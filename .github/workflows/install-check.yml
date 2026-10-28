@@ -93,7 +93,10 @@ jobs:
             echo y | steward sc release-age "$RELEASE_AGE_DAYS"
             echo "3. the release-age gate lowered to $RELEASE_AGE_DAYS day(s) for this run (input)" >> "$GITHUB_STEP_SUMMARY"
           fi
-          steward sc upgrade-tool npm:workstation-steward "$V"
+          # the release's provenance first, then the pin; allow_low_downloads approves a package name younger than 30 days,
+          # which mise's npm installer otherwise refuses (this one's until 2026-11-27; the third install check found it)
+          npm view "workstation-steward@$V" dist.attestations --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const a=JSON.parse(s);if(!a||!/slsa\.dev\/provenance/.test(JSON.stringify(a))){console.error("no provenance attestation");process.exit(1)}console.log("provenance:",JSON.stringify(a.provenance||a))})'
+          steward sc upgrade-tool "npm:workstation-steward[allow_low_downloads=true]" "$V"
           eval "$(mise hook-env -s bash)"; hash -r
           echo "steward is $(command -v steward)"
           out="$(steward version)"; echo "$out"
