@@ -59,7 +59,7 @@ jobs:
           add_shims_to_path: false
           export_path: false
 
-      - name: 1. Worktree mode, from just release-worktree at the tag
+      - name: 1. Worktree mode, from just release-worktree at the tag, then steward init (the order a maintainer follows)
         env:
           MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
         run: |
@@ -67,20 +67,20 @@ jobs:
           eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           echo y | just release-worktree "v$V"
+          "$HOME/.local/bin/steward" init --yes
           out="$("$HOME/.local/bin/steward" version)"; echo "$out"
           grep -qF "release $V (v$V)" <<<"$out" || { echo "expected: release $V (v$V)"; exit 1; }
           echo "1. worktree mode: \`$(head -1 <<<"$out")\`" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: 2. steward init (a fresh config), and mise linked to it
+      - name: 2. The fresh config checks out, and mise is linked to it
         env:
           MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
         run: |
           eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
-          steward init --yes
           steward config --check
           steward sc link
           ls -l "$HOME/.config/mise/"
-          echo "2. init and link: \`$(steward config | head -1)\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "2. config checks out; mise linked: \`$(readlink "$HOME/.config/mise/config.toml")\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: 3. npm mode, from steward sc upgrade-tool
         run: |
