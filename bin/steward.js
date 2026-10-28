@@ -161,18 +161,26 @@ async function init(args) {
   console.log(`Next:\n  steward doctor             what this machine still needs\n  DRY_RUN=1 steward sc link  then steward sc link: point ~/.config/mise at this config's mise/\n  edit ${C.tilde(path.join(target, 'steward.toml'))}: your roots, and [profiles] to turn on AI tooling or projects`);
   // The Claude Code skills (D48), last: only a person in their own terminal can accept the plugin's command
   if (!yes && process.stdin.isTTY && !process.env.CLAUDECODE) await offerSkills(target);
-  else console.log('  steward skills install     the Claude Code skills, for you or --project <path> (from your own terminal)');
+  else console.log('  steward skills install     the Claude Code skills, for you or --project <path> (from your own terminal);\n                             [skills] pr_consolidation in steward.toml adds PR consolidation');
 }
 
-// offerSkills(target) — you, one project, or not now; `steward skills install` shows its plan and asks again
+// offerSkills(target) — everywhere, one project, or not now; then whether to include PR consolidation (its switch in the
+// new steward.toml); `steward skills install` shows its plan and asks again
 async function offerSkills(target) {
   const rl = require('readline').createInterface({ input: process.stdin, output: process.stdout });
   const q = s => new Promise(res => rl.question(s, res));
   console.log("\nInstall the steward's Claude Code skills (/steward:supply-chain and the rest)?\n  1) everywhere: every Claude Code session you start, in any folder (turned on in ~/.claude/settings.json)\n  2) one project: only sessions started in a folder you name (turned on in its .claude/settings.local.json)\n  3) not now");
   const a = (await q('Choose 1, 2 or 3 [3]: ')).trim();
   const project = a === '2' ? (await q('Project folder (its path): ')).trim() : '';
+  if (a !== '1' && !(a === '2' && project)) {
+    rl.close();
+    console.log('Later: steward skills install [--project <path>]; [skills] pr_consolidation in steward.toml adds PR consolidation');
+    return;
+  }
+  const pr = /^y(es)?$/i.test((await q("Also include PR consolidation (folds a repo's Dependabot and Renovate PRs into one verified PR)? [y/N] ")).trim());
   rl.close();
-  if (a !== '1' && !(a === '2' && project)) { console.log('Later: steward skills install [--project <path>]'); return; }
+  const file = path.join(target, 'steward.toml');
+  if (pr && require('../lib/skills.js').includePrConsolidation(file)) console.log(`Set [skills] pr_consolidation = true in ${C.tilde(file)} (set it back to false to leave it out)`);
   spawnSync(process.execPath, [path.join(ENGINE, 'lib', 'skills.js'), 'install', ...(project ? ['--project', project] : [])],
     { cwd: ENGINE, stdio: 'inherit', env: { ...process.env, STEWARD_INSTANCE: target } });
 }

@@ -135,6 +135,26 @@ test("skills install: claude's exit code alone isn't success; the plugin must be
   assert.equal(receipts(s.dir).length, 1, 'the receipt still records what ran');
 });
 
+test("skills: init's PR consolidation answer turns the switch on in the new steward.toml, keeping its comments", () => {
+  const S = require('../lib/skills.js');
+  const dir = path.join(ROOT, 'switch');
+  fs.mkdirSync(dir);
+  const ex = path.join(dir, 'example.toml');
+  fs.copyFileSync(path.join(REPO, 'examples', 'steward.toml'), ex);
+  assert.equal(S.includePrConsolidation(ex), true);
+  const after = fs.readFileSync(ex, 'utf8');
+  assert.match(after, /^pr_consolidation = true +# add the pr-consolidation skill/m);
+  assert.equal(after.replace('pr_consolidation = true', 'pr_consolidation = false'), fs.readFileSync(path.join(REPO, 'examples', 'steward.toml'), 'utf8'), 'only that value changed');
+  assert.equal(S.includePrConsolidation(ex), false, 'already on');
+  const bare = path.join(dir, 'bare.toml');
+  fs.writeFileSync(bare, 'schema = 1');
+  S.includePrConsolidation(bare);
+  assert.equal(fs.readFileSync(bare, 'utf8'), 'schema = 1\n\n[skills]\npr_consolidation = true\n');
+  const on = setup('switch-on');
+  fs.copyFileSync(ex, path.join(on.dir, 'inst', 'steward.toml'));
+  assert.ok(fs.readdirSync(path.join(on.run(['path']).stdout.trim(), 'skills')).includes('pr-consolidation'));
+});
+
 test('skills: the marketplace lists the steward plugin by command; config and commands agree', () => {
   const S = require('../lib/skills.js');
   const mk = JSON.parse(fs.readFileSync(path.join(REPO, '.claude-plugin', 'marketplace.json'), 'utf8'));
