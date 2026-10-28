@@ -38,6 +38,18 @@ The steward aims for *safe, explained and reversible*, not merely *newest*.
   from someone's laptop, and carries a *provenance attestation*: a signed record of the commit and workflow that built
   it, which anyone can check.
 
+> [!TIP]
+> To check a release is genuine, read its provenance record. It should name this repository and its release workflow.
+> On npmjs.com, a version that has one shows a green check; from a terminal (with `jq`):
+>
+> ```sh
+> curl -s https://registry.npmjs.org/-/npm/v1/attestations/workstation-steward@<version> |
+>   jq -r '.attestations[] | select(.predicateType | test("slsa"))
+>          | .bundle.dsseEnvelope.payload | @base64d | fromjson
+>          | .predicate.buildDefinition.externalParameters.workflow | "\(.repository) \(.path)"'
+> # https://github.com/pacphi/workstation-steward .github/workflows/release.yml
+> ```
+
 ## See it work
 
 ### The weekly review
@@ -109,20 +121,6 @@ steward sc plan       # what an upgrade would take, hold or skip, and why
 > [!TIP]
 > `steward` on its own lists every command and tells you when something needs you: new projects, a soak ending, a
 > review due.
-
-<details>
-<summary>Want to check the release is genuine before installing?</summary>
-
-Every release carries a provenance attestation: a signed record, kept by npm, of the exact commit and GitHub workflow
-that built it. This prints the record's type; any answer other than the one shown means the release wasn't built by
-this repo's workflow:
-
-```sh
-npm view workstation-steward@<version> dist.attestations.provenance.predicateType
-# https://slsa.dev/provenance/v1
-```
-
-</details>
 
 ### Ways to install, and to upgrade
 

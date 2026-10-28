@@ -65,7 +65,7 @@ The engine never holds your data, and your config never holds code. A release ch
 ## Install and set up
 
 - **Install** with mise, so the release-age gate and Renovate cover the steward like any other tool. Check the
-  release's provenance (`npm view workstation-steward@X.Y.Z dist.attestations`), then
+  release's provenance: its record must name this repository and `release.yml` ([the README shows how](../README.md#why-its-different)), then
   `mise use -g 'npm:workstation-steward[allow_low_downloads=true]@X.Y.Z'`. mise's npm installer refuses a package name
   younger than 30 days unless the tool is approved this way; this one's turns 30 days old on 2026-11-27, after which
   the approval does nothing. *Built: every release from 0.1.0 is on npm with provenance (R6).*
