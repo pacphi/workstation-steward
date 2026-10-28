@@ -3,6 +3,19 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## 0.1.0 (2026-10-28)
+
+
+### Features
+
+* releases through release-please and npm Trusted Publishing, behind a publish guard (D46) ([#3](https://github.com/pacphi/workstation-steward/issues/3)) ([4607b68](https://github.com/pacphi/workstation-steward/commit/4607b68e8caabac0ac1b1bf63bc401f2f2a6e05c))
+* workstation-steward, the engine (initial public commit) ([9f2bfd5](https://github.com/pacphi/workstation-steward/commit/9f2bfd57b8133034c30d0f5ef87979b7f608567a))
+
+
+### Continuous Integration
+
+* the first release is 0.1.0 (release-please initial-version) ([#5](https://github.com/pacphi/workstation-steward/issues/5)) ([fffd5c4](https://github.com/pacphi/workstation-steward/commit/fffd5c49fa5abddb27ce58513ae43edcdedc452f))
+
 ## [Before 0.1.0] Private development, 2026-10-21 to 2026-10-27
 
 The steward was built in a private repository before this one existed, and that history stays private. The
