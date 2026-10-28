@@ -122,8 +122,8 @@ runner the way a maintainer's machine runs it, and switches between the two rele
 gh workflow run install-check.yml --repo pacphi/workstation-steward -f version=X.Y.Z
 ```
 
-1. Worktree mode: `just release-worktree vX.Y.Z`, then `steward init --yes` (a fresh config from the examples);
-   `steward version` says `release X.Y.Z (vX.Y.Z)`.
+1. Worktree mode: `just release-worktree vX.Y.Z`; `steward version` points at `steward init` while there is no config;
+   then `steward init --yes` (a fresh config from the examples), and `steward version` says `release X.Y.Z (vX.Y.Z)`.
 2. `steward config --check`, and `steward sc link` points mise at the new config.
 3. npm mode: `steward sc upgrade-tool npm:workstation-steward X.Y.Z`; `steward version` says `release X.Y.Z (npm)`.
 4. `steward check`, and the plugin folder as Claude Code builds it.

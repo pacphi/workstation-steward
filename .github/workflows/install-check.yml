@@ -59,7 +59,7 @@ jobs:
           add_shims_to_path: false
           export_path: false
 
-      - name: 1. Worktree mode, from just release-worktree at the tag, then steward init (the order a maintainer follows)
+      - name: 1. Worktree mode, from just release-worktree at the tag; steward version before and after steward init
         env:
           MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
         run: |
@@ -67,6 +67,9 @@ jobs:
           eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           echo y | just release-worktree "v$V"
+          # before any config: version answers and points at init (the first install check found it failing; fixed in 0.2.1)
+          before="$("$HOME/.local/bin/steward" version)"; echo "$before"
+          grep -qF "no steward.toml yet: steward init" <<<"$before" || { echo "expected version to point at steward init"; exit 1; }
           "$HOME/.local/bin/steward" init --yes
           out="$("$HOME/.local/bin/steward" version)"; echo "$out"
           grep -qF "release $V (v$V)" <<<"$out" || { echo "expected: release $V (v$V)"; exit 1; }
