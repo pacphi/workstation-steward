@@ -1,7 +1,7 @@
 {
  "name": "steward-config-sync",
- "title": "workstation-steward: what the steward tells you about your config repo",
- "desc": "An illustrative session, looping, in three scenes. A bare steward shows a banner line: one file changed here and one newer commit on GitHub, as of the last fetch, pointing to steward config. steward config ends with the repo section: the GitHub repository and branch, the changed file, and the newer commit, each with the git command that acts on it. steward review fetches the config repo and lists the same items, plus its open pull requests on GitHub, such as Renovate's.",
+ "title": "workstation-steward: your config repo, watched and kept in step",
+ "desc": "An illustrative session, looping, in five scenes. A bare steward shows a banner line: one file changed here and one newer commit on GitHub, as of the last fetch, pointing to steward config sync. steward config ends with the repo section: the GitHub repository and branch, the changed policy file, and the newer commit, each with the command that acts on it. steward review fetches the config repo and lists the same items, plus its open pull requests on GitHub, such as Renovate's. After Renovate's pull request is merged, steward config sync shows the plan (one commit, the mise files it changes, the local edit that stays, then mise install and steward check); with --apply it asks, fast-forwards, prints the receipt and the rollback command, runs mise install after a yes, and runs steward check.",
  "window": "steward — zsh",
  "still": 1,
  "scenes": [
@@ -30,7 +30,7 @@
       true
      ],
      [
-      " 1 file(s) changed here, 1 newer on GitHub (as of 2026-10-28 13:02): steward config",
+      " 1 file(s) changed here, 1 newer on GitHub (as of 2026-10-28 13:02): steward config sync",
       "fg"
      ]
     ]
@@ -58,7 +58,7 @@
     "out": "repo:        you/steward-config (main → origin/main)"
    },
    {
-    "out": "             1 file(s) changed here: mise/mise.lock"
+    "out": "             1 file(s) changed here: supply-chain/host.toml"
    },
    {
     "out": "               → git -C ~/.config/workstation-steward status",
@@ -68,7 +68,7 @@
     "out": "             1 newer commit(s) on origin/main (as of 2026-10-28 13:02)"
    },
    {
-    "out": "               → git -C ~/.config/workstation-steward pull --ff-only",
+    "out": "               → steward config sync",
     "color": "dim"
    }
   ],
@@ -106,7 +106,7 @@
     "color": "dim"
    },
    {
-    "out": "- 1 file(s) changed here: mise/mise.lock"
+    "out": "- 1 file(s) changed here: supply-chain/host.toml"
    },
    {
     "out": "  → git -C ~/.config/workstation-steward status",
@@ -116,7 +116,7 @@
     "out": "- 1 newer commit(s) on origin/main (as of 2026-10-28 13:02)"
    },
    {
-    "out": "  → git -C ~/.config/workstation-steward pull --ff-only",
+    "out": "  → steward config sync",
     "color": "dim"
    },
    {
@@ -129,6 +129,141 @@
    {
     "out": "  → gh pr view 2 -R you/steward-config",
     "color": "dim"
+   }
+  ],
+  [
+   {
+    "out": "# after merging Renovate's #2 on GitHub",
+    "color": "dim"
+   },
+   {
+    "cmd": "steward config sync"
+   },
+   {
+    "out": "~/.config/workstation-steward  (you/steward-config, main → origin/main)"
+   },
+   {
+    "out": "  pull    1 commit(s):"
+   },
+   {
+    "out": "            59b69ee chore(deps): update dependency npm:renovate to v44.181.6 (#2)"
+   },
+   {
+    "out": "  files   mise/config.toml, mise/mise.lock"
+   },
+   {
+    "out": "  stays   1 local edit(s) GitHub doesn't touch"
+   },
+   {
+    "out": "  then    mise install (mise/ changed; asks), steward check"
+   },
+   {
+    "out": "",
+    "quick": true
+   },
+   {
+    "out": "plan only. Add --apply to do it (asks first; fast-forward only, never a rebase or merge).",
+    "color": "dim"
+   }
+  ],
+  [
+   {
+    "cmd": "steward config sync --apply"
+   },
+   {
+    "out": "  … the same plan …",
+    "color": "dim"
+   },
+   {
+    "ask": "Fast-forward main to origin/main? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "fast-forwarded 9e411b6 → 59b69ee",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "out": "  receipt:  ~/.local/state/workstation-steward/backups/config-sync-20261028T212323/receipt.json",
+    "color": "dim"
+   },
+   {
+    "out": "  rollback: steward config sync --rollback ~/.local/state/…/config-sync-20261028T212323/receipt.json",
+    "color": "dim"
+   },
+   {
+    "ask": "mise/ changed: run mise install for its pins? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "segs": [
+     [
+      "mise ",
+      "dim"
+     ],
+     [
+      "npm:renovate@44.181.6 ",
+      "fg"
+     ],
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "installed",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "steward check",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "ok     ",
+      "ok",
+      true
+     ],
+     [
+      "config format 1: current",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "ok     ",
+      "ok",
+      true
+     ],
+     [
+      "add-ons: ai_tooling off, projects on",
+      "fg"
+     ]
+    ]
    }
   ]
  ]
