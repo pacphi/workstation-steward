@@ -9,7 +9,7 @@ toolchain, Homebrew, apps, the App Store, macOS, trust stores and Docker, and, i
 project under your development folders. Each week it answers one question: *what needs updating, is it safe yet, and
 what changes if I say yes?*
 
-![A first session: verify the release, install it through mise, steward init's guided setup, then a first upgrade plan](docs/assets/steward-onboarding.svg)
+![A first session: install through mise, check the version, steward init's guided setup, then a first upgrade plan](docs/assets/steward-onboarding.svg)
 
 > [!IMPORTANT]
 > workstation-steward is 0.x and runs on macOS. Linux and Windows follow, one package manager at a time
@@ -29,8 +29,9 @@ The steward aims for *safe, explained and reversible*, not merely *newest*.
   disk through a soak (3 days by default), so going back is a config restore, not a reinstall.
 - **Your data stays yours.** The engine holds none of it. Your config (an *instance*: roots, policy, the registry of
   your projects) lives in your own folder, best kept in a private Git repo.
-- **Releases you can verify.** Every release from 0.1.0 is published from CI through npm Trusted Publishing, with a
-  SLSA provenance attestation linking the package to the exact commit and workflow that built it.
+- **Releases you can verify.** Every release from 0.1.0 is built and published by this repo's GitHub workflow, never
+  from someone's laptop, and carries a *provenance attestation*: a signed record of the commit and workflow that built
+  it, which anyone can check.
 
 ## See it work
 
@@ -67,29 +68,33 @@ justified. This animation retells a real run,
 
 ## Quick start
 
-**1. Check the release, then install it through mise**, so the same gate and Renovate keep the steward current:
+**1. Install** the `steward` command through [mise](https://mise.jdx.dev), the tool manager that keeps your other CLIs
+current. mise then keeps the steward current too, under the same release-age gate:
 
 ```sh
-# expect: https://slsa.dev/provenance/v1
-npm view workstation-steward@<version> dist.attestations.provenance.predicateType
-mise use -g 'npm:workstation-steward[allow_low_downloads=true]@<version>'
+mise use -g npm:workstation-steward@<version>
 ```
 
 > [!NOTE]
-> By default, mise's npm installer refuses a package name younger than 30 days unless you approve it, which is what
-> `allow_low_downloads=true` does. `workstation-steward` turns 30 days old on 2026-11-27; after that the approval
-> changes nothing. Check the provenance first, as above.
+> Until 2026-11-27, add an approval: `mise use -g 'npm:workstation-steward[allow_low_downloads=true]@<version>'`.
+> By default mise won't install a package whose name is less than 30 days old, and this one was first published on
+> 2026-10-28.
 
-**2. Create your config.** `steward init` copies the example instance to `~/.config/workstation-steward`, shows every
-file it will write, and asks. Then it walks the rest of setup one question at a time (the AI tooling add-on, the
-projects add-on and where your projects live, the Claude Code skills), and each answer changes one line of
-`steward.toml`.
+**2. Check it.** `steward version` says which release is running and where your config will live:
+
+```sh
+steward version
+```
+
+**3. Set up.** `steward init` creates your config in `~/.config/workstation-steward`, shows every file it will write,
+and asks first. Then it walks the rest of setup one question at a time (the AI tooling add-on, the projects add-on
+and where your projects live, the Claude Code skills); each answer changes one line of `steward.toml`.
 
 ```sh
 steward init
 ```
 
-**3. See where you stand.** Both are read-only:
+**4. Take a first look.** Both are read-only:
 
 ```sh
 steward doctor        # what this machine still needs (--install fixes it)
@@ -98,7 +103,21 @@ steward sc plan       # what an upgrade would take, hold or skip, and why
 
 > [!TIP]
 > `steward` on its own lists every command and tells you when something needs you: new projects, a soak ending, a
-> review due. `steward check` says whether your config is in a format this release reads.
+> review due.
+
+<details>
+<summary>Want to check the release is genuine before installing?</summary>
+
+Every release carries a provenance attestation: a signed record, kept by npm, of the exact commit and GitHub workflow
+that built it. This prints the record's type; any answer other than the one shown means the release wasn't built by
+this repo's workflow:
+
+```sh
+npm view workstation-steward@<version> dist.attestations.provenance.predicateType
+# https://slsa.dev/provenance/v1
+```
+
+</details>
 
 Working on the steward itself? Run it from a clone with `node bin/steward.js`, or as `steward-dev` alongside a pinned
 release ([`docs/lifecycle.md`](docs/lifecycle.md#two-channels)).

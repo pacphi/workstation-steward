@@ -1,20 +1,13 @@
 {
  "name": "steward-onboarding",
  "title": "workstation-steward: a first session in the terminal",
- "desc": "An illustrative session, looping. It checks the npm release's provenance (SLSA v1), installs it through mise, runs steward init (nine files created with a receipt; the AI tooling add-on off, the projects add-on on under ~/Development, the Claude Code skills installed everywhere with PR consolidation), then runs steward sc plan, which takes gh 2.103.2, holds python@3.15 3.15.2 because it is two days old, and skips postgres 18 because a major upgrade is deliberate.",
+ "desc": "An illustrative first session, looping. It installs the steward through mise from npm, checks it with steward version (release 0.2.1 from npm; no config yet, so it points at steward init), runs steward init (nine files created with a receipt; the AI tooling add-on off, the projects add-on on under ~/Development, the Claude Code skills installed everywhere with PR consolidation), then runs steward sc plan, which takes gh 2.103.2, holds python@3.15 3.15.2 because it is two days old, and skips postgres 18 because a major upgrade is deliberate.",
  "window": "steward — zsh",
  "still": 1,
  "scenes": [
   [
    {
-    "cmd": "npm view workstation-steward@0.2.1 dist.attestations.provenance.predicateType"
-   },
-   {
-    "out": "https://slsa.dev/provenance/v1",
-    "color": "ok"
-   },
-   {
-    "cmd": "mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.2.1'"
+    "cmd": "mise use -g npm:workstation-steward@0.2.1"
    },
    {
     "segs": [
@@ -32,6 +25,32 @@
       "fg"
      ]
     ]
+   },
+   {
+    "cmd": "steward version"
+   },
+   {
+    "out": "workstation-steward release 0.2.1 (npm) on node 26.12.1"
+   },
+   {
+    "out": "engine:   ~/.local/share/mise/installs/npm-workstation-steward/0.2.1/…/workstation-steward",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "instance: ~/.config/workstation-steward   [~/.config default]  ",
+      "fg"
+     ],
+     [
+      "(no steward.toml yet: steward init)",
+      "hold"
+     ]
+    ]
+   },
+   {
+    "out": "format:   none yet; this release writes 1 and reads 1",
+    "color": "dim"
    }
   ],
   [
