@@ -12,6 +12,7 @@ For maintainers of this repository; users install releases as [`../README.md`](.
 - [One-time npm setup](#one-time-npm-setup)
 - [Publishing an existing release](#publishing-an-existing-release)
 - [After each release](#after-each-release)
+- [Checking a release on a clean Mac](#checking-a-release-on-a-clean-mac)
 - [The publish guard](#the-publish-guard)
 - [A pre-push leak check for your clone](#a-pre-push-leak-check-for-your-clone)
 
@@ -110,6 +111,27 @@ gh workflow run release.yml --repo pacphi/workstation-steward -f tag=v0.1.0
   ```
 
 - A config repo that pins the steward through mise gets a Renovate PR once the release is 3 days old.
+
+## Checking a release on a clean Mac
+
+The Install check workflow (`.github/workflows/install-check.yml`) installs a released version on a fresh macOS
+runner the way a maintainer's machine runs it, and switches between the two release modes
+([`lifecycle.md`](lifecycle.md#two-channels)). Start it by hand:
+
+```sh
+gh workflow run install-check.yml --repo pacphi/workstation-steward -f version=X.Y.Z
+```
+
+1. Worktree mode: `just release-worktree vX.Y.Z`; `steward version` says `release X.Y.Z (vX.Y.Z)`.
+2. `steward init --yes` makes a fresh config from the examples, and `steward sc link` points mise at it.
+3. npm mode: `steward sc upgrade-tool npm:workstation-steward X.Y.Z`; `steward version` says `release X.Y.Z (npm)`.
+4. `steward check`, and the plugin folder as Claude Code builds it.
+5. The skills plugin: `steward skills install --yes` (a runner is not a Claude Code session), then `claude plugin list`.
+6. Back to worktree mode: `steward sc rollback`; `steward version` says `(vX.Y.Z)` again.
+
+The config's release-age gate (3 days) applies to step 3. To check a younger release, set `-f release_age_days=0`:
+it lowers the gate for that run only, and the job summary says so. Each step checks its result and adds a line to the
+summary.
 
 ## The publish guard
 

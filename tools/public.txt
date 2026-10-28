@@ -45,6 +45,7 @@ lychee.toml
 renovate/
 .github/workflows/docs-check.yml
 .github/workflows/lint.yml
+.github/workflows/install-check.yml
 biome.jsonc
 tsconfig.json
 
