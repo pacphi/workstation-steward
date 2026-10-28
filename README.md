@@ -126,14 +126,23 @@ npm view workstation-steward@<version> dist.attestations.provenance.predicateTyp
 
 ### Ways to install, and to upgrade
 
-The steward runs on Node 26 or later. Pick one way and upgrade the same way:
+The steward runs on Node 26 or later. Pick one way to install:
 
-| Way | Install | Upgrade | Release-age gate |
-| --- | --- | --- | --- |
-| **mise** (recommended) | `mise use -g npm:workstation-steward@<version>` | `steward sc upgrade` takes it with your other tools once it's old enough; or just it: `steward sc upgrade-tool npm:workstation-steward` | Yes; Renovate also proposes it, if your config is in a Git repo |
-| **npm** | `npm install -g workstation-steward@<version>` | `npm install -g workstation-steward@<newer version>` (`npm outdated -g` shows when there is one) | No: check a release's age yourself |
-| **npx** (try it, no install) | `npx workstation-steward@<version> version` | Name a newer version | No |
-| **From a clone** (contributors) | `git clone`, then `npm link` ([`CONTRIBUTING.md`](CONTRIBUTING.md#set-up)) | `git pull` | No |
+```sh
+mise use -g npm:workstation-steward@<version>     # mise (recommended)
+npm install -g workstation-steward@<version>       # npm
+npx workstation-steward@<version> version          # npx: try it without installing
+```
+
+Contributors run it from a clone instead: `git clone`, then `npm link` ([`CONTRIBUTING.md`](CONTRIBUTING.md#set-up)).
+Upgrade the same way you installed:
+
+| Way | How it upgrades | Release-age gate |
+| --- | --- | --- |
+| mise | `steward sc upgrade` takes it with your other tools once it's old enough (or just it: `steward sc upgrade-tool npm:workstation-steward`); Renovate proposes it too, if your config is in a Git repo | Yes |
+| npm | `npm install -g workstation-steward@<newer version>`; `npm outdated -g` shows when there is one | No: check a release's age yourself |
+| npx | Name the newer version | No |
+| A clone | `git pull` | No |
 
 There's no `curl … | sh` installer, on purpose: running a download straight into a shell is what the steward guards
 against. Working on the steward itself? Run it as `steward-dev` alongside a pinned release
