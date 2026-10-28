@@ -1,0 +1,225 @@
+{
+ "name": "steward-config-repo",
+ "title": "workstation-steward: keep your config in a private Git repo",
+ "desc": "An illustrative session, looping, in four scenes. It turns ~/.config/workstation-steward into a Git repository and pushes it to a new private GitHub repository with gh; clones it on another Mac, checks it with steward check and points mise at it with steward sc link; on the first Mac, an upgrade changes mise/mise.lock, which is committed and pushed; on the other Macs, git pull brings the change and mise install applies it.",
+ "window": "steward — zsh",
+ "still": 0,
+ "scenes": [
+  [
+   {
+    "out": "# 1. make your config a repo",
+    "color": "dim"
+   },
+   {
+    "cmd": "cd ~/.config/workstation-steward"
+   },
+   {
+    "cmd": "git init -b main && git add -A && git commit -m 'My steward config'"
+   },
+   {
+    "out": "Initialized empty Git repository in ~/.config/workstation-steward/.git/"
+   },
+   {
+    "out": "[main (root-commit) 4e1c2d7] My steward config"
+   },
+   {
+    "out": " 9 files changed, 553 insertions(+)"
+   },
+   {
+    "cmd": "gh repo create you/steward-config --private --source . --remote origin --push"
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "Created repository you/steward-config on github.com",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  https://github.com/you/steward-config",
+    "color": "ans"
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "Added remote https://github.com/you/steward-config.git",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "Pushed commits to https://github.com/you/steward-config.git",
+      "fg"
+     ]
+    ]
+   }
+  ],
+  [
+   {
+    "out": "# 2. use it on another Mac",
+    "color": "dim"
+   },
+   {
+    "cmd": "git clone https://github.com/you/steward-config ~/.config/workstation-steward"
+   },
+   {
+    "out": "Cloning into '~/.config/workstation-steward'..."
+   },
+   {
+    "cmd": "steward check"
+   },
+   {
+    "out": "engine 0.2.1; instance ~/.config/workstation-steward [~/.config default]",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "ok     ",
+      "ok",
+      true
+     ],
+     [
+      "config format 1: current",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "ok     ",
+      "ok",
+      true
+     ],
+     [
+      "add-ons: ai_tooling off, projects on",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "cmd": "steward sc link"
+   },
+   {
+    "out": "… ~/.config/mise/config.toml -> ~/.config/workstation-steward/mise/config.toml"
+   },
+   {
+    "out": "… ~/.config/mise/mise.lock -> ~/.config/workstation-steward/mise/mise.lock"
+   }
+  ],
+  [
+   {
+    "out": "# 3. day to day: a change on this Mac",
+    "color": "dim"
+   },
+   {
+    "cmd": "steward sc upgrade-tool gh"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "config backup: ~/.config/mise/backups/config.toml.20261029-091512",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "all checks passed",
+      "ok"
+     ]
+    ]
+   },
+   {
+    "cmd": "git -C ~/.config/workstation-steward status --short"
+   },
+   {
+    "out": " M mise/mise.lock",
+    "color": "hold"
+   },
+   {
+    "cmd": "git -C ~/.config/workstation-steward commit -am 'gh 2.103.2' && git -C ~/.config/workstation-steward push"
+   },
+   {
+    "out": "[main 9f3e1a2] gh 2.103.2"
+   },
+   {
+    "out": " 1 file changed, 6 insertions(+), 6 deletions(-)"
+   },
+   {
+    "out": "To https://github.com/you/steward-config.git"
+   },
+   {
+    "out": "   4e1c2d7..9f3e1a2  main -> main"
+   }
+  ],
+  [
+   {
+    "out": "# 4. on your other Macs",
+    "color": "dim"
+   },
+   {
+    "cmd": "git -C ~/.config/workstation-steward pull --ff-only"
+   },
+   {
+    "out": "Updating 4e1c2d7..9f3e1a2"
+   },
+   {
+    "out": "Fast-forward"
+   },
+   {
+    "out": " mise/mise.lock | 12 ++++++------"
+   },
+   {
+    "cmd": "mise install"
+   },
+   {
+    "segs": [
+     [
+      "mise ",
+      "dim"
+     ],
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "gh@2.103.2",
+      "fg"
+     ]
+    ]
+   }
+  ]
+ ]
+}
