@@ -43,7 +43,9 @@ it from there, so the list itself is never published.
 ## Pull requests
 
 One topic per PR, with a title in the [Conventional Commits](https://www.conventionalcommits.org) style
-(`feat(sc): …`, `fix(ai): …`, `docs: …`). Say what you ran to check it. Dependency updates come from Renovate and
+(`feat(sc): …`, `fix(ai): …`, `docs: …`). Merges are squash-only and the title becomes the commit, which
+release-please reads to version releases and write `CHANGELOG.md` ([`docs/maintainers.md`](docs/maintainers.md)), so a
+PR title check enforces it. Say what you ran to check it. Dependency updates come from Renovate and
 wait out the 3-day release-age gate; a security fix that can't wait names its advisory.
 
 AI-assisted contributions are welcome under the same bar: you've read and run what you submit.

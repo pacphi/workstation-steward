@@ -54,3 +54,32 @@ test('export: only allowed tracked files; never the instance, archive/ or owner/
   const chk = run('leak-check.js', [out, '--terms', empty]);   // not this checkout's own terms (it is also an instance)
   assert.equal(chk.status, 0, chk.stdout);
 });
+
+test('leak-check in a pure engine checkout (no steward.toml): every tracked file and every new one Git does not ignore', () => {
+  // a throwaway Git repo holding a copy of the tool, so "this checkout" is the repo, as in the public engine repo
+  const repo = path.join(ROOT, 'pure');
+  fs.mkdirSync(path.join(repo, 'tools'), { recursive: true });
+  fs.copyFileSync(path.join(REPO, 'tools', 'leak-check.js'), path.join(repo, 'tools', 'leak-check.js'));
+  const git = (...a) => spawnSync('git', ['-C', repo, ...a], { encoding: 'utf8' });
+  git('init', '-q', '-b', 'main');
+  fs.writeFileSync(path.join(repo, '.gitignore'), 'ignored.md\n');
+  fs.writeFileSync(path.join(repo, 'README.md'), '# ok\n');
+  fs.writeFileSync(path.join(repo, 'outside-the-allow-list.md'), 'the Secret-Project repo\n');   // never in tools/public.txt
+  fs.writeFileSync(path.join(repo, 'ignored.md'), 'secret-project, but Git ignores this file\n');
+  git('add', 'README.md', 'tools', '.gitignore');
+  const r = spawnSync(process.execPath, [path.join(repo, 'tools', 'leak-check.js'), '--terms', terms], { cwd: repo, encoding: 'utf8' });
+  assert.equal(r.status, 1, r.stdout);
+  assert.match(r.stdout, /in this checkout \(tracked and new\)/);
+  assert.match(r.stdout, /outside-the-allow-list\.md:1: a private term \(Secret-Project\)/, 'a new, untracked file is checked too');
+  assert.doesNotMatch(r.stdout, /ignored\.md/, 'an ignored file is not');
+});
+
+test('publish-guard: outside the Release workflow it refuses, naming every reason', () => {
+  const r = spawnSync(process.execPath, [path.join(REPO, 'tools', 'publish-guard.js')], {
+    encoding: 'utf8', env: { ...process.env, GITHUB_ACTIONS: '', GITHUB_REPOSITORY: 'someone/fork', GITHUB_WORKFLOW_REF: '', PUBLISH_GUARD_OFFLINE: '1' },
+  });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /not running on GitHub Actions/);
+  assert.match(r.stderr, /repository is someone\/fork, not pacphi\/workstation-steward/);
+  assert.match(r.stderr, /workflow is unknown, not \.github\/workflows\/release\.yml/);
+});
