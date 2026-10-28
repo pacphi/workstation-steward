@@ -12,6 +12,6 @@
     "MD033": false, // inline HTML is allowed
     "MD041": false  // CLAUDE.md is a single "@AGENTS.md" line (an import, not a document)
   },
-  "ignores": ["node_modules/**", ".claude/worktrees/**", "archive/evidence/**"],
+  "ignores": ["node_modules/**", ".claude/worktrees/**", "archive/evidence/**", "CHANGELOG.md"], // CHANGELOG.md is release-please's output (D46)
   "gitignore": true
 }

@@ -18,6 +18,7 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | Doc | Rev | What it is |
 | --- | --- | --- |
 | [`lifecycle.md`](lifecycle.md) | 12, 2026-10-28 | Install, set up, use, upgrade, migrate the config, reconcile projects, add tools, roll back, and the two channels: the promises across releases, each marked built or planned (D40, D41) |
+| [`maintainers.md`](maintainers.md) | 1, 2026-10-28 | Releasing: the release PR, Conventional Commit titles, the one-time npm setup (placeholder and Trusted Publishing), the publish guard, a pre-push leak check (D46) |
 | [`architecture.md`](architecture.md) | 33, 2026-10-27 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D42 |
 
 ## Living docs by area

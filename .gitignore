@@ -20,6 +20,7 @@
 # --- AI tool output: this repo chooses no AI tools (projects/registry.toml ai = []) --------------------------------
 # .claude/ itself stays tracked: .claude/skills/ links the area skills. Only local settings and agent worktrees go.
 .claude/settings.local.json
+CLAUDE.local.md
 .claude/worktrees/
 .claude-flow/
 .swarm/

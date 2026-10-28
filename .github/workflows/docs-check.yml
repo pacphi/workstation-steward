@@ -7,6 +7,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch: # the release workflow starts it on the release PR (D46)
 
 permissions:
   contents: read

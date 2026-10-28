@@ -1,0 +1,32 @@
+# A PR's title becomes its squash commit (squash-only merges, title = PR title), and release-please groups the
+# CHANGELOG by its type, so it must follow Conventional Commits (feat:, fix:, docs:, chore:, test:, ci:, …; feat!: or
+# a BREAKING CHANGE footer for a breaking change). D46. Reads the title only; no checkout, no secrets.
+name: PR title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  conventional:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          types: |
+            feat
+            fix
+            perf
+            revert
+            docs
+            refactor
+            test
+            build
+            ci
+            chore
+          requireScope: false

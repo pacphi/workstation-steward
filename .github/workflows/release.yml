@@ -1,0 +1,87 @@
+# Releases (D46). On every push to main, release-please keeps one release PR open: the next version (from the
+# Conventional Commit types since the last release) and the rolling, grouped CHANGELOG.md. A PR opened with the
+# workflow's own token starts no other workflow, so this one starts the required checks on the release branch itself
+# (workflow_dispatch is the exception GitHub allows). Merging the release PR tags vX.Y.Z and creates the GitHub
+# release; then the tagged commit is tested on macOS and published to npm with Trusted Publishing (OIDC, no token) and
+# provenance, after tools/publish-guard.js agrees. The npm side is set up once by the maintainer: docs/maintainers.md.
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # the release commit, tag and GitHub release
+      pull-requests: write   # the release PR
+      issues: write          # its labels
+      actions: write         # starting the checks on the release PR
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - id: rp
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+      - name: Start the required checks on the release PR
+        if: ${{ steps.rp.outputs.pr }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ fromJSON(steps.rp.outputs.pr).headBranchName }}
+        run: |
+          for wf in test.yml lint.yml docs-check.yml; do gh workflow run "$wf" --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"; done
+
+  test:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    runs-on: macos-latest
+    env:
+      STEWARD_INSTANCE: ${{ github.workspace }}/examples
+      MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
+      NO_PROGRESS: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+        with:
+          version: 2026.10.18
+          install: false
+      - run: mise install
+      - run: npm ci --ignore-scripts --prefix tools/types
+      - run: just test
+      - run: just lint
+
+  publish:
+    needs: [release-please, test]
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    runs-on: macos-latest   # the package is macOS-only (os: darwin)
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write       # npm Trusted Publishing (OIDC) and provenance
+    env:
+      MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+          fetch-depth: 0    # the guard checks that HEAD is exactly the release tag
+      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+        with:
+          version: 2026.10.18
+          install: false
+      - run: mise install node npm   # npm 11.5.1 or later is needed for Trusted Publishing
+      - run: mise exec -- node tools/publish-guard.js
+      - run: mise exec -- npm publish --access public --provenance
