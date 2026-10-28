@@ -1,7 +1,7 @@
 # Releases (D46). On every push to main, release-please keeps one release PR open: the next version (from the
-# Conventional Commit types since the last release) and the rolling, grouped CHANGELOG.md. A PR opened with the
-# workflow's own token starts no other workflow, and checks started by hand on its branch don't count for the PR, so
-# the maintainer closes and reopens the release PR before merging it: the reopen runs the required checks. Merging it
+# Conventional Commit types since the last release) and the rolling, grouped CHANGELOG.md. GitHub holds the checks of
+# a PR this workflow opens or updates until a maintainer approves them ("Approve workflows to run"); the approved runs
+# are the PR's required checks (docs/maintainers.md; close and reopen also runs them). Merging it
 # tags vX.Y.Z and creates the GitHub release; then the tagged commit is tested on macOS and published to npm with
 # Trusted Publishing (OIDC, no token) and provenance, after tools/publish-guard.js agrees. Started by hand with a tag
 # (gh workflow run release.yml -f tag=vX.Y.Z), it tests and publishes a release that already exists. The npm side is
