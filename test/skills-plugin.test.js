@@ -135,24 +135,46 @@ test("skills install: claude's exit code alone isn't success; the plugin must be
   assert.equal(receipts(s.dir).length, 1, 'the receipt still records what ran');
 });
 
-test("skills: init's PR consolidation answer turns the switch on in the new steward.toml, keeping its comments", () => {
-  const S = require('../lib/skills.js');
-  const dir = path.join(ROOT, 'switch');
-  fs.mkdirSync(dir);
-  const ex = path.join(dir, 'example.toml');
-  fs.copyFileSync(path.join(REPO, 'examples', 'steward.toml'), ex);
-  assert.equal(S.includePrConsolidation(ex), true);
-  const after = fs.readFileSync(ex, 'utf8');
-  assert.match(after, /^pr_consolidation = true +# add the pr-consolidation skill/m);
-  assert.equal(after.replace('pr_consolidation = true', 'pr_consolidation = false'), fs.readFileSync(path.join(REPO, 'examples', 'steward.toml'), 'utf8'), 'only that value changed');
-  assert.equal(S.includePrConsolidation(ex), false, 'already on');
-  const bare = path.join(dir, 'bare.toml');
-  fs.writeFileSync(bare, 'schema = 1');
-  S.includePrConsolidation(bare);
-  assert.equal(fs.readFileSync(bare, 'utf8'), 'schema = 1\n\n[skills]\npr_consolidation = true\n');
-  const on = setup('switch-on');
-  fs.copyFileSync(ex, path.join(on.dir, 'inst', 'steward.toml'));
-  assert.ok(fs.readdirSync(path.join(on.run(['path']).stdout.trim(), 'skills')).includes('pr-consolidation'));
+test('init setup: each answer changes one line of the new steward.toml, and the skills follow it', async () => {
+  const { walkSetup } = require('../lib/setup.js');
+  const s = setup('walk');
+  const file = path.join(s.dir, 'inst', 'steward.toml');
+  fs.copyFileSync(path.join(REPO, 'examples', 'steward.toml'), file);
+  const before = fs.readFileSync(file, 'utf8').split('\n');
+  const answers = ['y', 'y', '~/code, ~/work', '1', 'y'];
+  const asked = [];
+  const out = await walkSetup(file, async q => { asked.push(q); return answers.shift(); }, () => {});
+  assert.deepEqual(out, { set: ['profiles.ai_tooling = true', 'profiles.projects = true', 'projects.roots = ["~/code","~/work"]', 'skills.pr_consolidation = true'], install: { project: null } });
+  assert.match(asked[2], /\[~\/Development\]: $/, 'the roots question shows the current value');
+  const after = fs.readFileSync(file, 'utf8').split('\n');
+  assert.equal(after.length, before.length);
+  const changed = after.filter((l, i) => l !== before[i]);
+  assert.deepEqual(changed.map(l => l.split('#')[0].trim()), ['roots = ["~/code", "~/work"]', 'ai_tooling = true', 'projects = true', 'pr_consolidation = true']);
+  assert.ok(changed.every(l => l.includes('# ')), 'comments stay');
+  const cfg = JSON.parse(execFileSync(process.execPath, [path.join(REPO, 'lib', 'config.js'), '--json'], { encoding: 'utf8', env: { ...process.env, STEWARD_INSTANCE: path.join(s.dir, 'inst') } }));
+  assert.deepEqual([cfg.profiles.ai_tooling, cfg.profiles.projects, cfg.skills.pr_consolidation], [true, true, true]);
+  assert.deepEqual(fs.readdirSync(path.join(s.run(['path']).stdout.trim(), 'skills')).sort(), ['ai-tooling', 'pr-consolidation', 'projects', 'supply-chain']);
+});
+
+test('init setup: no to the add-ons, Enter for the roots, one project, and not now each leave the file as it was', async () => {
+  const { walkSetup } = require('../lib/setup.js');
+  const file = path.join(ROOT, 'walk-defaults.toml');
+  fs.copyFileSync(path.join(REPO, 'examples', 'steward.toml'), file);
+  const ex = fs.readFileSync(file, 'utf8');
+  const run = async answers => walkSetup(file, async () => answers.shift(), () => {});
+  assert.deepEqual(await run(['', '', '']), { set: [], install: null });
+  assert.deepEqual(await run(['n', 'n', '2', '/tmp/p', 'n']), { set: [], install: { project: '/tmp/p' } });
+  assert.deepEqual(await run(['n', 'n', '2', '']), { set: [], install: null }, 'one project with no folder is not now');
+  assert.equal(fs.readFileSync(file, 'utf8'), ex);
+  const proj = await run(['n', 'y', '', '3']);
+  assert.deepEqual(proj, { set: ['profiles.projects = true'], install: null }, 'Enter keeps the roots');
+});
+
+test('tomlSet: replaces a value in place, adds a missing key under its header, adds a missing table', () => {
+  const W = require('../lib/write.js');
+  assert.equal(W.tomlSet('[a]\nk = false   # note\n', 'a', 'k', true), '[a]\nk = true    # note\n');
+  assert.equal(W.tomlSet('[a]\n# x\n[b]\nk = 1\n', 'a', 'k', true), '[a]\nk = true\n# x\n[b]\nk = 1\n', 'only [a]');
+  assert.equal(W.tomlSet('schema = 1', 'skills', 'pr_consolidation', true), 'schema = 1\n\n[skills]\npr_consolidation = true\n');
 });
 
 test('skills: the marketplace lists the steward plugin by command; config and commands agree', () => {
