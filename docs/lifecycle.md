@@ -66,7 +66,7 @@ The engine never holds your data, and your config never holds code. A release ch
 ## Install and set up
 
 - **Install** with mise, so the release-age gate and Renovate cover the steward like any other tool. Check the
-  release's provenance (`npm view workstation-steward@X.Y.Z dist.attestations`), then
+  release's provenance: its record must name this repository and `release.yml` ([the README shows how](../README.md#why-its-different)), then
   `mise use -g 'npm:workstation-steward[allow_low_downloads=true]@X.Y.Z'`. mise's npm installer refuses a package name
   younger than 30 days unless the tool is approved this way; this one's turns 30 days old on 2026-11-27, after which
   the approval does nothing. *Built: every release from 0.1.0 is on npm with provenance (R6).*
@@ -236,7 +236,8 @@ Check with `steward version`.
 **Switch to npm through mise.** *Built; the install check proves it on a clean Mac
 ([`maintainers.md`](maintainers.md#checking-a-release-on-a-clean-mac)).* Keep the worktree: it becomes the fallback.
 
-1. Check the release's provenance (`npm view workstation-steward@X.Y.Z dist.attestations`), then pin it with the
+1. Check the release's provenance: its record must name this repository and `release.yml`
+   ([the README shows how](../README.md#why-its-different)). Then pin it with the
    steward's own command, which backs up your mise config, verifies and writes a receipt:
    `steward sc upgrade-tool 'npm:workstation-steward[allow_low_downloads=true]' X.Y.Z`. The approval lets mise's npm
    installer take a package name younger than 30 days (this one's until 2026-11-27); after that it changes nothing.

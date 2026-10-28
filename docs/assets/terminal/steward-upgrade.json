@@ -1,0 +1,154 @@
+{
+ "name": "steward-upgrade",
+ "title": "workstation-steward: a safe upgrade, and its undo",
+ "desc": "An illustrative steward sc upgrade, looping. The plan takes gh 2.103.2 and holds a two-day-old python release; after a yes it backs up the mise config, upgrades gh without pruning the old version, verifies every tool and records a receipt. Then steward sc rollback restores the backed-up config after another yes.",
+ "window": "steward — zsh",
+ "still": 0,
+ "scenes": [
+  [
+   {
+    "cmd": "steward sc upgrade"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "mise tools (mise already applies minimum_release_age)",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  take   ",
+      "ok",
+      true
+     ],
+     [
+      "gh 2.103.1 -> 2.103.2",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  hold   ",
+      "hold",
+      true
+     ],
+     [
+      "python 3.15.1 -> 3.15.2 (2d old)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "plan: 0 formula(e), 0 cask(s), 1 mise tool(s)",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "ask": "Apply this plan? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "config backup: ~/.config/mise/backups/config.toml.20261028-112629",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "   $ mise upgrade --bump --no-prune gh",
+    "color": "dim"
+   },
+   {
+    "out": "   $ mise reshim",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "all checks passed",
+      "ok"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "done. rollback: steward sc rollback   (restores ~/.config/mise/backups/config.toml.20261028-112629)",
+      "fg"
+     ]
+    ]
+   }
+  ],
+  [
+   {
+    "cmd": "steward sc rollback"
+   },
+   {
+    "ask": "Restore this config? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "restoring ~/.config/mise/backups/config.toml.20261028-112629",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "restored. Check with: steward sc verify",
+      "fg"
+     ]
+    ]
+   }
+  ]
+ ]
+}

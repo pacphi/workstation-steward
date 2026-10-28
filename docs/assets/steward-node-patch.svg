@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="368" viewBox="0 0 940 368" role="img" aria-labelledby="t d">
+<title id="t">workstation-steward: patching Node</title>
+<desc id="d">An illustrative steward sc node-patch 26.13.0, looping. It checks the official tarball against nodejs.org's SHASUMS256.txt, backs up the mise config, installs Node 26.13.0, confirms the installed binary is byte-identical to the official build, pins it, reinstalls the npm -g tools into it one by one, verifies, and keeps the previous Node installed for rollback.</desc>
+<style>
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px}
+@keyframes k1{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}3.361%{clip-path:inset(0 93.55% 0 0);opacity:1;animation-timing-function:steps(29, end)}14.328%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.403%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.345%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l1{opacity:1;animation:k1 11.9s linear infinite}
+@keyframes k2{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}18.950%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.403%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.345%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l2{opacity:1;animation:k2 11.9s linear infinite}
+@keyframes k3{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}22.479%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.403%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.345%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l3{opacity:1;animation:k3 11.9s linear infinite}
+@keyframes k4{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}26.008%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.403%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.345%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l4{opacity:1;animation:k4 11.9s linear infinite}
+@keyframes k5{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}29.538%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.403%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.345%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l5{opacity:1;animation:k5 11.9s linear infinite}
+@keyframes k6{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}33.067%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.403%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.345%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l6{opacity:1;animation:k6 11.9s linear infinite}
+@keyframes k7{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}36.597%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.403%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.345%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l7{opacity:1;animation:k7 11.9s linear infinite}
+@keyframes k8{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}40.126%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.403%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.345%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l8{opacity:1;animation:k8 11.9s linear infinite}
+@keyframes k9{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}43.655%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.403%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.345%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l9{opacity:1;animation:k9 11.9s linear infinite}
+@keyframes k10{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}47.185%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.403%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.345%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l10{opacity:1;animation:k10 11.9s linear infinite}
+@keyframes k11{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}50.714%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.403%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.345%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l11{opacity:1;animation:k11 11.9s linear infinite}
+@keyframes k12{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}54.244%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.403%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.345%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l12{opacity:1;animation:k12 11.9s linear infinite}
+@keyframes k13{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}57.773%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.403%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.345%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l13{opacity:1;animation:k13 11.9s linear infinite}
+@keyframes k14{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}61.303%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.403%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.345%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l14{opacity:1;animation:k14 11.9s linear infinite}
+@media (prefers-reduced-motion:reduce){text{animation:none!important}}
+</style>
+<rect x="0.5" y="0.5" width="939" height="367" rx="10" fill="#0d1117" stroke="#30363d"/>
+<path d="M0.5 10.5a10 10 0 0 1 10-10h919a10 10 0 0 1 10 10V36H0.5Z" fill="#161b22"/>
+<line x1="0.5" y1="36" x2="939.5" y2="36" stroke="#30363d"/>
+<circle cx="20" cy="18" r="6" fill="#ff5f57"/><circle cx="40" cy="18" r="6" fill="#febc2e"/><circle cx="60" cy="18" r="6" fill="#28c840"/>
+<text x="470" y="22" text-anchor="middle" fill="#8b949e" style="font-size:12px">steward — zsh</text>
+<text class="l1" x="24" y="66" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward sc node-patch 26.13.0</tspan></text>
+<text class="l2" x="24" y="86" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">verify official tarball against SHASUMS256.txt</tspan></text>
+<text class="l3" x="24" y="106" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">   ✓ </tspan><tspan fill="#c9d1d9">download SHASUMS256.txt</tspan></text>
+<text class="l4" x="24" y="126" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">   ✓ </tspan><tspan fill="#c9d1d9">download node-v26.13.0-darwin-arm64.tar.gz</tspan></text>
+<text class="l5" x="24" y="146" xml:space="preserve"><tspan fill="#3fb950">node-v26.13.0-darwin-arm64.tar.gz: OK</tspan></text>
+<text class="l6" x="24" y="166" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">config backup: ~/.config/mise/backups/config.toml.20261028-140512</tspan></text>
+<text class="l7" x="24" y="186" xml:space="preserve"><tspan fill="#8b949e">   $ mise install node@26.13.0</tspan></text>
+<text class="l8" x="24" y="206" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#3fb950">installed bin/node is byte-identical to the official build</tspan></text>
+<text class="l9" x="24" y="226" xml:space="preserve"><tspan fill="#8b949e">   $ mise use -g node@26.13.0</tspan></text>
+<text class="l10" x="24" y="246" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">reinstall hybrids into Node 26.13.0 (each separately, reviewed allow-scripts)</tspan></text>
+<text class="l11" x="24" y="266" xml:space="preserve"><tspan fill="#8b949e">   $ mise reshim</tspan></text>
+<text class="l12" x="24" y="286" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#3fb950">all checks passed</tspan></text>
+<text class="l13" x="24" y="306" xml:space="preserve"><tspan fill="#8b949e">   $ mise lock --global node</tspan></text>
+<text class="l14" x="24" y="326" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">done. Node 26.12.1 stays installed (rollback). Relax the pin to the major after 3 days.</tspan></text>
+</svg>

@@ -1,0 +1,138 @@
+{
+ "name": "steward-node-patch",
+ "title": "workstation-steward: patching Node",
+ "desc": "An illustrative steward sc node-patch 26.13.0, looping. It checks the official tarball against nodejs.org's SHASUMS256.txt, backs up the mise config, installs Node 26.13.0, confirms the installed binary is byte-identical to the official build, pins it, reinstalls the npm -g tools into it one by one, verifies, and keeps the previous Node installed for rollback.",
+ "window": "steward — zsh",
+ "still": 0,
+ "scenes": [
+  [
+   {
+    "cmd": "steward sc node-patch 26.13.0"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "verify official tarball against SHASUMS256.txt",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "   ✓ ",
+      "ok",
+      true
+     ],
+     [
+      "download SHASUMS256.txt",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "   ✓ ",
+      "ok",
+      true
+     ],
+     [
+      "download node-v26.13.0-darwin-arm64.tar.gz",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "node-v26.13.0-darwin-arm64.tar.gz: OK",
+    "color": "ok"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "config backup: ~/.config/mise/backups/config.toml.20261028-140512",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "   $ mise install node@26.13.0",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "installed bin/node is byte-identical to the official build",
+      "ok"
+     ]
+    ]
+   },
+   {
+    "out": "   $ mise use -g node@26.13.0",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "reinstall hybrids into Node 26.13.0 (each separately, reviewed allow-scripts)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "   $ mise reshim",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "all checks passed",
+      "ok"
+     ]
+    ]
+   },
+   {
+    "out": "   $ mise lock --global node",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "done. Node 26.12.1 stays installed (rollback). Relax the pin to the major after 3 days.",
+      "fg"
+     ]
+    ]
+   }
+  ]
+ ]
+}

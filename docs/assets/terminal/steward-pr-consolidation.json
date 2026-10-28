@@ -1,0 +1,123 @@
+{
+ "name": "steward-pr-consolidation",
+ "title": "workstation-steward: PR consolidation in Claude Code",
+ "desc": "A retelling of the real pacphi/ampel#86, looping. In Claude Code, /steward:pr-consolidation works in a fresh clone, finds three Dependabot PRs, takes the two in-major bumps (axios, vite) that are at least three days old, defers the major one with its breaking changes written up, fixes twelve RustSec vulnerabilities with lockfile-only updates, justifies one ignore that has no fix without a major, and opens one PR with every CI job green. Merging stays the owner's decision.",
+ "window": "claude — pacphi/ampel",
+ "still": 0,
+ "scenes": [
+  [
+   {
+    "cmd": "/steward:pr-consolidation pacphi/ampel",
+    "prompt": ">"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "A fresh clone in a scratch folder. CI's audit gate: cargo audit, then cargo deny.",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "Bot PRs: Dependabot #81 axios, #82 i18next-http-backend, #83 vite.",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "Take, in-major and at least 3 days old: axios ^1.20.0 (#81), vite ^8.3.4 (#83).",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "Defer, a major: i18next-http-backend 3.0.6 → 4.0.2 (#82); breaking changes written up.",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "Pre-existing: cargo audit found 12 vulnerabilities; fixed with lockfile-only updates.",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "One ignore, justified: RUSTSEC-2024-0449 (unsafe-libyaml has no fix without a major).",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "Every CI job green. Opened ",
+      "fg"
+     ],
+     [
+      "pacphi/ampel#86",
+      "ans",
+      true
+     ],
+     [
+      ": one PR in place of #81 and #83.",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "",
+    "quick": true
+   },
+   {
+    "out": "  Merging is yours: #81 and #83 close after it lands; #82 waits for your call.",
+    "color": "dim"
+   }
+  ]
+ ]
+}

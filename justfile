@@ -13,6 +13,7 @@ lint:
     shellcheck -x lib/lib.sh tools/release-worktree supply-chain/bin/install-hybrids supply-chain/bin/link supply-chain/bin/mise-self-update supply-chain/bin/node-patch supply-chain/bin/prune supply-chain/bin/release-age supply-chain/bin/retire-hybrid supply-chain/bin/rollback supply-chain/bin/status supply-chain/bin/trust-review supply-chain/bin/upgrade-tool supply-chain/bin/verify
     node --check bin/steward.js
     node --check tools/export.js
+    node --check tools/terminal-svg.js
     node --check tools/leak-check.js
     node --check lib/commands.js
     node --check lib/projects.js
@@ -92,6 +93,10 @@ leak-check *folder:
 # in place, ahead of any installed release. After editing a skill, /reload-plugins in the session picks it up
 claude *args:
     claude --plugin-dir . {{args}}
+
+# Rebuild the README's animated terminals (docs/assets/*.svg) from their scripts in docs/assets/terminal/
+terminal-svg:
+    node tools/terminal-svg.js
 
 # Run every test: the merge rules and writers, then onboarding and offboarding end to end on throwaway repos
 test:

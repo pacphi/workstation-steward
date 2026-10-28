@@ -27,7 +27,7 @@ it from there, so the list itself is never published.
 ## Making a change
 
 - **Read first:** [`docs/architecture.md`](docs/architecture.md) for the design and the numbered decisions (D1, D2 …),
-  and the area's runbook under `docs/<area>/`.
+  and the area's runbook beside its skill in [`skills/`](skills/) (`skills/<area>/runbook.md`).
 - **Commands that write** follow the same shape: a read-only plan by default; `--apply` (or a `[y/N]`) to act; a
   backup before the first write; a receipt under the state folder; a way back (`--undo`, `--rollback` or
   `steward sc rollback`). `DRY_RUN=1` previews any of them.

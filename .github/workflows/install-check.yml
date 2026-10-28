@@ -93,9 +93,10 @@ jobs:
             echo y | steward sc release-age "$RELEASE_AGE_DAYS"
             echo "3. the release-age gate lowered to $RELEASE_AGE_DAYS day(s) for this run (input)" >> "$GITHUB_STEP_SUMMARY"
           fi
-          # the release's provenance first, then the pin; allow_low_downloads approves a package name younger than 30 days,
+          # the provenance record must name THIS repository and its release workflow, not merely exist
+          curl -fsS "https://registry.npmjs.org/-/npm/v1/attestations/workstation-steward@$V" | REPO="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const a=JSON.parse(s).attestations.find(x=>/slsa/.test(x.predicateType));const w=a&&JSON.parse(Buffer.from(a.bundle.dsseEnvelope.payload,"base64").toString()).predicate.buildDefinition.externalParameters.workflow;if(!w||w.repository!==process.env.REPO||w.path!==".github/workflows/release.yml"){console.error("provenance does not name",process.env.REPO,"release.yml:",JSON.stringify(w));process.exit(1)}console.log("provenance:",w.repository,w.path,w.ref)})'
+          # then the pin; allow_low_downloads approves a package name younger than 30 days,
           # which mise's npm installer otherwise refuses (this one's until 2026-11-27; the third install check found it)
-          npm view "workstation-steward@$V" dist.attestations --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const a=JSON.parse(s);if(!a||!/slsa\.dev\/provenance/.test(JSON.stringify(a))){console.error("no provenance attestation");process.exit(1)}console.log("provenance:",JSON.stringify(a.provenance||a))})'
           steward sc upgrade-tool "npm:workstation-steward[allow_low_downloads=true]" "$V"
           eval "$(mise hook-env -s bash)"; hash -r
           echo "steward is $(command -v steward)"
