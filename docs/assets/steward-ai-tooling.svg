@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="308" viewBox="0 0 940 308" role="img" aria-labelledby="t d">
+<title id="t">workstation-steward: AI tooling drift, and a repin with its undo</title>
+<desc id="d">An illustrative session, looping, in three scenes. steward ai drift checks the AQE runtime, the hybrids, the guards and every project, and finds three launcher configs still pointing at Node 26.4.0, which is no longer the active Node. steward ai repin shows its rule and a plan of three untracked files. steward ai repin --apply asks, changes them with a backup and a receipt, and prints the rollback command; steward ai drift then finds no pinned launchers.</desc>
+<style>
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px}
+@keyframes k1{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}1.307%{clip-path:inset(0 92.86% 0 0);opacity:1;animation-timing-function:steps(26, end)}5.131%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}31.765%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}32.908%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l1{opacity:1;animation:k1 30.6s linear infinite}
+@keyframes k2{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}6.928%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}31.765%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}32.908%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l2{opacity:1;animation:k2 30.6s linear infinite}
+@keyframes k3{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}8.301%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}31.765%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}32.908%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l3{opacity:1;animation:k3 30.6s linear infinite}
+@keyframes k4{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}9.673%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}31.765%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}32.908%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l4{opacity:1;animation:k4 30.6s linear infinite}
+@keyframes k5{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}11.046%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}31.765%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}32.908%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l5{opacity:1;animation:k5 30.6s linear infinite}
+@keyframes k6{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}12.418%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}31.765%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}32.908%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l6{opacity:1;animation:k6 30.6s linear infinite}
+@keyframes k7{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}13.791%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}31.765%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}32.908%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l7{opacity:1;animation:k7 30.6s linear infinite}
+@keyframes k8{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}15.163%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}31.765%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}32.908%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l8{opacity:1;animation:k8 30.6s linear infinite}
+@keyframes k9{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}16.536%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}31.765%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}32.908%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l9{opacity:1;animation:k9 30.6s linear infinite}
+@keyframes k10{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}17.908%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}31.765%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}32.908%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l10{opacity:1;animation:k10 30.6s linear infinite}
+@keyframes k11{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}19.281%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}31.765%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}32.908%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l11{opacity:1;animation:k11 30.6s linear infinite}
+@keyframes k12{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}33.072%{clip-path:inset(0 88.89% 0 0);opacity:1;animation-timing-function:steps(16, end)}35.425%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}60.686%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}61.830%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l12{opacity:0;animation:k12 30.6s linear infinite}
+@keyframes k13{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}37.222%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}60.686%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}61.830%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l13{opacity:0;animation:k13 30.6s linear infinite}
+@keyframes k14{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}38.595%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}60.686%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}61.830%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l14{opacity:0;animation:k14 30.6s linear infinite}
+@keyframes k15{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}39.967%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}60.686%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}61.830%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l15{opacity:0;animation:k15 30.6s linear infinite}
+@keyframes k16{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}41.340%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}60.686%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}61.830%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l16{opacity:0;animation:k16 30.6s linear infinite}
+@keyframes k17{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}42.712%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}60.686%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}61.830%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l17{opacity:0;animation:k17 30.6s linear infinite}
+@keyframes k18{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}44.085%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}60.686%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}61.830%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l18{opacity:0;animation:k18 30.6s linear infinite}
+@keyframes k19{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}45.458%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}60.686%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}61.830%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l19{opacity:0;animation:k19 30.6s linear infinite}
+@keyframes k20{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}46.830%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}60.686%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}61.830%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l20{opacity:0;animation:k20 30.6s linear infinite}
+@keyframes k21{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}48.203%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}60.686%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}61.830%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l21{opacity:0;animation:k21 30.6s linear infinite}
+@keyframes k22{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}61.993%{clip-path:inset(0 92.31% 0 0);opacity:1;animation-timing-function:steps(24, end)}65.523%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.484%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.627%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l22{opacity:0;animation:k22 30.6s linear infinite}
+@keyframes k23{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}67.320%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.484%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.627%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l23{opacity:0;animation:k23 30.6s linear infinite}
+@keyframes k24{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}68.693%{clip-path:inset(0 2.94% 0 0);opacity:1;animation-timing-function:step-end}71.144%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.484%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.627%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l24{opacity:0;animation:k24 30.6s linear infinite}
+@keyframes k25{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}72.124%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.484%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.627%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l25{opacity:0;animation:k25 30.6s linear infinite}
+@keyframes k26{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}73.497%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.484%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.627%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l26{opacity:0;animation:k26 30.6s linear infinite}
+@keyframes k27{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}74.869%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.484%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.627%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l27{opacity:0;animation:k27 30.6s linear infinite}
+@keyframes k28{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}76.242%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.484%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.627%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l28{opacity:0;animation:k28 30.6s linear infinite}
+@keyframes k29{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}76.634%{clip-path:inset(0 92.86% 0 0);opacity:1;animation-timing-function:steps(26, end)}80.458%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.484%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.627%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l29{opacity:0;animation:k29 30.6s linear infinite}
+@keyframes k30{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}82.255%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.484%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.627%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l30{opacity:0;animation:k30 30.6s linear infinite}
+@keyframes k31{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}83.627%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.484%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.627%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l31{opacity:0;animation:k31 30.6s linear infinite}
+@keyframes k32{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}85.000%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.484%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.627%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l32{opacity:0;animation:k32 30.6s linear infinite}
+@media (prefers-reduced-motion:reduce){text{animation:none!important}}
+</style>
+<rect x="0.5" y="0.5" width="939" height="307" rx="10" fill="#0d1117" stroke="#30363d"/>
+<path d="M0.5 10.5a10 10 0 0 1 10-10h919a10 10 0 0 1 10 10V36H0.5Z" fill="#161b22"/>
+<line x1="0.5" y1="36" x2="939.5" y2="36" stroke="#30363d"/>
+<circle cx="20" cy="18" r="6" fill="#ff5f57"/><circle cx="40" cy="18" r="6" fill="#febc2e"/><circle cx="60" cy="18" r="6" fill="#28c840"/>
+<text x="470" y="22" text-anchor="middle" fill="#8b949e" style="font-size:12px">steward — zsh</text>
+<text class="l1" x="24" y="66" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward ai drift --offline</tspan></text>
+<text class="l2" x="24" y="86" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9" font-weight="600">aqe runtime</tspan></text>
+<text class="l3" x="24" y="106" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">  ok    </tspan><tspan fill="#c9d1d9">current → 3.15.12</tspan></text>
+<text class="l4" x="24" y="126" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9" font-weight="600">hybrids</tspan></text>
+<text class="l5" x="24" y="146" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">  ok    </tspan><tspan fill="#c9d1d9">ruflo: receipt matches supply-chain/hybrids.toml and the active Node</tspan></text>
+<text class="l6" x="24" y="166" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9" font-weight="600">guards</tspan></text>
+<text class="l7" x="24" y="186" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">  ok    </tspan><tspan fill="#c9d1d9">CLAUDE_FLOW_AUTO_UPDATE=false in ~/.claude/settings.json: yes</tspan></text>
+<text class="l8" x="24" y="206" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">  ok    </tspan><tspan fill="#c9d1d9">npx ask rules in ~/.claude/settings.json: 10 present</tspan></text>
+<text class="l9" x="24" y="226" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9" font-weight="600">pinned launchers</tspan></text>
+<text class="l10" x="24" y="246" xml:space="preserve"><tspan fill="#f85149" font-weight="600">  DRIFT </tspan><tspan fill="#c9d1d9">3 file(s), 4 reference(s) → ~/.local/share/mise/installs/node/26.4.0 (not the active Node 26.12.1)</tspan></text>
+<text class="l11" x="24" y="266" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9" font-weight="600">Summary: 1 drift, 0 warning(s) across 12 project(s) (9 onboarded, 3 ignored). Nothing was changed.</tspan></text>
+<text class="l12" x="24" y="66" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward ai repin</tspan></text>
+<text class="l13" x="24" y="86" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">repin rules (ai-tooling/ai-tooling.toml)</tspan></text>
+<text class="l14" x="24" y="106" xml:space="preserve"><tspan fill="#c9d1d9">  [1] ~/.local/share/mise/installs/node/26.4.0/bin/node</tspan></text>
+<text class="l15" x="24" y="126" xml:space="preserve"><tspan fill="#c9d1d9">      → ~/.local/share/mise/installs/node/26/bin/node  (pre-patch Node 26.4.0)</tspan></text>
+<text class="l16" x="24" y="146" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">plan: 3 file(s)</tspan></text>
+<text class="l17" x="24" y="166" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">  apply </tspan><tspan fill="#c9d1d9">~/Development/web/.mcp.json  [1]×2  (untracked)</tspan></text>
+<text class="l18" x="24" y="186" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">  apply </tspan><tspan fill="#c9d1d9">~/Development/api/.mcp.json  [1]×1  (untracked)</tspan></text>
+<text class="l19" x="24" y="206" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">  apply </tspan><tspan fill="#c9d1d9">~/Development/api/.codex/config.toml  [1]×1  (untracked)</tspan></text>
+<text class="l20" x="24" y="226" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">3 file(s) to change (4 reference(s)); 0 skipped</tspan></text>
+<text class="l21" x="24" y="246" xml:space="preserve"><tspan fill="#8b949e">  plan only; run `steward ai repin --apply` to apply (asks first)</tspan></text>
+<text class="l22" x="24" y="66" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward ai repin --apply</tspan></text>
+<text class="l23" x="24" y="86" xml:space="preserve"><tspan fill="#8b949e">  … the same rules and plan …</tspan></text>
+<text class="l24" x="24" y="106" xml:space="preserve"><tspan fill="#c9d1d9">Change 3 file(s) as above? [y/N] </tspan><tspan fill="#79c0ff" font-weight="600">y</tspan></text>
+<text class="l25" x="24" y="126" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">changed 3 file(s); receipt ~/.local/state/workstation-steward/backups/repin-20261028T171200/receipt.json</tspan></text>
+<text class="l26" x="24" y="146" xml:space="preserve"><tspan fill="#c9d1d9">  rollback: steward ai repin --rollback ~/.local/state/…/repin-20261028T171200/receipt.json</tspan></text>
+<text class="l27" x="24" y="166" xml:space="preserve"><tspan fill="#8b949e">  Running Codex/Claude sessions keep their servers until restarted; new sessions use the new paths.</tspan></text>
+<text class="l28" x="24" y="186" xml:space="preserve"><tspan fill="#c9d1d9"></tspan></text>
+<text class="l29" x="24" y="206" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward ai drift --offline</tspan></text>
+<text class="l30" x="24" y="226" xml:space="preserve"><tspan fill="#8b949e">  …</tspan></text>
+<text class="l31" x="24" y="246" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9" font-weight="600">pinned launchers</tspan></text>
+<text class="l32" x="24" y="266" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">  ok    </tspan><tspan fill="#c9d1d9">no launcher config, AQE hook shim or AQE runtime script points into a version-specific install</tspan></text>
+</svg>
