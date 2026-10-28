@@ -3,6 +3,19 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.2.0](https://github.com/pacphi/workstation-steward/compare/v0.1.0...v0.2.0) (2026-10-28)
+
+
+### Features
+
+* **skills:** install the steward plugin with `steward skills install` and from `steward init` (D48) ([#11](https://github.com/pacphi/workstation-steward/issues/11)) ([511a8d2](https://github.com/pacphi/workstation-steward/commit/511a8d2d4aef04d15b8a8d3bf5cfdfc508062baa))
+* **skills:** one skills/ folder as the steward plugin, self-contained, no symlinks (D48) ([#10](https://github.com/pacphi/workstation-steward/issues/10)) ([82c2d73](https://github.com/pacphi/workstation-steward/commit/82c2d73d3b1b01419125091922cf418bdbbcfa31))
+
+
+### Continuous Integration
+
+* release only when what users get changes (D47) ([#9](https://github.com/pacphi/workstation-steward/issues/9)) ([98a7a98](https://github.com/pacphi/workstation-steward/commit/98a7a981f969eb57e22d6ea94ccc373564ce8666))
+
 ## 0.1.0 (2026-10-28)
 
 
