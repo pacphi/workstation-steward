@@ -181,7 +181,26 @@ you've turned on.
 The steward keeps its own state outside any repo: receipts and backups in `~/.local/state/workstation-steward/`
 (mode 0700), and copies of your mise config in `~/.config/mise/backups/` before every change.
 
-## Contributing and security
+## Contribute
 
-[`CONTRIBUTING.md`](CONTRIBUTING.md) covers setting up, testing against `examples/`, and the shape every changing
-command follows. Report vulnerabilities privately: [`SECURITY.md`](SECURITY.md). MIT licensed ([`LICENSE`](LICENSE)).
+The steward changes people's machines, so every change is judged first on whether it stays safe: read-only by
+default, and a plan, a yes, a backup and a receipt for anything that writes. AI-assisted contributions are welcome
+under the same bar: you've read and run what you submit.
+
+| You want to… | Start here |
+| --- | --- |
+| Set up a clone and run the checks | [Set up](CONTRIBUTING.md#set-up): point `STEWARD_INSTANCE` at `examples/`, then `just test`, `just lint`, `just docs` |
+| Change how the steward behaves | [Making a change](CONTRIBUTING.md#making-a-change): the shape every writing command follows, and a test with every fix |
+| Open a pull request | [Pull requests](CONTRIBUTING.md#pull-requests): one topic, and a Conventional Commits title, which versions the release |
+
+## Security
+
+> [!WARNING]
+> Found a vulnerability? Please don't open a public issue. Report it privately through
+> **[Security → Report a vulnerability](https://github.com/pacphi/workstation-steward/security/advisories/new)**.
+> Expect an acknowledgement within a few days and a fix or a plan within two weeks; [`SECURITY.md`](SECURITY.md) says
+> what counts.
+
+## License
+
+MIT. See [`LICENSE`](LICENSE).
