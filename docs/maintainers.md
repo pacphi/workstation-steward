@@ -10,6 +10,7 @@ For maintainers of this repository; users install releases as [`../README.md`](.
 - [How a release happens](#how-a-release-happens)
 - [Pull request titles](#pull-request-titles)
 - [One-time npm setup](#one-time-npm-setup)
+- [Publishing an existing release](#publishing-an-existing-release)
 - [After each release](#after-each-release)
 - [The publish guard](#the-publish-guard)
 - [A pre-push leak check for your clone](#a-pre-push-leak-check-for-your-clone)
@@ -27,7 +28,9 @@ For maintainers of this repository; users install releases as [`../README.md`](.
    `initial-version` in `release-please-config.json`, since release-please would otherwise start at 1.0.0): the version follows the commit
    types since the last release (before 1.0, `feat` raises the minor version and `fix` the patch; `feat!` or a
    `BREAKING CHANGE:` footer is called out at the top), and `CHANGELOG.md` gains the grouped entries.
-2. The release workflow starts the required checks on that PR itself (a PR opened by a workflow starts none).
+2. **When you decide to release, close and reopen the release PR** (`gh pr close <n> && gh pr reopen <n>`). A PR a
+   workflow opens or updates starts no checks, and checks started by hand on its branch don't count for it; your reopen
+   runs the required checks. Wait for them to pass.
 3. **Merging the release PR is the release.** The workflow tags the commit, creates the GitHub release with the same
    notes, runs the tests and lint on macOS against the tag, then publishes to npm through Trusted Publishing (no token)
    with provenance, after [the publish guard](#the-publish-guard) agrees.
@@ -74,6 +77,15 @@ So the name is reserved first with an empty `0.0.0`, published by hand; every re
    The trust must name `pacphi/workstation-steward` and `release.yml`; the release must carry a provenance
    attestation.
 5. **Retire the placeholder:** `npm deprecate workstation-steward@0.0.0 "Placeholder; install 0.1.0 or later"`.
+
+## Publishing an existing release
+
+If a release was tagged but not published (the publish job failed, or was skipped), start the workflow by hand with
+the tag. It runs the same macOS tests, guard and publish against that tag:
+
+```sh
+gh workflow run release.yml --repo pacphi/workstation-steward -f tag=v0.1.0
+```
 
 ## After each release
 
