@@ -3,6 +3,18 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.2.1](https://github.com/pacphi/workstation-steward/compare/v0.2.0...v0.2.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* a fresh Mac's first steps: version before init, sc link, verify without the AI tools, the young npm name ([#16](https://github.com/pacphi/workstation-steward/issues/16)) ([b967279](https://github.com/pacphi/workstation-steward/commit/b967279ad71fe6b294d34a05ada1814d7540e146))
+
+
+### Documentation
+
+* a README that shows the steward working: five animated terminals, the promises with their mechanisms, a guided quick start ([#17](https://github.com/pacphi/workstation-steward/issues/17)) ([ce57a84](https://github.com/pacphi/workstation-steward/commit/ce57a844cd93c338af3d1fea461c571cca830857))
+
 ## [0.2.0](https://github.com/pacphi/workstation-steward/compare/v0.1.0...v0.2.0) (2026-10-28)
 
 
