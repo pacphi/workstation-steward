@@ -9,11 +9,16 @@ toolchain, Homebrew, apps, the App Store, macOS, trust stores and Docker, and, i
 project under your development folders. Each week it answers one question: *what needs updating, is it safe yet, and
 what changes if I say yes?*
 
-![A first session: install through mise, check the version, steward init's guided setup, then a first upgrade plan](docs/assets/steward-onboarding.svg)
-
 > [!IMPORTANT]
 > workstation-steward is 0.x and runs on macOS. Linux and Windows follow, one package manager at a time
 > ([`docs/lifecycle.md`](docs/lifecycle.md#platforms)).
+
+![A first session: install through mise, check the version, steward init's guided setup, then a first upgrade plan](docs/assets/steward-onboarding.svg)
+
+> [!TIP]
+> mise is the recommended way in, because it keeps the steward current under the same release-age gate as your other
+> tools. Plain `npm install -g` works too, and `npx` lets you try it without installing:
+> [ways to install, and to upgrade](#ways-to-install-and-to-upgrade).
 
 ## Why it's different
 
@@ -119,8 +124,20 @@ npm view workstation-steward@<version> dist.attestations.provenance.predicateTyp
 
 </details>
 
-Working on the steward itself? Run it from a clone with `node bin/steward.js`, or as `steward-dev` alongside a pinned
-release ([`docs/lifecycle.md`](docs/lifecycle.md#two-channels)).
+### Ways to install, and to upgrade
+
+The steward runs on Node 26 or later. Pick one way and upgrade the same way:
+
+| Way | Install | Upgrade | Release-age gate |
+| --- | --- | --- | --- |
+| **mise** (recommended) | `mise use -g npm:workstation-steward@<version>` | `steward sc upgrade` takes it with your other tools once it's old enough; or just it: `steward sc upgrade-tool npm:workstation-steward` | Yes; Renovate also proposes it, if your config is in a Git repo |
+| **npm** | `npm install -g workstation-steward@<version>` | `npm install -g workstation-steward@<newer version>` (`npm outdated -g` shows when there is one) | No: check a release's age yourself |
+| **npx** (try it, no install) | `npx workstation-steward@<version> version` | Name a newer version | No |
+| **From a clone** (contributors) | `git clone`, then `npm link` ([`CONTRIBUTING.md`](CONTRIBUTING.md#set-up)) | `git pull` | No |
+
+There's no `curl … | sh` installer, on purpose: running a download straight into a shell is what the steward guards
+against. Working on the steward itself? Run it as `steward-dev` alongside a pinned release
+([`docs/lifecycle.md`](docs/lifecycle.md#two-channels)).
 
 ## What it looks after
 
