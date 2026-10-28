@@ -23,12 +23,12 @@ The area can be switched off with `ai_tooling = false` under `[profiles]` in `..
 - the upstream threads to watch.
 
 The qualification recipe behind those values is in
-[`../docs/ai-tooling/qualification.md`](../docs/ai-tooling/qualification.md); how upstream fixes retire local patches,
+[`../skills/ai-tooling/qualification.md`](../skills/ai-tooling/qualification.md); how upstream fixes retire local patches,
 and how projects are kept in step after a promotion, in
 [`../docs/ai-tooling/upstream-and-reconcile.md`](../docs/ai-tooling/upstream-and-reconcile.md).
 
-Procedures: [`../docs/ai-tooling/runbook.md`](../docs/ai-tooling/runbook.md). Claude skill:
-[`skill/`](skill/README.md) (`ai-tooling-steward`).
+Procedures: [`../skills/ai-tooling/runbook.md`](../skills/ai-tooling/runbook.md). Claude skill:
+[`../skills/ai-tooling/`](../skills/ai-tooling/README.md) (`ai-tooling`).
 
 ## Commands
 

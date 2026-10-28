@@ -33,8 +33,8 @@ those, so their upgrades follow its rules.
   Ruflo's policy folders are backed up before any version change. `steward sc prune` refuses until the
   receipts match.
 
-Procedures: [`../docs/supply-chain/runbook.md`](../docs/supply-chain/runbook.md). Claude skill:
-[`skill/`](skill/README.md) (`supply-chain-steward`).
+Procedures: [`../skills/supply-chain/runbook.md`](../skills/supply-chain/runbook.md). Claude skill:
+[`../skills/supply-chain/`](../skills/supply-chain/README.md) (`supply-chain`).
 
 ## Commands
 

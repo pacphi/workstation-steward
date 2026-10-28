@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Qualify an AQE release for the shared, patched runtime: the AQE recipe in
-# archive/ai-tooling-ownership-and-qualification.md, adopted from the 2026-10-21 lane (continuation-29-aqe), reviewed,
-# with its paths taken from steward.toml and ai-tooling.toml.
+# skills/ai-tooling/qualification.md, with its paths taken from steward.toml and ai-tooling.toml.
 # Usage: ai-tooling/qualify/aqe/run.sh <version> <step>
 #   build    clone the tag, rebuild it unpatched (must match the official tarball), apply patches/, rebuild, pack,
 #            stage the release (bin/, runtime/ and models/ from the current release; natives compiled here)

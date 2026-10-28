@@ -57,7 +57,7 @@ lint:
     node --check lib/write.js
     node --check supply-chain/bin/addon-check.js
     node --check supply-chain/bin/tool-age.js
-    shellcheck -x fleet/skill/scripts/lock-age.sh
+    shellcheck -x skills/pr-consolidation/scripts/lock-age.sh
     node supply-chain/bin/lock-check.js
     node --test test/onboard.test.js test/soak.test.js test/fleet.test.js
 
@@ -87,6 +87,11 @@ export folder:
 # leak-terms.txt. With no folder it checks an export of this checkout. Run before every push from the public clone
 leak-check *folder:
     node tools/leak-check.js {{folder}}
+
+# Start Claude Code with this checkout's skills loaded as the `steward` plugin (D48): /steward:supply-chain and the rest, read
+# in place, ahead of any installed release. After editing a skill, /reload-plugins in the session picks it up
+claude *args:
+    claude --plugin-dir . {{args}}
 
 # Run every test: the merge rules and writers, then onboarding and offboarding end to end on throwaway repos
 test:

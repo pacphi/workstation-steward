@@ -18,7 +18,7 @@
 *.bak-*
 
 # --- AI tool output: this repo chooses no AI tools (projects/registry.toml ai = []) --------------------------------
-# .claude/ itself stays tracked: .claude/skills/ links the area skills. Only local settings and agent worktrees go.
+# The skills are a plugin (skills/, .claude-plugin/; `just claude`), so .claude/ holds only local settings and worktrees.
 .claude/settings.local.json
 CLAUDE.local.md
 .claude/worktrees/

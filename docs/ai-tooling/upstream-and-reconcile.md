@@ -6,7 +6,7 @@ How the AI tooling add-on keeps three things in step as Ruflo, AQE (agentic-qe) 
 upstream packages, the versions qualified on your machine, and the copies inside each onboarded project. It covers
 what happens today, how an upstream fix retires a local patch, what `steward projects reconcile` adds, and what can go
 wrong with each. The decision behind it is D42 in [`../architecture.md`](../architecture.md#decisions); the
-procedures are in [`runbook.md`](runbook.md); the qualification recipe in [`qualification.md`](qualification.md).
+procedures are in [`runbook.md`](../../skills/ai-tooling/runbook.md); the qualification recipe in [`qualification.md`](../../skills/ai-tooling/qualification.md).
 
 ## Contents
 
@@ -77,7 +77,7 @@ helpers, most copied by Ruflo releases 3.0 to 3.37. It kept the 4 that had been 
 ```
 
 - **Layer 1, upstream,** releases often: Ruflo about weekly, AQE several times a month.
-- **Layer 2, your machine,** moves only after the release-age gate and a qualification ([`qualification.md`](qualification.md)),
+- **Layer 2, your machine,** moves only after the release-age gate and a qualification ([`qualification.md`](../../skills/ai-tooling/qualification.md)),
   with a backup and a way back.
 - **Layer 3, each project,** holds what onboarding copied in: files and folders from the qualified installs, and keys
   merged into its settings and launcher files. **Reconciliation** keeps layer 3 in step with layer 2 after layer 2

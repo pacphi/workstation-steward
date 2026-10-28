@@ -1,7 +1,7 @@
 # AQE qualification
 
 Proves a new AQE release safe for the shared, patched runtime before any project uses it. This is the AQE recipe in
-[`docs/ai-tooling/qualification.md`](../../../docs/ai-tooling/qualification.md#aqe-the-shared-patched-runtime),
+[`skills/ai-tooling/qualification.md`](../../../skills/ai-tooling/qualification.md#aqe-the-shared-patched-runtime),
 adopted on 2026-10-26 from the 2026-10-21 lane that qualified 3.15.10 (`continuation-29-aqe`). The scripts were
 read line by line, and their paths now come from `steward.toml` and `ai-tooling.toml`.
 

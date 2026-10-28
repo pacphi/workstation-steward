@@ -5,7 +5,7 @@ description: >
   ecosystem (Rust, Node/pnpm/npm, Go, Java/Maven/Gradle, Python, .NET, PHP, Ruby, GitHub Actions,
   Docker), into one verified PR on a fresh branch. Applies the bumps at manifest level within the
   current major, regenerates locks once, fixes upgrade-caused and pre-existing CI failures, makes
-  every CI audit job pass, enforces a 3-day release-age gate, and writes a PR body that justifies
+  every CI audit job pass, enforces the release-age gate (3 days by default), and writes a PR body that justifies
   every override, ignore and exception. Use when asked to "consolidate the Dependabot PRs",
   "combine the Renovate PRs", "roll the dependency PRs into one", "clear the security audit and
   the bot PRs", or to run a dependency-hygiene pass on a repo or across a fleet of repos.
@@ -18,21 +18,21 @@ metadata:
 # pr-consolidation
 
 Turn a pile of bot dependency PRs into one PR that is green in CI, secure by the repo's own audit
-gates, and honest about what it deferred. The owner's rules live in
-workstation-steward's `AGENTS.md` (the checkout this skill is installed from, not the target repo's own; release age, majors, merging, attribution, Renovate); this skill
-applies them and doesn't restate them.
+gates, and honest about what it deferred. The rules live in [rules.md](rules.md) beside this file
+(`${CLAUDE_SKILL_DIR}/rules.md`): release age, majors, merging, attribution, CI audits, Renovate. They hold on
+top of the target repo's own rules; this skill applies them and doesn't restate them.
 
 ## Roles
 
 - **Consolidating agent** (one per repo): phases 0 to 10 below, in a fresh clone. It pushes a
   branch and opens one PR. It **never merges, never closes, never comments on** other PRs, never
   force-pushes, never uses admin overrides.
-- **Orchestrator** (the session that dispatched the agent, or the owner): verifies CI and the PR
+- **Orchestrator** (the session that dispatched the agent, or the user): verifies CI and the PR
   body itself, merges, then handles the superseded PRs per [bots.md](bots.md). Its loop and the
   brief it hands each agent are in [ORCHESTRATION.md](ORCHESTRATION.md).
 
 If you were invoked directly on one repo with no orchestrator, stop after phase 10 and put the
-merge and the closing of superseded PRs to the owner as a decision.
+merge and the closing of superseded PRs to the user as a decision.
 
 ## Load only what applies
 
@@ -55,7 +55,8 @@ Monorepos mix several (tanzu-genai-showcase#221 had Go, Python, .NET, PHP, Ruby,
 
 ## Scripts
 
-All in [scripts/](scripts/), bash 3.2-safe, each with usage in its header.
+All in [scripts/](scripts/), bash 3.2-safe, each with usage in its header. Run them by their full path,
+`${CLAUDE_SKILL_DIR}/scripts/<name>`, since you work in the target repo's clone.
 `lock-age.sh` (release-age check of new lockfile entries), `pr-status.sh`, `wait-ci.sh`,
 `compare-base.sh` (is this failure already on the base branch?), and, for the orchestrator only,
 `merge-and-close.sh` and `lock-fix.sh`.
@@ -64,7 +65,7 @@ All in [scripts/](scripts/), bash 3.2-safe, each with usage in its header.
 
 Track them with a todo list. Show real command output before claiming anything passes.
 
-**0. Discover.** Work only in a fresh clone outside `~/Development`:
+**0. Discover.** Work only in a fresh clone in a scratch folder, outside the user's project roots (`steward config`):
 `gh repo clone <repo> <scratch>/<name> -- --recurse-submodules -b <base>` (submodules can be Cargo
 path dependencies: emailibrium's `ruvector`). Then:
 
@@ -122,8 +123,9 @@ scoped fix: stop and report it.
 - **Re-run every audit right before you report.** Advisories land mid-run: RUSTSEC-2026-0385
   and -0386 appeared on 2026-10-23 and turned fresh runs red (emailibrium#312, ampel#90).
 
-**7. Release-age gate (3 days).** Every version you introduce, direct or transitive, plus
-toolchain, action and image pins, must be at least 3 days old by registry publish time.
+**7. Release-age gate.** Every version you introduce, direct or transitive, plus toolchain,
+action and image pins, must be at least N days old by registry publish time, where N is the gate
+in `steward config` (default 3; [rules.md](rules.md#release-age)).
 
 - `scripts/lock-age.sh` checks lockfiles; the ecosystem files give the registry command for
   everything else. Resolver age settings are not proof (node.md).
@@ -133,7 +135,7 @@ toolchain, action and image pins, must be at least 3 days old by registry publis
 - Record every exception with its advisory and publish time.
 
 **8. Commit, push, open the PR.** Conventional commits; stage only intended files; let hooks
-run. Attribution per AGENTS.md (default: no Co-Authored-By trailer). DCO → `git commit -s`
+run. Attribution per [rules.md](rules.md#changing-a-repo) (default: no Co-Authored-By trailer). DCO → `git commit -s`
 (a private TypeScript + Postgres app: every bot PR failed sign-off). release-please → `chore(deps)` for dev-only
 changes (claude-autopilot#34). Normal push only. The PR body has:
 
@@ -155,7 +157,7 @@ dispatch-only workflows can be started on the branch with `gh workflow run <wf> 
 
 **10. Hand-off.** Final message (also saved to `<scratch>/<repo>-report.md`): PR URL; final
 status per CI job; superseded PRs by bot; deferred majors with the three facts; overrides,
-ignores and exceptions; pre-existing fixes; files changed; decisions the owner must make.
+ignores and exceptions; pre-existing fixes; files changed; decisions the user must make.
 The orchestrator merges and closes; see [ORCHESTRATION.md](ORCHESTRATION.md) and [bots.md](bots.md).
 
 ## Done when

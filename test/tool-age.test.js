@@ -1,4 +1,4 @@
-// supply-chain/bin/tool-age.js (argument and config checks) and fleet/skill/scripts/lock-age.sh --files with aube
+// supply-chain/bin/tool-age.js (argument and config checks) and skills/pr-consolidation/scripts/lock-age.sh --files with aube
 // lockfiles and a fake curl (no network). Run: just test
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -25,7 +25,7 @@ case "$u" in
 esac
 `, { mode: 0o755 });
 const ENV = { ...process.env, PATH: `${bin}:${process.env.PATH}` };
-const lockAge = (...a) => spawnSync(path.join(REPO, 'fleet/skill/scripts/lock-age.sh'), a, { encoding: 'utf8', env: ENV });
+const lockAge = (...a) => spawnSync(path.join(REPO, 'skills/pr-consolidation/scripts/lock-age.sh'), a, { encoding: 'utf8', env: ENV });
 
 test('lock-age --files: lists only new aube-lock entries, flags the young one, exits 1', () => {
   const r = lockAge('-c', '2026-10-23T00:00:00Z', '--files', old, neu);

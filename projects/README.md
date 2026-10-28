@@ -32,8 +32,8 @@ It runs on demand only. `steward` prints a one-line notice when new projects hav
 A registry can start from a seed list: every seeded entry starts `unconfirmed` with `ai = []`, and `ai_seed` carries
 the list's choice. Projects found later show as new until a decision is recorded.
 
-Procedures: [`../docs/projects/runbook.md`](../docs/projects/runbook.md). Claude skill:
-[`skill/`](skill/README.md) (`projects-steward`).
+Procedures: [`../skills/projects/runbook.md`](../skills/projects/runbook.md). Claude skill:
+[`../skills/projects/`](../skills/projects/README.md) (`projects`).
 
 ## Commands
 
