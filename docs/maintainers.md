@@ -27,7 +27,11 @@ For maintainers of this repository; users install releases as [`../README.md`](.
 1. Every merge to `main` updates the **release PR** (`chore(main): release X.Y.Z`; the first one is 0.1.0, set by
    `initial-version` in `release-please-config.json`, since release-please would otherwise start at 1.0.0): the version follows the commit
    types since the last release (before 1.0, `feat` raises the minor version and `fix` the patch; `feat!` or a
-   `BREAKING CHANGE:` footer is called out at the top), and `CHANGELOG.md` gains the grouped entries.
+   `BREAKING CHANGE:` footer is called out at the top), and `CHANGELOG.md` gains the grouped entries. A change only to
+   folders that never ship (`exclude-paths` in `release-please-config.json`: `.claude-plugin`, `.github`, `docs`, `test`,
+   `tools`) leaves the release PR alone and stays out of the changelog (D47). release-please can't skip top-level
+   files, so an edit to `AGENTS.md` or the `justfile` still updates the release PR: merge it only when something users
+   get (the npm package, or `renovate/steward.json`) has changed.
 2. **When you decide to release, close and reopen the release PR** (`gh pr close <n> && gh pr reopen <n>`). A PR a
    workflow opens or updates starts no checks, and checks started by hand on its branch don't count for it; your reopen
    runs the required checks. Wait for them to pass.
