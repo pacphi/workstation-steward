@@ -1,0 +1,28 @@
+# steward.toml: where things are on this machine, plus the policy every area shares (the release-age gate).
+# Together with the policy files beside it, this folder is your instance (D39). The steward finds it at
+# $STEWARD_INSTANCE, or ~/.config/workstation-steward. Anything left out uses the built-in default in lib/config.js;
+# `steward config` shows every effective value and where it came from.
+
+schema = 1                                 # this file's format; `steward check` says when a release wants `steward migrate`
+
+[projects]
+roots = ["~/Development"]                  # where your projects live; discovery searches each, recursively
+exclude = []                               # folders never descended into
+max_depth = 8
+worktrees = "inherit"                      # worktrees follow their parent repo's decision (or "ignore", "prompt")
+
+[paths]
+mise_config_dir = "~/.config/mise"         # where `steward sc link` points config.toml and mise.lock (this instance's mise/)
+
+[policy]
+min_release_age_days = 3                   # take the newest version at least this many days old, everywhere;
+                                           # `steward sc release-age <days>` also updates mise's and Renovate's copies
+soak_days = 3                              # after an upgrade, old installs stay this long before `steward sc prune`
+review_days = 7                            # `steward` says a review is due this many days after the last `steward review`
+
+[profiles]
+ai_tooling = false                         # Ruflo, AgentDB, AQE, Brain and RuVector: drift, repin, guards (steward ai …)
+projects = false                           # discovery, the registry and onboarding of ~/Development (steward projects …)
+
+[ioc]
+extra_roots = []                           # extra folders swept for indicators of compromise

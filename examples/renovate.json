@@ -1,0 +1,103 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Machine toolchain: Renovate's mise manager reads mise/config.toml. Security updates bypass the age gate.",
+  "extends": [
+    "config:recommended"
+  ],
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": [
+      "security"
+    ]
+  },
+  "enabledManagers": [
+    "mise"
+  ],
+  "ignoreDeps": [],
+  "packageRules": [
+    {
+      "description": "Pinned migration-critical tools: one PR each, reviewed by hand, then `steward sc upgrade-tool` locally. Match on depName (for `npm:<pkg>` tools the packageName is the bare `<pkg>`), with a regex: a glob `*` doesn't match the `/` in scoped names.",
+      "matchManagers": [
+        "mise"
+      ],
+      "matchDepNames": [
+        "node",
+        "npm",
+        "/^npm:/"
+      ],
+      "groupName": null,
+      "labels": [
+        "toolchain",
+        "review-required"
+      ]
+    },
+    {
+      "description": "Everything else floating on \"latest\" in mise: weekly digest",
+      "matchManagers": [
+        "mise"
+      ],
+      "matchDepNames": [
+        "!node",
+        "!npm",
+        "!/^npm:/"
+      ],
+      "groupName": "mise tools",
+      "schedule": [
+        "* 0-5 * * 1"
+      ]
+    },
+    {
+      "description": "Majors are deliberate, and a 0.x minor counts as a major: one PR each, never in the digest",
+      "matchManagers": [
+        "mise"
+      ],
+      "matchCurrentVersion": "/^v?0\\./",
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "groupName": null,
+      "labels": [
+        "toolchain",
+        "review-required",
+        "breaking"
+      ]
+    },
+    {
+      "description": "Majors are deliberate: one PR each, never in the digest",
+      "matchManagers": [
+        "mise"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "groupName": null,
+      "labels": [
+        "toolchain",
+        "review-required",
+        "breaking"
+      ]
+    },
+    {
+      "description": "AI tooling owns these (ai-tooling/ai-tooling.toml owned_mise): its qualification decides, so a PR opens only when ticked on the Dependency Dashboard. Security PRs still open at once (vulnerabilityAlerts sets dependencyDashboardApproval false).",
+      "matchManagers": [
+        "mise"
+      ],
+      "matchDepNames": [
+        "npm:agentic-qe",
+        "npm:ruvnet-brain",
+        "npm:ruvector",
+        "npm:@ruvector/ruvllm-cli",
+        "npm:@ruvector/typesafe",
+        "npm:@claude-flow/codex",
+        "npm:agent-browser"
+      ],
+      "addLabels": [
+        "ai-tooling"
+      ],
+      "dependencyDashboardApproval": true
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Update the standalone mise binary (D38). Without a version: the release bin/mise-self.js chose (age-gated, or the
+# first patched release under a host.toml security_exception). With a version: that release exactly, past the gate
+# (a security fix; record why). The version is always named: a bare `mise self-update` before 2026.10.18 takes the
+# newest release with no age gate. Plugins are left alone (--no-plugins), one change at a time.
+# Backs the binary up first; the receipt starts a soak; roll back with `steward sc rollback mise`.
+# Usage: mise-self-update [version]      DRY_RUN=1 mise-self-update
+# shellcheck source=lib/lib.sh
+source "$(dirname "$0")/../../lib/lib.sh"
+
+bin="$(command -v mise)" || die "mise is not on PATH"
+bin="$(readlink -f "${bin}")"
+prefix="$(brew --prefix 2>/dev/null || true)"
+[[ -n "${prefix}" && "${bin}" == "${prefix}"/* ]] && die "mise ${bin/#${HOME}/~} is Homebrew's: brew upgrade mise (steward sc upgrade judges it with the formulae)"
+current="$("${bin}" --version 2>/dev/null | awk '{print $1}')"
+
+IFS=$'\t' read -r action _ chosen reason _ < <(node "${SC_ROOT}/bin/mise-self.js" --plan)
+if [[ -n "${1:-}" ]]; then
+  target="${1#v}"
+  [[ "${target}" =~ ^[0-9]{4}\.[0-9]+\.[0-9]+$ ]] || die "not a mise release: $1 (e.g. 2026.10.18)"
+  if [[ "${action}" == take && "${target}" == "${chosen}" ]]; then log "mise ${current} -> ${target} (${reason})"
+  else warn "pinning mise ${target} exactly: the gate chose ${chosen} (${action}); this skips the ${STEWARD_POLICY_MIN_RELEASE_AGE_DAYS}d release-age gate (security fixes only; record the advisory)"; fi
+else
+  target="${chosen}"
+  [[ "${action}" == take ]] || { log "mise ${current}: nothing to take (${action}: ${reason})"; exit 0; }
+  log "mise ${current} -> ${target} (${reason})"
+fi
+[[ "${target}" == "${current}" ]] && { log "mise is already ${current}"; exit 0; }
+
+backup="${STATE_DIR}/backups/mise-self-update-$(date -u +%Y%m%dT%H%M%SZ)"
+log "binary backup: ${backup/#${HOME}/~}/mise"
+if [[ "${DRY_RUN}" != "1" ]]; then
+  mkdir -p "${backup}" && chmod 700 "${STATE_DIR}" "${backup}"
+  cp -p "${bin}" "${backup}/mise"
+fi
+# mise checks the archive's zipsign signature and the new binary's macOS code signature before it replaces itself.
+run "${bin}" self-update --yes --no-plugins "${target}"
+[[ "${DRY_RUN}" == "1" ]] && { log "dry run: nothing changed"; exit 0; }
+
+# The receipt (lib/soak.js reads backups/*/receipt.json) starts a soak and tells rollback where the binary goes.
+printf '{"kind":"mise-self-update","at":"%s","engine":"%s","from":"%s","to":"%s","binary":"%s","files":["%s"]}\n' \
+  "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${STEWARD_ENGINE_VERSION}" "${current}" "${target}" "${bin}" "${bin}" >"${backup}/receipt.json"
+now="$("${bin}" --version 2>/dev/null | awk '{print $1}')"
+[[ "${now}" == "${target}" ]] || die "mise reports ${now:-nothing}, expected ${target}; roll back with: steward sc rollback mise"
+"${bin}" ls >/dev/null || die "mise ${target} cannot read the config; roll back with: steward sc rollback mise"
+run "${bin}" reshim
+"${SC_ROOT}/bin/verify" || die "verification failed; roll back with: steward sc rollback mise"
+log "done: mise ${current} -> ${target}. Rollback: steward sc rollback mise (restores ${backup/#${HOME}/~}/mise)"

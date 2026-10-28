@@ -1,0 +1,17 @@
+// Markdown lint for every tracked .md file (`just docs`, and the Docs check workflow). Rules that fight how these
+// docs are written are off; the structural ones stay on (blank lines around headings, lists, fences and tables,
+// code fence languages, link fragments, bare URLs). archive/evidence/ holds verbatim copies of PR bodies and reports:
+// they are not reformatted (lychee still checks their links).
+{
+  "config": {
+    "default": true,
+    "MD013": false, // line length: prose and tables here run long on purpose
+    "MD060": false, // table column style: aligned pipes are not required
+    "MD024": { "siblings_only": true }, // the same heading under different parents is fine
+    "MD036": false, // a bold line used as a caption is not a heading
+    "MD033": false, // inline HTML is allowed
+    "MD041": false  // CLAUDE.md is a single "@AGENTS.md" line (an import, not a document)
+  },
+  "ignores": ["node_modules/**", ".claude/worktrees/**", "archive/evidence/**"],
+  "gitignore": true
+}

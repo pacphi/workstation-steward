@@ -1,0 +1,310 @@
+# AI tooling policy: what `steward ai drift` compares this machine against. Paths name the roots in steward.toml
+# [paths] as {{NAME}} placeholders ({{AI_TOOLING_ROOT}}, {{MISE_DATA_DIR}}, {{CLAUDE_DIR}} …; `steward config` shows them),
+# except each [[repin]] `from`, which records a path that really existed. `ai repin`, `ai guard` and `ai transport`
+# change things after a plan and a yes, with a backup and a receipt; `ai qualify` and `ai promote` are still by hand (5c). Background and recipe:
+# archive/ai-tooling-ownership-and-qualification.md. Design: docs/architecture.md.
+
+# Packages AI tooling owns. They install through mise (mise/config.toml) or the npm -g hybrids
+# (supply-chain/hybrids.toml), but `steward sc upgrade` skips them and Renovate opens their PRs only on
+# Dependency Dashboard approval (label `ai-tooling`).
+owned_mise = [
+  "npm:agentic-qe",
+  "npm:ruvnet-brain",
+  "npm:ruvector",
+  "npm:@ruvector/ruvllm-cli",
+  "npm:@ruvector/typesafe",
+  "npm:@claude-flow/codex",
+  "npm:agent-browser",
+]
+owned_hybrids = ["ruflo", "agentdb"]
+
+# The shared, patched AQE runtime that project launchers and hook shims point at.
+[aqe]
+package = "agentic-qe"
+repo = "proffesor-for-testing/agentic-qe"   # GitHub repo whose release notes drift reads
+runtime = "{{AI_TOOLING_ROOT}}/aqe"
+current = "3.15.12-local.1"   # qualified and promoted 2026-10-26 (ai-tooling/qualify/aqe, all 8 gates PASS)
+based_on = "3.15.12"
+patches = ["bootstrap-provenance-guard", "dream-opt-out"]
+# What `aqe`, `aqe-mcp` and `agentic-qe` should resolve to, and what project launchers should run.
+bin = "{{AI_TOOLING_ROOT}}/aqe/current/bin"
+
+# The AQE hook transport (D24): AQE's own aqe-hook.cjs and brain-checkpoint.cjs run AQE_HOOK_BUNDLE first, so
+# pointing it here sends every hook to the shared runtime on any stack, with no node_modules shim. Source in
+# ai-tooling/transports/; `steward projects onboard` installs it. v1 (no project binding) stays for projects that pinned it.
+hook_transport = "{{AI_TOOLING_ROOT}}/aqe/transports/v2/aqe-hook-bundle.cjs"
+
+# The shared Ruflo launcher that Codex project configs point at.
+[ruflo_core]
+runtime = "{{AI_TOOLING_ROOT}}/ruflo-core"
+current = "0.2.8"
+
+# The pinned Ruflo plugin marketplace that project settings name in extraKnownMarketplaces.ruflo (2026-10-15
+# migration; ruflo-project-scope-and-live-pilot.md). Claude's ruflo-mods/swarm/console plugins come from here.
+[ruflo]
+marketplace = "{{AI_TOOLING_ROOT}}/ruflo/marketplaces/1882006a02487590c8c66a7eec8d7504f6af33c3"
+
+# Brain's knowledge-base update is deliberately deferred (owner-run script); drift reports its age only.
+[brain]
+kb_source = "~/.cache/ruvnet-brain/kb/SOURCE.json"
+# The Codex MCP server Brain's installer registers (projects run it with a bare `node`, as the installer does).
+codex_server = "~/.cache/ruvnet-brain/codex-marketplace/plugin/mcp/server.mjs"
+
+# Stable launch paths the per-tool profiles (projects/profiles/) render into project configs. Version-independent
+# links only (D11, D12): they survive upgrades and prunes. Never mise shims.
+[launch]
+node = "{{MISE_DATA_DIR}}/installs/node/26/bin/node"
+ruflo = "{{MISE_DATA_DIR}}/installs/node/26/lib/node_modules/ruflo"
+ruvector = "{{MISE_DATA_DIR}}/installs/npm-ruvector/0.3/node_modules/ruvector"
+
+# Codex tools whose approval_mode must be "prompt" (D37): the owner confirms every run. Onboarding writes them so
+# (projects/profiles), `steward ai approvals` fixes existing projects, and drift reports any project still "approve".
+[[codex_prompt]]
+server = "ruvnet-brain"
+tool = "ruvnet_cli_run"
+why = "declared destructive; runs any subcommand of ruflo, claude-flow, agentic-flow, agentic-qe, ruvector, agent-browser or ruv-swarm with arbitrary arguments, gated only by having read that subcommand's help in the last 24h. Its approval was carried from the migration with no vetting receipt, unlike the 53 vetted read-only Ruflo ones"
+
+# Codex servers that launch with the stable Node link ([launch] node), not a bare `node` that depends on the PATH Codex was
+# started with (a minimal PATH has no node) and on whichever Node comes first (D37).
+[[codex_stable_node]]
+server = "ruvnet-brain"
+why = "Brain's installer registers a bare node; every other server here launches the stable link"
+
+# Keep-off list (D23): what onboarding and the feature baseline never turn on, write or change, whatever a
+# qualified install defaults to. It always wins over a profile. `key` is a path in the file named by `file`
+# (settings = .claude/settings.json, settings_local, mcp = .mcp.json, codex = .codex/config.toml); `value` is
+# what it must stay at, or absent when the key must never be written. Each entry cites the note it comes from
+# (~/Development/active/audit/ai-tooling-audit-2026-10-14/ unless a path says otherwise).
+[[keep_off]]
+file = "settings"
+key = "claudeFlow.daemon.autoStart"
+value = false
+why = "the daemon spends tokens unprompted; 55/55 projects set false (master-completion-plan.md Decision 5; Ruflo #1427)"
+
+[[keep_off]]
+file = "settings"
+key = "claudeFlow.agentTeams.coordination.autoAssignOnIdle"
+value = false
+why = "Ruflo 3.59.8 turned it off: liveness alone isn't authority to assign work (upstream #3031)"
+
+[[keep_off]]
+file = "settings"
+key = "claudeFlow.agentTeams.hooks.teammateIdle.autoAssign"
+value = false
+why = "the same #3031 default"
+
+[[keep_off]]
+file = "settings"
+key = "permissions"
+why = "tool permissions are the owner's; Ruflo and AQE init both write allow rules (fresh-brain-hook-investigation.md)"
+
+[[keep_off]]
+file = "settings"
+key = "attribution"
+why = "Ruflo's opt-in ruflo-bot Co-Authored-By trailer; each repo's own attribution rules govern commits"
+
+[[keep_off]]
+file = "settings"
+key = "includeCoAuthoredBy"
+why = "the same: commit attribution belongs to the repo"
+
+[[keep_off]]
+file = "settings"
+key = "enabledMcpjsonServers"
+why = "approving a project's .mcp.json servers is a trust decision the owner makes in Claude Code"
+
+[[keep_off]]
+file = "settings_local"
+key = "enableAllProjectMcpServers"
+why = "the same trust decision, for every server at once"
+
+[[keep_off]]
+file = "settings_local"
+key = "enabledMcpjsonServers"
+why = "the same trust decision"
+
+[[keep_off]]
+file = "settings"
+key = "env.CLAUDE_FLOW_AUTO_UPDATE"
+why = "the guard lives machine-wide ([guards]); a project value could only turn auto-update back on"
+
+[[keep_off]]
+file = "mcp"
+key = "mcpServers.ruflo"
+why = "Claude gets Ruflo from the per-project ruflo-* plugins, not .mcp.json (ruflo-project-scope-and-live-pilot.md)"
+
+[[keep_off]]
+file = "mcp"
+key = "mcpServers.ruv-swarm"
+why = "unpinned npx launcher outside qualification (5b)"
+
+[[keep_off]]
+file = "mcp"
+key = "mcpServers.flow-nexus"
+why = "unpinned npx launcher to a remote service; remote services need the owner's opt-in (consistent-tooling-rollout.md)"
+
+[[keep_off]]
+file = "mcp"
+key = "mcpServers.agentic-qe.env.AQE_RVF_MODE"
+why = "SQLite-only mode was rejected (historical-rollout-policy-proposal.md)"
+
+[[keep_off]]
+file = "mcp"
+key = "mcpServers.agentic-qe.env.RUVECTOR_USE_RVF_PATTERN_STORE"
+why = "the same rejection"
+
+# Approvals onboarding writes for each Codex server: exactly these, never more (D17). Sources are receipts under
+# ~/Development/active/audit/ai-tooling-migration-backup-2026-10-14/.
+[approvals]
+ruflo_source = "continuation-24-ruflo-approvals/receipt.json (53 vetted; 8 sensitive reads excluded) + continuation-22-ruvector-approvals/receipt.json sets.ruflo (6)"
+ruvector_source = "continuation-22-ruvector-approvals/receipt.json sets.ruvector (16, the server's own read-only profile)"
+agentic_qe_source = "continuation-22-approvals/receipt.json (memory trio, owner-approved) + continuation-22-ruvector-approvals/receipt.json sets.agentic-qe (2)"
+ruvnet_brain_source = "search_ruvnet only (read-only). ruvnet_cli_run was carried from the migration with no vetting receipt and is declared destructive: [[codex_prompt]] keeps it at prompt (D37)"
+
+# Workarounds with an exit: drift reports each as still needed until every condition holds, and the AQE
+# qualification recipe checks them. When all hold, onboarding removes the setting and the file is retired.
+[[retire]]
+what = "AQE hook transport v2 ([aqe] hook_transport, AQE_HOOK_BUNDLE in each project's settings.local.json)"
+when = [
+  "the shared runtime carries no local patches: proffesor-for-testing/agentic-qe#1188 fixed (bootstrap guard) and the dream opt-out shown unnecessary",
+  "stock AQE qualifies on its own (ai-tooling/qualify/aqe with no patches/), at the version npm:agentic-qe is pinned to",
+  "stock AQE run from a hook binds the project's own store (from a subfolder and a worktree) without AQE_PROJECT_ROOT",
+]
+watch = ["proffesor-for-testing/agentic-qe#1188"]
+# When it retires: qualify stock AQE (ai-tooling/qualify/aqe without patches/), then
+steps = [
+  "drop the [env] _.path line in mise/config.toml, so the stock npm:agentic-qe (pinned at the qualified version) runs bare `aqe`",
+  "repoint project launchers and hooks from {{AI_TOOLING_ROOT}}/aqe to the stock install (steward ai repin, steward projects onboard --refresh)",
+  "remove [aqe] hook_transport and the AQE_HOOK_BUNDLE entries (steward projects onboard --replace-older)",
+]
+
+# Settings that must hold machine-wide.
+[guards]
+# Ruflo installs its own patch releases on startup unless this is "false".
+auto_update_env = "CLAUDE_FLOW_AUTO_UPDATE"
+auto_update_files = ["{{CLAUDE_DIR}}/settings.json", "~/.zshenv"]
+# The npx ask guard (D27): Ruflo's and AQE's skills, commands and agents tell agents to run unpinned `npx`
+# (`@claude-flow/cli@latest`, `claude-flow@alpha`, `ruv-swarm`, `agentdb`…), and projects' own allow rules
+# (`Bash(npx @claude-flow*)` in 26) auto-approve it, skipping pins, the release-age gate and the auto-update guard.
+# A user-level ask rule is evaluated before any project's allow rule, so each run prompts instead. The projects'
+# rules stay as they are (permissions are the owner's: keep-off). `steward ai guard` adds missing rules; drift checks.
+# Not covered: hooks and .mcp.json launchers, which permission rules don't gate (the `latest` launchers, 5b).
+npx_ask_file = "{{CLAUDE_DIR}}/settings.json"
+npx_ask = [
+  "Bash(npx *claude-flow*)",    # claude-flow, @claude-flow/cli, with or without -y
+  "Bash(npx *ruflo*)",
+  "Bash(npx *ruv-swarm*)",
+  "Bash(npx *agentdb*)",        # agentdb, agentdb-cli
+  "Bash(npx *agentic-flow*)",
+  "Bash(npx *flow-nexus*)",
+  "Bash(npx *agentic-qe*)",
+  "Bash(npx aqe *)",
+  "Bash(npx *ruvector*)",
+  "Bash(npx *ruvnet-brain*)",
+]
+# The git ignore guard (D28): AI tool output that is never project source, ignored in every repo on this machine
+# through the user's git ignore file (git's core.excludesFile, else ~/.config/git/ignore). Already-tracked files stay
+# tracked. What a project may keep in its history (AGENTS.md, CLAUDE.md, .agents/, .claude/) stays its own decision.
+# `steward ai guard` keeps a marked block; lines starting with # are the block's group comments.
+git_ignore = [
+  "# Ruflo (claude-flow) runtime state and swarm stores",
+  ".claude-flow/",
+  ".swarm/",
+  ".hive-mind/",
+  "# Agentic QE runtime state and learned stores",
+  ".agentic-qe/",
+  "# AgentDB and RuVector stores",
+  "agentdb.rvf*",
+  "*.rvf",
+  "*.rvf.lock",
+  "*.rvf.manifest.json",
+  "ruvector.db",
+  "# Launchers onboarding points at this machine's installs (D6, D11): per machine, never shared",
+  ".mcp.json",
+  ".mcp.json.*",
+  ".codex/",
+  "# Claude Code: local settings and agent worktrees (D19)",
+  "**/.claude/settings.local.json",
+  ".claude/worktrees/",
+  "# Leftover tool locks",
+  ".beads.gate.lock",
+]
+
+# The plugin store guard (D29): keys a Claude Code plugin keeps in its store file that must hold one value.
+# ruflo-console has its own updater: once a day it reads the plugin manifest on the tip of github.com/ruvnet/ruflo's main
+# branch and offers (or, after "Always auto-update", installs) every newer minor or patch, bypassing qualification
+# and the release-age gate; for a 0.x plugin a minor is a major. `updates = "off"` is the plugin's own off switch.
+# Ruflo plugins change only by qualifying a new pinned marketplace commit ([ruflo] marketplace). Never choose
+# "Always auto-update" in its prompt. `steward ai guard` sets the key (adds or changes only these keys); drift checks it.
+[[guards.plugin_store]]
+name = "ruflo-console updater"
+file_glob = "{{CLAUDE_DIR}}/plugins/store/ruflo-console_ruflo-*.json"
+set = { updates = "off" }
+
+# Offboarding (D31): what `steward projects offboard` takes out of a project whose registry entry has no AI tools.
+# Keys and entries are removed from the untracked or ignored launcher and settings files; paths are moved, never
+# copied or deleted, into the run's backup folder, and the rollback moves them back. Tracked files are never touched,
+# and an untracked entry offboarding doesn't recognize stays (the owner can name it with --also).
+[offboard]
+# MCP servers, in .mcp.json, settings.json `mcpServers`, `enabledMcpjsonServers` and Codex `mcp_servers`
+servers = ["ruflo", "claude-flow", "ruv-swarm", "flow-nexus", "agentic-qe", "aqe", "ruvector", "ruvnet-brain"]
+# plugins (`enabledPlugins` and Codex `plugins` keys, `name@marketplace`) by marketplace, and their marketplaces
+marketplaces = ["ruflo", "ruvnet-brain"]
+# settings.json keys the tools own outright
+settings_keys = ["claudeFlow", "aqe", "v3Configuration", "v3Learning"]
+# env keys (settings `env`, Codex `shell_environment_policy.set`): these prefixes, and these names their templates
+# write (Ruflo's settings template; agentic-kit's host switches)
+env_prefixes = ["CLAUDE_FLOW_", "AQE_", "RUFLO_", "RUVECTOR_", "BRAIN_"]
+env_names = ["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "CLAUDE_CODE_ENABLE_FUNCTION_HOOKS", "ENABLE_CLAUDE_CODE", "ENABLE_CODEX"]
+# a hook, status line or approval rule is the tools' when it matches this (JavaScript regex)
+tool_pattern = '\.claude/(helpers|hooks)/|agentic-qe|aqe-hook|\bruflo\b|claude-flow|ruv-swarm|flow-nexus|ruvector|ruvnet-brain|\bmcp__(claude-flow|ruflo|agentic-qe|ruvector|ruvnet-brain)__'
+# stores, moved wherever they sit in the project (tools write them in the folder they run in)
+stores = [".claude-flow", ".swarm", ".hive-mind", ".agentic-qe", ".ruvector", "ruvector.db", "agentdb.rvf", "agentdb.rvf.lock", "agentdb.rvf.manifest.json"]
+# whole paths the tools write (`*` matches within one name): moved when nothing under them is tracked
+paths = [
+  ".claude/helpers", ".claude/hooks", ".claude/guidance", ".claude/agent-overrides", ".claude/docs/v3-agents-index.md",
+  ".claude/memory.db", ".claude/proven-config*", ".claude/.proven-config-version", ".claude/settings.local.json.bak",
+  ".mcp.json.*", ".codex/hooks.json",
+]
+# folders the tools copy units into: an untracked unit moves when the qualified Ruflo or AQE install ships that name,
+# when it is a Codex copy of a Ruflo command (`source-command-*`), or when its SKILL.md says `author: rUv`
+copy_dirs = [".claude/agents", ".claude/commands", ".claude/skills", ".agents/skills"]
+
+# Project launchers (.mcp.json, .codex/config.toml) must not fetch an unpinned version at session start.
+[launchers]
+forbid = ["@latest"]
+
+# Upstream threads whose resolution changes something here.
+[[watch]]
+issue = "proffesor-for-testing/agentic-qe#1188"
+why = "the bootstrap patch can be dropped once a release fixes the empty-index backfill"
+
+[[watch]]
+issue = "vercel-labs/agent-browser#1679"
+why = "repository-controlled executables; its first patched release may qualify for the advisory exception"
+
+# Launcher repin rules for `steward ai repin`: each `from` path prefix in a project's launcher configs becomes `to`,
+# and in the scripts they run: AQE hook shims (node_modules/.bin/agentic-qe) and the AQE runtime's bin/aqe and
+# bin/aqe-mcp in every release (lib/pins.js).
+# Version-independent targets survive upgrades and prunes: mise keeps node/26 on the newest 26.x, and
+# npm-ruvector/0.3 on the newest 0.3.x. Never mise shims: they resolve per directory, and a project .nvmrc could
+# select another Node ABI. D11 and D12 in docs/architecture.md.
+[[repin]]
+from = "~/.local/share/mise/installs/node/26.4.0/bin/node"
+to = "{{MISE_DATA_DIR}}/installs/node/26/bin/node"
+why = "pre-patch Node 26.4.0 (missing the 26.5.1 and 26.12.1 security releases)"
+
+[[repin]]
+from = "~/.local/share/mise/installs/node/26.4.0/lib/node_modules/ruflo/"
+to = "{{MISE_DATA_DIR}}/installs/node/26/lib/node_modules/ruflo/"
+why = "the same ruflo 3.59.8 hybrid, installed under the active Node (identical dependency tree)"
+
+[[repin]]
+from = "~/.local/share/mise/installs/node/26.4.0/lib/node_modules/ruvector/"
+to = "{{MISE_DATA_DIR}}/installs/npm-ruvector/0.3/node_modules/ruvector/"
+why = "mise's normal ruvector 0.3.3 (D12: @ruvector/core 0.1.32 to 0.1.33, same 105 MCP tools)"
+
+[[repin]]
+from = "~/.local/share/mise/installs/node/26.4/lib/node_modules/ruflo/"
+to = "{{MISE_DATA_DIR}}/installs/node/26/lib/node_modules/ruflo/"
+why = "Ruflo's memory hook (.claude-flow/memory-package.json) loads through the 26.4 link, which dies with 26.4.0"

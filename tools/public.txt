@@ -1,0 +1,65 @@
+# What the public engine repo gets (D39), read by tools/export.js and tools/leak-check.js.
+# An allow-list: only tracked files under these paths are exported, so a new folder stays private until it is added
+# here on purpose. A trailing / means everything tracked under it. `!` lines exclude, and win over includes.
+# Never exported, whatever is listed: archive/, owner/, and the instance (steward.toml and the policy files).
+# CLAUDE.md is written by the export (`@AGENTS.md` only), and the export adds the instance files to .gitignore.
+
+# the client and the engine
+bin/
+lib/
+supply-chain/bin/
+supply-chain/checks/
+supply-chain/skill/
+supply-chain/host-defaults.toml
+supply-chain/README.md
+ai-tooling/bin/
+ai-tooling/qualify/
+ai-tooling/transports/
+ai-tooling/skill/
+ai-tooling/README.md
+projects/bin/
+projects/profiles/
+projects/skill/
+projects/README.md
+fleet/bin/
+fleet/skill/
+fleet/README.md
+.claude/skills/
+
+# what a newcomer reads and copies
+examples/
+docs/
+README.md
+AGENTS.md
+CONTRIBUTING.md
+SECURITY.md
+LICENSE
+
+# building, testing and checking the engine
+package.json
+justfile
+tools/
+test/
+lychee.toml
+.markdownlint-cli2.jsonc
+.gitignore
+.github/workflows/test.yml
+.github/renovate.json
+renovate/
+.github/workflows/docs-check.yml
+.github/workflows/lint.yml
+biome.jsonc
+tsconfig.json
+
+# the instance and private material, even if a line above would match
+!archive/
+!owner/
+!steward.toml
+!renovate.json
+!mise/
+!supply-chain/host.toml
+!supply-chain/hybrids.toml
+!supply-chain/verify.tsv
+!supply-chain/vendor/
+!ai-tooling/ai-tooling.toml
+!projects/registry.toml

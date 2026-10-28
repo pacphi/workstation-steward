@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Developer task (D41): pin the release channel to a tag, and write the two launchers that keep the channels apart.
+#   - the release: a detached Git worktree of this repo at <tag> (default ~/.local/share/workstation-steward/release,
+#     or $STEWARD_RELEASE). Created, or moved to the tag when it exists; refused if it has local changes.
+#   - ~/.local/bin/steward      the release, with your config ($STEWARD_INSTANCE, else this repo's instance) and mise
+#                               told to ignore the release checkout's own mise/ (an untrusted local config there)
+#   - ~/.local/bin/steward-dev  this clone, answering to that release (for `steward check`'s format guard)
+# Shows the plan, asks, then acts; DRY_RUN=1 only shows it. A launcher is replaced only when this task wrote it.
+# Until steward comes from npm (R6), when mise's own `steward` shim takes over and these launchers go.
+# Usage: tools/release-worktree <tag>      e.g. just release-worktree v0.1.0
+# shellcheck source=lib/lib.sh
+source "$(dirname "$0")/../lib/lib.sh"
+
+tag="${1:?usage: release-worktree <tag>}"
+dest="${STEWARD_RELEASE:-${HOME}/.local/share/workstation-steward/release}"
+bin_dir="${HOME}/.local/bin"
+mark="written by \`just release-worktree\`"
+commit="$(git -C "${REPO_ROOT}" rev-parse --verify --quiet "${tag}^{commit}")" || die "no tag or commit ${tag} here (git tag ${tag} first)"
+git -C "${REPO_ROOT}" cat-file -e "${commit}:bin/steward.js" 2>/dev/null || die "${tag} has no bin/steward.js: tag a commit that has the steward client"
+# Captured first: `… | grep -q` under pipefail fails when grep exits early (SIGPIPE)
+client="$(git -C "${REPO_ROOT}" cat-file -p "${commit}:bin/steward.js")"
+[[ "${client}" == *STEWARD_CHANNEL* ]] || die "${tag} predates the channels (D41): tag a newer commit"
+
+log "plan: the release channel at ${tag} ($(git -C "${REPO_ROOT}" rev-parse --short "${commit}"))"
+if [[ -e "${dest}" ]]; then
+  git -C "${dest}" rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "${dest/#${HOME}/~} exists and isn't a Git worktree; move it aside"
+  [[ -z "$(git -C "${dest}" status --porcelain)" ]] || die "${dest/#${HOME}/~} has local changes; a release checkout must stay clean"
+  echo "  move   ${dest/#${HOME}/~}: $(git -C "${dest}" describe --tags --always) -> ${tag}"
+else
+  echo "  create ${dest/#${HOME}/~} (detached worktree at ${tag})"
+fi
+for f in steward steward-dev; do
+  t="${bin_dir}/${f}"
+  if [[ -e "${t}" ]] && ! grep -qF "${mark}" "${t}"; then die "${t/#${HOME}/~} exists and wasn't written by this task; move it aside"; fi
+  echo "  write  ${t/#${HOME}/~}"
+done
+echo "  config ${INSTANCE_ROOT/#${HOME}/~} (what \`steward\` uses unless \$STEWARD_INSTANCE says otherwise)"
+confirm "Set up the release channel?" || die "aborted"
+[[ "${DRY_RUN}" == 1 ]] && { log "dry run: nothing changed"; exit 0; }
+
+if [[ -e "${dest}" ]]; then git -C "${dest}" checkout -q --detach "${commit}"
+else mkdir -p "$(dirname "${dest}")" && git -C "${REPO_ROOT}" worktree add -q --detach "${dest}" "${commit}"; fi
+mkdir -p "${bin_dir}"
+cat >"${bin_dir}/steward" <<EOF
+#!/bin/sh
+# workstation-steward, the RELEASE channel (${tag}): ${mark} in ${REPO_ROOT/#${HOME}/~}.
+# Goes when steward comes from npm (R6). D41 in docs/architecture.md.
+STEWARD_CHANNEL=release
+STEWARD_INSTANCE="\${STEWARD_INSTANCE:-${INSTANCE_ROOT}}"
+MISE_IGNORED_CONFIG_PATHS="${dest}/mise\${MISE_IGNORED_CONFIG_PATHS:+:\${MISE_IGNORED_CONFIG_PATHS}}"
+export STEWARD_CHANNEL STEWARD_INSTANCE MISE_IGNORED_CONFIG_PATHS
+exec node "${dest}/bin/steward.js" "\$@"
+EOF
+cat >"${bin_dir}/steward-dev" <<EOF
+#!/bin/sh
+# workstation-steward, the DEV channel (this clone): ${mark} in ${REPO_ROOT/#${HOME}/~}.
+# Uses examples/ and its own state unless given --real. D41 in docs/architecture.md.
+STEWARD_CHANNEL=dev
+STEWARD_RELEASE="${dest}"
+export STEWARD_CHANNEL STEWARD_RELEASE
+exec node "${REPO_ROOT}/bin/steward.js" "\$@"
+EOF
+chmod 755 "${bin_dir}/steward" "${bin_dir}/steward-dev"
+log "done. Check: steward version; steward-dev version; steward sc status"

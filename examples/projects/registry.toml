@@ -1,0 +1,3 @@
+# The registry of decisions for each project under [projects] roots: onboarded (with its AI tools), ignored or
+# deferred. `steward projects scan` finds new ones and `steward projects decide <path>` records a decision here.
+# Starts empty.

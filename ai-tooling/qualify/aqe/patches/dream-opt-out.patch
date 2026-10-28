@@ -1,0 +1,42 @@
+diff --git a/src/learning/dream/dream-engine.ts b/src/learning/dream/dream-engine.ts
+index a73b94fc..76594d9a 100644
+--- a/src/learning/dream/dream-engine.ts
++++ b/src/learning/dream/dream-engine.ts
+@@ -539,6 +539,9 @@ export class DreamEngine {
+    * @returns Dream cycle result with insights and statistics
+    */
+   async dream(durationMs?: number, options: DreamRunOptions = {}): Promise<DreamCycleResult> {
++    if (process.env.AQE_DREAM_EXECUTION === 'disabled') {
++      throw new Error('AQE dream execution is disabled by operator policy');
++    }
+     this.ensureInitialized();
+     if (this.closing) throw new Error('Dream engine is closing; no new dream is started');
+     // #1060: one dream at a time per engine; a second request is refused.
+diff --git a/src/learning/dream/dream-scheduler.ts b/src/learning/dream/dream-scheduler.ts
+index 54f6fa89..6d79c57d 100644
+--- a/src/learning/dream/dream-scheduler.ts
++++ b/src/learning/dream/dream-scheduler.ts
+@@ -536,6 +536,9 @@ export class DreamScheduler {
+    * Execute a dream cycle with the specified duration.
+    */
+   private async executeDream(durationMs: number): Promise<DreamCycleResult> {
++    if (process.env.AQE_DREAM_EXECUTION === 'disabled') {
++      throw new Error('AQE dream execution is disabled by operator policy');
++    }
+     if (this.dreaming) {
+       throw new Error('A dream is already in progress');
+     }
+diff --git a/src/learning/dream/speculative-dreamer.ts b/src/learning/dream/speculative-dreamer.ts
+index 732ca1bc..9327fa07 100644
+--- a/src/learning/dream/speculative-dreamer.ts
++++ b/src/learning/dream/speculative-dreamer.ts
+@@ -167,6 +167,9 @@ export class SpeculativeDreamer {
+     strategies: DreamStrategy[],
+     options: SpeculativeDreamOptions = {},
+   ): Promise<SpeculativeDreamResult> {
++    if (process.env.AQE_DREAM_EXECUTION === 'disabled') {
++      throw new Error('AQE dream execution is disabled by operator policy');
++    }
+     if (strategies.length < 1) {
+       throw new Error('At least one strategy is required');
+     }

@@ -1,0 +1,99 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "workstation-steward's rules for a config repo's mise toolchain (D39, D40): the 3-day release-age gate, security updates that bypass it, majors and 0.x minors one PR each, exact pins reviewed one by one, everything floating in a weekly digest. Extend it pinned to a release tag: \"extends\": [\"github>pacphi/workstation-steward//renovate/steward#vX.Y.Z\"]. The repo adds its own enabledManagers and ignoreDeps.",
+  "extends": [
+    "config:recommended"
+  ],
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": [
+      "security"
+    ]
+  },
+  "packageRules": [
+    {
+      "description": "Exact-pinned tools (node, npm, and every `npm:` tool): one PR each, reviewed, then `steward sc upgrade-tool` locally. Match on depName (for `npm:<pkg>` tools the packageName is the bare `<pkg>`), with a regex: a glob `*` doesn't match the `/` in scoped names.",
+      "matchManagers": [
+        "mise"
+      ],
+      "matchDepNames": [
+        "node",
+        "npm",
+        "/^npm:/"
+      ],
+      "groupName": null,
+      "labels": [
+        "toolchain",
+        "review-required"
+      ]
+    },
+    {
+      "description": "Everything else floating on \"latest\" in mise: weekly digest",
+      "matchManagers": [
+        "mise"
+      ],
+      "matchDepNames": [
+        "!node",
+        "!npm",
+        "!/^npm:/"
+      ],
+      "groupName": "mise tools",
+      "schedule": [
+        "* 0-5 * * 1"
+      ]
+    },
+    {
+      "description": "Majors are deliberate, and a 0.x minor counts as a major: one PR each, never in the digest",
+      "matchManagers": [
+        "mise"
+      ],
+      "matchCurrentVersion": "/^v?0\\./",
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "groupName": null,
+      "labels": [
+        "toolchain",
+        "review-required",
+        "breaking"
+      ]
+    },
+    {
+      "description": "Majors are deliberate: one PR each, never in the digest",
+      "matchManagers": [
+        "mise"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "groupName": null,
+      "labels": [
+        "toolchain",
+        "review-required",
+        "breaking"
+      ]
+    },
+    {
+      "description": "The AI tooling add-on owns these (its ai-tooling.toml owned_mise): its qualification decides, so a PR opens only when ticked on the Dependency Dashboard. Security PRs still open at once (vulnerabilityAlerts sets dependencyDashboardApproval false). Harmless where the add-on is off.",
+      "matchManagers": [
+        "mise"
+      ],
+      "matchDepNames": [
+        "npm:agentic-qe",
+        "npm:ruvnet-brain",
+        "npm:ruvector",
+        "npm:@ruvector/ruvllm-cli",
+        "npm:@ruvector/typesafe",
+        "npm:@claude-flow/codex",
+        "npm:agent-browser"
+      ],
+      "addLabels": [
+        "ai-tooling"
+      ],
+      "dependencyDashboardApproval": true
+    }
+  ]
+}

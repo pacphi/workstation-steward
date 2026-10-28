@@ -1,0 +1,36 @@
+{
+  "_": "What this repo needs on the machine. Read by lib/doctor.js (steward doctor) and printed into docs/prereqs.md (steward doctor --markdown; a test keeps them equal). Plain JSON, not TOML, because reading TOML needs yq, which is itself on this list. need: required | optional. source: system (comes with macOS or the Xcode tools) | mise (a tool in mise/config.toml; `mise` is its name there) | brew (Homebrew formula) | manual. check overrides the default `command -v <bin>`; version is a command whose first line is shown.",
+  "areas": {
+    "core": "Every command",
+    "supply-chain": "steward sc …",
+    "fleet": "steward fleet …, steward review, the pr-consolidation scripts",
+    "dev": "Working on this repo: lint, docs checks, Renovate config checks"
+  },
+  "prereqs": [
+    { "name": "macOS", "bin": "sw_vers", "area": "core", "need": "required", "source": "system", "version": "sw_vers -productVersion", "why": "The steward audits Homebrew, the App Store and the macOS trust stores; it is macOS only", "install": "" },
+    { "name": "bash", "bin": "bash", "area": "core", "need": "required", "source": "system", "version": "bash --version", "why": "Every supply-chain script. The macOS 3.2 is enough and is what they are written for", "install": "" },
+    { "name": "git", "bin": "git", "area": "core", "need": "required", "source": "system", "version": "git --version", "why": "Project discovery, onboarding, sync, prune and every PR step", "install": "xcode-select --install" },
+    { "name": "curl", "bin": "curl", "area": "core", "need": "required", "source": "system", "version": "curl --version", "why": "Registry, Homebrew and advisory lookups", "install": "" },
+    { "name": "mise", "bin": "mise", "area": "core", "need": "required", "source": "manual", "version": "mise --version", "why": "Installs and pins every tool below; `steward sc` wraps it. The standalone build in ~/.local/bin; `steward sc upgrade-tool mise` updates it (D38)", "install": "curl https://mise.run | sh" },
+    { "name": "node", "bin": "node", "area": "core", "need": "required", "source": "mise", "mise": "node", "version": "node --version", "why": "lib/*.js, drift, onboarding, review, doctor and the tests", "install": "mise install node" },
+    { "name": "just", "bin": "just", "area": "dev", "need": "optional", "source": "mise", "mise": "just", "version": "just --version", "why": "Developer tasks only: `just test`, `lint`, `docs`, `links`, `release-worktree`. The steward itself runs as `steward`", "install": "mise install just" },
+    { "name": "yq", "bin": "yq", "area": "core", "need": "required", "source": "mise", "mise": "yq", "version": "yq --version", "why": "Reads steward.toml and the policy files (`yq -p toml`)", "install": "mise install yq" },
+
+    { "name": "Homebrew", "bin": "brew", "area": "supply-chain", "need": "required", "source": "manual", "version": "brew --version", "why": "`steward sc audit` and `steward sc upgrade` manage formulae and casks", "install": "see https://brew.sh" },
+    { "name": "npm", "bin": "npm", "area": "supply-chain", "need": "required", "source": "mise", "mise": "npm", "version": "npm --version", "why": "Installs the npm -g hybrids (Ruflo, AgentDB) with a reviewed script allow-list", "install": "mise install npm" },
+    { "name": "shasum", "bin": "shasum", "area": "supply-chain", "need": "required", "source": "system", "why": "`steward sc node-patch` checks the Node tarball against SHASUMS256", "install": "" },
+    { "name": "security", "bin": "security", "area": "supply-chain", "need": "required", "source": "system", "why": "`steward sc audit` reads the macOS system roots and admin trust settings", "install": "" },
+    { "name": "softwareupdate", "bin": "softwareupdate", "area": "supply-chain", "need": "required", "source": "system", "why": "`steward sc audit` lists pending macOS updates", "install": "" },
+    { "name": "mas", "bin": "mas", "area": "supply-chain", "need": "optional", "source": "brew", "brew": "mas", "version": "mas --version", "why": "`steward sc audit` checks the App Store; skipped with a warning when missing", "install": "brew install mas" },
+    { "name": "Docker", "bin": "docker", "area": "supply-chain", "need": "optional", "source": "manual", "version": "docker --version", "why": "`steward sc audit` checks running images and IOC digests; skipped when Docker is not running", "install": "install Docker Desktop" },
+
+    { "name": "gh", "bin": "gh", "area": "fleet", "need": "required", "source": "mise", "mise": "gh", "version": "gh --version", "why": "Every PR, review, issue and alert read; `steward review` and `steward fleet prune-merged`", "install": "mise install gh" },
+    { "name": "gh login", "bin": "gh", "check": "gh auth status", "area": "fleet", "need": "required", "source": "manual", "why": "GitHub is the source of record for alerts and updates; the weekly review and prune-merged need a logged-in gh", "install": "gh auth login" },
+    { "name": "jq", "bin": "jq", "area": "fleet", "need": "required", "source": "brew", "brew": "jq", "version": "jq --version", "why": "The pr-consolidation scripts (lock-age, pr-status, merge-and-close …) parse gh and registry JSON", "install": "brew install jq" },
+
+    { "name": "shellcheck", "bin": "shellcheck", "area": "dev", "need": "optional", "source": "mise", "mise": "shellcheck", "version": "shellcheck --version", "why": "`just lint` and the lock-age script check", "install": "mise install shellcheck" },
+    { "name": "markdownlint-cli2", "bin": "markdownlint-cli2", "area": "dev", "need": "optional", "source": "mise", "mise": "npm:markdownlint-cli2", "version": "markdownlint-cli2 --version", "why": "`just docs` Markdown lint", "install": "mise install npm:markdownlint-cli2" },
+    { "name": "lychee", "bin": "lychee", "area": "dev", "need": "optional", "source": "mise", "mise": "lychee", "version": "lychee --version", "why": "`just docs` and `just links` link checks", "install": "mise install lychee" },
+    { "name": "renovate", "bin": "renovate", "area": "dev", "need": "optional", "source": "mise", "mise": "npm:renovate", "version": "renovate --version", "why": "Checking a renovate.json with `renovate --platform=local`", "install": "mise install npm:renovate" }
+  ]
+}

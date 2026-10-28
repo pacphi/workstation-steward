@@ -1,0 +1,33 @@
+# RuvNet Brain profile (D18): what onboarding gives a project whose registry entry lists "brain". Brain is switched
+# on per project only: its user-level Claude plugin, Codex plugin and Codex MCP stay off
+# (brain-project-scope-result.json, brain-project-mcp-scope-result.json). One shared knowledge base
+# (ai-tooling.toml [brain] kb_source), never copied into a project. Its own plugin hooks (the PreToolUse write gate)
+# come with the plugin and are never bypassed (fresh-brain-hook-investigation.md).
+# Never run Brain's installer update, --yes/--auto/--force or `npx ruvnet-brain`: they switch Brain on globally.
+tool = "brain"
+
+[settings.enabledPlugins]
+"ruvnet-brain@ruvnet-brain" = true
+
+[codex.plugins."ruvnet-brain@ruvnet-brain"]
+enabled = true
+
+# The server lives under Brain's cache (not a mise install). Brain's installer registers a bare `node`; here it is the stable
+# Node link, like every other server (ai-tooling.toml [[codex_stable_node]], D37).
+[codex.mcp_servers.ruvnet-brain]
+command = "{{NODE}}"
+args = ["{{BRAIN_CODEX_SERVER}}"]
+enabled = true
+env = {}
+
+# search_ruvnet is read-only (the server declares it so). ruvnet_cli_run is declared destructive and runs any subcommand
+# of seven RuvNet CLIs, so it stays at prompt: the owner confirms each run (ai-tooling.toml [[codex_prompt]], D37). Written
+# even with --no-approvals, because it restricts rather than grants.
+[codex.approve]
+ruvnet-brain = ["search_ruvnet"]
+
+[codex.prompt]
+ruvnet-brain = ["ruvnet_cli_run"]
+
+[[manual]]
+text = "Open Claude Code and Codex in the project and accept the Brain plugin's hooks when asked (owner's trust)."

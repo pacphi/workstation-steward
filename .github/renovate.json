@@ -1,0 +1,26 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "The engine repo's own dependencies: GitHub Actions, pinned by commit SHA with a version comment, the example toolchain (examples/mise/config.toml), and the dev-only type definitions in tools/types/package.json (@types/node, D45), under the same rules users get (renovate/steward.json). package.json has no dependencies. A config repo extends renovate/steward.json at a release tag instead of this file. (In a checkout that is also an instance, the root renovate.json wins and this file is not read.)",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    "local>pacphi/workstation-steward//renovate/steward"
+  ],
+  "enabledManagers": [
+    "github-actions",
+    "mise",
+    "npm"
+  ],
+  "packageRules": [
+    {
+      "description": "Actions: one PR per action, after the same 3-day gate; a digest-only update rides with the version it belongs to",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "labels": [
+        "ci"
+      ],
+      "groupName": null
+    }
+  ]
+}

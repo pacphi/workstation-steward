@@ -1,0 +1,29 @@
+# Your host policy (D40). The audit reads it on top of the engine's shared defaults (supply-chain/host-defaults.toml
+# in the engine): the browsers that are never held, apps with a bundled Node, the Electron support window, distrusted
+# root certificates and indicators of compromise from published incidents. A release brings the newest of those.
+# `steward sc host` shows the merged policy and where each value came from. Empty is fine.
+
+# Add your own: they join the defaults. A [[distrusted_root]] or [[ioc]] with a default's name replaces that default.
+# vendored_node = ["/Applications/Some App.app/Contents/Resources/node"]
+#
+# [[ioc]]
+# name = "Something you were told about"
+# source = "https://…"
+# files = ["/tmp/marker"]
+# site_packages_files = []
+# processes = ["bad-process"]
+# docker_digests = []
+
+# Turn defaults off, by name or value (the audit flags one that matches no default, likely a typo).
+# [off]
+# always_current = ["firefox"]
+# ioc = ["Plex2Shell (CVE-2026-96652..96656) miner/proxy payloads"]
+
+# A version younger than the release-age gate is taken only when it is the first patched release for an advisory
+# listed in the GitHub Advisory DB, RustSec or OSV. Each entry names the exact version and expires.
+# [[security_exception]]
+# kind = "formula"                         # formula, cask or mise
+# name = "openssl@3"
+# version = "3.6.1"
+# advisory = "https://github.com/advisories/GHSA-xxxx-xxxx-xxxx"
+# expires = "2026-11-03"                   # a week or so: by then the version is past the gate anyway

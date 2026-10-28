@@ -1,0 +1,29 @@
+# Markdown lint (.markdownlint-cli2.jsonc) and the links between docs and their #fragments (lychee.toml, offline).
+# Runs on every PR (no paths filter, so it can be a required check), no secrets. External URLs are not fetched here: a
+# PR's token can't read the owner's private repos, so `just links` checks them on the Mac.
+name: Docs check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  markdown-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: DavidAnson/markdownlint-cli2-action@21c1be1b93ad9ed58fa840aacc3f279cde2a72ff # v24.2.0
+        with:
+          globs: "**/*.md"
+  doc-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: --config lychee.toml --offline --no-progress '**/*.md'
+          fail: true

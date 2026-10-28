@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Read-only: what's outdated, whether the active Node line has a newer security release, hybrid and
+# upstream-issue status, and vendored Node runtimes inside apps.
+# shellcheck source=lib/lib.sh
+source "$(dirname "$0")/../../lib/lib.sh"
+STEWARD_HOST_JSON="$(host_json)" || die "host policy: lib/host.js failed"
+
+log "mise outdated --bump (respects minimum_release_age)"
+mise outdated --bump 2>/dev/null | sed 's/^/  /' || warn "mise outdated failed"
+
+log "mise itself (D38: GitHub releases, the release-age gate, GitHub Advisory DB and OSV)"
+node "${SC_ROOT}/bin/mise-self.js" || warn "mise check failed"
+
+log "Node security status (nodejs.org/dist/index.json)"
+current="$(node -p 'process.versions.node')"
+# shellcheck disable=SC2016 # single quotes on purpose: the JavaScript is passed to node verbatim
+curl -fsS https://nodejs.org/dist/index.json | node -e '
+  let s = ""; process.stdin.on("data", d => s += d).on("end", () => {
+    const cur = process.argv[1], major = "v" + cur.split(".")[0] + ".";
+    const line = JSON.parse(s).filter(r => r.version.startsWith(major));
+    const idx = line.findIndex(r => r.version === "v" + cur);
+    const newerSec = line.slice(0, idx < 0 ? line.length : idx).filter(r => r.security);
+    console.log(`  active v${cur}; newest ${line[0].version} (${line[0].date}, security=${line[0].security})`);
+    console.log(newerSec.length ? `  ACTION: ${newerSec.length} newer security release(s): ${newerSec.map(r => r.version).join(", ")} → steward sc node-patch ${line[0].version.slice(1)}` : "  ok: no newer security release on this line");
+  });' "${current}"
+
+log "Hybrids (npm -g in active Node)"
+n="$(hybrids_json | yq '. | length')"
+for ((i = 0; i < n; i++)); do
+  name="$(hybrids_json | yq -r ".[$i].name")"; want="$(hybrids_json | yq -r ".[$i].version")"; issue="$(hybrids_json | yq -r ".[$i].issue")"
+  have="$(npm ls -g --depth=0 --json 2>/dev/null | yq -p json -r ".dependencies.\"${name}\".version // \"MISSING\"")"
+  state=""
+  if [[ "${issue}" =~ github.com/([^/]+/[^/]+)/issues/([0-9]+) ]]; then
+    state="$(gh issue view "${BASH_REMATCH[2]}" --repo "${BASH_REMATCH[1]}" --json state -q .state 2>/dev/null || echo '?')"
+  fi
+  printf '  %-24s want %-16s have %-16s upstream %s %s\n' "${name}" "${want}" "${have}" "${state:-n/a}" "${issue}"
+done
+
+log "Vendored Node runtimes (patch by updating the app)"
+# The list lives in host.toml (vendored_node, vendored_node_dirs): it's data about this machine's apps.
+while IFS= read -r f; do
+  f="${f/#\~/${HOME}}"
+  [[ -x "${f}" ]] && printf '  %-10s %s\n' "$("${f}" --version 2>/dev/null)" "${f/#${HOME}/~}"
+done < <(host_json | yq -p json -r '.vendored_node[]?')
+while IFS= read -r d; do
+  find "${d/#\~/${HOME}}" -maxdepth 2 -name node -type f 2>/dev/null | while read -r f; do
+    printf '  %-10s %s\n' "$("${f}" --version 2>/dev/null)" "${f/#${HOME}/~}"
+  done
+done < <(host_json | yq -p json -r '.vendored_node_dirs[]?')

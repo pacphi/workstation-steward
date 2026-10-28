@@ -1,0 +1,152 @@
+# AQE profile (D18, D24): what onboarding gives a project whose registry entry lists "aqe". Values come from the
+# qualified shared runtime (AQE 3.15.10-local.1: dist/init/phases/07-hooks.js, read 2026-10-25), the migration's
+# receipts and ai-tooling/ai-tooling.toml. Adds only; a project's own value wins; the keep-off list wins over all.
+#
+# Not written, because only `aqe init` produces them and onboarding never runs it (aqe-matcher-fix-and-global-
+# retirement.md; consistent-tooling-rollout.md): .agentic-qe/config.yaml, the AQE_* / AQE_V3_* settings env derived
+# from it, and the aqe / v3Configuration / v3Learning settings sections. AQE runs on its defaults without them.
+tool = "aqe"
+
+# The hook files AQE ships, copied from the qualified runtime. Both find AQE through AQE_HOOK_BUNDLE first (the
+# resolver in aqe-hook.cjs; brain-checkpoint.cjs reuses it), so no project needs a node_modules shim (D24).
+[[copy]]
+from = "{{AQE_PKG}}/.claude/hooks/aqe-hook.cjs"
+to = ".claude/hooks/aqe-hook.cjs"
+
+[[copy]]
+from = "{{AQE_PKG}}/.claude/helpers/brain-checkpoint.cjs"   # AQE's own pattern export (aqe.rvf), not RuvNet Brain
+to = ".claude/helpers/brain-checkpoint.cjs"
+
+# Skills, commands and agents: AQE bundles Ruflo's Claude-Flow material too. Ruflo owns those names (D26), so with
+# Ruflo chosen these copies skip every name the qualified Ruflo ships (lib/profiles.js render()); AQE's own QE
+# material is what remains.
+[[copy]]
+from = "{{AQE_PKG}}/.claude/skills"
+to = ".claude/skills"
+
+[[copy]]
+from = "{{AQE_PKG}}/.claude/commands"
+to = ".claude/commands"
+
+[[copy]]
+from = "{{AQE_PKG}}/.claude/agents"
+to = ".claude/agents"
+
+# .claude/settings.local.json: local to this checkout. The transport binds the hook to the project from
+# CLAUDE_PROJECT_DIR and runs the shared runtime ([[retire]] in ai-tooling.toml says when it can go).
+[settings_local.env]
+AQE_HOOK_BUNDLE = "{{AQE_HOOK_TRANSPORT}}"
+
+# Hooks: exactly what 07-hooks.js generates (already in seconds, after the owner's #654).
+[[hook]]
+event = "PreToolUse"
+matcher = "^(Write|Edit|MultiEdit)$"
+command = '''node "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/aqe-hook.cjs" guard --file "$TOOL_INPUT_file_path" --json'''
+timeout = 3
+continueOnError = true
+
+[[hook]]
+event = "PreToolUse"
+matcher = "^(Write|Edit|MultiEdit)$"
+command = '''node "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/aqe-hook.cjs" pre-edit --file "$TOOL_INPUT_file_path" --json'''
+timeout = 5
+continueOnError = true
+
+[[hook]]
+event = "PreToolUse"
+matcher = "^Bash$"
+command = '''node "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/aqe-hook.cjs" pre-command --command "$TOOL_INPUT_command" --json'''
+timeout = 3
+continueOnError = true
+
+[[hook]]
+event = "PreToolUse"
+matcher = "^(Task|Agent)$"
+command = '''node "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/aqe-hook.cjs" pre-task --description "$TOOL_INPUT_prompt" --json'''
+timeout = 5
+continueOnError = true
+
+[[hook]]
+event = "PostToolUse"
+matcher = "^(Write|Edit|MultiEdit)$"
+command = '''node "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/aqe-hook.cjs" post-edit --file "$TOOL_INPUT_file_path" --success --json'''
+timeout = 5
+continueOnError = true
+
+[[hook]]
+event = "PostToolUse"
+matcher = "^Bash$"
+command = '''node "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/aqe-hook.cjs" post-command --command "$TOOL_INPUT_command" --success true --json'''
+timeout = 5
+continueOnError = true
+
+[[hook]]
+event = "PostToolUse"
+matcher = "^(Task|Agent)$"
+command = '''node "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/aqe-hook.cjs" post-task --task-id "$TOOL_RESULT_agent_id" --agent "$TOOL_INPUT_subagent_type" --success true --description "$TOOL_INPUT_prompt" --json'''
+timeout = 5
+continueOnError = true
+
+[[hook]]
+event = "UserPromptSubmit"
+command = '''node "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/aqe-hook.cjs" route --json'''
+timeout = 5
+continueOnError = true
+
+[[hook]]
+event = "SessionStart"
+command = '''node "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/aqe-hook.cjs" session-start --session-id "$SESSION_ID" --json'''
+timeout = 10
+continueOnError = true
+
+[[hook]]
+event = "SessionStart"
+command = '''sh -c 'exec node "${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/brain-checkpoint.cjs" verify --json''''
+timeout = 5
+continueOnError = true
+
+[[hook]]
+event = "Stop"
+command = '''node "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/aqe-hook.cjs" session-end --save-state --json'''
+timeout = 5
+continueOnError = true
+
+[[hook]]
+event = "Stop"
+command = '''node "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/aqe-hook.cjs" post-route --success true --json'''
+timeout = 5
+continueOnError = true
+
+[[hook]]
+event = "Stop"
+command = '''sh -c 'exec node "${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/brain-checkpoint.cjs" export --json''''
+timeout = 60
+continueOnError = true
+
+# The shared runtime's MCP server, bound to this project. AQE_EMBEDDER_ENDPOINT is empty: the offline model, no
+# network (a project's own endpoint, like emailibrium's, is kept). team-rollout-checkpoint.md.
+[mcp.agentic-qe]
+command = "{{AQE}}/bin/aqe-mcp"
+args = []
+
+[mcp.agentic-qe.env]
+AQE_PROJECT_ROOT = "{{PROJECT}}"
+AQE_MEMORY_PATH = "{{PROJECT}}/.agentic-qe/memory.db"
+AQE_SESSION_CACHE = "off"
+AQE_EMBEDDER_ENDPOINT = ""
+
+[codex.mcp_servers.agentic-qe]
+command = "{{AQE}}/bin/aqe-mcp"
+args = []
+
+[codex.mcp_servers.agentic-qe.env]
+AQE_PROJECT_ROOT = "{{PROJECT}}"
+AQE_MEMORY_PATH = "{{PROJECT}}/.agentic-qe/memory.db"
+AQE_SESSION_CACHE = "off"
+AQE_EMBEDDER_ENDPOINT = ""
+
+[codex.approve]
+agentic-qe = ["memory_query", "memory_retrieve", "memory_store", "migration_check", "migration_status"]
+
+[[manual]]
+text = "Open Claude Code in the project and approve the agentic-qe server and the AQE hooks when asked (owner's trust)."

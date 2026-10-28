@@ -1,0 +1,16 @@
+--- a/src/learning/qe-reasoning-bank.ts
++++ b/src/learning/qe-reasoning-bank.ts
+@@ -296,9 +296,12 @@
+             return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1000;
+           })();
+ 
++          const activeSpaceId = getActiveEmbeddingSpaceIdentity()?.spaceId;
+           const embeddings = this.getSqliteStore().getRecentEmbeddings(limit);
+           const vectors = embeddings
+-            .filter(({ embedding }) => embedding && embedding.length > 0)
++            .filter(({ embedding, spaceId }) =>
++              Boolean(activeSpaceId) && spaceId === activeSpaceId &&
++              embedding && embedding.length > 0)
+             .map(({ patternId, embedding }) => ({
+               id: patternId,
+               vector: embedding instanceof Float32Array

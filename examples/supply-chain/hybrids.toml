@@ -1,0 +1,13 @@
+# CLIs that can't live on mise's npm: backend yet, so they're `npm install -g`'d into the ACTIVE Node, one per
+# command, with a reviewed list of the install scripts they may run. They vanish when that Node version is removed;
+# `steward sc node-patch` reinstalls them into the new Node. Retire one with `steward sc retire-hybrid <name> <spec>` once
+# its upstream issue is fixed. Empty is fine.
+#
+# [[hybrid]]
+# name = "some-cli"
+# version = "1.2.3"
+# source = "registry"                      # or a path under supply-chain/, such as "vendor/some-cli-1.2.3.tgz"
+# allow_scripts = ["some-cli", "better-sqlite3"]
+# verify = "--version"
+# reason = "why it can't use mise's npm: backend"
+# issue = "https://github.com/<owner>/<repo>/issues/<n>"

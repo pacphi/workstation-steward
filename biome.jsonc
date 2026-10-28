@@ -1,0 +1,37 @@
+// Biome lints the engine's JavaScript (D45): its recommended rules, minus the ones below, which would only move the
+// code to another style. No formatting: the code keeps its own. `just lint` and the Lint workflow run it, and a
+// warning fails them as an error does.
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.3/schema.json",
+  "files": {
+    "includes": [
+      "**/*.js", "**/*.cjs", "**/*.mjs",
+      // compared byte for byte with the installed, qualified transport by `steward ai drift`: never edited for lint
+      "!ai-tooling/transports/aqe-hook-bundle.cjs",
+      // the AQE qualification gates' fixtures run inside the sandboxed stage and stay as recorded
+      "!ai-tooling/qualify/aqe/fixtures",
+      "!archive", "!node_modules"
+    ]
+  },
+  "formatter": { "enabled": false },
+  "assist": { "enabled": false },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "style": {
+        "useNodejsImportProtocol": "off", // require('fs'), as the code writes it everywhere
+        "useTemplate": "off" // 'a' + b where the code chose it
+      },
+      "complexity": {
+        "useOptionalChain": "off", // a && a.b: the code's own style
+        "noCommaOperator": "off" // a few deliberate `x = 1, y = 2` lines
+      },
+      "suspicious": {
+        "noControlCharactersInRegex": "off", // the ANSI escape (\x1b) in colour-stripping regexes is the point
+        "noTemplateCurlyInString": "off", // shell placeholders like '${CLAUDE_PROJECT_DIR:-.}' are literal on purpose
+        "noAssignInExpressions": "off" // (out[k] = out[k] || []) and similar: deliberate, and read as such
+      }
+    }
+  }
+}

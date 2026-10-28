@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Read-only health check: every CLI in verify.tsv, native addons, and npm doctor (cache check skipped:
+# `npm doctor cache` garbage-collects ~/.npm/_cacache, which is a mutation).
+# shellcheck source=lib/lib.sh
+source "$(dirname "$0")/../../lib/lib.sh"
+
+fails=0
+log "CLIs (verify.tsv)"
+while IFS=$'\t' read -r bin args want_rc want_out; do
+  [[ -z "${bin}" || "${bin}" == \#* ]] && continue
+  if ! command -v "${bin}" >/dev/null 2>&1; then
+    printf '  FAIL %-18s not on PATH\n' "${bin}"; fails=$((fails + 1)); continue
+  fi
+  # Test the binary mise resolves for the config, not whatever this (possibly long-lived) shell's PATH
+  # finds first: after an upgrade, an old install dir can stay ahead on PATH until a new shell starts.
+  exe="$(mise which "${bin}" 2>/dev/null || command -v "${bin}")"
+  [[ "$(command -v "${bin}")" == "${exe}" ]] \
+    || warn "${bin}: this shell's PATH resolves $(command -v "${bin}"); mise resolves ${exe} (new shells are fine)"
+  # shellcheck disable=SC2086 # args intentionally word-split
+  out="$(perl -e 'alarm shift; exec @ARGV' 60 "${exe}" ${args} </dev/null 2>&1)" && rc=0 || rc=$?
+  if [[ "${rc}" == "${want_rc}" ]] && grep -qE -- "${want_out}" <<<"${out}"; then
+    printf '  ok   %-18s %s\n' "${bin}" "$(grep -v '^\s*$' <<<"${out}" | tail -1 | cut -c1-60)"
+  else
+    printf '  FAIL %-18s rc=%s (want %s) %s\n' "${bin}" "${rc}" "${want_rc}" "$(tail -1 <<<"${out}" | cut -c1-60)"
+    fails=$((fails + 1))
+  fi
+done < "${SC_INSTANCE}/verify.tsv"
+
+log "Native addons"
+node "${SC_ROOT}/bin/addon-check.js" || fails=$((fails + 1))
+
+log "npm doctor (ping registry versions environment permissions)"
+# Known false positive with fuzzy node pins: npm compares the PATH symlink (node/26) to the real prefix.
+# "Not ok / Use npm vX" just means a newer npm exists — informational, not a failure.
+npm doctor ping registry versions environment permissions 2>&1 \
+  | awk '/^Checking/ {c=$0; next} /^(Ok|Not ok)/ {s=$0; next} /^(Use|current:|Error)/ && c {print "  " c ": " s " (" $0 ")"; c=""; next} c && s {print "  " c ": " s; c=""; s=""}' || true
+
+if ((fails)); then die "${fails} check(s) failed"; fi
+log "all checks passed"

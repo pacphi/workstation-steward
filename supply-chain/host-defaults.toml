@@ -1,0 +1,61 @@
+# Shared host policy that ships with the engine (D40): what anyone's `steward sc audit` checks unless their own
+# supply-chain/host.toml says otherwise. A release brings the newest of it, so new indicators of compromise and
+# distrusted roots reach every machine without anyone copying them.
+# How your host.toml combines with this file (lib/host.js):
+#   - a plain value (electron_supported_majors): yours wins;
+#   - a list (always_current, vendored_node, vendored_node_dirs): yours adds to it;
+#   - a named entry ([[distrusted_root]], [[ioc]]): yours adds one, or replaces the one with the same name;
+#   - [off] in your host.toml turns a default off by name or value, e.g. always_current = ["firefox"].
+# security_exception entries are yours alone: they name your versions and expire.
+# An entry for some platforms only says so: `platforms = ["macos"]` on a table, or a list item written as a table,
+# { name = "…", platforms = ["macos"] } (path = for a path). Without the key an entry holds on every platform.
+
+# Apps that bundle their own Node runtime (steward sc status reports their versions; a path that isn't on a machine is
+# skipped). Patch them by updating the app.
+vendored_node = [
+  { path = "/Applications/Cursor.app/Contents/Resources/app/resources/helpers/node", platforms = ["macos"] },
+  "~/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+  { path = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node", platforms = ["macos"] },
+  { path = "/Applications/LM Studio.app/Contents/Resources/app/.webpack/bin/node", platforms = ["macos"] },
+  "~/.lmstudio/.internal/utils/node",
+]
+vendored_node_dirs = ["~/.local/share/cursor-agent/versions"]   # each version folder holds its own node
+
+# Apps (by Homebrew cask token) whose every release is a security release: browsers ship Chromium/Gecko
+# security fixes in nearly every update, so they are never held by the cooldown.
+always_current = [
+  { name = "google-chrome", platforms = ["macos"] },
+  { name = "brave-browser", platforms = ["macos"] },
+  { name = "firefox", platforms = ["macos"] },
+]
+
+# Electron supports its newest majors and drops the rest from security fixes (electronjs.org/docs/latest/tutorial/
+# electron-timelines: the latest three stable majors). An app bundling an older Electron is reported.
+electron_supported_majors = 3
+
+# Roots that must not be trusted. The audit (supply-chain/checks/) checks the macOS system roots, the admin trust settings,
+# /etc/ssl/cert.pem, Homebrew's ca-certificates and Node's bundled store.
+[[distrusted_root]]
+name = "emSign ECC Root CA - G3"
+sha256 = "86A1ECBA089C4A8D3BBE2734C612BA341D813E043CF9E8A862CD5C57A36BBE6B"
+reason = "eMudhra intermediates with trivially weak P-384 keys, revoked 2026-10-18; removed from NSS 3.131.1"
+source = "https://bugzilla.mozilla.org/buglist.cgi?quicksearch=emSign"
+since = "2026-10-23"
+
+# Indicators of compromise from published incident reports. Every path and process pattern is checked
+# read-only; nothing is executed or deleted.
+[[ioc]]
+name = "LiteLLM 1.107.0 PyPI/Docker backdoor (2026-10-21)"
+source = "https://github.com/advisories/GHSA-92x9-889m-jgmw"
+files = ["/tmp/.pc_once_72129118c59f5636c0bb", "/tmp/remote_code_loader.lock"]
+site_packages_files = ["cook.pth", "cook.py"]
+processes = ["PRIVCOLLECT_ACTIVE", "remote_code_loader", "cook.py"]
+docker_digests = ["sha256:1bbcb1443bc962e45f5aad53fe3d2c30600e0379715fb6c664cdd3ac126c339e"]
+
+[[ioc]]
+name = "Plex2Shell (CVE-2026-96652..96656) miner/proxy payloads"
+source = "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+files = []
+site_packages_files = []
+processes = ["myawesomeproxy", "mylovelyminer"]
+docker_digests = []

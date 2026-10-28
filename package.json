@@ -1,0 +1,46 @@
+{
+  "name": "workstation-steward",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Keeps a Mac's software supply chain current within policy: a release-age gate, plans before changes, backups, receipts and rollback.",
+  "license": "MIT",
+  "author": "Chris Phillipson",
+  "homepage": "https://github.com/pacphi/workstation-steward",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pacphi/workstation-steward.git"
+  },
+  "bugs": "https://github.com/pacphi/workstation-steward/issues",
+  "bin": {
+    "steward": "bin/steward.js"
+  },
+  "os": [
+    "darwin"
+  ],
+  "engines": {
+    "node": ">=26"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "examples/",
+    "supply-chain/bin/",
+    "supply-chain/checks/",
+    "supply-chain/host-defaults.toml",
+    "supply-chain/skill/",
+    "supply-chain/README.md",
+    "ai-tooling/bin/",
+    "ai-tooling/qualify/",
+    "ai-tooling/transports/",
+    "ai-tooling/skill/",
+    "ai-tooling/README.md",
+    "projects/bin/",
+    "projects/profiles/",
+    "projects/skill/",
+    "projects/README.md",
+    "fleet/bin/",
+    "fleet/skill/",
+    "fleet/README.md",
+    "SECURITY.md"
+  ]
+}

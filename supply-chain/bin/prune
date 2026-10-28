@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Remove versions no tracked config needs any more — after the soak. Shows the list, refuses while a soak is
+# running (steward.toml [policy] soak_days after the last upgrade, Node patch, hybrid install or repin), if an
+# npm -g hybrid exists only in a Node about to be removed, or if a project's launcher config points into an
+# install about to be removed, dry-runs, then asks.
+# Usage: prune [tool...]      DRY_RUN=1 prune (reports a running soak and checks the rest)
+#        STEWARD_SKIP_SOAK=1 prune   prune before the soak ends (the other checks still apply)
+# shellcheck source=lib/lib.sh
+source "$(dirname "$0")/../../lib/lib.sh"
+
+log "prunable (mise ls --prunable)"
+list="$(mise ls --prunable "$@" 2>/dev/null || true)"
+[[ -z "${list}" ]] && { log "nothing to prune"; exit 0; }
+while IFS= read -r line; do printf '  %s\n' "${line}"; done <<<"${list}"
+
+# The soak (D20): old installs stay for soak_days after a change, so rolling back is a link away, not a reinstall.
+if ! soak="$(node "${REPO_ROOT}/lib/soak.js" --gate 2>&1)"; then
+  if [[ "${STEWARD_SKIP_SOAK:-0}" == "1" ]]; then warn "${soak}; skipping it (STEWARD_SKIP_SOAK=1)"
+  elif [[ "${DRY_RUN}" == "1" ]]; then warn "${soak}; a real prune refuses until then (dry run: checking the rest)"
+  else die "${soak}. Wait, or STEWARD_SKIP_SOAK=1 steward sc prune to prune early"
+  fi
+fi
+
+active_prefix="$(active_node_prefix)"
+# An older Node may hold the only reviewed install of a hybrid (2026-10-21: the qualified ruflo stayed under
+# Node 26.4.0 while 26.12.1 got a wider allow-list). Refuse until the active Node's installs match hybrids.toml.
+for name in $(hybrids_json | yq -r '.[].name'); do
+  hybrid_receipt_ok "${name}" || die "hybrid ${name}: no receipt matching hybrids.toml and the active Node — run 'steward sc install-hybrids' first"
+done
+while read -r tool ver _; do
+  [[ "${tool}" == node ]] || continue
+  old="${STEWARD_PATHS_MISE_DATA_DIR}/installs/node/${ver}/lib/node_modules"
+  for name in $(hybrids_json | yq -r '.[].name'); do
+    if [[ -d "${old}/${name}" && ! -d "${active_prefix}/lib/node_modules/${name}" ]]; then
+      die "hybrid ${name} exists only in node ${ver} — run 'steward sc install-hybrids' first"
+    fi
+  done
+done <<<"${list}"
+
+# A launcher config (.mcp.json, .codex/config.toml, .claude/settings*.json) or a script it runs (an AQE hook shim,
+# the AQE runtime's bin/aqe and bin/aqe-mcp) that points into an install folder about to be removed would break, so
+# refuse while any does (2026-10-24: 88 configs pinned Node 26.4.0; 2026-10-25: 19 shims and 14 AQE runtime
+# scripts). Fix with stable paths (node/26/…), never by pruning first.
+dirs=()
+while read -r tool ver _; do
+  [[ -n "${tool}" && -n "${ver}" ]] || continue
+  d="$(mise where "${tool}@${ver}" 2>/dev/null || true)"
+  [[ -n "${d}" ]] && dirs+=("${d}")
+done <<<"${list}"
+if (( ${#dirs[@]} )); then
+  pinned="$(node "${REPO_ROOT}/lib/pins.js" "${dirs[@]}" || true)"
+  if [[ -n "${pinned}" ]]; then
+    printf '%s\n' "${pinned}" | awk -F'\t' '{n[$2]++; r[$2]+=$3} END {for (i in n) printf "  %s: %d file(s), %d reference(s)\n", i, n[i], r[i]}'
+    die "launcher configs or the scripts they run still point into installs that prune would remove — see steward ai drift; repin them first"
+  fi
+fi
+run mise prune -n "$@"
+confirm "Delete the versions above?" || { log "aborted"; exit 1; }
+run mise prune -y "$@"
+# A full prune ends the "soak over: prune when ready" banner (lib/soak.js); pruning named tools leaves it up.
+if [[ "${DRY_RUN}" != "1" && $# -eq 0 ]]; then
+  mkdir -p "${STATE_DIR}" && printf '{"at":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"${STATE_DIR}/pruned.json"
+fi

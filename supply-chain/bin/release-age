@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Show or set the release-age gate everywhere it lives. steward.toml [policy] min_release_age_days is the authority;
+# mise's minimum_release_age and Renovate's minimumReleaseAge are copies, because neither can read steward.toml.
+# Usage: release-age            show the three values
+#        release-age <days>     set all three (shows the plan, asks, backs up; DRY_RUN=1 previews)
+# shellcheck source=lib/lib.sh
+source "$(dirname "$0")/../../lib/lib.sh"
+
+steward="${STEWARD_CONFIG:-${INSTANCE_ROOT}/steward.toml}"
+mise_cfg="${INSTANCE_ROOT}/mise/config.toml"
+renovate="${INSTANCE_ROOT}/renovate.json"
+
+show() {
+  printf '  %-34s %s\n' "steward.toml min_release_age_days" "$(yq -p toml -oy -r '.policy.min_release_age_days // "unset (default 3)"' "${steward}")"
+  printf '  %-34s %s\n' "mise/config.toml minimum_release_age" "$(yq -p toml -oy -r '.settings.minimum_release_age // "unset"' "${mise_cfg}")"
+  printf '  %-34s %s\n' "renovate.json minimumReleaseAge" "$(yq -p json -oy -r '.minimumReleaseAge // "unset"' "${renovate}")"
+}
+
+log "release-age gate"
+show
+days="${1:-}"
+[[ -z "${days}" ]] && exit 0
+[[ "${days}" =~ ^[0-9]+$ ]] || die "need a whole number of days, like 3"
+
+# Each file must already hold exactly one setting to replace; the edits keep everything else byte-for-byte.
+[[ "$(grep -cE '^min_release_age_days *= *[0-9]+' "${steward}")" == 1 ]] || die "${steward/#${HOME}/~}: expected one [policy] min_release_age_days line"
+[[ "$(grep -cE '^minimum_release_age *= *"[^"]*"' "${mise_cfg}")" == 1 ]] || die "mise/config.toml: expected one minimum_release_age line"
+[[ "$(grep -cE '"minimumReleaseAge": *"[^"]*"' "${renovate}")" == 1 ]] || die "renovate.json: expected one minimumReleaseAge"
+unit="days"; [[ "${days}" == 1 ]] && unit="day"
+
+log "plan"
+printf '  steward.toml      min_release_age_days = %s\n' "${days}"
+printf '  mise/config.toml  minimum_release_age = "%sd"\n' "${days}"
+printf '  renovate.json     "minimumReleaseAge": "%s %s"\n' "${days}" "${unit}"
+confirm "Set the release-age gate to ${days} ${unit} in all three?" || die "aborted"
+
+backup="$(backup_config)"; log "mise config backup: ${backup/#${HOME}/~}"
+stamp="${backup##*.}"
+if [[ "${DRY_RUN}" != "1" ]]; then
+  cp -p "${steward}" "${BACKUP_DIR}/steward.toml.${stamp}"
+  cp -p "${renovate}" "${BACKUP_DIR}/renovate.json.${stamp}"
+fi
+run perl -pi -e "s/^(min_release_age_days *= *)[0-9]+/\${1}${days}/" "${steward}"
+run perl -pi -e "s/^(minimum_release_age *= *\")[^\"]*\"/\${1}${days}d\"/" "${mise_cfg}"
+run perl -pi -e "s/(\"minimumReleaseAge\": *\")[^\"]*\"/\${1}${days} ${unit}\"/" "${renovate}"
+[[ "${DRY_RUN}" == "1" ]] && { log "dry run: nothing changed"; exit 0; }
+
+log "after"
+show
+node "${REPO_ROOT}/lib/config.js" --check || die "steward.toml no longer validates; restore ${BACKUP_DIR/#${HOME}/~}/steward.toml.${stamp}"
+log "done. Commit steward.toml, mise/config.toml and renovate.json together (PR). Backups: ${BACKUP_DIR/#${HOME}/~}/*.${stamp}"

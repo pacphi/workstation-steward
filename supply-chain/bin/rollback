@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Restore the newest (or a named) config + lockfile backup taken by upgrade/node-patch, then reshim.
+# Nothing is uninstalled, so the previous versions are still on disk.
+# `rollback mise` restores the mise binary from the newest mise-self-update backup instead (D38).
+# Usage: rollback [backup-file]      rollback mise      DRY_RUN=1 rollback
+# shellcheck source=lib/lib.sh
+source "$(dirname "$0")/../../lib/lib.sh"
+
+if [[ "${1:-}" == mise ]]; then
+  dir="$(find "${STATE_DIR}/backups" -maxdepth 1 -name 'mise-self-update-*' -type d 2>/dev/null | sort | tail -1)"
+  [[ -n "${dir}" && -f "${dir}/mise" && -f "${dir}/receipt.json" ]] || die "no mise binary backup under ${STATE_DIR/#${HOME}/~}/backups"
+  bin="$(yq -p json -r '.binary' "${dir}/receipt.json")"
+  log "mise $("${bin}" --version 2>/dev/null | awk '{print $1}') at ${bin/#${HOME}/~} -> $("${dir}/mise" --version 2>/dev/null | awk '{print $1}') from ${dir/#${HOME}/~}"
+  confirm "Restore this mise binary?" || exit 1
+  # A copy beside it, then a rename: writing over a signed binary in place gets it killed by macOS (stale signature).
+  run cp -p "${dir}/mise" "${bin}.rollback"
+  run mv -f "${bin}.rollback" "${bin}"
+  run "${bin}" reshim
+  log "restored. Check with: steward sc verify"
+  exit 0
+fi
+
+src="${1:-$(find "${BACKUP_DIR}" -name 'config.toml.*' 2>/dev/null | sort | tail -1)}"
+[[ -f "${src}" ]] || die "no backup found in ${BACKUP_DIR/#${HOME}/~}"
+stamp="${src##*.toml.}"
+log "restoring ${src/#${HOME}/~}"
+diff -u "${MISE_CONFIG}" "${src}" | sed 's/^/  /' || true
+confirm "Restore this config?" || exit 1
+# Write through the symlink so the dotfiles repo copy is restored too.
+run cp "${src}" "$(readlink -f "${MISE_CONFIG}")"
+[[ -f "${BACKUP_DIR}/mise.lock.${stamp}" ]] && run cp "${BACKUP_DIR}/mise.lock.${stamp}" "$(readlink -f "${MISE_CONFIG%/*}/mise.lock")"
+run mise reshim
+log "restored. Check with: steward sc verify"

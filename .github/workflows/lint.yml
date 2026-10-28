@@ -1,0 +1,30 @@
+# Biome and the TypeScript checker over the engine's JavaScript (D45), on every PR and push to main. A Linux runner is
+# enough (neither needs macOS), so this runs in a private copy too, at the normal rate; the macOS Tests workflow runs
+# `just lint` as well, with shellcheck. The tools come from the example toolchain, pinned there.
+name: Lint
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  js:
+    runs-on: ubuntu-latest
+    env:
+      MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
+      # a checkout that is also an instance (this private repo) has its own mise/ at the root: not this job's toolchain
+      MISE_IGNORED_CONFIG_PATHS: ${{ github.workspace }}/mise
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+        with:
+          version: 2026.10.18
+          install: false # a lockfile in a parent folder would make the action use --locked (see test.yml)
+      - run: mise install node biome npm:typescript
+      - run: npm ci --ignore-scripts --prefix tools/types   # dev only: Node's type definitions; nothing runs
+      - run: mise exec -- biome lint --error-on-warnings .
+      - run: mise exec -- tsc -p tsconfig.json

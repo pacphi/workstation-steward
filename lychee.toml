@@ -1,0 +1,18 @@
+# Link check for every Markdown file (`just links`, and the Docs check workflow): links between docs, their
+# #fragments, and external URLs. A broken link fails the run.
+include_fragments = "anchor-only"
+cache = true
+max_cache_age = "1d"
+max_retries = 2
+retry_wait_time = 5
+timeout = 30
+max_concurrency = 8
+# Some hosts rate-limit or block scripted clients: count 429 as reachable.
+accept = ["100..=103", "200..=299", "429"]
+# Never checked: the local machine, and the placeholders the docs use as examples.
+exclude_all_private = true
+exclude = [
+  '^https?://(localhost|127\.0\.0\.1)',
+  '^https?://example\.(com|org)',
+]
+# Private repositories under the owner's account answer 404 to an anonymous client: the run needs GITHUB_TOKEN.

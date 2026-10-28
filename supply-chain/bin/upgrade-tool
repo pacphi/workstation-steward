@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Upgrade one mise tool. Without a version: newest release older than minimum_release_age, same precision
+# as the current pin (`mise upgrade --bump`). With a version: pin exactly (bypasses the age gate — use for
+# security fixes). Never prunes; old versions stay until `steward sc prune`.
+# Usage: upgrade <tool> [version]      e.g. upgrade npm:typescript   |  upgrade npm@12.3.0
+#        upgrade mise [version]       mise itself: bin/mise-self-update (D38)
+#        DRY_RUN=1 upgrade <tool>
+# shellcheck source=lib/lib.sh
+source "$(dirname "$0")/../../lib/lib.sh"
+
+tool="${1:?usage: upgrade <tool> [version]}"; version="${2:-}"
+[[ "${tool}" == node ]] && die "use 'steward sc node-patch <x.y.z>' for Node (hybrids must be reinstalled)"
+[[ "${tool}" == mise ]] && exec "${SC_ROOT}/bin/mise-self-update" ${version:+"${version}"}
+
+log "before"; mise ls "${tool}" 2>/dev/null | sed 's/^/  /' || true
+backup="$(backup_config)"; log "config backup: ${backup/#${HOME}/~}"
+if [[ -n "${version}" ]]; then
+  run mise use -g "${tool}@${version}"
+else
+  run mise upgrade --bump --no-prune "${tool}"
+fi
+run mise reshim
+refresh_env
+[[ "${DRY_RUN}" == "1" ]] && { log "dry run: nothing changed"; exit 0; }
+write_change_receipt upgrade "${tool}${version:+@${version}}"
+log "after"; mise ls "${tool}" | sed 's/^/  /'
+"${SC_ROOT}/bin/verify" || die "verification failed — roll back with: steward sc rollback"
+run mise lock --global "${tool}"
+log "done. rollback: steward sc rollback   (restores ${backup/#${HOME}/~})"

@@ -1,0 +1,41 @@
+# The tests and lint on macOS, against the example instance (examples/): the engine must work on a fresh Mac with
+# none of the owner's data (D39). The public repo runs it on every PR (no paths filter, so it can be a required
+# check) and every push to main. A private copy runs it only when started by hand, since macOS runners bill 10x on
+# private repos: gh workflow run test.yml --ref <branch>
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    if: ${{ !github.event.repository.private || github.event_name == 'workflow_dispatch' }}
+    runs-on: macos-latest
+    env:
+      STEWARD_INSTANCE: ${{ github.workspace }}/examples
+      # The example toolchain is the job's global mise config, so the tools resolve from any folder
+      MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
+      # A checkout that is also an instance (this private repo) has its own mise/ at the root; mise would read it as
+      # an untrusted local config and fail. The public repo has none, so this is a no-op there.
+      MISE_IGNORED_CONFIG_PATHS: ${{ github.workspace }}/mise
+      NO_PROGRESS: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+        with:
+          version: 2026.10.18
+          # The action installs with --locked when it finds a mise lockfile in any parent folder, and a checkout that is
+          # also an instance has the owner's at its root (runs 40550641067 and 40550828044 failed on it). Install below.
+          install: false
+      # The example toolchain, past its own 3-day gate; the same as the action's install where there is no lockfile
+      - run: mise install
+      - run: npm ci --ignore-scripts --prefix tools/types   # dev only: Node's type definitions for tsc (D45); nothing runs
+      - run: node bin/steward.js config   # no launcher on a runner: the client straight from the checkout
+      - run: just test
+      - run: just lint

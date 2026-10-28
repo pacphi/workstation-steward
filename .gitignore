@@ -1,0 +1,60 @@
+# workstation-steward's own ignores. On this machine, AI tool output in every repo is also ignored by the git ignore
+# guard (~/.config/git/ignore, ai-tooling.toml [guards] git_ignore, D28); the AI lines below keep a clone elsewhere
+# just as clean. Grouped by where the files come from.
+
+# --- macOS and editors --------------------------------------------------------------------------------------------
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# --- Secrets and local environment --------------------------------------------------------------------------------
+.env
+.env.*
+
+# --- Backups an edit leaves beside a file -------------------------------------------------------------------------
+# `steward sc link` keeps the file it replaces as <file>.pre-link; older steps kept dated <file>.bak-<stamp> copies.
+*.pre-link
+*.bak-*
+
+# --- AI tool output: this repo chooses no AI tools (projects/registry.toml ai = []) --------------------------------
+# .claude/ itself stays tracked: .claude/skills/ links the area skills. Only local settings and agent worktrees go.
+.claude/settings.local.json
+.claude/worktrees/
+.claude-flow/
+.swarm/
+.hive-mind/
+.agentic-qe/
+.codex/
+.mcp.json
+.mcp.json.*
+agentdb.rvf*
+*.rvf
+*.rvf.lock
+*.rvf.manifest.json
+ruvector.db
+.beads.gate.lock
+
+# --- Node: no dependencies; tools/types holds only the dev type definitions for tsc (D45) -------------------------
+node_modules/
+npm-debug.log*
+
+# --- Python: the AQE qualification gates (ai-tooling/qualify/aqe/gates) ------------------------------------------
+__pycache__/
+
+# lychee link-check cache (just links)
+.lycheecache
+
+# --- An instance (your config) never belongs in the engine repo (D39) ---------------------------------------------
+/steward.toml
+/renovate.json
+/mise/
+/supply-chain/host.toml
+/supply-chain/hybrids.toml
+/supply-chain/verify.tsv
+/supply-chain/vendor/
+/ai-tooling/ai-tooling.toml
+/projects/registry.toml
+/leak-terms.txt
+/archive/
+/owner/

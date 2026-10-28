@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Move the global Node to an exact (security) release on the same major, the way it was done 2026-10-21:
+# verify the official tarball against SHASUMS256, install, prove the installed binary is byte-identical,
+# reinstall npm -g hybrids into the new Node, pin exactly, reshim, lock, verify.
+# Exact pins bypass minimum_release_age; relax back to the major ("26") once the release is 3+ days old.
+# Usage: node-patch <x.y.z>     DRY_RUN=1 node-patch <x.y.z>
+# shellcheck source=lib/lib.sh
+source "$(dirname "$0")/../../lib/lib.sh"
+
+ver="${1:?usage: node-patch <x.y.z>}"
+[[ "${ver}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "need an exact version like 26.12.2"
+cur="$(node -p 'process.versions.node')"
+[[ "${ver%%.*}" == "${cur%%.*}" ]] || confirm "Major change ${cur} → ${ver}. Continue?" || exit 1
+
+arch="$(uname -m)"; [[ "${arch}" == x86_64 ]] && arch=x64
+tgz="node-v${ver}-darwin-${arch}.tar.gz"
+tmp="$(mktemp -d)"; trap 'rm -rf "${tmp}"' EXIT
+
+log "verify official tarball against SHASUMS256.txt"
+quiet "download SHASUMS256.txt" curl -fsSL "https://nodejs.org/dist/v${ver}/SHASUMS256.txt" -o "${tmp}/SHASUMS256.txt"
+quiet "download ${tgz}" curl -fsSL "https://nodejs.org/dist/v${ver}/${tgz}" -o "${tmp}/${tgz}"
+(cd "${tmp}" && grep " ${tgz}\$" SHASUMS256.txt | shasum -a 256 -c -) || die "tarball checksum mismatch"
+tar -xzf "${tmp}/${tgz}" -C "${tmp}" "node-v${ver}-darwin-${arch}/bin/node"
+
+backup="$(backup_config)"; log "config backup: ${backup/#${HOME}/~}"
+run mise install "node@${ver}"
+if [[ "${DRY_RUN}" != "1" ]]; then
+  a="$(shasum -a 256 "${tmp}/node-v${ver}-darwin-${arch}/bin/node" | cut -d' ' -f1)"
+  b="$(shasum -a 256 "${STEWARD_PATHS_MISE_DATA_DIR}/installs/node/${ver}/bin/node" | cut -d' ' -f1)"
+  [[ "${a}" == "${b}" ]] || die "installed node differs from official tarball (${a} vs ${b})"
+  log "installed bin/node is byte-identical to the official build"
+fi
+
+run mise use -g "node@${ver}"
+refresh_env
+[[ "${DRY_RUN}" == "1" ]] || [[ "$(node -p 'process.versions.node')" == "${ver}" ]] || die "PATH still resolves an old node"
+log "reinstall hybrids into Node ${ver} (each separately, reviewed allow-scripts)"
+install_hybrids
+run mise reshim
+[[ "${DRY_RUN}" == "1" ]] && { log "dry run: nothing changed"; exit 0; }
+write_change_receipt node-patch "node ${cur} → ${ver}"
+"${SC_ROOT}/bin/verify" || die "verification failed — roll back with: steward sc rollback"
+run mise lock --global node
+log "done. Node ${cur} stays installed (rollback). Relax the pin to the major after 3 days, then: mise lock --global node"

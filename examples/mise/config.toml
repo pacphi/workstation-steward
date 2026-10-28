@@ -1,0 +1,23 @@
+# Your global mise toolchain. `steward sc link` points ~/.config/mise/config.toml here, so this file (and the
+# mise.lock mise writes next to it) is the record of what is installed. Renovate can watch it and propose updates.
+# Pin what you care about exactly; "latest" means the newest release past minimum_release_age.
+
+[tools]
+node = "26"
+npm = "latest"                             # the npm -g hybrids install with it (supply-chain/hybrids.toml)
+just = "latest"
+yq = "latest"
+gh = "latest"
+shellcheck = "latest"
+lychee = "latest"
+"npm:markdownlint-cli2" = "latest"
+# Lint and type check (D45): pinned, so a new release can't change what a PR is judged by; bumped by a PR
+biome = "2.6.3"
+"npm:typescript" = "7.0.2"
+
+[settings]
+experimental = true
+lockfile = true
+# The release-age gate. steward.toml [policy] min_release_age_days is the authority; `steward sc release-age <days>`
+# keeps this copy in step, and `steward sc audit` flags a disagreement.
+minimum_release_age = "3d"

@@ -1,0 +1,262 @@
+# Ruflo profile (D18, D21, D22): what onboarding gives a project whose registry entry lists "ruflo". Includes
+# RuVector, Ruflo's vector layer (D21), and AgentDB, Ruflo's memory backend (claudeFlow.memory.backend = hybrid).
+#
+# Stack-neutral: the same wiring on every stack; lib/projects.js facets decide where files go. Values come from the
+# qualified Ruflo install (3.59.8, dist/src/init/settings-generator.js and helper-commands.js, read 2026-10-25), the
+# 2026-10-15 migration's receipts, and ai-tooling/ai-tooling.toml. Not from any one project.
+#
+# Onboarding only adds: a key or file the project already has is kept as it is (a project's own choice wins), and
+# the keep-off list in ai-tooling.toml wins over everything here. Placeholders ({{…}}) are filled per project by
+# lib/profiles.js; see projects/profiles/README.md.
+tool = "ruflo"
+
+# Files copied from the qualified install, never from another project. A folder holding .LOCKED is owner-managed
+# (helpers refresh only through a reviewed migration), so onboarding adds missing names there and changes none.
+[[copy]]
+from = "{{RUFLO_CLI}}/.claude/helpers"
+to = ".claude/helpers"
+exclude = ["helpers.manifest.json"]   # the package's own integrity manifest for its helpers dir
+
+[[copy]]
+from = "{{RUFLO_CLI}}/.claude/skills"
+to = ".claude/skills"
+
+[[copy]]
+from = "{{RUFLO_CLI}}/.claude/commands"
+to = ".claude/commands"
+
+[[copy]]
+from = "{{RUFLO_CLI}}/.claude/agents"
+to = ".claude/agents"
+
+# Ruflo's documented opt-out from automatic helper refresh (`ruflo init upgrade` and its self-healing). Every
+# migrated helpers dir has it (57/57, team-rollout-checkpoint.md); it doesn't approve hooks or commands.
+[[write]]
+path = ".claude/helpers/.LOCKED"
+text = "Migration-managed helper refresh: preserve reconciled local customizations. Refresh only through reviewed, backed-up tooling migration. This marker is the vendor-supported auto-refresh opt-out; it does not approve hooks or disable command authorization.\n"
+
+# The SessionStart/SessionEnd memory hook loads @claude-flow/memory from distPath when it exists and silently
+# falls back otherwise; drift's "launcher targets" checks that it exists.
+[[write]]
+path = ".claude-flow/memory-package.json"
+json = { distPath = "{{RUFLO}}/node_modules/@claude-flow/memory/dist/index.js" }
+
+# .claude/settings.json
+[settings.env]
+CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"   # generator
+CLAUDE_FLOW_V3_ENABLED = "true"              # generator
+CLAUDE_FLOW_HOOKS_ENABLED = "true"           # generator
+CLAUDE_CODE_ENABLE_FUNCTION_HOOKS = "1"      # ruflo-mods needs it on older Claude Code (dist/src/mods/claude-installs.js)
+
+# Project-scoped plugins from the pinned marketplace; the user-level ones stay off (ruflo-project-scope-and-live-pilot.md).
+[settings.enabledPlugins]
+"ruflo-mods@ruflo" = true
+"ruflo-swarm@ruflo" = true
+"ruflo-console@ruflo" = true
+
+[settings.extraKnownMarketplaces.ruflo.source]
+source = "directory"
+path = "{{RUFLO_MARKETPLACE}}"
+
+[settings.statusLine]
+type = "command"
+command = '''sh -c 'D="${CLAUDE_PROJECT_DIR:-.}"; [ -f "$D/.claude/helpers/statusline.cjs" ] || D="${HOME}"; exec node "$D/.claude/helpers/statusline.cjs"''''
+
+# The generator's claudeFlow block, minus the keep-off list.
+[settings.claudeFlow]
+version = "3.0.0"
+enabled = true
+
+[settings.claudeFlow.platform]
+os = "{{OS}}"
+arch = "{{ARCH}}"
+shell = "{{SHELL}}"
+
+[settings.claudeFlow.modelPreferences]
+default = "claude-sonnet-5"                 # a project's own choice is kept
+routing = "claude-haiku-4-5-20251001"
+
+[settings.claudeFlow.agentTeams]
+enabled = true
+teammateMode = "auto"
+taskListEnabled = true
+mailboxEnabled = true
+
+[settings.claudeFlow.agentTeams.coordination]
+autoAssignOnIdle = false                    # keep-off (upstream #3031)
+trainPatternsOnComplete = true
+notifyLeadOnComplete = true
+sharedMemoryNamespace = "agent-teams"
+
+[settings.claudeFlow.agentTeams.hooks.teammateIdle]
+enabled = true
+autoAssign = false                          # keep-off (upstream #3031)
+checkTaskList = true
+
+[settings.claudeFlow.agentTeams.hooks.taskCompleted]
+enabled = true
+trainPatterns = true
+notifyLead = true
+
+[settings.claudeFlow.swarm]
+topology = "hierarchical-mesh"
+maxAgents = 15
+
+[settings.claudeFlow.memory]
+backend = "hybrid"                          # AgentDB + SQLite
+enableHNSW = true
+learningBridge = { enabled = true }
+memoryGraph = { enabled = true }
+agentScopes = { enabled = true }
+
+[settings.claudeFlow.neural]
+enabled = true
+
+[settings.claudeFlow.daemon]
+autoStart = false                           # keep-off: started by hand only (Ruflo #1427)
+workers = ["map", "audit", "optimize"]
+
+[settings.claudeFlow.daemon.schedules]
+audit = { interval = "4h", priority = "critical" }
+optimize = { interval = "2h", priority = "high" }
+
+[settings.claudeFlow.learning]
+enabled = true
+autoTrain = true
+patterns = ["coordination", "optimization", "prediction"]
+retention = { shortTerm = "24h", longTerm = "30d" }
+
+[settings.claudeFlow.adr]
+autoGenerate = true
+directory = "/docs/adr"
+template = "madr"
+
+[settings.claudeFlow.ddd]
+trackDomains = true
+validateBoundedContexts = true
+directory = "/docs/ddd"
+
+[settings.claudeFlow.security]
+autoScan = true
+scanOnEdit = true
+cveCheck = true
+threatModel = true
+
+# Hooks: the generator's set for 3.59.8, whose hook-handler.cjs handles pre-bash, post-edit, route,
+# session-restore, session-end, post-task (and pre-task, stats). Older projects also wire notify, status,
+# compact-manual, compact-auto, pre-edit and post-bash, which 3.59.8 doesn't handle; onboarding doesn't add them.
+# Timeouts are in seconds, Claude Code's unit. The generator writes 5000/10000/15000 (milliseconds-shaped, so
+# hours) except the memory hooks' AUTO_MEMORY_HOOK_TIMEOUT_S = 30; this profile uses seconds throughout (the same
+# bug the owner reported for AQE as #654, fixed there).
+[[hook]]
+event = "PreToolUse"
+matcher = "Bash"
+command = '''sh -c 'D="${CLAUDE_PROJECT_DIR:-.}"; [ -f "$D/.claude/helpers/hook-handler.cjs" ] || D="${HOME}"; exec node "$D/.claude/helpers/hook-handler.cjs" pre-bash''''
+timeout = 5
+
+[[hook]]
+event = "PostToolUse"
+matcher = "Write|Edit|MultiEdit"
+command = '''sh -c 'D="${CLAUDE_PROJECT_DIR:-.}"; [ -f "$D/.claude/helpers/hook-handler.cjs" ] || D="${HOME}"; exec node "$D/.claude/helpers/hook-handler.cjs" post-edit''''
+timeout = 10
+
+[[hook]]
+event = "UserPromptSubmit"
+command = '''sh -c 'D="${CLAUDE_PROJECT_DIR:-.}"; [ -f "$D/.claude/helpers/hook-handler.cjs" ] || D="${HOME}"; exec node "$D/.claude/helpers/hook-handler.cjs" route''''
+timeout = 10
+
+[[hook]]
+event = "SessionStart"
+command = '''sh -c 'D="${CLAUDE_PROJECT_DIR:-.}"; [ -f "$D/.claude/helpers/hook-handler.cjs" ] || D="${HOME}"; exec node "$D/.claude/helpers/hook-handler.cjs" session-restore''''
+timeout = 15
+
+[[hook]]
+event = "SessionStart"
+command = '''sh -c 'D="${CLAUDE_PROJECT_DIR:-.}"; [ -f "$D/.claude/helpers/auto-memory-hook.mjs" ] || D="${HOME}"; exec node "$D/.claude/helpers/auto-memory-hook.mjs" import''''
+timeout = 30
+
+[[hook]]
+event = "SessionEnd"
+command = '''sh -c 'D="${CLAUDE_PROJECT_DIR:-.}"; [ -f "$D/.claude/helpers/hook-handler.cjs" ] || D="${HOME}"; exec node "$D/.claude/helpers/hook-handler.cjs" session-end''''
+timeout = 10
+
+[[hook]]
+event = "Stop"
+command = '''sh -c 'D="${CLAUDE_PROJECT_DIR:-.}"; [ -f "$D/.claude/helpers/auto-memory-hook.mjs" ] || D="${HOME}"; exec node "$D/.claude/helpers/auto-memory-hook.mjs" sync''''
+timeout = 30
+
+[[hook]]
+event = "PreCompact"
+matcher = "manual"
+command = '''sh -c 'D="${CLAUDE_PROJECT_DIR:-.}"; [ -f "$D/.claude/helpers/hook-handler.cjs" ] || D="${HOME}"; exec node "$D/.claude/helpers/hook-handler.cjs" session-end''''
+timeout = 5
+
+[[hook]]
+event = "PreCompact"
+matcher = "auto"
+command = '''sh -c 'D="${CLAUDE_PROJECT_DIR:-.}"; [ -f "$D/.claude/helpers/hook-handler.cjs" ] || D="${HOME}"; exec node "$D/.claude/helpers/hook-handler.cjs" session-end''''
+timeout = 6
+
+[[hook]]
+event = "SubagentStop"
+command = '''sh -c 'D="${CLAUDE_PROJECT_DIR:-.}"; [ -f "$D/.claude/helpers/hook-handler.cjs" ] || D="${HOME}"; exec node "$D/.claude/helpers/hook-handler.cjs" post-task''''
+timeout = 5
+
+# .mcp.json: RuVector, pinned (no npx). Claude gets Ruflo's own MCP from the ruflo-* plugins (keep-off: no ruflo,
+# ruv-swarm or flow-nexus entries here).
+[mcp.ruvector]
+command = "{{NODE}}"
+args = ["{{RUVECTOR}}/bin/cli.js", "mcp", "start"]
+env = {}
+
+# .codex/config.toml
+[codex.plugins."ruflo-core@ruflo"]
+enabled = true
+
+# The shared launcher with the five guards the migration set (the migration's live pilot): stdio only, the pinned CLI,
+# never npx, helpers locked, no daemon.
+[codex.mcp_servers.ruflo]
+command = "{{NODE}}"
+args = ["{{RUFLO_CORE}}/scripts/mcp-launch.cjs"]
+
+[codex.mcp_servers.ruflo.env]
+CLAUDE_FLOW_MCP_TRANSPORT = "stdio"
+RUFLO_MCP_CLI_OVERRIDE = "{{RUFLO_CLI}}/bin/cli.js"
+RUFLO_MCP_SKIP_NPX = "1"
+RUFLO_HELPERS_LOCKED = "1"
+RUFLO_DAEMON_AUTOSTART = "0"
+
+[codex.mcp_servers.ruvector]
+command = "{{NODE}}"
+args = ["{{RUVECTOR}}/bin/cli.js", "mcp", "start"]
+env = {}
+
+# Codex tool approvals (D17): exactly the vetted sets ([approvals] in ai-tooling.toml names the receipts).
+# `--no-approvals` leaves them out.
+[codex.approve]
+ruflo = [
+  "agent_health", "agent_list", "agent_status", "agentdb_health", "agenticow_diff", "agenticow_lineage",
+  "agenticow_query", "agenticow_status", "aidefence_analyze", "aidefence_stats", "autopilot_history",
+  "autopilot_status", "claims_list", "coordination_metrics", "daa_learning_status", "daa_performance_metrics",
+  "embeddings_rabitq_search", "embeddings_rabitq_status", "embeddings_search", "embeddings_status",
+  "hive-mind_status", "hooks_intelligence_stats", "hooks_list", "hooks_metrics", "managed_agent_list",
+  "managed_agent_status", "mcp_status", "memory_bridge_status", "memory_list", "memory_retrieve", "memory_search",
+  "memory_stats", "memory_store", "metaharness_audit_list", "mission_get", "neural_status", "performance_metrics",
+  "performance_report", "policy_status", "progress_check", "progress_summary", "ruvllm_status", "session_list",
+  "swarm_health", "swarm_pheromone_status", "swarm_status", "system_health", "system_info", "system_metrics",
+  "system_status", "task_list", "task_status", "task_summary", "wasm_agent_list", "wasm_gallery_list",
+  "wasm_gallery_search", "workflow_list", "workflow_status", "x_federation_channel_list",
+]
+ruvector = [
+  "hooks_attention_info", "hooks_capabilities", "hooks_doctor", "hooks_export", "hooks_gnn_info", "hooks_recall",
+  "hooks_route", "hooks_route_enhanced", "hooks_stats", "hooks_suggest_context", "metaharness_flywheel_gate",
+  "metaharness_replay_verify", "metaharness_reward_hack_scan", "metaharness_route", "metaharness_status",
+  "metaharness_workspace_probe",
+]
+
+# Steps onboarding lists and never runs.
+[[manual]]
+text = "Open Claude Code and Codex in the project and approve its MCP servers and hooks when asked: project trust and hook trust are the owner's."
+
+[[manual]]
+text = "If a Codex Ruflo call reports policy-ledger-anchor-missing, the owner runs `ruflo policy verify --establish-anchor` interactively (master-completion-plan.md)."

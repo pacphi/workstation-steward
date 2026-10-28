@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Move a hybrid from npm -g to mise's npm: backend once its upstream blocker is fixed:
+# add the npm: tool, verify it resolves first on PATH and works, then remove the npm -g copy.
+# Remove the entry from hybrids.toml afterwards.
+# Usage: retire-hybrid <name> <mise-tool-spec>     e.g. retire-hybrid ruflo npm:ruflo@3.60.0
+# shellcheck source=lib/lib.sh
+source "$(dirname "$0")/../../lib/lib.sh"
+
+name="${1:?usage: retire-hybrid <name> <mise-spec>}"; spec="${2:?usage: retire-hybrid <name> <mise-spec>}"
+bin="$(hybrids_json | yq -r ".[] | select(.name == \"${name}\") | .verify_bin // .name")"
+args="$(hybrids_json | yq -r ".[] | select(.name == \"${name}\") | .verify")"
+[[ -n "${bin}" ]] || die "${name} is not in hybrids.toml"
+
+backup="$(backup_config)"; log "config backup: ${backup/#${HOME}/~}"
+run mise use -g "${spec}"
+run npm uninstall -g "${name}"
+run mise reshim
+[[ "${DRY_RUN}" == "1" ]] && { log "dry run: nothing changed"; exit 0; }
+refresh_env
+where="$(command -v "${bin}")"
+[[ "${where}" == "${STEWARD_PATHS_MISE_DATA_DIR}/installs/npm-"* ]] || die "${bin} resolves to ${where}, not the mise npm: install"
+# shellcheck disable=SC2086
+"${bin}" ${args} >/dev/null || die "${bin} ${args} failed — roll back with: steward sc rollback && steward sc install-hybrids"
+"${SC_ROOT}/bin/verify"
+run mise lock --global "${spec%@*}"
+log "retired ${name}. Now delete its [[hybrid]] block from hybrids.toml and commit."

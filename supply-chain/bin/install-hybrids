@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# (Re)install the npm -g hybrids from hybrids.toml into the active Node: each on its own, with its reviewed install
+# scripts, a Ruflo policy backup when Ruflo's version changes, and a receipt (install_hybrids in lib/lib.sh); then reshim.
+# Usage: install-hybrids      DRY_RUN=1 install-hybrids
+# shellcheck source=lib/lib.sh
+source "$(dirname "$0")/../../lib/lib.sh"
+
+install_hybrids
+run mise reshim
