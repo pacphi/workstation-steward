@@ -31,7 +31,7 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | AI tooling | [`ai-tooling/upstream-and-reconcile.md`](ai-tooling/upstream-and-reconcile.md) | 5, 2026-10-27 | The three layers (upstream, your machine, each project), from an upstream ask to a retired patch, what `projects reconcile` adds, challenges and mitigations (D42) |
 | Projects | [`../projects/README.md`](../projects/README.md) | — | What counts as a project, the registry fields, `scan` and `list` |
 | Projects | [`../projects/profiles/README.md`](../projects/profiles/README.md) | — | The per-tool onboarding profiles and how they're filled in |
-| Fleet | [`../fleet/README.md`](../fleet/README.md) | — | Renovate and PR consolidation; skill in `skills/pr-consolidation/` |
+| Fleet | [`../fleet/README.md`](../fleet/README.md) | — | `fleet sync` and `prune-merged` after merges; Renovate and PR consolidation, with links to the runbook and the skill's rules |
 
 ## Runbooks
 

@@ -110,12 +110,14 @@ Keep yours in a private Git repo: it names your projects.
 bin/steward.js          the steward client; lib/commands.js lists every command (D40, D41)
 lib/                    config.js (the instance and steward.toml), lib.sh (bash helpers), projects.js (discovery,
                         registry), onboard.js / offboard.js, doctor.js and prereqs.json, soak.js, review.js …
-supply-chain/           bin/ (audit, upgrade, mise-self, verify …), skill/, README.md
-ai-tooling/             bin/ (drift, repin, guard …), qualify/ (the AQE qualification kit), transports/, skill/
-projects/               bin/, profiles/ (per-tool onboarding profiles), skill/, README.md
-fleet/                  bin/ (sync, prune-merged), skill/ (PR consolidation), README.md
+supply-chain/           bin/ (audit, upgrade, mise-self, verify …), checks/, host-defaults.toml, README.md
+ai-tooling/             bin/ (drift, repin, guard …), qualify/ (the AQE qualification kit), transports/, README.md
+projects/               bin/, profiles/ (per-tool onboarding profiles), README.md
+fleet/                  bin/ (sync, prune-merged), README.md
+skills/                 the Claude Code skills, one per area plus pr-consolidation, each with its runbook (D48)
+.claude-plugin/         the plugin and marketplace manifests (D48)
 examples/               a complete example instance; the tests run against it
-docs/                   README.md (index), architecture.md, lifecycle.md, prereqs.md, <area>/runbook.md
+docs/                   README.md (index), architecture.md, lifecycle.md, prereqs.md, fleet/runbook.md, assets/
 tools/                  developer tasks: release-worktree, export, leak-check, public.txt
 test/                   node:test suites, run by `just test`
 justfile                developer tasks only: test, lint, docs, links, release-worktree, export, leak-check
