@@ -1,0 +1,242 @@
+{
+ "name": "steward-fleet",
+ "title": "workstation-steward: a checkout brought level after merges",
+ "desc": "An illustrative session, looping, in three scenes. After PR #12 and a Renovate PR merge on GitHub, steward fleet sync plans a fast-forward of two commits and drops one local edit that upstream already has. With --apply it asks, fast-forwards and writes a receipt; git log shows both merges. steward fleet prune-merged --apply finds the local branch fix/readme, whose PR merged and whose remote is gone, keeps main, asks, deletes it and records its tip in a receipt.",
+ "window": "steward — zsh",
+ "still": 0,
+ "scenes": [
+  [
+   {
+    "out": "# PR #12 and Renovate's #13 just merged on GitHub",
+    "color": "dim"
+   },
+   {
+    "cmd": "steward fleet sync ~/Development/web"
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[1/4] checking the checkout: main → origin/main (0s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[2/4] fetching: 0 ahead, 2 behind (1s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[3/4] comparing local edits with upstream: 1 overlapping path(s), 0 other local edit(s) stay (0s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "",
+    "quick": true
+   },
+   {
+    "out": "~/Development/web"
+   },
+   {
+    "out": "main: 2 commit(s) to fast-forward to origin/main"
+   },
+   {
+    "segs": [
+     [
+      "  drop    ",
+      "hold",
+      true
+     ],
+     [
+      "package.json  (same as upstream)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "",
+    "quick": true
+   },
+   {
+    "out": "plan only. Add --apply to do it (asks first, backs up what it drops).",
+    "color": "dim"
+   }
+  ],
+  [
+   {
+    "cmd": "steward fleet sync ~/Development/web --apply"
+   },
+   {
+    "out": "… the same plan …",
+    "color": "dim"
+   },
+   {
+    "ask": "Drop the edits above and fast-forward? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[4/4] applying: 34bae21 → 383e0d4 (0s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "receipt ~/.local/state/workstation-steward/backups/sync-web-20261028T194609/receipt.json."
+   },
+   {
+    "out": "To restore a dropped edit, copy it back from its backup. (total 1s)"
+   },
+   {
+    "out": "",
+    "quick": true
+   },
+   {
+    "cmd": "git -C ~/Development/web log --oneline -2"
+   },
+   {
+    "segs": [
+     [
+      "383e0d4 ",
+      "hold"
+     ],
+     [
+      "chore(deps): update web to 1.4.1 (#13)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "23e2b14 ",
+      "hold"
+     ],
+     [
+      "docs: how to run it (#12)",
+      "fg"
+     ]
+    ]
+   }
+  ],
+  [
+   {
+    "cmd": "steward fleet prune-merged ~/Development/web --apply"
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[1/3] reading the checkout: acme/web: 2 local branch(es) (0s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[2/3] checking each branch against GitHub: 1 to delete (1s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "",
+    "quick": true
+   },
+   {
+    "out": "~/Development/web"
+   },
+   {
+    "segs": [
+     [
+      "  delete ",
+      "skip",
+      true
+     ],
+     [
+      "fix/readme  (PR #12 merged, remote gone, nothing newer)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  keep   ",
+      "ok",
+      true
+     ],
+     [
+      "main  (current branch)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "",
+    "quick": true
+   },
+   {
+    "ask": "Delete 1 local branch(es)? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[3/3] deleting: 1 deleted (0s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "receipt ~/.local/state/workstation-steward/backups/prune-merged-web-20261028T194610/receipt.json."
+   },
+   {
+    "out": "To bring one back: git branch <name> <tip> (tips are in the receipt). (total 1s)"
+   }
+  ]
+ ]
+}

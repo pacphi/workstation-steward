@@ -2,6 +2,13 @@
 
 Every project under your `[projects] roots`, your decision for each, and which AI tools it uses.
 
+When a new repo lands: `steward projects scan` lists it, `steward projects decide` records your choice in the
+registry, and `steward projects onboard` shows every file it would create or edit for the tools you chose. With
+`--apply` it asks, backs up, writes a receipt with its rollback command, and lists the new files in
+`.git/info/exclude` so `git status` stays clean.
+
+![steward projects scan finds ~/Development/web; decide records it as onboarded with AQE and Brain; onboard plans nine files, then applies them after a yes with a receipt](../docs/assets/steward-projects.svg)
+
 ## What counts as a project
 
 The roots, excluded paths, depth, skip folders and markers come from `../steward.toml` `[projects]`, over the

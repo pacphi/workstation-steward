@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="468" viewBox="0 0 940 468" role="img" aria-labelledby="t d">
+<title id="t">workstation-steward: a new project, decided and onboarded</title>
+<desc id="d">An illustrative session, looping, in three scenes. steward projects scan finds a new Node and TypeScript repo, ~/Development/web; steward projects decide records it as onboarded with AQE and Brain after a yes. steward projects onboard shows the plan per file (nine files to create, each with the keys it adds), the .git/info/exclude lines that keep git status clean, the Node the hooks will run, and the one manual step. With --apply it asks, writes a receipt with its rollback command, and git status stays clean.</desc>
+<style>
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px}
+@keyframes k1{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}1.081%{clip-path:inset(0 91.30% 0 0);opacity:1;animation-timing-function:steps(21, end)}3.635%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}32.581%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}33.527%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l1{opacity:0;animation:k1 37s linear infinite}
+@keyframes k2{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}5.122%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}32.581%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}33.527%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l2{opacity:0;animation:k2 37s linear infinite}
+@keyframes k3{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}6.257%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}32.581%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}33.527%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l3{opacity:0;animation:k3 37s linear infinite}
+@keyframes k4{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}6.581%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}32.581%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}33.527%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l4{opacity:0;animation:k4 37s linear infinite}
+@keyframes k5{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}7.716%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}32.581%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}33.527%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l5{opacity:0;animation:k5 37s linear infinite}
+@keyframes k6{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}8.851%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}32.581%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}33.527%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l6{opacity:0;animation:k6 37s linear infinite}
+@keyframes k7{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}9.176%{clip-path:inset(0 97.47% 0 0);opacity:1;animation-timing-function:steps(77, end)}15.662%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}32.581%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}33.527%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l7{opacity:0;animation:k7 37s linear infinite}
+@keyframes k8{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}17.149%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}32.581%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}33.527%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l8{opacity:0;animation:k8 37s linear infinite}
+@keyframes k9{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}18.284%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}32.581%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}33.527%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l9{opacity:0;animation:k9 37s linear infinite}
+@keyframes k10{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}19.419%{clip-path:inset(0 2.13% 0 0);opacity:1;animation-timing-function:step-end}21.446%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}32.581%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}33.527%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l10{opacity:0;animation:k10 37s linear infinite}
+@keyframes k11{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}22.257%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}32.581%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}33.527%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l11{opacity:0;animation:k11 37s linear infinite}
+@keyframes k12{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}33.662%{clip-path:inset(0 95.45% 0 0);opacity:1;animation-timing-function:steps(42, end)}38.770%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l12{opacity:1;animation:k12 37s linear infinite}
+@keyframes k13{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}40.257%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l13{opacity:1;animation:k13 37s linear infinite}
+@keyframes k14{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}41.392%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l14{opacity:1;animation:k14 37s linear infinite}
+@keyframes k15{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}42.527%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l15{opacity:1;animation:k15 37s linear infinite}
+@keyframes k16{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}42.851%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l16{opacity:1;animation:k16 37s linear infinite}
+@keyframes k17{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}43.176%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l17{opacity:1;animation:k17 37s linear infinite}
+@keyframes k18{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}44.311%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l18{opacity:1;animation:k18 37s linear infinite}
+@keyframes k19{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}44.635%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l19{opacity:1;animation:k19 37s linear infinite}
+@keyframes k20{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}44.959%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l20{opacity:1;animation:k20 37s linear infinite}
+@keyframes k21{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}46.095%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l21{opacity:1;animation:k21 37s linear infinite}
+@keyframes k22{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}46.419%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l22{opacity:1;animation:k22 37s linear infinite}
+@keyframes k23{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}47.554%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l23{opacity:1;animation:k23 37s linear infinite}
+@keyframes k24{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}48.689%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l24{opacity:1;animation:k24 37s linear infinite}
+@keyframes k25{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}49.014%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l25{opacity:1;animation:k25 37s linear infinite}
+@keyframes k26{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}50.149%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l26{opacity:1;animation:k26 37s linear infinite}
+@keyframes k27{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}51.284%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l27{opacity:1;animation:k27 37s linear infinite}
+@keyframes k28{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}52.419%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l28{opacity:1;animation:k28 37s linear infinite}
+@keyframes k29{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}53.554%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l29{opacity:1;animation:k29 37s linear infinite}
+@keyframes k30{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}54.689%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}65.014%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.959%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l30{opacity:1;animation:k30 37s linear infinite}
+@keyframes k31{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}66.095%{clip-path:inset(0 96.15% 0 0);opacity:1;animation-timing-function:steps(50, end)}72.176%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.919%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.865%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l31{opacity:0;animation:k31 37s linear infinite}
+@keyframes k32{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}73.662%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.919%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.865%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l32{opacity:0;animation:k32 37s linear infinite}
+@keyframes k33{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}74.797%{clip-path:inset(0 2.13% 0 0);opacity:1;animation-timing-function:step-end}76.824%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.919%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.865%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l33{opacity:0;animation:k33 37s linear infinite}
+@keyframes k34{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}77.635%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.919%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.865%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l34{opacity:0;animation:k34 37s linear infinite}
+@keyframes k35{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}78.770%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.919%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.865%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l35{opacity:0;animation:k35 37s linear infinite}
+@keyframes k36{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}79.905%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.919%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.865%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l36{opacity:0;animation:k36 37s linear infinite}
+@keyframes k37{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}81.041%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.919%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.865%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l37{opacity:0;animation:k37 37s linear infinite}
+@keyframes k38{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}81.365%{clip-path:inset(0 95.12% 0 0);opacity:1;animation-timing-function:steps(39, end)}86.108%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.919%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.865%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l38{opacity:0;animation:k38 37s linear infinite}
+@keyframes k39{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}87.595%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.919%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.865%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l39{opacity:0;animation:k39 37s linear infinite}
+@media (prefers-reduced-motion:reduce){text{animation:none!important}}
+</style>
+<rect x="0.5" y="0.5" width="939" height="467" rx="10" fill="#0d1117" stroke="#30363d"/>
+<path d="M0.5 10.5a10 10 0 0 1 10-10h919a10 10 0 0 1 10 10V36H0.5Z" fill="#161b22"/>
+<line x1="0.5" y1="36" x2="939.5" y2="36" stroke="#30363d"/>
+<circle cx="20" cy="18" r="6" fill="#ff5f57"/><circle cx="40" cy="18" r="6" fill="#febc2e"/><circle cx="60" cy="18" r="6" fill="#28c840"/>
+<text x="470" y="22" text-anchor="middle" fill="#8b949e" style="font-size:12px">steward — zsh</text>
+<text class="l1" x="24" y="66" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward projects scan</tspan></text>
+<text class="l2" x="24" y="86" xml:space="preserve"><tspan fill="#c9d1d9">registry: 12 project(s); discovered: 13</tspan></text>
+<text class="l3" x="24" y="106" xml:space="preserve"><tspan fill="#c9d1d9"></tspan></text>
+<text class="l4" x="24" y="126" xml:space="preserve"><tspan fill="#c9d1d9">new (1) — needs a decision (then steward projects onboard &lt;path&gt;):</tspan></text>
+<text class="l5" x="24" y="146" xml:space="preserve"><tspan fill="#c9d1d9">  git        ~/Development/web  stack: node/ts</tspan></text>
+<text class="l6" x="24" y="166" xml:space="preserve"><tspan fill="#c9d1d9"></tspan></text>
+<text class="l7" x="24" y="186" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward projects decide ~/Development/web --decision onboarded --ai aqe,brain</tspan></text>
+<text class="l8" x="24" y="206" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">1 registry change(s)</tspan></text>
+<text class="l9" x="24" y="226" xml:space="preserve"><tspan fill="#c9d1d9">  ~/Development/web: new → onboarded [aqe, brain]</tspan></text>
+<text class="l10" x="24" y="246" xml:space="preserve"><tspan fill="#c9d1d9">Record these in projects/registry.toml? [y/N] </tspan><tspan fill="#79c0ff" font-weight="600">y</tspan></text>
+<text class="l11" x="24" y="266" xml:space="preserve"><tspan fill="#c9d1d9">recorded 1; registry has 13 project(s). Commit projects/registry.toml through a PR.</tspan></text>
+<text class="l12" x="24" y="66" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward projects onboard ~/Development/web</tspan></text>
+<text class="l13" x="24" y="86" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">onboard plan: ~/Development/web (aqe, brain)</tspan></text>
+<text class="l14" x="24" y="106" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">  create </tspan><tspan fill="#c9d1d9">.claude/settings.json                  absent</tspan></text>
+<text class="l15" x="24" y="126" xml:space="preserve"><tspan fill="#8b949e">           + hook aqe PreToolUse ^(Write|Edit|MultiEdit)$ aqe-hook.cjs guard</tspan></text>
+<text class="l16" x="24" y="146" xml:space="preserve"><tspan fill="#8b949e">           … 13 more</tspan></text>
+<text class="l17" x="24" y="166" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">  create </tspan><tspan fill="#c9d1d9">.mcp.json                              absent-ignored</tspan></text>
+<text class="l18" x="24" y="186" xml:space="preserve"><tspan fill="#8b949e">           + mcpServers.agentic-qe.command</tspan></text>
+<text class="l19" x="24" y="206" xml:space="preserve"><tspan fill="#8b949e">           … 5 more</tspan></text>
+<text class="l20" x="24" y="226" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">  create </tspan><tspan fill="#c9d1d9">.claude/skills (aqe)                   absent</tspan></text>
+<text class="l21" x="24" y="246" xml:space="preserve"><tspan fill="#8b949e">           + 125 name(s)</tspan></text>
+<text class="l22" x="24" y="266" xml:space="preserve"><tspan fill="#8b949e">  … 6 more files</tspan></text>
+<text class="l23" x="24" y="286" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">.git/info/exclude (files onboarding creates, so `git status` stays clean)</tspan></text>
+<text class="l24" x="24" y="306" xml:space="preserve"><tspan fill="#c9d1d9">  + /.claude/settings.json  + /.claude/hooks/aqe-hook.cjs  + /.claude/skills  …</tspan></text>
+<text class="l25" x="24" y="326" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">hooks run a bare `node`</tspan></text>
+<text class="l26" x="24" y="346" xml:space="preserve"><tspan fill="#c9d1d9">  mise resolves Node 26.12.1 here; aqe needs &gt;=22.13.0</tspan></text>
+<text class="l27" x="24" y="366" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">manual steps (listed, never run)</tspan></text>
+<text class="l28" x="24" y="386" xml:space="preserve"><tspan fill="#c9d1d9">  aqe: Open Claude Code in the project and approve the agentic-qe server and the AQE hooks when asked.</tspan></text>
+<text class="l29" x="24" y="406" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">0 edit, 9 create, 0 PR (not applied: rollout), 0 manual</tspan></text>
+<text class="l30" x="24" y="426" xml:space="preserve"><tspan fill="#8b949e">  plan only; `steward projects onboard &lt;path&gt; --apply` applies it (asks first)</tspan></text>
+<text class="l31" x="24" y="66" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward projects onboard ~/Development/web --apply</tspan></text>
+<text class="l32" x="24" y="86" xml:space="preserve"><tspan fill="#8b949e">  … the same plan …</tspan></text>
+<text class="l33" x="24" y="106" xml:space="preserve"><tspan fill="#c9d1d9">Apply 9 change(s) to ~/Development/web? [y/N] </tspan><tspan fill="#79c0ff" font-weight="600">y</tspan></text>
+<text class="l34" x="24" y="126" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">applied; receipt ~/.local/state/workstation-steward/backups/onboard-web-20261028T194417/receipt.json</tspan></text>
+<text class="l35" x="24" y="146" xml:space="preserve"><tspan fill="#c9d1d9">  rollback: steward projects onboard --rollback ~/.local/state/…/onboard-web-20261028T194417/receipt.json</tspan></text>
+<text class="l36" x="24" y="166" xml:space="preserve"><tspan fill="#c9d1d9">  check: the plan now has nothing left to apply</tspan></text>
+<text class="l37" x="24" y="186" xml:space="preserve"><tspan fill="#c9d1d9"></tspan></text>
+<text class="l38" x="24" y="206" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">git -C ~/Development/web status --short</tspan></text>
+<text class="l39" x="24" y="226" xml:space="preserve"><tspan fill="#8b949e"># nothing: the new files are listed in .git/info/exclude</tspan></text>
+</svg>

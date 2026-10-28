@@ -1,0 +1,363 @@
+{
+ "name": "steward-supply-chain",
+ "title": "workstation-steward: a host audit, then tidying up after the soak",
+ "desc": "An illustrative session, looping, in three scenes. steward sc audit checks the mise toolchain, the release-age gate, Homebrew, apps, trust stores, Docker and indicators of compromise (trimmed to one line each), and ends with three actions: a gated mise release, a browser to update now, and a container on a floating tag. Three days after an upgrade, the steward banner and steward sc soak say the soak is over. steward sc prune lists the old versions no config needs, previews the removal, asks, and removes them.",
+ "window": "steward — zsh",
+ "still": 0,
+ "scenes": [
+  [
+   {
+    "cmd": "steward sc audit"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "mise toolchain (bin/status)",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ACTION ",
+      "hold",
+      true
+     ],
+     [
+      "mise: 2026.10.18 -> 2026.10.19 (3d old): steward sc upgrade-tool mise",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "Release-age gate (steward.toml is the authority; mise and Renovate must agree)",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ok     ",
+      "ok",
+      true
+     ],
+     [
+      "mise/config.toml minimum_release_age = 3d",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ok     ",
+      "ok",
+      true
+     ],
+     [
+      "renovate.json minimumReleaseAge = 3 days",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "Homebrew formulae",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  held   ",
+      "hold",
+      true
+     ],
+     [
+      "python@3.15 3.15.1 -> 3.15.2 (2d old; eligible in 1d)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "Apps (bundle version vs Homebrew cask catalog; Electron vs its 3 supported majors)",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ACTION ",
+      "hold",
+      true
+     ],
+     [
+      "app: Google Chrome 155.0.8059.86 -> 156.0.8078.74 (0d old; always_current: update now)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "Trust stores",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ok     ",
+      "ok",
+      true
+     ],
+     [
+      "emSign ECC Root CA - G3 (default): in macOS system roots, admin trust setting = Deny",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "Docker",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ACTION ",
+      "hold",
+      true
+     ],
+     [
+      "docker: container ollama runs floating ollama/ollama:latest; pin tag@digest",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "Indicators of compromise (ioc: the engine's defaults and yours; read-only)",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  clean  ",
+      "ok",
+      true
+     ],
+     [
+      "LiteLLM 1.107.0 PyPI/Docker backdoor (2026-10-21) (default)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "Summary: 3 action(s), 0 alert(s)",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "out": "  Next: steward sc plan (Homebrew + mise); apps, App Store, macOS and trust are manual."
+   }
+  ],
+  [
+   {
+    "out": "# three days after an upgrade",
+    "color": "dim"
+   },
+   {
+    "cmd": "steward"
+   },
+   {
+    "segs": [
+     [
+      "soak over",
+      "ok",
+      true
+     ],
+     [
+      " since 2026-10-31 09:12: when ready, DRY_RUN=1 steward sc prune, then steward sc prune",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "cmd": "steward sc soak"
+   },
+   {
+    "out": "soak_days = 3 (steward.toml [policy])"
+   },
+   {
+    "out": "not running: the last soak ended 2026-10-31 09:12"
+   },
+   {
+    "out": "last prune: none recorded (older than the newest change: prune when ready)"
+   },
+   {
+    "out": "newest changes:"
+   },
+   {
+    "out": "  2026-10-28 09:12  upgrade    gh@2.103.2  ~/.local/state/workstation-steward/changes/…-upgrade.json",
+    "color": "dim"
+   }
+  ],
+  [
+   {
+    "cmd": "steward sc prune"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "prunable (mise ls --prunable)",
+      "fg",
+      false
+     ]
+    ]
+   },
+   {
+    "out": "  gh                      2.103.1",
+    "quick": true
+   },
+   {
+    "out": "  uv                      0.13.4",
+    "quick": true
+   },
+   {
+    "out": "   $ mise prune -n",
+    "color": "dim"
+   },
+   {
+    "out": "mise gh@2.103.1 is prunable: gh is required at 2.103.2 by ~/.config/mise/config.toml, ~/.config/mise/mise.lock",
+    "color": "dim"
+   },
+   {
+    "out": "mise gh@2.103.1 [dryrun]  remove ~/.local/share/mise/installs/gh/2.103.1, ~/.cache/mise/gh/2.103.1",
+    "color": "dim"
+   },
+   {
+    "out": "mise uv@0.13.4 is prunable: uv is required at 0.13.5 by ~/.config/mise/config.toml, ~/.config/mise/mise.lock",
+    "color": "dim"
+   },
+   {
+    "out": "mise uv@0.13.4 [dryrun]   remove ~/.local/share/mise/installs/uv/0.13.4, ~/.cache/mise/uv/0.13.4",
+    "color": "dim"
+   },
+   {
+    "ask": "Delete the versions above? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "out": "   $ mise prune -y",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "mise gh@2.103.1 ",
+      "dim"
+     ],
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "done",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "mise uv@0.13.4  ",
+      "dim"
+     ],
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "done",
+      "fg"
+     ]
+    ]
+   }
+  ]
+ ]
+}

@@ -9,6 +9,13 @@ Dashboard (security PRs still open at once).
 Not every project uses these tools, and none has to. Each project's choice lives in
 `projects/registry.toml` in your instance ([an example](../examples/projects/registry.toml)), and drift checks only what a project chose.
 
+A normal day here: `steward ai drift` compares the machine and every project with your policy and changes nothing.
+When a Node patch leaves launcher configs pointing at the old Node's folder, `steward ai repin` shows the files it
+would move to a path that survives upgrades, then `--apply` asks, backs each file up and writes a receipt for the
+rollback.
+
+![steward ai drift finds three launcher configs pinned to Node 26.4.0; steward ai repin plans the change, applies it after a yes with a receipt, and drift comes back clean](../docs/assets/steward-ai-tooling.svg)
+
 ## Policy
 
 The area can be switched off with `ai_tooling = false` under `[profiles]` in `../steward.toml`.

@@ -1,0 +1,317 @@
+{
+ "name": "steward-ai-tooling",
+ "title": "workstation-steward: AI tooling drift, and a repin with its undo",
+ "desc": "An illustrative session, looping, in three scenes. steward ai drift checks the AQE runtime, the hybrids, the guards and every project, and finds three launcher configs still pointing at Node 26.4.0, which is no longer the active Node. steward ai repin shows its rule and a plan of three untracked files. steward ai repin --apply asks, changes them with a backup and a receipt, and prints the rollback command; steward ai drift then finds no pinned launchers.",
+ "window": "steward — zsh",
+ "still": 0,
+ "scenes": [
+  [
+   {
+    "cmd": "steward ai drift --offline"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "aqe runtime",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ok    ",
+      "ok",
+      true
+     ],
+     [
+      "current → 3.15.12",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "hybrids",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ok    ",
+      "ok",
+      true
+     ],
+     [
+      "ruflo: receipt matches supply-chain/hybrids.toml and the active Node",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "guards",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ok    ",
+      "ok",
+      true
+     ],
+     [
+      "CLAUDE_FLOW_AUTO_UPDATE=false in ~/.claude/settings.json: yes",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ok    ",
+      "ok",
+      true
+     ],
+     [
+      "npx ask rules in ~/.claude/settings.json: 10 present",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "pinned launchers",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  DRIFT ",
+      "#f85149",
+      true
+     ],
+     [
+      "3 file(s), 4 reference(s) → ~/.local/share/mise/installs/node/26.4.0 (not the active Node 26.12.1)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "Summary: 1 drift, 0 warning(s) across 12 project(s) (9 onboarded, 3 ignored). Nothing was changed.",
+      "fg",
+      true
+     ]
+    ]
+   }
+  ],
+  [
+   {
+    "cmd": "steward ai repin"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "repin rules (ai-tooling/ai-tooling.toml)",
+      "fg",
+      false
+     ]
+    ]
+   },
+   {
+    "out": "  [1] ~/.local/share/mise/installs/node/26.4.0/bin/node"
+   },
+   {
+    "out": "      → ~/.local/share/mise/installs/node/26/bin/node  (pre-patch Node 26.4.0)"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "plan: 3 file(s)",
+      "fg",
+      false
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  apply ",
+      "ok",
+      true
+     ],
+     [
+      "~/Development/web/.mcp.json  [1]×2  (untracked)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  apply ",
+      "ok",
+      true
+     ],
+     [
+      "~/Development/api/.mcp.json  [1]×1  (untracked)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  apply ",
+      "ok",
+      true
+     ],
+     [
+      "~/Development/api/.codex/config.toml  [1]×1  (untracked)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "3 file(s) to change (4 reference(s)); 0 skipped",
+      "fg",
+      false
+     ]
+    ]
+   },
+   {
+    "out": "  plan only; run `steward ai repin --apply` to apply (asks first)",
+    "color": "dim"
+   }
+  ],
+  [
+   {
+    "cmd": "steward ai repin --apply"
+   },
+   {
+    "out": "  … the same rules and plan …",
+    "color": "dim"
+   },
+   {
+    "ask": "Change 3 file(s) as above? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "changed 3 file(s); receipt ~/.local/state/workstation-steward/backups/repin-20261028T171200/receipt.json",
+      "fg",
+      false
+     ]
+    ]
+   },
+   {
+    "out": "  rollback: steward ai repin --rollback ~/.local/state/…/repin-20261028T171200/receipt.json"
+   },
+   {
+    "out": "  Running Codex/Claude sessions keep their servers until restarted; new sessions use the new paths.",
+    "color": "dim"
+   },
+   {
+    "out": "",
+    "quick": true
+   },
+   {
+    "cmd": "steward ai drift --offline"
+   },
+   {
+    "out": "  …",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "pinned launchers",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ok    ",
+      "ok",
+      true
+     ],
+     [
+      "no launcher config, AQE hook shim or AQE runtime script points into a version-specific install",
+      "fg"
+     ]
+    ]
+   }
+  ]
+ ]
+}

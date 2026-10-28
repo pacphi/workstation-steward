@@ -1,0 +1,259 @@
+{
+ "name": "steward-projects",
+ "title": "workstation-steward: a new project, decided and onboarded",
+ "desc": "An illustrative session, looping, in three scenes. steward projects scan finds a new Node and TypeScript repo, ~/Development/web; steward projects decide records it as onboarded with AQE and Brain after a yes. steward projects onboard shows the plan per file (nine files to create, each with the keys it adds), the .git/info/exclude lines that keep git status clean, the Node the hooks will run, and the one manual step. With --apply it asks, writes a receipt with its rollback command, and git status stays clean.",
+ "window": "steward — zsh",
+ "still": 1,
+ "scenes": [
+  [
+   {
+    "cmd": "steward projects scan"
+   },
+   {
+    "out": "registry: 12 project(s); discovered: 13"
+   },
+   {
+    "out": "",
+    "quick": true
+   },
+   {
+    "out": "new (1) — needs a decision (then steward projects onboard <path>):"
+   },
+   {
+    "out": "  git        ~/Development/web  stack: node/ts"
+   },
+   {
+    "out": "",
+    "quick": true
+   },
+   {
+    "cmd": "steward projects decide ~/Development/web --decision onboarded --ai aqe,brain"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "1 registry change(s)",
+      "fg",
+      false
+     ]
+    ]
+   },
+   {
+    "out": "  ~/Development/web: new → onboarded [aqe, brain]"
+   },
+   {
+    "ask": "Record these in projects/registry.toml? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "out": "recorded 1; registry has 13 project(s). Commit projects/registry.toml through a PR."
+   }
+  ],
+  [
+   {
+    "cmd": "steward projects onboard ~/Development/web"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "onboard plan: ~/Development/web (aqe, brain)",
+      "fg",
+      false
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  create ",
+      "ok",
+      true
+     ],
+     [
+      ".claude/settings.json                  absent",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "           + hook aqe PreToolUse ^(Write|Edit|MultiEdit)$ aqe-hook.cjs guard",
+    "color": "dim",
+    "quick": true
+   },
+   {
+    "out": "           … 13 more",
+    "color": "dim",
+    "quick": true
+   },
+   {
+    "segs": [
+     [
+      "  create ",
+      "ok",
+      true
+     ],
+     [
+      ".mcp.json                              absent-ignored",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "           + mcpServers.agentic-qe.command",
+    "color": "dim",
+    "quick": true
+   },
+   {
+    "out": "           … 5 more",
+    "color": "dim",
+    "quick": true
+   },
+   {
+    "segs": [
+     [
+      "  create ",
+      "ok",
+      true
+     ],
+     [
+      ".claude/skills (aqe)                   absent",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "           + 125 name(s)",
+    "color": "dim",
+    "quick": true
+   },
+   {
+    "out": "  … 6 more files",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      ".git/info/exclude (files onboarding creates, so `git status` stays clean)",
+      "fg",
+      false
+     ]
+    ]
+   },
+   {
+    "out": "  + /.claude/settings.json  + /.claude/hooks/aqe-hook.cjs  + /.claude/skills  …",
+    "quick": true
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "hooks run a bare `node`",
+      "fg",
+      false
+     ]
+    ]
+   },
+   {
+    "out": "  mise resolves Node 26.12.1 here; aqe needs >=22.13.0"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "manual steps (listed, never run)",
+      "fg",
+      false
+     ]
+    ]
+   },
+   {
+    "out": "  aqe: Open Claude Code in the project and approve the agentic-qe server and the AQE hooks when asked."
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "0 edit, 9 create, 0 PR (not applied: rollout), 0 manual",
+      "fg",
+      false
+     ]
+    ]
+   },
+   {
+    "out": "  plan only; `steward projects onboard <path> --apply` applies it (asks first)",
+    "color": "dim"
+   }
+  ],
+  [
+   {
+    "cmd": "steward projects onboard ~/Development/web --apply"
+   },
+   {
+    "out": "  … the same plan …",
+    "color": "dim"
+   },
+   {
+    "ask": "Apply 9 change(s) to ~/Development/web? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "applied; receipt ~/.local/state/workstation-steward/backups/onboard-web-20261028T194417/receipt.json",
+      "fg",
+      false
+     ]
+    ]
+   },
+   {
+    "out": "  rollback: steward projects onboard --rollback ~/.local/state/…/onboard-web-20261028T194417/receipt.json"
+   },
+   {
+    "out": "  check: the plan now has nothing left to apply"
+   },
+   {
+    "out": "",
+    "quick": true
+   },
+   {
+    "cmd": "git -C ~/Development/web status --short"
+   },
+   {
+    "out": "# nothing: the new files are listed in .git/info/exclude",
+    "color": "dim"
+   }
+  ]
+ ]
+}

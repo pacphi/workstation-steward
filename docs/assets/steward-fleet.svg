@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="328" viewBox="0 0 940 328" role="img" aria-labelledby="t d">
+<title id="t">workstation-steward: a checkout brought level after merges</title>
+<desc id="d">An illustrative session, looping, in three scenes. After PR #12 and a Renovate PR merge on GitHub, steward fleet sync plans a fast-forward of two commits and drops one local edit that upstream already has. With --apply it asks, fast-forwards and writes a receipt; git log shows both merges. steward fleet prune-merged --apply finds the local branch fix/readme, whose PR merged and whose remote is gone, keeps main, asks, deletes it and records its tip in a receipt.</desc>
+<style>
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px}
+@keyframes k1{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}1.173%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.065%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.091%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l1{opacity:1;animation:k1 34.1s linear infinite}
+@keyframes k2{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}2.405%{clip-path:inset(0 94.74% 0 0);opacity:1;animation-timing-function:steps(36, end)}7.155%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.065%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.091%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l2{opacity:1;animation:k2 34.1s linear infinite}
+@keyframes k3{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}8.768%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.065%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.091%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l3{opacity:1;animation:k3 34.1s linear infinite}
+@keyframes k4{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}10.000%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.065%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.091%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l4{opacity:1;animation:k4 34.1s linear infinite}
+@keyframes k5{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}11.232%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.065%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.091%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l5{opacity:1;animation:k5 34.1s linear infinite}
+@keyframes k6{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}12.463%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.065%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.091%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l6{opacity:1;animation:k6 34.1s linear infinite}
+@keyframes k7{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}12.815%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.065%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.091%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l7{opacity:1;animation:k7 34.1s linear infinite}
+@keyframes k8{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}14.047%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.065%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.091%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l8{opacity:1;animation:k8 34.1s linear infinite}
+@keyframes k9{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}15.279%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.065%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.091%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l9{opacity:1;animation:k9 34.1s linear infinite}
+@keyframes k10{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}16.510%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.065%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.091%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l10{opacity:1;animation:k10 34.1s linear infinite}
+@keyframes k11{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}16.862%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.065%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.091%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l11{opacity:1;animation:k11 34.1s linear infinite}
+@keyframes k12{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}29.238%{clip-path:inset(0 95.65% 0 0);opacity:1;animation-timing-function:steps(44, end)}35.044%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}64.472%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.499%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l12{opacity:0;animation:k12 34.1s linear infinite}
+@keyframes k13{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}36.657%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}64.472%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.499%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l13{opacity:0;animation:k13 34.1s linear infinite}
+@keyframes k14{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}37.889%{clip-path:inset(0 2.17% 0 0);opacity:1;animation-timing-function:step-end}40.088%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}64.472%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.499%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l14{opacity:0;animation:k14 34.1s linear infinite}
+@keyframes k15{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}40.968%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}64.472%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.499%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l15{opacity:0;animation:k15 34.1s linear infinite}
+@keyframes k16{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}42.199%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}64.472%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.499%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l16{opacity:0;animation:k16 34.1s linear infinite}
+@keyframes k17{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}43.431%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}64.472%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.499%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l17{opacity:0;animation:k17 34.1s linear infinite}
+@keyframes k18{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}44.663%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}64.472%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.499%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l18{opacity:0;animation:k18 34.1s linear infinite}
+@keyframes k19{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}45.015%{clip-path:inset(0 95.35% 0 0);opacity:1;animation-timing-function:steps(41, end)}50.425%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}64.472%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.499%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l19{opacity:0;animation:k19 34.1s linear infinite}
+@keyframes k20{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}52.038%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}64.472%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.499%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l20{opacity:0;animation:k20 34.1s linear infinite}
+@keyframes k21{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}53.270%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}64.472%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}65.499%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l21{opacity:0;animation:k21 34.1s linear infinite}
+@keyframes k22{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}65.645%{clip-path:inset(0 96.30% 0 0);opacity:1;animation-timing-function:steps(52, end)}72.507%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.727%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.754%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l22{opacity:0;animation:k22 34.1s linear infinite}
+@keyframes k23{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}74.120%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.727%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.754%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l23{opacity:0;animation:k23 34.1s linear infinite}
+@keyframes k24{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}75.352%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.727%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.754%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l24{opacity:0;animation:k24 34.1s linear infinite}
+@keyframes k25{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}76.584%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.727%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.754%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l25{opacity:0;animation:k25 34.1s linear infinite}
+@keyframes k26{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}76.935%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.727%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.754%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l26{opacity:0;animation:k26 34.1s linear infinite}
+@keyframes k27{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}78.167%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.727%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.754%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l27{opacity:0;animation:k27 34.1s linear infinite}
+@keyframes k28{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}79.399%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.727%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.754%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l28{opacity:0;animation:k28 34.1s linear infinite}
+@keyframes k29{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}80.630%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.727%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.754%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l29{opacity:0;animation:k29 34.1s linear infinite}
+@keyframes k30{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}80.982%{clip-path:inset(0 2.94% 0 0);opacity:1;animation-timing-function:step-end}83.182%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.727%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.754%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l30{opacity:0;animation:k30 34.1s linear infinite}
+@keyframes k31{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}84.062%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.727%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.754%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l31{opacity:0;animation:k31 34.1s linear infinite}
+@keyframes k32{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}85.293%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.727%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.754%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l32{opacity:0;animation:k32 34.1s linear infinite}
+@keyframes k33{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}86.525%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}97.727%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.754%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l33{opacity:0;animation:k33 34.1s linear infinite}
+@media (prefers-reduced-motion:reduce){text{animation:none!important}}
+</style>
+<rect x="0.5" y="0.5" width="939" height="327" rx="10" fill="#0d1117" stroke="#30363d"/>
+<path d="M0.5 10.5a10 10 0 0 1 10-10h919a10 10 0 0 1 10 10V36H0.5Z" fill="#161b22"/>
+<line x1="0.5" y1="36" x2="939.5" y2="36" stroke="#30363d"/>
+<circle cx="20" cy="18" r="6" fill="#ff5f57"/><circle cx="40" cy="18" r="6" fill="#febc2e"/><circle cx="60" cy="18" r="6" fill="#28c840"/>
+<text x="470" y="22" text-anchor="middle" fill="#8b949e" style="font-size:12px">steward — zsh</text>
+<text class="l1" x="24" y="66" xml:space="preserve"><tspan fill="#8b949e"># PR #12 and Renovate's #13 just merged on GitHub</tspan></text>
+<text class="l2" x="24" y="86" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward fleet sync ~/Development/web</tspan></text>
+<text class="l3" x="24" y="106" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">✓ </tspan><tspan fill="#c9d1d9">[1/4] checking the checkout: main → origin/main (0s)</tspan></text>
+<text class="l4" x="24" y="126" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">✓ </tspan><tspan fill="#c9d1d9">[2/4] fetching: 0 ahead, 2 behind (1s)</tspan></text>
+<text class="l5" x="24" y="146" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">✓ </tspan><tspan fill="#c9d1d9">[3/4] comparing local edits with upstream: 1 overlapping path(s), 0 other local edit(s) stay (0s)</tspan></text>
+<text class="l6" x="24" y="166" xml:space="preserve"><tspan fill="#c9d1d9"></tspan></text>
+<text class="l7" x="24" y="186" xml:space="preserve"><tspan fill="#c9d1d9">~/Development/web</tspan></text>
+<text class="l8" x="24" y="206" xml:space="preserve"><tspan fill="#c9d1d9">main: 2 commit(s) to fast-forward to origin/main</tspan></text>
+<text class="l9" x="24" y="226" xml:space="preserve"><tspan fill="#d29922" font-weight="600">  drop    </tspan><tspan fill="#c9d1d9">package.json  (same as upstream)</tspan></text>
+<text class="l10" x="24" y="246" xml:space="preserve"><tspan fill="#c9d1d9"></tspan></text>
+<text class="l11" x="24" y="266" xml:space="preserve"><tspan fill="#8b949e">plan only. Add --apply to do it (asks first, backs up what it drops).</tspan></text>
+<text class="l12" x="24" y="66" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward fleet sync ~/Development/web --apply</tspan></text>
+<text class="l13" x="24" y="86" xml:space="preserve"><tspan fill="#8b949e">… the same plan …</tspan></text>
+<text class="l14" x="24" y="106" xml:space="preserve"><tspan fill="#c9d1d9">Drop the edits above and fast-forward? [y/N] </tspan><tspan fill="#79c0ff" font-weight="600">y</tspan></text>
+<text class="l15" x="24" y="126" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">✓ </tspan><tspan fill="#c9d1d9">[4/4] applying: 34bae21 → 383e0d4 (0s)</tspan></text>
+<text class="l16" x="24" y="146" xml:space="preserve"><tspan fill="#c9d1d9">receipt ~/.local/state/workstation-steward/backups/sync-web-20261028T194609/receipt.json.</tspan></text>
+<text class="l17" x="24" y="166" xml:space="preserve"><tspan fill="#c9d1d9">To restore a dropped edit, copy it back from its backup. (total 1s)</tspan></text>
+<text class="l18" x="24" y="186" xml:space="preserve"><tspan fill="#c9d1d9"></tspan></text>
+<text class="l19" x="24" y="206" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">git -C ~/Development/web log --oneline -2</tspan></text>
+<text class="l20" x="24" y="226" xml:space="preserve"><tspan fill="#d29922">383e0d4 </tspan><tspan fill="#c9d1d9">chore(deps): update web to 1.4.1 (#13)</tspan></text>
+<text class="l21" x="24" y="246" xml:space="preserve"><tspan fill="#d29922">23e2b14 </tspan><tspan fill="#c9d1d9">docs: how to run it (#12)</tspan></text>
+<text class="l22" x="24" y="66" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward fleet prune-merged ~/Development/web --apply</tspan></text>
+<text class="l23" x="24" y="86" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">✓ </tspan><tspan fill="#c9d1d9">[1/3] reading the checkout: acme/web: 2 local branch(es) (0s)</tspan></text>
+<text class="l24" x="24" y="106" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">✓ </tspan><tspan fill="#c9d1d9">[2/3] checking each branch against GitHub: 1 to delete (1s)</tspan></text>
+<text class="l25" x="24" y="126" xml:space="preserve"><tspan fill="#c9d1d9"></tspan></text>
+<text class="l26" x="24" y="146" xml:space="preserve"><tspan fill="#c9d1d9">~/Development/web</tspan></text>
+<text class="l27" x="24" y="166" xml:space="preserve"><tspan fill="#db6d28" font-weight="600">  delete </tspan><tspan fill="#c9d1d9">fix/readme  (PR #12 merged, remote gone, nothing newer)</tspan></text>
+<text class="l28" x="24" y="186" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">  keep   </tspan><tspan fill="#c9d1d9">main  (current branch)</tspan></text>
+<text class="l29" x="24" y="206" xml:space="preserve"><tspan fill="#c9d1d9"></tspan></text>
+<text class="l30" x="24" y="226" xml:space="preserve"><tspan fill="#c9d1d9">Delete 1 local branch(es)? [y/N] </tspan><tspan fill="#79c0ff" font-weight="600">y</tspan></text>
+<text class="l31" x="24" y="246" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">✓ </tspan><tspan fill="#c9d1d9">[3/3] deleting: 1 deleted (0s)</tspan></text>
+<text class="l32" x="24" y="266" xml:space="preserve"><tspan fill="#c9d1d9">receipt ~/.local/state/workstation-steward/backups/prune-merged-web-20261028T194610/receipt.json.</tspan></text>
+<text class="l33" x="24" y="286" xml:space="preserve"><tspan fill="#c9d1d9">To bring one back: git branch &lt;name&gt; &lt;tip&gt; (tips are in the receipt). (total 1s)</tspan></text>
+</svg>
