@@ -20,7 +20,7 @@ For maintainers of this repository; users install releases as [`../README.md`](.
 ```text
  PRs merge to main ──► release-please keeps one release PR open:     merge it ──► tag vX.Y.Z + GitHub release
  (Conventional Commit   next version + rolling CHANGELOG.md            │          ──► tests on macOS (the tag)
-  titles, squash)       (the checks are started on it by the workflow) │          ──► publish-guard ──► npm publish
+  titles, squash)       (its checks wait for your approval)            │          ──► publish-guard ──► npm publish
                                                                         └─ when you decide to release      (provenance)
 ```
 
@@ -31,9 +31,10 @@ For maintainers of this repository; users install releases as [`../README.md`](.
    folders that never ship (`exclude-paths` in `release-please-config.json`: `.github`, `docs`, `test`, `tools`) leaves the release PR alone and stays out of the changelog (D47). release-please can't skip top-level
    files, so an edit to `AGENTS.md` or the `justfile` still updates the release PR: merge it only when something users
    get (the npm package, or `renovate/steward.json`) has changed.
-2. **When you decide to release, close and reopen the release PR** (`gh pr close <n> && gh pr reopen <n>`). A PR a
-   workflow opens or updates starts no checks, and checks started by hand on its branch don't count for it; your reopen
-   runs the required checks. Wait for them to pass.
+2. **When you decide to release, approve the release PR's checks.** Each time release-please opens or updates the PR
+   (as `github-actions[bot]`), GitHub holds its checks: the PR shows "workflows awaiting approval". Choose *Approve
+   workflows to run*; those runs count as the PR's required checks. Wait for them to pass. If the PR shows no checks at
+   all, close and reopen it (`gh pr close <n> && gh pr reopen <n>`): the reopen runs them too.
 3. **Merging the release PR is the release.** The workflow tags the commit, creates the GitHub release with the same
    notes, runs the tests and lint on macOS against the tag, then publishes to npm through Trusted Publishing (no token)
    with provenance, after [the publish guard](#the-publish-guard) agrees.
@@ -79,7 +80,13 @@ So the name is reserved first with an empty `0.0.0`, published by hand; every re
 
    The trust must name `pacphi/workstation-steward` and `release.yml`; the release must carry a provenance
    attestation.
-5. **Retire the placeholder:** `npm deprecate workstation-steward@0.0.0 "Placeholder; install 0.1.0 or later"`.
+5. **Retire the placeholders:** the hand publish of `0.0.0` also left a `0.0.0-stage` version, a by-product of npm's
+   background processing (the releases from the workflow left none). Deprecate both:
+
+   ```sh
+   npm deprecate workstation-steward@0.0.0 "Placeholder; install 0.1.0 or later"
+   npm deprecate workstation-steward@0.0.0-stage "Placeholder; install 0.1.0 or later"
+   ```
 
 ## Publishing an existing release
 
@@ -93,7 +100,15 @@ gh workflow run release.yml --repo pacphi/workstation-steward -f tag=v0.1.0
 ## After each release
 
 - The GitHub release and `CHANGELOG.md` carry the same notes.
-- `npm view workstation-steward version` shows the new version within a few minutes (registry reads lag a publish).
+- **npm finishes the publish in the background.** The publish step can succeed while the registry still shows the
+  previous version: its log ends `Your package is being processed and may take a few minutes to become available`, and
+  0.2.0 appeared about 3 minutes later. Call it published when the registry says so, not the log:
+
+  ```sh
+  npm view workstation-steward dist-tags
+  npm view workstation-steward@X.Y.Z dist.attestations --json   # the provenance attestation
+  ```
+
 - A config repo that pins the steward through mise gets a Renovate PR once the release is 3 days old.
 
 ## The publish guard
