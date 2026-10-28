@@ -7,7 +7,6 @@
 //        onboard.js --all [--json]     one line per onboarded project with AI tools (counts only)
 //        onboard.js --rollback <receipt.json>   undo an apply (refuses if anything it wrote has changed since)
 const fs = require('fs');
-const path = require('path');
 const readline = require('readline');
 const P = require('../../lib/projects.js');
 const O = require('../../lib/onboard.js');
@@ -65,7 +64,7 @@ function show(p) {
   if (args.includes('--rollback')) {
     const receipt = args[args.indexOf('--rollback') + 1];
     if (!receipt || receipt.startsWith('--')) { console.error('usage: steward projects onboard --rollback <receipt.json>'); process.exitCode = 2; return; }
-    const rc = JSON.parse(fs.readFileSync(P.untilde(receipt), 'utf8'));
+    const rc = JSON.parse(fs.readFileSync(P.userPath(receipt), 'utf8'));
     const changed = O.changedSince(rc);
     if (changed.length) { console.error(`refusing: changed since the apply: ${changed.slice(0, 5).join(', ')}${changed.length > 5 ? ` … ${changed.length - 5} more` : ''}`); process.exitCode = 1; return; }
     for (const e of rc.entries) console.log(`  ${e.names ? `remove ${e.names.length} name(s) from` : e.backup ? 'restore' : 'remove'} ${e.path}`);
@@ -93,7 +92,7 @@ function show(p) {
     return;
   }
   if (!target) { console.error('usage: steward projects onboard <path> [--refresh <file>…] [--no-approvals] [--json] | --all'); process.exitCode = 2; return; }
-  const p = O.plan(path.resolve(P.untilde(target)), opts);
+  const p = O.plan(P.userPath(target), opts);
   if (json) { console.log(JSON.stringify(p, (k, v) => (k === 'next' || k === 'text' ? undefined : v), 1)); return; }
   show(p);
   if (!args.includes('--apply')) { if (!p.stop && p.files.some(f => f.action === 'edit' || f.action === 'create')) console.log('  plan only; `steward projects onboard <path> --apply` applies it (asks first)'); return; }

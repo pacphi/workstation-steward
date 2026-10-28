@@ -34,7 +34,7 @@ const state = () => (!fs.existsSync(DEST) ? 'missing' : sha(DEST) === sha(SRC) ?
   if (args.includes('--rollback')) {
     const receipt = args[args.indexOf('--rollback') + 1];
     if (!receipt || receipt.startsWith('--')) { console.error('usage: --rollback <receipt.json>'); process.exit(2); }
-    const rc = JSON.parse(fs.readFileSync(C.untilde(receipt), 'utf8'));
+    const rc = JSON.parse(fs.readFileSync(C.userPath(receipt), 'utf8'));
     if (sha(C.untilde(rc.file)) !== rc.sha_after) { console.error(`refusing: ${rc.file} changed since the install`); process.exit(1); }
     const what = rc.backup ? `restore ${rc.file} from ${rc.backup}` : `remove ${rc.file} (it didn't exist before)`;
     if (!(await ask(`${what[0].toUpperCase()}${what.slice(1)}?`))) { console.log('nothing changed'); return; }

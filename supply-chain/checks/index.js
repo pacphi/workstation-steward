@@ -31,6 +31,23 @@ function verLt(a, b) {
   return false;
 }
 
+// appVersion(have, want) — the app's bundle version in the cask's terms: Chromium-based apps prefix the Chromium major
+// (Brave 156.1.98.60 is cask 1.98.60.0)
+const appVersion = (have, want) => {
+  const v = String(have).split(' ')[0];
+  return parseInt(v, 10) > 100 && parseInt(want, 10) < 10 ? v.slice(v.indexOf('.') + 1) : v;
+};
+
+// appBehind(have, want) — an app is behind its cask when its numbers sort lower. Only the numbers count, without
+// trailing zeros: a cask writes the same release with a channel word or an extra .0 (Warp 0.2026.10.21.08.25.02 is
+// cask 0.2026.10.21.08.25.stable_02; Brave 1.98.60 is cask 1.98.60.0)
+function appBehind(have, want) {
+  const nums = s => { const n = (String(s).match(/\d+/g) || []).map(Number); while (n.length && n[n.length - 1] === 0) n.pop(); return n; };
+  const x = nums(have), y = nums(want);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) < (y[i] ?? 0);
+  return false;
+}
+
 // securityException(ctx, kind, name, version) — the advisory of an unexpired security_exception for that version
 const securityException = (ctx, kind, name, version) => {
   const e = (ctx.policy.security_exception || []).find(x => x.kind === kind && x.name === name && x.version === version && x.expires >= ctx.today);
@@ -133,14 +150,12 @@ const CHECKS = [
         }
         const c = byApp.get(base);
         if (!c || !have) continue;
-        let cmp = have.split(' ')[0];
-        // Chromium-based apps prefix the Chromium major (Brave 153.1.95.104 vs cask 1.95.104)
-        if (parseInt(cmp, 10) > 100 && parseInt(c.want, 10) < 10) cmp = cmp.slice(cmp.indexOf('.') + 1);
-        if (!verLt(cmp, c.want)) continue;
+        const v = appVersion(have, c.want);
+        if (!appBehind(v, c.want)) continue;
         const age = ageDays((await brew.releaseDate(ctx, 'cask', c.token, c.want)), ctx.now);
-        if (always.has(c.token)) out.action(`app: ${short} ${have} -> ${c.want} (${age}d old; always_current: update now)`);
-        else if (age >= min || age < 0) out.action(`app: ${short} ${have} -> ${c.want} (${age}d old; vendor updater; matched cask ${c.token} by app name)`);
-        else out.held(`${short} ${have} -> ${c.want} (${age}d old; matched cask ${c.token})`);
+        if (always.has(c.token)) out.action(`app: ${short} ${v} -> ${c.want} (${age}d old; always_current: update now)`);
+        else if (age >= min || age < 0) out.action(`app: ${short} ${v} -> ${c.want} (${age}d old; vendor updater; matched cask ${c.token} by app name)`);
+        else out.held(`${short} ${v} -> ${c.want} (${age}d old; matched cask ${c.token})`);
       }
     },
   },
@@ -223,4 +238,4 @@ const CHECKS = [
   },
 ];
 
-module.exports = { CHECKS, ALL, verLt, ageDays, securityException };
+module.exports = { CHECKS, ALL, verLt, appVersion, appBehind, ageDays, securityException };

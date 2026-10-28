@@ -148,7 +148,7 @@ const receiptFiles = rc => rc.files || [{ file: rc.file, sha_after: rc.sha_after
   if (args.includes('--rollback')) {
     const receipt = args[args.indexOf('--rollback') + 1];
     if (!receipt || receipt.startsWith('--')) { console.error('usage: --rollback <receipt.json>'); process.exit(2); }
-    const files = receiptFiles(JSON.parse(fs.readFileSync(C.untilde(receipt), 'utf8')));
+    const files = receiptFiles(JSON.parse(fs.readFileSync(C.userPath(receipt), 'utf8')));
     const changed = files.filter(f => !fs.existsSync(C.untilde(f.file)) || sha(fs.readFileSync(C.untilde(f.file), 'utf8')) !== f.sha_after);
     if (changed.length) { console.error(`refusing: changed since the guard was added: ${changed.map(f => f.file).join(', ')}`); process.exit(1); }
     for (const f of files) console.log(`  ${f.backup ? `restore ${f.file} from ${f.backup}` : `remove ${f.file} (it didn't exist before)`}`);

@@ -207,7 +207,7 @@ function check(r) {
 
 const rows = P.loadRegistry()
   .filter(r => r.decision === 'onboarded' && (r.ai || []).length && P.exists(r.abs))
-  .filter(r => !target || r.abs === path.resolve(P.untilde(target)));
+  .filter(r => !target || r.abs === P.userPath(target));
 if (target && !rows.length) { console.error(`not an onboarded project with AI tools in the registry: ${target}`); process.exit(1); }
 const B = ['add', 'refresh', 'older', 'init', 'own', 'keepoff', 'latest', 'unexplained'];
 const st = progress(1).stage(`check ${rows.length} project(s)`);

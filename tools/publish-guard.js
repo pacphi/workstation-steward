@@ -16,7 +16,7 @@ const run = (cmd, args, o = {}) => spawnSync(cmd, args, { cwd: ROOT, encoding: '
 const why = [];
 
 // repo(url) — owner/name from a package.json repository URL
-const repo = url => (String(url || '').match(/github\.com[/:]([^/]+\/[^/.]+)/) || [])[1];
+const repo = url => (String(url || '').match(/github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?\/?$/) || [])[1];
 const own = repo(pkg.repository && pkg.repository.url);
 
 // 1. the release workflow of this package's own repository, on GitHub Actions

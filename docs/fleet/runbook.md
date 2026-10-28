@@ -1,10 +1,11 @@
 # Fleet runbook
 
-![Revision 2](https://img.shields.io/badge/Revision-2-green) ![Revised 2026-10-26](https://img.shields.io/badge/Revised-2026--10--26-green)
+![Revision 3](https://img.shields.io/badge/Revision-3-green) ![Revised 2026-10-28](https://img.shields.io/badge/Revised-2026--10--28-green)
 
-Procedures for the GitHub side of the repos under `~/Development`. The rules are in
-[`../../AGENTS.md`](../../AGENTS.md): Renovate, Repos under ~/Development, Repos with long-lived version lines.
-This page gives the steps in order and doesn't restate the rules.
+Procedures for the GitHub side of the repos under your `[projects] roots`. The rules are in the PR-consolidation
+skill's [`rules.md`](../../skills/pr-consolidation/rules.md) (release age, majors, changing a repo, merging, Renovate)
+and in [`AGENTS.md`](../../AGENTS.md#changing-a-projects-files) (changing a project's files). This page gives the
+steps in order and doesn't restate the rules.
 
 ## Contents
 
@@ -51,12 +52,16 @@ merges. The orchestrator verifies, merges, then handles the superseded PRs:
 
 The owner syncs local checkouts and tidies their branches (D34). Each recipe shows a plan; `--apply` asks, backs up, and writes a receipt. Agents run the plan only.
 
+A `<repo>` is the checkout's path: absolute, `~/…`, or from the folder you run `steward` in (`.` in the checkout
+itself, D49).
+
 ```sh
-steward fleet sync ai/my-app                    # plan: what upstream moved, which local edits it already has
-steward fleet sync ai/my-app --apply            # asks, backs up what it drops, fast-forwards
-steward fleet sync ai/my-app --apply --replace .nvmrc   # also drop an edit you name that differs from upstream
-steward fleet prune-merged ai/my-app            # plan: local branches whose PR merged
-steward fleet prune-merged ai/my-app --apply    # asks, records each branch tip, deletes
+cd <checkout>
+steward fleet sync .                            # plan: what upstream moved, which local edits it already has
+steward fleet sync . --apply                    # asks, backs up what it drops, fast-forwards
+steward fleet sync . --apply --replace .nvmrc   # also drop an edit you name that differs from upstream
+steward fleet prune-merged .                    # plan: local branches whose PR merged
+steward fleet prune-merged . --apply            # asks, records each branch tip, deletes
 ```
 
 - **What sync drops:** a local edit only where upstream changes the same path, and only when it matches upstream byte for

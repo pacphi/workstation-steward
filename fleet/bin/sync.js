@@ -2,7 +2,7 @@
 // Bring one checkout up to date with its upstream after PRs merged: fast-forward only, dropping only the local edits
 // the upstream already has. Plan by default; --apply asks, backs up what it drops, writes a receipt.
 // Usage: sync.js <repo> [--apply] [--replace <path>]... [--no-fetch]
-//   <repo>            a Git checkout (a path, or one relative to ~/Development/active)
+//   <repo>            a Git checkout: its path, absolute or from the folder you run steward in (`.` for this one)
 //   --replace <path>  also drop this local edit (or untracked file) in favour of upstream; for edits you named
 // Per path that upstream changes and the checkout also touches:
 //   drop     local content equals upstream's (byte for byte, as JSON, or already contained in a 3-way merge)
@@ -26,12 +26,11 @@ for (let i = 0; i < args.length; i++) {
 }
 const die = m => { console.error(`sync: ${m}`); process.exit(1); };
 if (rest.length !== 1) die('usage: sync.js <repo> [--apply] [--replace <path>]... [--no-fetch]');
-let dir = C.untilde(rest[0]);
-if (!path.isAbsolute(dir)) dir = path.join(C.HOME, 'Development', 'active', dir);
+let dir = C.userPath(rest[0]);
 const git = (...a) => execFileSync('git', ['-C', dir, ...a], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 const gitBuf = (...a) => execFileSync('git', ['-C', dir, ...a], { stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 256 << 20 });
 const tryGit = (...a) => { try { return git(...a).trim(); } catch { return null; } };
-if (!fs.existsSync(dir) || tryGit('rev-parse', '--git-dir') === null) die(`${dir} is not a Git checkout`);
+if (!fs.existsSync(dir) || tryGit('rev-parse', '--git-dir') === null) die(`${C.tilde(dir)} is not a Git checkout (<repo> is a path: absolute, ~/…, or from the folder you run steward in)`);
 dir = tryGit('rev-parse', '--show-toplevel');
 
 const pg = progress(4);

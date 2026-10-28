@@ -20,7 +20,8 @@ if [[ "${1:-}" == mise ]]; then
   exit 0
 fi
 
-src="${1:-$(find "${BACKUP_DIR}" -name 'config.toml.*' 2>/dev/null | sort | tail -1)}"
+if [[ -n "${1:-}" ]]; then src="$(user_path "$1")"
+else src="$(find "${BACKUP_DIR}" -name 'config.toml.*' 2>/dev/null | sort | tail -1)"; fi
 [[ -f "${src}" ]] || die "no backup found in ${BACKUP_DIR/#${HOME}/~}"
 stamp="${src##*.toml.}"
 log "restoring ${src/#${HOME}/~}"

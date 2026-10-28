@@ -96,13 +96,17 @@ test('skills install --project: local scope, run in the project; a tracked setti
   const r = s.run(['install', '--project', proj, '--yes']);
   assert.equal(r.status, 0, r.stderr);
   assert.equal(s.calls()[0], `${fs.realpathSync(proj)} plugin install steward --marketplace ${s.mdir} --scope local --yes`);
+  // a relative folder is read from where steward runs (STEWARD_CWD, as steward init passes it; D49)
+  const rel = s.run(['install', '--project', 'proj', '--yes'], { STEWARD_CWD: s.dir });
+  assert.equal(rel.status, 0, rel.stderr);
+  assert.equal(s.calls()[1], s.calls()[0]);
 
   fs.writeFileSync(path.join(proj, '.claude', 'settings.local.json'), '{}\n');
   execFileSync('git', ['-C', proj, 'add', '-f', '.claude/settings.local.json']);
   const t = s.run(['install', '--project', proj, '--yes']);
   assert.equal(t.status, 1);
   assert.match(t.stderr, /tracked by Git; change it through a PR/);
-  assert.equal(s.calls().length, 1, 'claude was not run again');
+  assert.equal(s.calls().length, 2, 'claude was not run again');
 });
 
 test('skills install: refused inside a Claude Code session, with an old Claude Code, or as a dry run; nothing runs', () => {

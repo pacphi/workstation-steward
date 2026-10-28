@@ -74,3 +74,18 @@ test('add-ons off: their steward commands refuse with a reason, and the projects
   assert.equal(banner.status, 0, banner.stderr);
   assert.equal(banner.stdout, '');
 });
+
+test('a path the user typed: from the folder steward runs in (STEWARD_CWD), ~ expanded; Node and bash agree', () => {
+  const here = path.join(ROOT, 'here'), home = os.homedir();
+  const js = node(['-e', 'const C = require("./lib/config.js"); for (const p of ["web", "./a/b", "~", "~/x", "/abs"]) console.log(C.userPath(p))'], { ...ENV, STEWARD_CWD: here });
+  assert.deepEqual(js.stdout.trim().split('\n'), [path.join(here, 'web'), path.join(here, 'a', 'b'), home, path.join(home, 'x'), '/abs'], js.stderr);
+  const sh = spawnSync('bash', ['-c', 'source lib/lib.sh && for p in web "~" "~/x" /abs; do user_path "$p"; echo; done'], { cwd: REPO, encoding: 'utf8', env: { ...ENV, STEWARD_CWD: here } });
+  assert.deepEqual(sh.stdout.trim().split('\n'), [path.join(here, 'web'), home, path.join(home, 'x'), '/abs'], sh.stderr);
+});
+
+test('githubRepo: owner/name from an HTTPS or SSH remote, keeping a dot in the name (2026-10-28)', () => {
+  const r = node(['-e', 'const { githubRepo } = require("./lib/review.js"); for (const u of process.argv.slice(1)) console.log(githubRepo(u) || "-")',
+    'https://github.com/pacphi/chrisphillipson.me.git', 'git@github.com:pacphi/chrisphillipson.me.git', 'https://github.com/pacphi/workstation-steward',
+    'https://github.com/pacphi/sindri/', 'https://gitlab.com/a/b.git', '']);
+  assert.deepEqual(r.stdout.trim().split('\n'), ['pacphi/chrisphillipson.me', 'pacphi/chrisphillipson.me', 'pacphi/workstation-steward', 'pacphi/sindri', '-', '-'], r.stderr);
+});

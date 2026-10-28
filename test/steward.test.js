@@ -113,3 +113,16 @@ test('init: plans, asks, never overwrites, writes a receipt that starts no soak'
   assert.match(clash.stderr, /never overwrites: mise\/config\.toml/);
   assert.equal(fs.readFileSync(path.join(partial, 'mise', 'config.toml'), 'utf8'), '# mine\n');
 });
+
+test('a relative path argument is read from the folder steward runs in, not the engine (2026-10-28)', () => {
+  const inst = path.join(ROOT, 'relpath-inst');
+  fs.cpSync(path.join(REPO, 'examples'), inst, { recursive: true });
+  const toml = path.join(inst, 'steward.toml');
+  fs.writeFileSync(toml, fs.readFileSync(toml, 'utf8').replace(/^projects = false/m, 'projects = true'));
+  const proj = path.join(ROOT, 'relpath-proj');
+  fs.mkdirSync(proj);
+  spawnSync('git', ['init', '-q'], { cwd: proj });
+  const r = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'projects', 'facets', '.'], { cwd: proj, encoding: 'utf8', env: { ...BASE, STEWARD_INSTANCE: inst } });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stdout.split('\n')[0], proj, 'facets . names the folder it ran in');
+});
