@@ -8,6 +8,13 @@
       "changelog-path": "CHANGELOG.md",
       "include-component-in-tag": false,
       "bump-minor-pre-major": true,
+      "exclude-paths": [
+        ".claude",
+        ".github",
+        "docs",
+        "test",
+        "tools"
+      ],
       "changelog-sections": [
         {
           "type": "feat",
