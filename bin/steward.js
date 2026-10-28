@@ -168,9 +168,9 @@ async function init(args) {
 async function offerSkills(target) {
   const rl = require('readline').createInterface({ input: process.stdin, output: process.stdout });
   const q = s => new Promise(res => rl.question(s, res));
-  console.log("\nInstall the steward's Claude Code skills (/steward:supply-chain and the rest)?\n  1) for you, in every project\n  2) for one project only\n  3) not now");
+  console.log("\nInstall the steward's Claude Code skills (/steward:supply-chain and the rest)?\n  1) everywhere: every Claude Code session you start, in any folder (turned on in ~/.claude/settings.json)\n  2) one project: only sessions started in a folder you name (turned on in its .claude/settings.local.json)\n  3) not now");
   const a = (await q('Choose 1, 2 or 3 [3]: ')).trim();
-  const project = a === '2' ? (await q('Project folder: ')).trim() : '';
+  const project = a === '2' ? (await q('Project folder (its path): ')).trim() : '';
   rl.close();
   if (a !== '1' && !(a === '2' && project)) { console.log('Later: steward skills install [--project <path>]'); return; }
   spawnSync(process.execPath, [path.join(ENGINE, 'lib', 'skills.js'), 'install', ...(project ? ['--project', project] : [])],
