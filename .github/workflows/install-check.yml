@@ -1,0 +1,127 @@
+# A released workstation-steward on a fresh Mac, the way a maintainer's machine runs it (D41, D48), switching between
+# the two release modes (docs/lifecycle.md, Where the release comes from): a worktree at the tag, then the npm package
+# through mise, then back. On the way it installs the Claude Code skills plugin: a runner is not a Claude Code session,
+# so the plugin's command is accepted with --yes. mise puts tools on PATH with `mise activate` (no shims), as on a
+# maintainer's Mac, so dropping the npm pin hands `steward` back to the worktree's launcher. Every step checks its
+# result and writes a line to the job summary. Started by hand only; read-only, no secrets, nothing published:
+#   gh workflow run install-check.yml -f version=0.2.0
+name: Install check
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The released version to check (X.Y.Z)
+        required: true
+      release_age_days:
+        description: For this run only, the config's release-age gate in days (empty keeps the config's 3)
+        required: false
+        default: ''
+      claude_code:
+        description: The Claude Code version for the plugin step (npm @anthropic-ai/claude-code)
+        required: true
+        default: '2.1.312'
+
+permissions:
+  contents: read
+
+concurrency: install-check
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  install:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    env:
+      V: ${{ inputs.version }}
+      RELEASE_AGE_DAYS: ${{ inputs.release_age_days }}
+      CLAUDE_CODE: ${{ inputs.claude_code }}
+      NO_PROGRESS: '1'
+      NO_COLOR: '1'
+    steps:
+      - name: The inputs are versions
+        run: |
+          [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "version is not X.Y.Z: $V"; exit 1; }
+          [[ "$CLAUDE_CODE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "claude_code is not X.Y.Z: $CLAUDE_CODE"; exit 1; }
+          [[ -z "$RELEASE_AGE_DAYS" || "$RELEASE_AGE_DAYS" =~ ^[0-9]+$ ]] || { echo "release_age_days is not a number"; exit 1; }
+          echo "## Install check: workstation-steward $V" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/v${{ inputs.version }}
+          fetch-depth: 0
+      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+        with:
+          version: 2026.10.18
+          install: false
+          add_shims_to_path: false
+          export_path: false
+
+      - name: 1. Worktree mode, from just release-worktree at the tag
+        env:
+          MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
+        run: |
+          mise install
+          eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo y | just release-worktree "v$V"
+          out="$("$HOME/.local/bin/steward" version)"; echo "$out"
+          grep -qF "release $V (v$V)" <<<"$out" || { echo "expected: release $V (v$V)"; exit 1; }
+          echo "1. worktree mode: \`$(head -1 <<<"$out")\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 2. steward init (a fresh config), and mise linked to it
+        env:
+          MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
+        run: |
+          eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
+          steward init --yes
+          steward config --check
+          steward sc link
+          ls -l "$HOME/.config/mise/"
+          echo "2. init and link: \`$(steward config | head -1)\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 3. npm mode, from steward sc upgrade-tool
+        run: |
+          eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
+          mise install
+          if [[ -n "$RELEASE_AGE_DAYS" ]]; then
+            echo y | steward sc release-age "$RELEASE_AGE_DAYS"
+            echo "3. the release-age gate lowered to $RELEASE_AGE_DAYS day(s) for this run (input)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          steward sc upgrade-tool npm:workstation-steward "$V"
+          eval "$(mise hook-env -s bash)"; hash -r
+          echo "steward is $(command -v steward)"
+          out="$(steward version)"; echo "$out"
+          grep -qF "release $V (npm)" <<<"$out" || { echo "expected: release $V (npm)"; exit 1; }
+          echo "3. npm mode: \`$(head -1 <<<"$out")\` from \`$(command -v steward)\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 4. steward check, and the plugin folder as Claude Code builds it (sh, from home)
+        run: |
+          eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
+          steward check
+          dir="$(cd ~ && sh -c 'steward skills path')"
+          ls "$dir/skills"
+          [[ -f "$dir/.claude-plugin/plugin.json" && -f "$dir/skills/supply-chain/SKILL.md" ]] || { echo "no plugin in $dir"; exit 1; }
+          echo "4. check passed; plugin folder holds: $(ls "$dir/skills" | tr '\n' ' ')" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 5. The skills plugin, from steward skills install
+        run: |
+          eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
+          npm install -g --allow-scripts=@anthropic-ai/claude-code "@anthropic-ai/claude-code@$CLAUDE_CODE"
+          hash -r; claude --version
+          steward skills install --yes
+          claude plugin list --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const p=JSON.parse(s).find(x=>x.id==="steward@workstation-steward");if(!p||!p.enabled){console.error("steward@workstation-steward is not installed and enabled");process.exit(1)}console.log(JSON.stringify(p))})'
+          echo "5. plugin: \`steward@workstation-steward\` installed and enabled (Claude Code $CLAUDE_CODE)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 6. Back to worktree mode, from steward sc rollback
+        run: |
+          eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
+          printf 'y\ny\n' | steward sc rollback
+          eval "$(mise hook-env -s bash)"; hash -r
+          echo "steward is $(command -v steward)"
+          out="$(steward version)"; echo "$out"
+          grep -qF "release $V (v$V)" <<<"$out" || { echo "expected: release $V (v$V)"; exit 1; }
+          dir="$(cd ~ && sh -c 'steward skills path')"; ls "$dir/skills"
+          echo "6. back to worktree mode: \`$(head -1 <<<"$out")\`; the plugin's command still answers" >> "$GITHUB_STEP_SUMMARY"
