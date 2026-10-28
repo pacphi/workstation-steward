@@ -14,20 +14,30 @@ const ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'steward-skills-'));
 test.after(() => fs.rmSync(ROOT, { recursive: true, force: true }));
 
 // a temp instance, state and Claude folder; a stand-in claude (and steward) on PATH
-function setup(name, toml = '', version = '2.1.312') {
+function setup(name, toml = '', version = '2.1.312', steward = 'ok') {
   const dir = path.join(ROOT, name);
   for (const d of ['inst', 'state', 'claude', 'bin']) fs.mkdirSync(path.join(dir, d), { recursive: true });
   fs.writeFileSync(path.join(dir, 'inst', 'steward.toml'), `schema = 1\n[paths]\nclaude_dir = "${path.join(dir, 'claude')}"\n${toml}`);
   fs.writeFileSync(path.join(dir, 'claude', 'settings.json'), '{ "theme": "dark" }\n');
   const log = path.join(dir, 'claude.log');
-  fs.writeFileSync(path.join(dir, 'bin', 'claude'), `#!/bin/sh\nif [ "$1" = "--version" ]; then echo "${version} (Claude Code)"; exit 0; fi\necho "$(pwd) $*" >> "${log}"\n`, { mode: 0o755 });
-  fs.writeFileSync(path.join(dir, 'bin', 'steward'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+  const mark = path.join(dir, 'installed');
+  fs.writeFileSync(path.join(dir, 'bin', 'claude'), `#!/bin/sh
+case "$*" in
+  --version) echo "${version} (Claude Code)"; exit 0 ;;
+  "plugin list --json") if [ -f "${mark}" ]; then echo '[{"id":"steward@workstation-steward","scope":"user"}]'; else echo '[]'; fi; exit 0 ;;
+  "plugin install"*) touch "${mark}" ;;
+  "plugin uninstall"*) rm -f "${mark}" ;;
+esac
+echo "$(pwd) $*" >> "${log}"
+`, { mode: 0o755 });
+  fs.writeFileSync(path.join(dir, 'bin', 'steward'), steward === 'ok' ? `#!/bin/sh\necho "${dir}"\n` : '#!/bin/sh\necho "steward: no command skills path" >&2; exit 2\n', { mode: 0o755 });
   // not inside a Claude Code session and not a dry run, unless a test says so
   const outside = Object.fromEntries(Object.entries(process.env).filter(([k]) => k !== 'CLAUDECODE' && k !== 'DRY_RUN'));
   const env = { ...outside, STEWARD_INSTANCE: path.join(dir, 'inst'), XDG_STATE_HOME: path.join(dir, 'state'), PATH: `${path.join(dir, 'bin')}:${process.env.PATH}`, NO_COLOR: '1' };
   const run = (args, extra = {}) => spawnSync(process.execPath, [path.join(REPO, 'lib', 'skills.js'), ...args], { encoding: 'utf8', input: '', env: { ...env, ...extra } });
   const calls = () => (fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n') : []);
-  return { dir, run, calls };
+  const mdir = path.join(dir, 'state', 'workstation-steward', 'skills', 'marketplace');
+  return { dir, run, calls, mdir };
 }
 const receipts = dir => {
   const b = path.join(dir, 'state', 'workstation-steward', 'backups');
@@ -66,8 +76,10 @@ test('skills install: user scope runs claude, backs up its settings and writes a
   const s = setup('install-user');
   const r = s.run(['install', '--yes']);
   assert.equal(r.status, 0, r.stderr + r.stdout);
-  assert.match(r.stdout, /runs: {5}claude plugin install steward --marketplace pacphi\/workstation-steward --scope user --yes/);
-  assert.match(s.calls()[0], / plugin install steward --marketplace pacphi\/workstation-steward --scope user --yes$/);
+  assert.match(r.stdout, /accepts: {2}the plugin's command `steward skills path`/);
+  assert.ok(s.calls()[0].endsWith(` plugin install steward --marketplace ${s.mdir} --scope user --yes`), s.calls()[0]);
+  const copied = JSON.parse(fs.readFileSync(path.join(s.mdir, '.claude-plugin', 'marketplace.json'), 'utf8'));
+  assert.equal(copied.plugins[0].source.command, 'steward skills path', "the engine's own marketplace, not one fetched");
   const [rc] = receipts(s.dir);
   assert.equal(rc.kind, 'skills-install');
   assert.equal(rc.status, 0);
@@ -83,7 +95,7 @@ test('skills install --project: local scope, run in the project; a tracked setti
   execFileSync('git', ['init', '-q', proj]);
   const r = s.run(['install', '--project', proj, '--yes']);
   assert.equal(r.status, 0, r.stderr);
-  assert.equal(s.calls()[0], `${fs.realpathSync(proj)} plugin install steward --marketplace pacphi/workstation-steward --scope local --yes`);
+  assert.equal(s.calls()[0], `${fs.realpathSync(proj)} plugin install steward --marketplace ${s.mdir} --scope local --yes`);
 
   fs.writeFileSync(path.join(proj, '.claude', 'settings.local.json'), '{}\n');
   execFileSync('git', ['-C', proj, 'add', '-f', '.claude/settings.local.json']);
@@ -105,8 +117,22 @@ test('skills install: refused inside a Claude Code session, with an old Claude C
   const o = old.run(['install', '--yes']);
   assert.equal(o.status, 1);
   assert.match(o.stderr, /older than 2\.1\.292/);
-  assert.deepEqual([...s.calls(), ...old.calls()], []);
+  const stale = setup('install-stale-steward', '', '2.1.312', 'old');
+  const st = stale.run(['install', '--yes']);
+  assert.equal(st.status, 1);
+  assert.match(st.stderr, /didn't print the plugin's folder .*no command skills path/);
+  assert.deepEqual([...s.calls(), ...old.calls(), ...stale.calls()], []);
   assert.deepEqual(receipts(s.dir), []);
+  assert.ok(!fs.existsSync(s.mdir), 'nothing written before the yes');
+});
+
+test("skills install: claude's exit code alone isn't success; the plugin must be listed", () => {
+  const s = setup('install-unlisted');
+  fs.writeFileSync(path.join(s.dir, 'bin', 'claude'), `#!/bin/sh\ncase "$*" in --version) echo "2.1.312 (Claude Code)";; "plugin list --json") echo '[]';; *) echo "not run: review the command first";; esac\nexit 0\n`, { mode: 0o755 });
+  const r = s.run(['install', '--yes']);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /doesn't show steward@workstation-steward/);
+  assert.equal(receipts(s.dir).length, 1, 'the receipt still records what ran');
 });
 
 test('skills: the marketplace lists the steward plugin by command; config and commands agree', () => {
@@ -114,9 +140,7 @@ test('skills: the marketplace lists the steward plugin by command; config and co
   const mk = JSON.parse(fs.readFileSync(path.join(REPO, '.claude-plugin', 'marketplace.json'), 'utf8'));
   assert.equal(mk.name, S.MARKETPLACE);
   assert.deepEqual(mk.plugins.map(p => [p.name, p.source]), [[S.PLUGIN, { source: 'command', command: 'steward skills path' }]]);
-  assert.equal(S.SOURCE, 'pacphi/workstation-steward');
-  assert.ok(require('../package.json').files.includes('.claude-plugin/plugin.json'), 'the manifest ships; the marketplace stays on GitHub');
-  assert.ok(!require('../package.json').files.includes('.claude-plugin/marketplace.json'));
+  assert.ok(require('../package.json').files.includes('.claude-plugin/'), 'the manifest and the marketplace ship: install registers the installed copy');
   const { COMMANDS } = require('../lib/commands.js');
   assert.ok(!COMMANDS.find(c => c.area === 'skills' && c.name === 'path').writes, 'path is read-only');
   assert.match(fs.readFileSync(path.join(REPO, 'examples', 'steward.toml'), 'utf8'), /^\[skills\]\npr_consolidation = false/m);
