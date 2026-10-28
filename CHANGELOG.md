@@ -3,6 +3,20 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.2.2](https://github.com/pacphi/workstation-steward/compare/v0.2.1...v0.2.2) (2026-10-28)
+
+
+### Bug Fixes
+
+* path arguments from your folder, no hard-coded fleet root, app versions and repo names read right ([#22](https://github.com/pacphi/workstation-steward/issues/22)) ([0ddd85a](https://github.com/pacphi/workstation-steward/commit/0ddd85aec4722667f44314502eb7fad40d359aba))
+
+
+### Documentation
+
+* a skills README with install, what to ask, and four Claude Code sessions ([#23](https://github.com/pacphi/workstation-steward/issues/23)) ([45547f2](https://github.com/pacphi/workstation-steward/commit/45547f264cae8be7d5fb3334b732889c690a5810))
+* an animated everyday task on each area page ([#20](https://github.com/pacphi/workstation-steward/issues/20)) ([2f87d1c](https://github.com/pacphi/workstation-steward/commit/2f87d1ca1f1765718995747752d75578434825b4))
+* keep your config in a private Git repo, with an animated walkthrough ([#19](https://github.com/pacphi/workstation-steward/issues/19)) ([b0f70c1](https://github.com/pacphi/workstation-steward/commit/b0f70c1bc939c344f2bedceb9177bd9aa6c5a402))
+
 ## [0.2.1](https://github.com/pacphi/workstation-steward/compare/v0.2.0...v0.2.1) (2026-10-28)
 
 
