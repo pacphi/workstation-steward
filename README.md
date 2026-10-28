@@ -25,7 +25,9 @@ node bin/steward.js doctor        # what this machine still needs (mise, Homebre
 node bin/steward.js sc audit      # read-only: what needs updating, and why
 ```
 
-Once it's on npm: `mise use -g npm:workstation-steward@<version>`, and then just `steward`. Edit
+From npm, through mise: check the release's provenance (`npm view workstation-steward@<version> dist.attestations`),
+then `mise use -g 'npm:workstation-steward[allow_low_downloads=true]@<version>'`, and then just `steward`. Until the
+package name is 30 days old (2026-11-27), mise's npm installer refuses it unless approved that way. Edit
 `~/.config/workstation-steward/steward.toml` for your project roots, and turn on the optional areas there.
 
 ## What it looks after

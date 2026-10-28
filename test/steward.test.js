@@ -49,6 +49,20 @@ test('check: format current, older, newer, missing; exit 0 only when nothing is 
   assert.match(bad.stdout, /schema: expected a whole number/);
 });
 
+test('version and check: a named instance with no steward.toml yet (a fresh release launcher) is explained, not a stop', () => {
+  const fresh = path.join(ROOT, 'fresh');
+  fs.mkdirSync(fresh);
+  const v = steward(['version'], { STEWARD_INSTANCE: fresh });
+  assert.equal(v.status, 0, v.stderr);
+  assert.match(v.stdout, /no steward\.toml yet: steward init/);
+  const c = steward(['check'], { STEWARD_INSTANCE: fresh });
+  assert.equal(c.status, 1, c.stderr);
+  assert.match(c.stdout, /WANTS {2}no steward\.toml at .*: steward init/);
+  const use = steward(['sc', 'host'], { STEWARD_INSTANCE: fresh });
+  assert.equal(use.status, 2, 'a command that uses the config still refuses');
+  assert.match(use.stderr, /no steward\.toml there/);
+});
+
 test('run: a config in a format this engine does not read is refused, not half-read', () => {
   const inst = instance('future', 'schema = 9\n');
   const r = steward(['sc', 'soak'], { STEWARD_INSTANCE: inst });
