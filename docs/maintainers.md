@@ -23,7 +23,8 @@ For maintainers of this repository; users install releases as [`../README.md`](.
                                                                         └─ when you decide to release      (provenance)
 ```
 
-1. Every merge to `main` updates the **release PR** (`chore(main): release X.Y.Z`): the version follows the commit
+1. Every merge to `main` updates the **release PR** (`chore(main): release X.Y.Z`; the first one is 0.1.0, set by
+   `initial-version` in `release-please-config.json`, since release-please would otherwise start at 1.0.0): the version follows the commit
    types since the last release (before 1.0, `feat` raises the minor version and `fix` the patch; `feat!` or a
    `BREAKING CHANGE:` footer is called out at the top), and `CHANGELOG.md` gains the grouped entries.
 2. The release workflow starts the required checks on that PR itself (a PR opened by a workflow starts none).
