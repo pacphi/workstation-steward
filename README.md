@@ -129,7 +129,7 @@ npm view workstation-steward@<version> dist.attestations.provenance.predicateTyp
 The steward runs on Node 26 or later. Pick one way to install:
 
 ```sh
-mise use -g npm:workstation-steward@<version>     # mise (recommended)
+mise use -g npm:workstation-steward@<version>      # mise (recommended)
 npm install -g workstation-steward@<version>       # npm
 npx workstation-steward@<version> version          # npx: try it without installing
 ```
