@@ -85,7 +85,7 @@ The engine never holds your data, and your config never holds code. A release ch
 - **Where the config is found:** `$STEWARD_INSTANCE`, else the engine's own folder when it holds a `steward.toml`,
   else `~/.config/workstation-steward`. *Built (R1).* `steward config` shows which, and why.
 - **Keep the config in Git.** A private repo gives every policy change a review and a history, and lets Renovate
-  propose toolchain updates for it. It names your projects, so don't make it public.
+  propose toolchain updates for it. It names your projects, so don't make it public. How: [`config-repo.md`](config-repo.md).
 
 ## Upgrade the steward
 

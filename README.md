@@ -105,7 +105,9 @@ steward version
 
 **3. Set up.** `steward init` creates your config in `~/.config/workstation-steward`, shows every file it will write,
 and asks first. Then it walks the rest of setup one question at a time (the AI tooling add-on, the projects add-on
-and where your projects live, the Claude Code skills); each answer changes one line of `steward.toml`.
+and where your projects live, the Claude Code skills); each answer changes one line of `steward.toml`. Then keep
+that config in a private Git repo, so it has a history, Renovate, and a second Mac in minutes:
+[`docs/config-repo.md`](docs/config-repo.md).
 
 ```sh
 steward init
@@ -185,6 +187,7 @@ you've turned on.
 | [`docs/lifecycle.md`](docs/lifecycle.md) | Install, upgrade, config formats, rollback, the two channels, and the promises behind them |
 | [`docs/architecture.md`](docs/architecture.md) | How it's built, and every design decision with its reason |
 | [`docs/prereqs.md`](docs/prereqs.md) | What the steward needs on the machine (`steward doctor` checks it) |
+| [`docs/config-repo.md`](docs/config-repo.md) | Keeping your config in a private Git repo, and in step across your Macs |
 | [`examples/README.md`](examples/README.md) | What goes in your instance |
 | [`docs/maintainers.md`](docs/maintainers.md) | How releases are made, published and checked on a clean Mac |
 | [`docs/README.md`](docs/README.md) | Every doc, the runbooks and the skills |

@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="308" viewBox="0 0 940 308" role="img" aria-labelledby="t d">
+<title id="t">workstation-steward: keep your config in a private Git repo</title>
+<desc id="d">An illustrative session, looping, in four scenes. It turns ~/.config/workstation-steward into a Git repository and pushes it to a new private GitHub repository with gh; clones it on another Mac, checks it with steward check and points mise at it with steward sc link; on the first Mac, an upgrade changes mise/mise.lock, which is committed and pushed; on the other Macs, git pull brings the change and mise install applies it.</desc>
+<style>
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px}
+@keyframes k1{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}0.763%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.721%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.389%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l1{opacity:1;animation:k1 52.4s linear infinite}
+@keyframes k2{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}1.565%{clip-path:inset(0 94.12% 0 0);opacity:1;animation-timing-function:steps(32, end)}4.313%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.721%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.389%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l2{opacity:1;animation:k2 52.4s linear infinite}
+@keyframes k3{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}5.363%{clip-path:inset(0 97.10% 0 0);opacity:1;animation-timing-function:steps(67, end)}9.943%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.721%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.389%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l3{opacity:1;animation:k3 52.4s linear infinite}
+@keyframes k4{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}10.992%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.721%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.389%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l4{opacity:1;animation:k4 52.4s linear infinite}
+@keyframes k5{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}11.794%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.721%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.389%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l5{opacity:1;animation:k5 52.4s linear infinite}
+@keyframes k6{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}12.595%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.721%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.389%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l6{opacity:1;animation:k6 52.4s linear infinite}
+@keyframes k7{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}13.397%{clip-path:inset(0 97.47% 0 0);opacity:1;animation-timing-function:steps(77, end)}17.977%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.721%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.389%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l7{opacity:1;animation:k7 52.4s linear infinite}
+@keyframes k8{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}19.027%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.721%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.389%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l8{opacity:1;animation:k8 52.4s linear infinite}
+@keyframes k9{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}19.828%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.721%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.389%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l9{opacity:1;animation:k9 52.4s linear infinite}
+@keyframes k10{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}20.630%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.721%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.389%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l10{opacity:1;animation:k10 52.4s linear infinite}
+@keyframes k11{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}21.431%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}28.721%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}29.389%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l11{opacity:1;animation:k11 52.4s linear infinite}
+@keyframes k12{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}29.485%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}51.718%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}52.385%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l12{opacity:0;animation:k12 52.4s linear infinite}
+@keyframes k13{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}30.286%{clip-path:inset(0 97.47% 0 0);opacity:1;animation-timing-function:steps(77, end)}34.866%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}51.718%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}52.385%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l13{opacity:0;animation:k13 52.4s linear infinite}
+@keyframes k14{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}35.916%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}51.718%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}52.385%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l14{opacity:0;animation:k14 52.4s linear infinite}
+@keyframes k15{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}36.718%{clip-path:inset(0 86.67% 0 0);opacity:1;animation-timing-function:steps(13, end)}37.834%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}51.718%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}52.385%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l15{opacity:0;animation:k15 52.4s linear infinite}
+@keyframes k16{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}38.884%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}51.718%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}52.385%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l16{opacity:0;animation:k16 52.4s linear infinite}
+@keyframes k17{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}39.685%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}51.718%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}52.385%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l17{opacity:0;animation:k17 52.4s linear infinite}
+@keyframes k18{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}40.487%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}51.718%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}52.385%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l18{opacity:0;animation:k18 52.4s linear infinite}
+@keyframes k19{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}41.288%{clip-path:inset(0 88.24% 0 0);opacity:1;animation-timing-function:steps(15, end)}42.576%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}51.718%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}52.385%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l19{opacity:0;animation:k19 52.4s linear infinite}
+@keyframes k20{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}43.626%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}51.718%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}52.385%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l20{opacity:0;animation:k20 52.4s linear infinite}
+@keyframes k21{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}44.427%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}51.718%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}52.385%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l21{opacity:0;animation:k21 52.4s linear infinite}
+@keyframes k22{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}52.481%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}79.723%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}80.391%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l22{opacity:0;animation:k22 52.4s linear infinite}
+@keyframes k23{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}53.282%{clip-path:inset(0 92.86% 0 0);opacity:1;animation-timing-function:steps(26, end)}55.515%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}79.723%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}80.391%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l23{opacity:0;animation:k23 52.4s linear infinite}
+@keyframes k24{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}56.565%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}79.723%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}80.391%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l24{opacity:0;animation:k24 52.4s linear infinite}
+@keyframes k25{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}57.366%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}79.723%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}80.391%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l25{opacity:0;animation:k25 52.4s linear infinite}
+@keyframes k26{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}58.168%{clip-path:inset(0 96.23% 0 0);opacity:1;animation-timing-function:steps(51, end)}62.548%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}79.723%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}80.391%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l26{opacity:0;animation:k26 52.4s linear infinite}
+@keyframes k27{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}63.597%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}79.723%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}80.391%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l27{opacity:0;animation:k27 52.4s linear infinite}
+@keyframes k28{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}64.399%{clip-path:inset(0 98.13% 0 0);opacity:1;animation-timing-function:steps(105, end)}68.979%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}79.723%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}80.391%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l28{opacity:0;animation:k28 52.4s linear infinite}
+@keyframes k29{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}70.029%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}79.723%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}80.391%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l29{opacity:0;animation:k29 52.4s linear infinite}
+@keyframes k30{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}70.830%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}79.723%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}80.391%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l30{opacity:0;animation:k30 52.4s linear infinite}
+@keyframes k31{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}71.632%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}79.723%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}80.391%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l31{opacity:0;animation:k31 52.4s linear infinite}
+@keyframes k32{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}72.433%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}79.723%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}80.391%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l32{opacity:0;animation:k32 52.4s linear infinite}
+@keyframes k33{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}80.487%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}98.492%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}99.160%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l33{opacity:0;animation:k33 52.4s linear infinite}
+@keyframes k34{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}81.288%{clip-path:inset(0 96.23% 0 0);opacity:1;animation-timing-function:steps(51, end)}85.668%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}98.492%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}99.160%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l34{opacity:0;animation:k34 52.4s linear infinite}
+@keyframes k35{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}86.718%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}98.492%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}99.160%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l35{opacity:0;animation:k35 52.4s linear infinite}
+@keyframes k36{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}87.519%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}98.492%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}99.160%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l36{opacity:0;animation:k36 52.4s linear infinite}
+@keyframes k37{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}88.321%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}98.492%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}99.160%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l37{opacity:0;animation:k37 52.4s linear infinite}
+@keyframes k38{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}89.122%{clip-path:inset(0 85.71% 0 0);opacity:1;animation-timing-function:steps(12, end)}90.153%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}98.492%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}99.160%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l38{opacity:0;animation:k38 52.4s linear infinite}
+@keyframes k39{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}91.202%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}98.492%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}99.160%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l39{opacity:0;animation:k39 52.4s linear infinite}
+@media (prefers-reduced-motion:reduce){text{animation:none!important}}
+</style>
+<rect x="0.5" y="0.5" width="939" height="307" rx="10" fill="#0d1117" stroke="#30363d"/>
+<path d="M0.5 10.5a10 10 0 0 1 10-10h919a10 10 0 0 1 10 10V36H0.5Z" fill="#161b22"/>
+<line x1="0.5" y1="36" x2="939.5" y2="36" stroke="#30363d"/>
+<circle cx="20" cy="18" r="6" fill="#ff5f57"/><circle cx="40" cy="18" r="6" fill="#febc2e"/><circle cx="60" cy="18" r="6" fill="#28c840"/>
+<text x="470" y="22" text-anchor="middle" fill="#8b949e" style="font-size:12px">steward — zsh</text>
+<text class="l1" x="24" y="66" xml:space="preserve"><tspan fill="#8b949e"># 1. make your config a repo</tspan></text>
+<text class="l2" x="24" y="86" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">cd ~/.config/workstation-steward</tspan></text>
+<text class="l3" x="24" y="106" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">git init -b main &amp;&amp; git add -A &amp;&amp; git commit -m 'My steward config'</tspan></text>
+<text class="l4" x="24" y="126" xml:space="preserve"><tspan fill="#c9d1d9">Initialized empty Git repository in ~/.config/workstation-steward/.git/</tspan></text>
+<text class="l5" x="24" y="146" xml:space="preserve"><tspan fill="#c9d1d9">[main (root-commit) 4e1c2d7] My steward config</tspan></text>
+<text class="l6" x="24" y="166" xml:space="preserve"><tspan fill="#c9d1d9"> 9 files changed, 553 insertions(+)</tspan></text>
+<text class="l7" x="24" y="186" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">gh repo create you/steward-config --private --source . --remote origin --push</tspan></text>
+<text class="l8" x="24" y="206" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">✓ </tspan><tspan fill="#c9d1d9">Created repository you/steward-config on github.com</tspan></text>
+<text class="l9" x="24" y="226" xml:space="preserve"><tspan fill="#79c0ff">  https://github.com/you/steward-config</tspan></text>
+<text class="l10" x="24" y="246" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">✓ </tspan><tspan fill="#c9d1d9">Added remote https://github.com/you/steward-config.git</tspan></text>
+<text class="l11" x="24" y="266" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">✓ </tspan><tspan fill="#c9d1d9">Pushed commits to https://github.com/you/steward-config.git</tspan></text>
+<text class="l12" x="24" y="66" xml:space="preserve"><tspan fill="#8b949e"># 2. use it on another Mac</tspan></text>
+<text class="l13" x="24" y="86" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">git clone https://github.com/you/steward-config ~/.config/workstation-steward</tspan></text>
+<text class="l14" x="24" y="106" xml:space="preserve"><tspan fill="#c9d1d9">Cloning into '~/.config/workstation-steward'...</tspan></text>
+<text class="l15" x="24" y="126" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward check</tspan></text>
+<text class="l16" x="24" y="146" xml:space="preserve"><tspan fill="#8b949e">engine 0.2.1; instance ~/.config/workstation-steward [~/.config default]</tspan></text>
+<text class="l17" x="24" y="166" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">ok     </tspan><tspan fill="#c9d1d9">config format 1: current</tspan></text>
+<text class="l18" x="24" y="186" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">ok     </tspan><tspan fill="#c9d1d9">add-ons: ai_tooling off, projects on</tspan></text>
+<text class="l19" x="24" y="206" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward sc link</tspan></text>
+<text class="l20" x="24" y="226" xml:space="preserve"><tspan fill="#c9d1d9">… ~/.config/mise/config.toml -&gt; ~/.config/workstation-steward/mise/config.toml</tspan></text>
+<text class="l21" x="24" y="246" xml:space="preserve"><tspan fill="#c9d1d9">… ~/.config/mise/mise.lock -&gt; ~/.config/workstation-steward/mise/mise.lock</tspan></text>
+<text class="l22" x="24" y="66" xml:space="preserve"><tspan fill="#8b949e"># 3. day to day: a change on this Mac</tspan></text>
+<text class="l23" x="24" y="86" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward sc upgrade-tool gh</tspan></text>
+<text class="l24" x="24" y="106" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#c9d1d9">config backup: ~/.config/mise/backups/config.toml.20261029-091512</tspan></text>
+<text class="l25" x="24" y="126" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">==&gt; </tspan><tspan fill="#3fb950">all checks passed</tspan></text>
+<text class="l26" x="24" y="146" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">git -C ~/.config/workstation-steward status --short</tspan></text>
+<text class="l27" x="24" y="166" xml:space="preserve"><tspan fill="#d29922"> M mise/mise.lock</tspan></text>
+<text class="l28" x="24" y="186" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">git -C ~/.config/workstation-steward commit -am 'gh 2.103.2' &amp;&amp; git -C ~/.config/workstation-steward push</tspan></text>
+<text class="l29" x="24" y="206" xml:space="preserve"><tspan fill="#c9d1d9">[main 9f3e1a2] gh 2.103.2</tspan></text>
+<text class="l30" x="24" y="226" xml:space="preserve"><tspan fill="#c9d1d9"> 1 file changed, 6 insertions(+), 6 deletions(-)</tspan></text>
+<text class="l31" x="24" y="246" xml:space="preserve"><tspan fill="#c9d1d9">To https://github.com/you/steward-config.git</tspan></text>
+<text class="l32" x="24" y="266" xml:space="preserve"><tspan fill="#c9d1d9">   4e1c2d7..9f3e1a2  main -&gt; main</tspan></text>
+<text class="l33" x="24" y="66" xml:space="preserve"><tspan fill="#8b949e"># 4. on your other Macs</tspan></text>
+<text class="l34" x="24" y="86" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">git -C ~/.config/workstation-steward pull --ff-only</tspan></text>
+<text class="l35" x="24" y="106" xml:space="preserve"><tspan fill="#c9d1d9">Updating 4e1c2d7..9f3e1a2</tspan></text>
+<text class="l36" x="24" y="126" xml:space="preserve"><tspan fill="#c9d1d9">Fast-forward</tspan></text>
+<text class="l37" x="24" y="146" xml:space="preserve"><tspan fill="#c9d1d9"> mise/mise.lock | 12 ++++++------</tspan></text>
+<text class="l38" x="24" y="166" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">mise install</tspan></text>
+<text class="l39" x="24" y="186" xml:space="preserve"><tspan fill="#8b949e">mise </tspan><tspan fill="#3fb950" font-weight="600">✓ </tspan><tspan fill="#c9d1d9">gh@2.103.2</tspan></text>
+</svg>
