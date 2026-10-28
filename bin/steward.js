@@ -216,7 +216,7 @@ function devBanner(what) {
 }
 
 function banners() {
-  for (const a of [['projects/bin/projects.js', 'banner'], ['projects/bin/reconcile.js', '--banner'], ['lib/soak.js', '--banner'], ['lib/review.js', '--banner']]) {
+  for (const a of [['projects/bin/projects.js', 'banner'], ['projects/bin/reconcile.js', '--banner'], ['lib/soak.js', '--banner'], ['lib/review.js', '--banner'], ['lib/configrepo.js', '--banner']]) {
     spawnSync(process.execPath, a, { cwd: ENGINE, stdio: 'inherit' });
   }
 }
