@@ -1,6 +1,6 @@
 # Lifecycle
 
-![Revision 12](https://img.shields.io/badge/Revision-12-green) ![Revised 2026-10-28](https://img.shields.io/badge/Revised-2026--10--28-green)
+![Revision 13](https://img.shields.io/badge/Revision-13-green) ![Revised 2026-10-28](https://img.shields.io/badge/Revised-2026--10--28-green)
 
 How someone installs workstation-steward, sets it up, uses it, and keeps it, their config and their projects safe
 over release after release. It is the contract the code is built to: each part is marked **built** or **planned**.
@@ -20,6 +20,7 @@ The decisions behind it are D39 and D40 in [`architecture.md`](architecture.md#d
 - [Platforms](#platforms)
 - [How releases are tested](#how-releases-are-tested)
 - [Two channels](#two-channels)
+  - [Where the release comes from](#where-the-release-comes-from)
 
 ## The three things that change
 
@@ -203,10 +204,47 @@ For anyone who both works on the steward and uses it on their own machine (D41).
   `release 0.1.0 (v0.1.0)` or `dev main@1a2b3c4 (+2 uncommitted)`.
 - **Pin the release** with `just release-worktree <tag>`: it creates (or moves) a detached checkout at the tag in
   `~/.local/share/workstation-steward/release` and writes both launchers to `~/.local/bin`, after showing its plan
-  and asking. Once the steward comes from npm, the release is the mise pin in your config repo and the launchers go.
+  and asking. The release can come from npm through mise instead: [where the release comes from](#where-the-release-comes-from).
 - **Feature work stays off your machine.** `steward-dev` uses `examples/` and a separate state folder unless you add
   `--real` (or set `$STEWARD_INSTANCE`).
 - **Trying a fix on your own machine** with `steward-dev --real`: read-only commands run as usual; a command that can
   change things first prints `DEV BUILD … is about to run …` and then its usual plan and question.
 - **The release keeps working.** `steward-dev --real check` reports when your config is in a format the pinned release
   can't read, and `steward migrate` will refuse to go past it.
+
+### Where the release comes from
+
+Two ways, chosen by how often you release. `steward-dev` runs your clone either way.
+
+| | A worktree at a tag | The npm package through mise |
+| --- | --- | --- |
+| What `steward` runs | a detached checkout of your clone at a tag, in `~/.local/share/workstation-steward/release` | `npm:workstation-steward` at the version your config's `mise/config.toml` pins |
+| A new release reaches you | when you run `just release-worktree vX.Y.Z`: at once | through `steward sc upgrade` or Renovate's PR, once the release is as old as your gate |
+| Supply-chain checks | your own CI, review and release; outside the release-age gate | the gate, provenance and Renovate, like every other tool |
+| `steward version` says | `release X.Y.Z (vX.Y.Z)` | `release X.Y.Z (npm)` |
+| Launchers | `steward` and `steward-dev` in `~/.local/bin`, written by the task | mise's `steward`; `steward-dev` still from the task |
+| Suits | active development: frequent releases you want at once | steady use: occasional releases, where waiting costs little |
+
+**Pin or move the worktree.** *Built.* From your clone: `DRY_RUN=1 just release-worktree vX.Y.Z`, then
+`just release-worktree vX.Y.Z`. It refuses a release folder with local changes, and a launcher it didn't write; move
+those aside first. A release folder that is a worktree of another repository (a predecessor's) can't move to this
+one's tag: remove it with `git -C <that repository> worktree remove <folder>` first, and the task creates a fresh one.
+Check with `steward version`.
+
+**Switch to npm through mise.** *Built; the install check proves it on a clean Mac
+([`maintainers.md`](maintainers.md#checking-a-release-on-a-clean-mac)).* Keep the worktree: it becomes the fallback.
+
+1. Check the release's provenance (`npm view workstation-steward@X.Y.Z dist.attestations`), then pin it with the
+   steward's own command, which backs up your mise config, verifies and writes a receipt:
+   `steward sc upgrade-tool 'npm:workstation-steward[allow_low_downloads=true]' X.Y.Z`. The approval lets mise's npm
+   installer take a package name younger than 30 days (this one's until 2026-11-27); after that it changes nothing.
+2. `steward version` says `release X.Y.Z (npm)`: with `mise activate`, mise's tools come before `~/.local/bin` on
+   `PATH`, so the package wins over the launcher.
+3. Commit the changed `mise/config.toml` and `mise.lock` in your config repo through a PR, as for any tool. From then on
+   `steward sc upgrade` takes new releases once they pass the gate, and Renovate proposes them.
+
+**Back to the worktree.** `steward sc rollback` restores the mise config from before the pin (or remove the pin through
+a PR). The launcher takes over again at once: mise's leftover `steward` shim passes through to the next `steward` on
+`PATH` when no version is pinned. To retire the worktree for good instead, remove it with
+`git -C <your clone> worktree remove ~/.local/share/workstation-steward/release` and delete `~/.local/bin/steward`;
+keep `steward-dev`, since the package installs only `steward`.
