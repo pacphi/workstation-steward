@@ -1,0 +1,204 @@
+{
+ "name": "steward-onboarding",
+ "title": "workstation-steward: a first session in the terminal",
+ "desc": "An illustrative session, looping. It checks the npm release's provenance (SLSA v1), installs it through mise, runs steward init (nine files created with a receipt; the AI tooling add-on off, the projects add-on on under ~/Development, the Claude Code skills installed everywhere with PR consolidation), then runs steward sc plan, which takes gh 2.103.2, holds python@3.15 3.15.2 because it is two days old, and skips postgres 18 because a major upgrade is deliberate.",
+ "window": "steward — zsh",
+ "still": 1,
+ "scenes": [
+  [
+   {
+    "cmd": "npm view workstation-steward@0.2.1 dist.attestations.provenance.predicateType"
+   },
+   {
+    "out": "https://slsa.dev/provenance/v1",
+    "color": "ok"
+   },
+   {
+    "cmd": "mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.2.1'"
+   },
+   {
+    "segs": [
+     [
+      "mise ",
+      "dim"
+     ],
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "npm:workstation-steward@0.2.1",
+      "fg"
+     ]
+    ]
+   }
+  ],
+  [
+   {
+    "cmd": "steward init"
+   },
+   {
+    "out": "steward init: create your config in ~/.config/workstation-steward from the examples (9 files):"
+   },
+   {
+    "ask": "Create these? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "out": "Created 9 files. Receipt: ~/.local/state/workstation-steward/backups/init-…/receipt.json",
+    "color": "dim"
+   },
+   {
+    "out": "A few questions finish the setup. Each answer changes one line in steward.toml.",
+    "color": "blue"
+   },
+   {
+    "ask": "Turn on the AI tooling add-on (Ruflo, AgentDB, AQE, Brain, RuVector: drift, repin, guards)? [y/N] ",
+    "answer": "n"
+   },
+   {
+    "ask": "Turn on the projects add-on (discovery, the registry and onboarding of your projects)? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "ask": "Where do your projects live? Folders, separated by commas [~/Development]: ",
+    "answer": "⏎"
+   },
+   {
+    "out": "Install the steward's Claude Code skills (/steward:supply-chain and the rest)?"
+   },
+   {
+    "out": "  1) everywhere: every Claude Code session you start, in any folder",
+    "quick": true
+   },
+   {
+    "out": "  2) one project: only sessions started in a folder you name    3) not now",
+    "quick": true
+   },
+   {
+    "ask": "Choose 1, 2 or 3 [3]: ",
+    "answer": "1"
+   },
+   {
+    "ask": "Also include PR consolidation (folds a repo's Dependabot and Renovate PRs into one verified PR)? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "out": "Set in ~/.config/workstation-steward/steward.toml: profiles.projects = true; skills.pr_consolidation = true",
+    "color": "dim"
+   },
+   {
+    "ask": "Install? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "segs": [
+     [
+      "✔ ",
+      "ok",
+      true
+     ],
+     [
+      "Successfully installed plugin: steward@workstation-steward (scope: user)",
+      "fg"
+     ]
+    ]
+   }
+  ],
+  [
+   {
+    "cmd": "steward sc plan"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "Homebrew formulae",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  hold   ",
+      "hold",
+      true
+     ],
+     [
+      "python@3.15 3.15.1 -> 3.15.2 (2d old)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "mise tools (mise already applies minimum_release_age)",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  take   ",
+      "ok",
+      true
+     ],
+     [
+      "gh 2.103.1 -> 2.103.2",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  skip   ",
+      "skip",
+      true
+     ],
+     [
+      "postgres 16.15 -> 18 (major: upgrade deliberately with steward sc upgrade-tool postgres <version>)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "plan: 0 formula(e), 0 cask(s), 1 mise tool(s)",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "out": "",
+    "quick": true
+   },
+   {
+    "out": "# next, in Claude Code: /steward:supply-chain audit",
+    "color": "dim"
+   }
+  ]
+ ]
+}

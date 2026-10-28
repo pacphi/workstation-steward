@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="288" viewBox="0 0 940 288" role="img" aria-labelledby="t d">
+<title id="t">workstation-steward: PR consolidation in Claude Code</title>
+<desc id="d">A retelling of the real pacphi/ampel#86, looping. In Claude Code, /steward:pr-consolidation works in a fresh clone, finds three Dependabot PRs, takes the two in-major bumps (axios, vite) that are at least three days old, defers the major one with its breaking changes written up, fixes twelve RustSec vulnerabilities with lockfile-only updates, justifies one ignore that has no fix without a major, and opens one PR with every CI job green. Merging stays the owner's decision.</desc>
+<style>
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px}
+@keyframes k1{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}3.883%{clip-path:inset(0 95.00% 0 0);opacity:1;animation-timing-function:steps(38, end)}20.485%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}92.621%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.019%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l1{opacity:1;animation:k1 10.3s linear infinite}
+@keyframes k2{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}25.825%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}92.621%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.019%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l2{opacity:1;animation:k2 10.3s linear infinite}
+@keyframes k3{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}29.903%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}92.621%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.019%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l3{opacity:1;animation:k3 10.3s linear infinite}
+@keyframes k4{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}33.981%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}92.621%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.019%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l4{opacity:1;animation:k4 10.3s linear infinite}
+@keyframes k5{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}38.058%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}92.621%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.019%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l5{opacity:1;animation:k5 10.3s linear infinite}
+@keyframes k6{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}42.136%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}92.621%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.019%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l6{opacity:1;animation:k6 10.3s linear infinite}
+@keyframes k7{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}46.214%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}92.621%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.019%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l7{opacity:1;animation:k7 10.3s linear infinite}
+@keyframes k8{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}50.291%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}92.621%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.019%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l8{opacity:1;animation:k8 10.3s linear infinite}
+@keyframes k9{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}54.369%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}92.621%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.019%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l9{opacity:1;animation:k9 10.3s linear infinite}
+@keyframes k10{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}55.534%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}92.621%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.019%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l10{opacity:1;animation:k10 10.3s linear infinite}
+@media (prefers-reduced-motion:reduce){text{animation:none!important}}
+</style>
+<rect x="0.5" y="0.5" width="939" height="287" rx="10" fill="#0d1117" stroke="#30363d"/>
+<path d="M0.5 10.5a10 10 0 0 1 10-10h919a10 10 0 0 1 10 10V36H0.5Z" fill="#161b22"/>
+<line x1="0.5" y1="36" x2="939.5" y2="36" stroke="#30363d"/>
+<circle cx="20" cy="18" r="6" fill="#ff5f57"/><circle cx="40" cy="18" r="6" fill="#febc2e"/><circle cx="60" cy="18" r="6" fill="#28c840"/>
+<text x="470" y="22" text-anchor="middle" fill="#8b949e" style="font-size:12px">claude — pacphi/ampel</text>
+<text class="l1" x="24" y="66" xml:space="preserve"><tspan fill="#d97757" font-weight="600">&gt; </tspan><tspan fill="#f0f6fc" font-weight="600">/steward:pr-consolidation pacphi/ampel</tspan></text>
+<text class="l2" x="24" y="86" xml:space="preserve"><tspan fill="#d97757" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9">A fresh clone in a scratch folder. CI's audit gate: cargo audit, then cargo deny.</tspan></text>
+<text class="l3" x="24" y="106" xml:space="preserve"><tspan fill="#d97757" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9">Bot PRs: Dependabot #81 axios, #82 i18next-http-backend, #83 vite.</tspan></text>
+<text class="l4" x="24" y="126" xml:space="preserve"><tspan fill="#d97757" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9">Take, in-major and at least 3 days old: axios ^1.20.0 (#81), vite ^8.3.4 (#83).</tspan></text>
+<text class="l5" x="24" y="146" xml:space="preserve"><tspan fill="#d97757" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9">Defer, a major: i18next-http-backend 3.0.6 → 4.0.2 (#82); breaking changes written up.</tspan></text>
+<text class="l6" x="24" y="166" xml:space="preserve"><tspan fill="#d97757" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9">Pre-existing: cargo audit found 12 vulnerabilities; fixed with lockfile-only updates.</tspan></text>
+<text class="l7" x="24" y="186" xml:space="preserve"><tspan fill="#d97757" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9">One ignore, justified: RUSTSEC-2024-0449 (unsafe-libyaml has no fix without a major).</tspan></text>
+<text class="l8" x="24" y="206" xml:space="preserve"><tspan fill="#d97757" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9">Every CI job green. Opened </tspan><tspan fill="#79c0ff" font-weight="600">pacphi/ampel#86</tspan><tspan fill="#c9d1d9">: one PR in place of #81 and #83.</tspan></text>
+<text class="l9" x="24" y="226" xml:space="preserve"><tspan fill="#c9d1d9"></tspan></text>
+<text class="l10" x="24" y="246" xml:space="preserve"><tspan fill="#8b949e">  Merging is yours: #81 and #83 close after it lands; #82 waits for your call.</tspan></text>
+</svg>

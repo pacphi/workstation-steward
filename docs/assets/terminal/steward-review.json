@@ -1,0 +1,222 @@
+{
+ "name": "steward-review",
+ "title": "workstation-steward: the weekly review",
+ "desc": "An illustrative steward review, looping. Seven read-only stages run (soak, supply-chain audit, AI tooling, projects, GitHub, fleet), then one report lists four items to decide, each with the command that acts on it: prune now that the soak has ended, two Homebrew updates past the release-age gate, and a new project to decide on. Nothing is changed.",
+ "window": "steward — zsh",
+ "still": 1,
+ "scenes": [
+  [
+   {
+    "cmd": "steward review"
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[1/7] soak and prune: prune due ",
+      "fg"
+     ],
+     [
+      "(0s)",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[2/7] supply-chain audit: 2 action(s) or alert(s) ",
+      "fg"
+     ],
+     [
+      "(14s)",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[3/7] AI tooling drift: off ",
+      "fg"
+     ],
+     [
+      "(0s)",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[4/7] projects scan: 1 new or gone ",
+      "fg"
+     ],
+     [
+      "(1s)",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[5/7] projects behind the AI tools: off ",
+      "fg"
+     ],
+     [
+      "(0s)",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[6/7] this repo on GitHub: 0 PR(s), 0 decision(s) ",
+      "fg"
+     ],
+     [
+      "(1s)",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[7/7] fleet on GitHub: 0 of 9 repos with something open ",
+      "fg"
+     ],
+     [
+      "(6s)",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "out": "(total 22s)",
+    "color": "dim"
+   }
+  ],
+  [
+   {
+    "out": "# Steward review, 2026-10-28",
+    "color": "blue",
+    "bold": true
+   },
+   {
+    "out": "4 item(s) to decide. Each names the command that acts on it; nothing here was changed."
+   },
+   {
+    "out": "## Soak and prune",
+    "color": "blue",
+    "bold": true
+   },
+   {
+    "out": "- the soak has ended: old installs can be pruned"
+   },
+   {
+    "segs": [
+     [
+      "  → ",
+      "dim"
+     ],
+     [
+      "DRY_RUN=1 steward sc prune, then steward sc prune",
+      "ans"
+     ]
+    ]
+   },
+   {
+    "out": "## Supply chain",
+    "color": "blue",
+    "bold": true
+   },
+   {
+    "out": "- brew: python@3.15 3.15.1 -> 3.15.2 (3d old)"
+   },
+   {
+    "segs": [
+     [
+      "  → ",
+      "dim"
+     ],
+     [
+      "steward sc plan, then steward sc upgrade",
+      "ans"
+     ]
+    ]
+   },
+   {
+    "out": "- brew: cloudflared 2026.10.3 -> 2026.10.5 (3d old)"
+   },
+   {
+    "segs": [
+     [
+      "  → ",
+      "dim"
+     ],
+     [
+      "steward sc plan, then steward sc upgrade",
+      "ans"
+     ]
+    ]
+   },
+   {
+    "out": "## Projects",
+    "color": "blue",
+    "bold": true
+   },
+   {
+    "out": "- new project: ~/Development/active/web/new-app"
+   },
+   {
+    "segs": [
+     [
+      "  → ",
+      "dim"
+     ],
+     [
+      "steward projects scan, then steward projects decide <path>",
+      "ans"
+     ]
+    ]
+   }
+  ]
+ ]
+}
