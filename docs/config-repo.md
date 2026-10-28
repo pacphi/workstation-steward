@@ -1,6 +1,6 @@
 # Keep your config in a private Git repo
 
-![Revision 1](https://img.shields.io/badge/Revision-1-green) ![Revised 2026-10-28](https://img.shields.io/badge/Revised-2026--10--28-green)
+![Revision 2](https://img.shields.io/badge/Revision-2-green) ![Revised 2026-10-28](https://img.shields.io/badge/Revised-2026--10--28-green)
 
 Your config (the *instance*: `steward.toml`, your policy files, the registry of your projects and your mise toolchain)
 is the one part of the steward that's yours alone. Putting it in a private Git repo gives you four things:
@@ -22,6 +22,7 @@ is the one part of the steward that's yours alone. Putting it in a private Git r
 - [2. Let Renovate keep it current](#2-let-renovate-keep-it-current)
 - [3. Use it on another Mac](#3-use-it-on-another-mac)
 - [4. Day to day](#4-day-to-day)
+- [What the steward tells you](#what-the-steward-tells-you)
 - [Keep the repo somewhere else](#keep-the-repo-somewhere-else)
 
 ## 1. Make your config a repo
@@ -94,6 +95,22 @@ mise install
 > [!TIP]
 > Run `steward check` after a pull: it says when the config is in a format your installed steward doesn't read yet,
 > which means that Mac needs the newer steward first.
+
+## What the steward tells you
+
+Once your config is a Git repo, the steward keeps an eye on it for you (D50), read-only:
+
+- **The banner.** `steward` on its own adds a `config` line when files changed here, commits aren't pushed, or GitHub
+  has newer commits. It never touches the network: "newer on GitHub" is as of the last fetch, and says when that was.
+- **`steward config`** ends with a `repo` section: the GitHub repository and branch, then each thing that needs you,
+  with the git command that acts on it.
+- **`steward review`** fetches first, then lists the same items, your config repo's open pull requests (Renovate's
+  among them), and its issues labelled `owner-decision`.
+
+![steward: a config banner line; steward config: the repo section with a changed lockfile and a newer commit, each with its git command; steward review: the same, plus a Renovate pull request](assets/steward-config-sync.svg)
+
+Only a folder that is a Git repository of its own counts. A config inside another repository (the `examples/` folder
+of a steward clone, say) gets no banner.
 
 ## Keep the repo somewhere else
 

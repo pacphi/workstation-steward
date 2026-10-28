@@ -1,0 +1,135 @@
+{
+ "name": "steward-config-sync",
+ "title": "workstation-steward: what the steward tells you about your config repo",
+ "desc": "An illustrative session, looping, in three scenes. A bare steward shows a banner line: one file changed here and one newer commit on GitHub, as of the last fetch, pointing to steward config. steward config ends with the repo section: the GitHub repository and branch, the changed file, and the newer commit, each with the git command that acts on it. steward review fetches the config repo and lists the same items, plus its open pull requests on GitHub, such as Renovate's.",
+ "window": "steward — zsh",
+ "still": 1,
+ "scenes": [
+  [
+   {
+    "cmd": "steward"
+   },
+   {
+    "segs": [
+     [
+      "review due",
+      "hold",
+      true
+     ],
+     [
+      " (last 8 days ago): steward review",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "config",
+      "hold",
+      true
+     ],
+     [
+      " 1 file(s) changed here, 1 newer on GitHub (as of 2026-10-28 13:02): steward config",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "… every command, by area …",
+    "color": "dim"
+   }
+  ],
+  [
+   {
+    "cmd": "steward config"
+   },
+   {
+    "out": "instance:    ~/.config/workstation-steward   [~/.config default]"
+   },
+   {
+    "out": "config file: ~/.config/workstation-steward/steward.toml"
+   },
+   {
+    "out": "… every setting, and where it came from …",
+    "color": "dim"
+   },
+   {
+    "out": "repo:        you/steward-config (main → origin/main)"
+   },
+   {
+    "out": "             1 file(s) changed here: mise/mise.lock"
+   },
+   {
+    "out": "               → git -C ~/.config/workstation-steward status",
+    "color": "dim"
+   },
+   {
+    "out": "             1 newer commit(s) on origin/main (as of 2026-10-28 13:02)"
+   },
+   {
+    "out": "               → git -C ~/.config/workstation-steward pull --ff-only",
+    "color": "dim"
+   }
+  ],
+  [
+   {
+    "cmd": "steward review"
+   },
+   {
+    "out": "… five stages …",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[6/7] your config repo: 2 to do here, 1 PR(s), 0 decision(s) (1s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "… the fleet …",
+    "color": "dim"
+   },
+   {
+    "out": "## Your config repo",
+    "bold": true
+   },
+   {
+    "out": "you/steward-config",
+    "color": "dim"
+   },
+   {
+    "out": "- 1 file(s) changed here: mise/mise.lock"
+   },
+   {
+    "out": "  → git -C ~/.config/workstation-steward status",
+    "color": "dim"
+   },
+   {
+    "out": "- 1 newer commit(s) on origin/main (as of 2026-10-28 13:02)"
+   },
+   {
+    "out": "  → git -C ~/.config/workstation-steward pull --ff-only",
+    "color": "dim"
+   },
+   {
+    "out": "## Pull requests (you/steward-config)",
+    "bold": true
+   },
+   {
+    "out": "- #2 chore(deps): update dependency npm:renovate to v44.181.6 (app/renovate, 2026-10-27)"
+   },
+   {
+    "out": "  → gh pr view 2 -R you/steward-config",
+    "color": "dim"
+   }
+  ]
+ ]
+}

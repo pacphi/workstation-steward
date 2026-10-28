@@ -11,7 +11,7 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | Doc | Rev | What it is |
 | --- | --- | --- |
 | [`guide.md`](guide.md) | 3, 2026-10-27 | Why the steward exists, what it looks after, the rules, first run, the weekly routine and what to do when something happens, words you'll see |
-| [`config-repo.md`](config-repo.md) | 1, 2026-10-28 | Keeping your config in a private Git repo: setting it up, Renovate, a second Mac, and staying in step |
+| [`config-repo.md`](config-repo.md) | 2, 2026-10-28 | Keeping your config in a private Git repo: setting it up, Renovate, a second Mac, staying in step, and what the steward tells you about it |
 | [`prereqs.md`](prereqs.md) | 3, 2026-10-27 | Everything the steward needs on the machine, the order to install it on a new Mac, and `steward doctor` |
 
 ## Design
