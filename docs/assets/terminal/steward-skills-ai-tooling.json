@@ -1,0 +1,187 @@
+{
+ "name": "steward-skills-ai-tooling",
+ "title": "workstation-steward in Claude Code: is the AI tooling OK?",
+ "desc": "An illustrative Claude Code session, looping, in two scenes. Asked whether the AI tooling is OK, the ai-tooling skill runs steward ai drift and explains its one finding: three launcher configs still start Node 26.4.0 by its exact path, missing later security fixes and due to break when it is pruned. It offers three choices; after the user picks the fix, it shows the repin plan, asks, applies it with a receipt, runs drift again (clean), and says how to undo it.",
+ "window": "claude — ~",
+ "still": 0,
+ "scenes": [
+  [
+   {
+    "cmd": "is the AI tooling OK?",
+    "prompt": ">"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Skill",
+      "fg",
+      true
+     ],
+     [
+      "(steward:ai-tooling)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(steward ai drift --offline)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ⎿  Summary: 1 drift, 0 warning(s) across 12 project(s) (9 onboarded, 3 ignored). Nothing was changed.",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "Mostly, yes: the AQE runtime, Ruflo, the hybrids and every guard match your policy. One thing drifted:",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  3 launcher configs in web and api still start Node 26.4.0 by its exact path. They work today, but they"
+   },
+   {
+    "out": "  miss 26.12.1's security fixes and will break when prune removes 26.4.0. `steward ai repin` moves"
+   },
+   {
+    "out": "  them to node/26, which always follows the newest 26.x."
+   },
+   {
+    "segs": [
+     [
+      "  ❯ 1. ",
+      "ans",
+      true
+     ],
+     [
+      "Show the repin plan, then apply it (Recommended)",
+      "ans",
+      true
+     ]
+    ]
+   },
+   {
+    "out": "    2. Show the plan only",
+    "quick": true
+   },
+   {
+    "out": "    3. Leave them for now",
+    "quick": true
+   }
+  ],
+  [
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(steward ai repin)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ⎿  3 file(s) to change (4 reference(s)); 0 skipped",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(steward ai repin --apply)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "ask": "  Do you want to proceed? ",
+    "answer": "❯ 1. Yes"
+   },
+   {
+    "out": "  ⎿  changed 3 file(s); receipt ~/.local/state/…/repin-20261028T171200/receipt.json",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(steward ai drift --offline)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ⎿  Summary: 0 drift, 0 warning(s) across 12 project(s) (9 onboarded, 3 ignored). Nothing was changed.",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "Fixed. Claude and Codex sessions that are already running keep the old paths until restarted; new",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ones use node/26. To undo: steward ai repin --rollback <that receipt>."
+   }
+  ]
+ ]
+}

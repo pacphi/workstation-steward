@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="368" viewBox="0 0 940 368" role="img" aria-labelledby="t d">
+<title id="t">workstation-steward in Claude Code: is this advisory a problem here?</title>
+<desc id="d">An illustrative Claude Code session, looping, in one scene. Asked whether last week's LiteLLM backdoor affects the Mac, the supply-chain skill reads the GitHub advisory, notes that the steward's shared indicators already cover it, runs steward sc audit (clean), and checks for the package and the image directly. It answers that the Mac is not exposed and that it changed nothing.</desc>
+<style>
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px}
+@keyframes k1{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}3.077%{clip-path:inset(0 96.83% 0 0);opacity:1;animation-timing-function:steps(61, end)}21.538%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.923%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.615%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l1{opacity:1;animation:k1 13s linear infinite}
+@keyframes k2{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}25.769%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.923%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.615%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l2{opacity:1;animation:k2 13s linear infinite}
+@keyframes k3{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}29.000%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.923%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.615%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l3{opacity:1;animation:k3 13s linear infinite}
+@keyframes k4{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}32.231%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.923%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.615%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l4{opacity:1;animation:k4 13s linear infinite}
+@keyframes k5{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}35.462%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.923%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.615%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l5{opacity:1;animation:k5 13s linear infinite}
+@keyframes k6{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}38.692%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.923%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.615%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l6{opacity:1;animation:k6 13s linear infinite}
+@keyframes k7{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}41.923%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.923%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.615%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l7{opacity:1;animation:k7 13s linear infinite}
+@keyframes k8{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}45.154%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.923%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.615%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l8{opacity:1;animation:k8 13s linear infinite}
+@keyframes k9{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}48.385%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.923%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.615%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l9{opacity:1;animation:k9 13s linear infinite}
+@keyframes k10{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}51.615%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.923%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.615%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l10{opacity:1;animation:k10 13s linear infinite}
+@keyframes k11{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}54.846%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.923%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.615%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l11{opacity:1;animation:k11 13s linear infinite}
+@keyframes k12{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}58.077%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.923%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.615%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l12{opacity:1;animation:k12 13s linear infinite}
+@keyframes k13{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}61.308%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.923%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.615%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l13{opacity:1;animation:k13 13s linear infinite}
+@keyframes k14{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}64.538%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}93.923%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}96.615%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l14{opacity:1;animation:k14 13s linear infinite}
+@media (prefers-reduced-motion:reduce){text{animation:none!important}}
+</style>
+<rect x="0.5" y="0.5" width="939" height="367" rx="10" fill="#0d1117" stroke="#30363d"/>
+<path d="M0.5 10.5a10 10 0 0 1 10-10h919a10 10 0 0 1 10 10V36H0.5Z" fill="#161b22"/>
+<line x1="0.5" y1="36" x2="939.5" y2="36" stroke="#30363d"/>
+<circle cx="20" cy="18" r="6" fill="#ff5f57"/><circle cx="40" cy="18" r="6" fill="#febc2e"/><circle cx="60" cy="18" r="6" fill="#28c840"/>
+<text x="470" y="22" text-anchor="middle" fill="#8b949e" style="font-size:12px">claude — ~</text>
+<text class="l1" x="24" y="66" xml:space="preserve"><tspan fill="#d97757" font-weight="600">&gt; </tspan><tspan fill="#f0f6fc" font-weight="600">is the LiteLLM backdoor from last week a problem on this Mac?</tspan></text>
+<text class="l2" x="24" y="86" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Skill</tspan><tspan fill="#c9d1d9">(steward:supply-chain)</tspan></text>
+<text class="l3" x="24" y="106" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Fetch</tspan><tspan fill="#c9d1d9">(https://github.com/advisories/GHSA-92x9-889m-jgmw)</tspan></text>
+<text class="l4" x="24" y="126" xml:space="preserve"><tspan fill="#8b949e">  ⎿  LiteLLM 1.107.0 on PyPI and Docker Hub: a malicious release, published 2026-10-21</tspan></text>
+<text class="l5" x="24" y="146" xml:space="preserve"><tspan fill="#d97757" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9">The steward already watches for it: its shared indicators list the backdoor's files, its cook.pth</tspan></text>
+<text class="l6" x="24" y="166" xml:space="preserve"><tspan fill="#c9d1d9">  in Python's site-packages, its processes and the image digest. Checking this Mac:</tspan></text>
+<text class="l7" x="24" y="186" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Bash</tspan><tspan fill="#c9d1d9">(steward sc audit)</tspan></text>
+<text class="l8" x="24" y="206" xml:space="preserve"><tspan fill="#8b949e">  ⎿  clean  LiteLLM 1.107.0 PyPI/Docker backdoor (2026-10-21) (default)</tspan></text>
+<text class="l9" x="24" y="226" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Bash</tspan><tspan fill="#c9d1d9">(find ~ -path '*site-packages/litellm-1.107.0*' 2&gt;/dev/null)</tspan></text>
+<text class="l10" x="24" y="246" xml:space="preserve"><tspan fill="#8b949e">  ⎿  (no output)</tspan></text>
+<text class="l11" x="24" y="266" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Bash</tspan><tspan fill="#c9d1d9">(docker images --digests | grep -i litellm)</tspan></text>
+<text class="l12" x="24" y="286" xml:space="preserve"><tspan fill="#8b949e">  ⎿  (no output)</tspan></text>
+<text class="l13" x="24" y="306" xml:space="preserve"><tspan fill="#d97757" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9">Not exposed. LiteLLM 1.107.0 isn't installed, no image has the bad digest, and none of its files or</tspan></text>
+<text class="l14" x="24" y="326" xml:space="preserve"><tspan fill="#c9d1d9">  processes are here. Every `steward sc audit` keeps checking for it. I changed nothing.</tspan></text>
+</svg>

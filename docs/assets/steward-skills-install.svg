@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="368" viewBox="0 0 940 368" role="img" aria-labelledby="t d">
+<title id="t">workstation-steward: installing the Claude Code skills</title>
+<desc id="d">An illustrative session, looping, in two scenes. steward skills install shows what it will install (the four skills, from the installed steward's own marketplace file; nothing is fetched), what it changes and how to undo it, asks, and installs the steward plugin for every Claude Code session. Then, in Claude Code, typing /steward: lists the four skills.</desc>
+<style>
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px}
+@keyframes k1{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}2.000%{clip-path:inset(0 91.67% 0 0);opacity:1;animation-timing-function:steps(22, end)}6.950%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}57.150%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}58.900%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l1{opacity:1;animation:k1 20s linear infinite}
+@keyframes k2{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}9.700%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}57.150%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}58.900%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l2{opacity:1;animation:k2 20s linear infinite}
+@keyframes k3{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}11.800%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}57.150%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}58.900%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l3{opacity:1;animation:k3 20s linear infinite}
+@keyframes k4{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}13.900%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}57.150%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}58.900%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l4{opacity:1;animation:k4 20s linear infinite}
+@keyframes k5{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}16.000%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}57.150%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}58.900%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l5{opacity:1;animation:k5 20s linear infinite}
+@keyframes k6{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}18.100%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}57.150%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}58.900%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l6{opacity:1;animation:k6 20s linear infinite}
+@keyframes k7{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}20.200%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}57.150%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}58.900%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l7{opacity:1;animation:k7 20s linear infinite}
+@keyframes k8{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}22.300%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}57.150%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}58.900%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l8{opacity:1;animation:k8 20s linear infinite}
+@keyframes k9{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}24.400%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}57.150%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}58.900%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l9{opacity:1;animation:k9 20s linear infinite}
+@keyframes k10{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}26.500%{clip-path:inset(0 6.25% 0 0);opacity:1;animation-timing-function:step-end}30.250%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}57.150%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}58.900%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l10{opacity:1;animation:k10 20s linear infinite}
+@keyframes k11{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}31.750%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}57.150%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}58.900%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l11{opacity:1;animation:k11 20s linear infinite}
+@keyframes k12{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}33.850%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}57.150%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}58.900%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l12{opacity:1;animation:k12 20s linear infinite}
+@keyframes k13{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}35.950%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}57.150%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}58.900%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l13{opacity:1;animation:k13 20s linear infinite}
+@keyframes k14{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}38.050%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}57.150%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}58.900%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l14{opacity:1;animation:k14 20s linear infinite}
+@keyframes k15{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}59.150%{clip-path:inset(0 75.00% 0 0);opacity:1;animation-timing-function:steps(6, end)}60.500%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.125%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.875%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l15{opacity:0;animation:k15 20s linear infinite}
+@keyframes k16{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}63.250%{clip-path:inset(0 81.82% 0 0);opacity:1;animation-timing-function:steps(9, end)}65.275%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.125%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.875%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l16{opacity:0;animation:k16 20s linear infinite}
+@keyframes k17{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}68.025%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.125%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.875%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l17{opacity:0;animation:k17 20s linear infinite}
+@keyframes k18{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}70.125%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.125%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.875%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l18{opacity:0;animation:k18 20s linear infinite}
+@keyframes k19{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}72.225%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.125%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.875%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l19{opacity:0;animation:k19 20s linear infinite}
+@keyframes k20{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}74.325%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.125%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.875%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l20{opacity:0;animation:k20 20s linear infinite}
+@keyframes k21{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}76.425%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.125%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.875%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l21{opacity:0;animation:k21 20s linear infinite}
+@keyframes k22{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}77.025%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.125%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.875%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l22{opacity:0;animation:k22 20s linear infinite}
+@media (prefers-reduced-motion:reduce){text{animation:none!important}}
+</style>
+<rect x="0.5" y="0.5" width="939" height="367" rx="10" fill="#0d1117" stroke="#30363d"/>
+<path d="M0.5 10.5a10 10 0 0 1 10-10h919a10 10 0 0 1 10 10V36H0.5Z" fill="#161b22"/>
+<line x1="0.5" y1="36" x2="939.5" y2="36" stroke="#30363d"/>
+<circle cx="20" cy="18" r="6" fill="#ff5f57"/><circle cx="40" cy="18" r="6" fill="#febc2e"/><circle cx="60" cy="18" r="6" fill="#28c840"/>
+<text x="470" y="22" text-anchor="middle" fill="#8b949e" style="font-size:12px">steward — zsh</text>
+<text class="l1" x="24" y="66" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">steward skills install</tspan></text>
+<text class="l2" x="24" y="86" xml:space="preserve"><tspan fill="#c9d1d9">steward skills install: the steward's Claude Code skills, in every Claude Code session you start, in any</tspan></text>
+<text class="l3" x="24" y="106" xml:space="preserve"><tspan fill="#c9d1d9">folder (Claude's user scope)</tspan></text>
+<text class="l4" x="24" y="126" xml:space="preserve"><tspan fill="#c9d1d9">  skills:   supply-chain, ai-tooling, projects, pr-consolidation (from your add-ons)</tspan></text>
+<text class="l5" x="24" y="146" xml:space="preserve"><tspan fill="#c9d1d9">  accepts:  the plugin's command `steward skills path`, which Claude Code runs each session (from this</tspan></text>
+<text class="l6" x="24" y="166" xml:space="preserve"><tspan fill="#c9d1d9">            release's own marketplace file, copied to ~/.local/state/…/skills/marketplace; nothing is fetched)</tspan></text>
+<text class="l7" x="24" y="186" xml:space="preserve"><tspan fill="#c9d1d9">  runs:     claude plugin install steward --marketplace ~/.local/state/…/skills/marketplace --scope user --yes</tspan></text>
+<text class="l8" x="24" y="206" xml:space="preserve"><tspan fill="#c9d1d9">  changes:  ~/.claude/settings.json, ~/.claude/plugins/</tspan></text>
+<text class="l9" x="24" y="226" xml:space="preserve"><tspan fill="#c9d1d9">  undo:     steward skills uninstall</tspan></text>
+<text class="l10" x="24" y="246" xml:space="preserve"><tspan fill="#c9d1d9">Install? [y/N] </tspan><tspan fill="#79c0ff" font-weight="600">y</tspan></text>
+<text class="l11" x="24" y="266" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">✔ </tspan><tspan fill="#c9d1d9">Successfully added marketplace: workstation-steward (declared in user settings)</tspan></text>
+<text class="l12" x="24" y="286" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">✔ </tspan><tspan fill="#c9d1d9">Successfully installed plugin: steward@workstation-steward (scope: user)</tspan></text>
+<text class="l13" x="24" y="306" xml:space="preserve"><tspan fill="#8b949e">Receipt: ~/.local/state/workstation-steward/backups/skills-install-20261028T155348/receipt.json</tspan></text>
+<text class="l14" x="24" y="326" xml:space="preserve"><tspan fill="#c9d1d9">Installed: steward@workstation-steward. A new Claude Code session loads /steward:supply-chain and the rest.</tspan></text>
+<text class="l15" x="24" y="66" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">$ </tspan><tspan fill="#f0f6fc" font-weight="600">claude</tspan></text>
+<text class="l16" x="24" y="86" xml:space="preserve"><tspan fill="#d97757" font-weight="600">&gt; </tspan><tspan fill="#f0f6fc" font-weight="600">/steward:</tspan></text>
+<text class="l17" x="24" y="106" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">  /steward:supply-chain      </tspan><tspan fill="#8b949e">Keeps this machine's software supply chain current within policy…</tspan></text>
+<text class="l18" x="24" y="126" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">  /steward:ai-tooling        </tspan><tspan fill="#8b949e">Keeps this machine's AI tooling consistent with policy…</tspan></text>
+<text class="l19" x="24" y="146" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">  /steward:projects          </tspan><tspan fill="#8b949e">Discovers projects under the project roots set in steward.toml…</tspan></text>
+<text class="l20" x="24" y="166" xml:space="preserve"><tspan fill="#58a6ff" font-weight="600">  /steward:pr-consolidation  </tspan><tspan fill="#8b949e">Consolidates open Dependabot and/or Renovate dependency PRs…</tspan></text>
+<text class="l21" x="24" y="186" xml:space="preserve"><tspan fill="#c9d1d9"></tspan></text>
+<text class="l22" x="24" y="206" xml:space="preserve"><tspan fill="#8b949e"># or skip the slash: ask in plain words, and Claude picks the skill</tspan></text>
+</svg>

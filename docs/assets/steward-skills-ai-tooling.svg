@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="308" viewBox="0 0 940 308" role="img" aria-labelledby="t d">
+<title id="t">workstation-steward in Claude Code: is the AI tooling OK?</title>
+<desc id="d">An illustrative Claude Code session, looping, in two scenes. Asked whether the AI tooling is OK, the ai-tooling skill runs steward ai drift and explains its one finding: three launcher configs still start Node 26.4.0 by its exact path, missing later security fixes and due to break when it is pruned. It offers three choices; after the user picks the fix, it shows the repin plan, asks, applies it with a receipt, runs drift again (clean), and says how to undo it.</desc>
+<style>
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px}
+@keyframes k1{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}2.235%{clip-path:inset(0 91.30% 0 0);opacity:1;animation-timing-function:steps(21, end)}7.514%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}49.693%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}51.648%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l1{opacity:1;animation:k1 17.9s linear infinite}
+@keyframes k2{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}10.587%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}49.693%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}51.648%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l2{opacity:1;animation:k2 17.9s linear infinite}
+@keyframes k3{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}12.933%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}49.693%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}51.648%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l3{opacity:1;animation:k3 17.9s linear infinite}
+@keyframes k4{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}15.279%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}49.693%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}51.648%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l4{opacity:1;animation:k4 17.9s linear infinite}
+@keyframes k5{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}17.626%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}49.693%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}51.648%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l5{opacity:1;animation:k5 17.9s linear infinite}
+@keyframes k6{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}19.972%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}49.693%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}51.648%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l6{opacity:1;animation:k6 17.9s linear infinite}
+@keyframes k7{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}22.318%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}49.693%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}51.648%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l7{opacity:1;animation:k7 17.9s linear infinite}
+@keyframes k8{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}24.665%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}49.693%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}51.648%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l8{opacity:1;animation:k8 17.9s linear infinite}
+@keyframes k9{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}27.011%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}49.693%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}51.648%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l9{opacity:1;animation:k9 17.9s linear infinite}
+@keyframes k10{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}29.358%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}49.693%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}51.648%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l10{opacity:1;animation:k10 17.9s linear infinite}
+@keyframes k11{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}30.028%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}49.693%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}51.648%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l11{opacity:1;animation:k11 17.9s linear infinite}
+@keyframes k12{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}51.927%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}95.559%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.514%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l12{opacity:0;animation:k12 17.9s linear infinite}
+@keyframes k13{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}54.274%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}95.559%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.514%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l13{opacity:0;animation:k13 17.9s linear infinite}
+@keyframes k14{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}56.620%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}95.559%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.514%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l14{opacity:0;animation:k14 17.9s linear infinite}
+@keyframes k15{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}58.966%{clip-path:inset(0 23.53% 0 0);opacity:1;animation-timing-function:step-end}63.156%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}95.559%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.514%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l15{opacity:0;animation:k15 17.9s linear infinite}
+@keyframes k16{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}64.832%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}95.559%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.514%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l16{opacity:0;animation:k16 17.9s linear infinite}
+@keyframes k17{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}67.179%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}95.559%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.514%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l17{opacity:0;animation:k17 17.9s linear infinite}
+@keyframes k18{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}69.525%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}95.559%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.514%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l18{opacity:0;animation:k18 17.9s linear infinite}
+@keyframes k19{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}71.872%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}95.559%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.514%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l19{opacity:0;animation:k19 17.9s linear infinite}
+@keyframes k20{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}74.218%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}95.559%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}97.514%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l20{opacity:0;animation:k20 17.9s linear infinite}
+@media (prefers-reduced-motion:reduce){text{animation:none!important}}
+</style>
+<rect x="0.5" y="0.5" width="939" height="307" rx="10" fill="#0d1117" stroke="#30363d"/>
+<path d="M0.5 10.5a10 10 0 0 1 10-10h919a10 10 0 0 1 10 10V36H0.5Z" fill="#161b22"/>
+<line x1="0.5" y1="36" x2="939.5" y2="36" stroke="#30363d"/>
+<circle cx="20" cy="18" r="6" fill="#ff5f57"/><circle cx="40" cy="18" r="6" fill="#febc2e"/><circle cx="60" cy="18" r="6" fill="#28c840"/>
+<text x="470" y="22" text-anchor="middle" fill="#8b949e" style="font-size:12px">claude — ~</text>
+<text class="l1" x="24" y="66" xml:space="preserve"><tspan fill="#d97757" font-weight="600">&gt; </tspan><tspan fill="#f0f6fc" font-weight="600">is the AI tooling OK?</tspan></text>
+<text class="l2" x="24" y="86" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Skill</tspan><tspan fill="#c9d1d9">(steward:ai-tooling)</tspan></text>
+<text class="l3" x="24" y="106" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Bash</tspan><tspan fill="#c9d1d9">(steward ai drift --offline)</tspan></text>
+<text class="l4" x="24" y="126" xml:space="preserve"><tspan fill="#8b949e">  ⎿  Summary: 1 drift, 0 warning(s) across 12 project(s) (9 onboarded, 3 ignored). Nothing was changed.</tspan></text>
+<text class="l5" x="24" y="146" xml:space="preserve"><tspan fill="#d97757" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9">Mostly, yes: the AQE runtime, Ruflo, the hybrids and every guard match your policy. One thing drifted:</tspan></text>
+<text class="l6" x="24" y="166" xml:space="preserve"><tspan fill="#c9d1d9">  3 launcher configs in web and api still start Node 26.4.0 by its exact path. They work today, but they</tspan></text>
+<text class="l7" x="24" y="186" xml:space="preserve"><tspan fill="#c9d1d9">  miss 26.12.1's security fixes and will break when prune removes 26.4.0. `steward ai repin` moves</tspan></text>
+<text class="l8" x="24" y="206" xml:space="preserve"><tspan fill="#c9d1d9">  them to node/26, which always follows the newest 26.x.</tspan></text>
+<text class="l9" x="24" y="226" xml:space="preserve"><tspan fill="#79c0ff" font-weight="600">  ❯ 1. </tspan><tspan fill="#79c0ff" font-weight="600">Show the repin plan, then apply it (Recommended)</tspan></text>
+<text class="l10" x="24" y="246" xml:space="preserve"><tspan fill="#c9d1d9">    2. Show the plan only</tspan></text>
+<text class="l11" x="24" y="266" xml:space="preserve"><tspan fill="#c9d1d9">    3. Leave them for now</tspan></text>
+<text class="l12" x="24" y="66" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Bash</tspan><tspan fill="#c9d1d9">(steward ai repin)</tspan></text>
+<text class="l13" x="24" y="86" xml:space="preserve"><tspan fill="#8b949e">  ⎿  3 file(s) to change (4 reference(s)); 0 skipped</tspan></text>
+<text class="l14" x="24" y="106" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Bash</tspan><tspan fill="#c9d1d9">(steward ai repin --apply)</tspan></text>
+<text class="l15" x="24" y="126" xml:space="preserve"><tspan fill="#c9d1d9">  Do you want to proceed? </tspan><tspan fill="#79c0ff" font-weight="600">❯ 1. Yes</tspan></text>
+<text class="l16" x="24" y="146" xml:space="preserve"><tspan fill="#8b949e">  ⎿  changed 3 file(s); receipt ~/.local/state/…/repin-20261028T171200/receipt.json</tspan></text>
+<text class="l17" x="24" y="166" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Bash</tspan><tspan fill="#c9d1d9">(steward ai drift --offline)</tspan></text>
+<text class="l18" x="24" y="186" xml:space="preserve"><tspan fill="#8b949e">  ⎿  Summary: 0 drift, 0 warning(s) across 12 project(s) (9 onboarded, 3 ignored). Nothing was changed.</tspan></text>
+<text class="l19" x="24" y="206" xml:space="preserve"><tspan fill="#d97757" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9">Fixed. Claude and Codex sessions that are already running keep the old paths until restarted; new</tspan></text>
+<text class="l20" x="24" y="226" xml:space="preserve"><tspan fill="#c9d1d9">  ones use node/26. To undo: steward ai repin --rollback &lt;that receipt&gt;.</tspan></text>
+</svg>
