@@ -32,6 +32,8 @@ const dim = s => (tty ? `\x1b[2m${s}\x1b[0m` : s);
 const die = (msg, code = 2) => { console.error(`steward: ${msg}`); process.exit(code); };
 // load() — the effective config, or a clear stop (a $STEWARD_INSTANCE without a steward.toml, an unreadable file)
 const load = () => { try { return C.load(); } catch (e) { return die(e.message); } };
+// report() — the same for the commands that report on the config: no steward.toml yet is something to say, not a stop
+const report = () => { try { return C.load({ allowMissing: true }); } catch (e) { return die(e.message); } };
 
 function help(area) {
   const cfg = (() => { try { return C.load(); } catch { return null; } })();
@@ -77,7 +79,7 @@ function releaseReads() {
 }
 
 function version() {
-  const cfg = load();
+  const cfg = report();
   console.log(`workstation-steward ${build()} on node ${process.versions.node}`);
   if (SANDBOX) console.log(dim('dev build: using examples/ and its own state; add --real to use your config'));
   console.log(`engine:   ${C.tilde(ENGINE)}`);
@@ -88,7 +90,7 @@ function version() {
 
 // check() — exit 0 when nothing is wanted from you, 1 when something is (each with its command), 2 on an error
 function check() {
-  const cfg = load();
+  const cfg = report();
   const wants = [];
   console.log(`engine ${C.ENGINE_VERSION}; instance ${C.tilde(C.INSTANCE_ROOT)} [${C.INSTANCE.source}]`);
   if (!fs.existsSync(cfg.file)) wants.push(`no steward.toml at ${C.tilde(C.INSTANCE_ROOT)}: steward init`);

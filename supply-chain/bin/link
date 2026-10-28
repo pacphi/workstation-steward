@@ -5,10 +5,14 @@
 source "$(dirname "$0")/../../lib/lib.sh"
 
 m="${INSTANCE_ROOT}/mise"
+# A fresh machine may have no ~/.config/mise yet (the install check found it): make it, or say so in a dry run
+if [[ ! -d "${STEWARD_PATHS_MISE_CONFIG_DIR}" ]]; then
+  if [[ "${DRY_RUN}" == 1 ]]; then echo "   \$ mkdir -p ${STEWARD_PATHS_MISE_CONFIG_DIR}"; else mkdir -p "${STEWARD_PATHS_MISE_CONFIG_DIR}"; fi
+fi
 for f in config.toml mise.lock; do
   t="${STEWARD_PATHS_MISE_CONFIG_DIR}/${f}"
   if [[ "${DRY_RUN}" == 1 ]]; then echo "   \$ ln -sfn ${m}/${f} ${t}"; continue; fi
   [[ -L "${t}" ]] || { [[ -e "${t}" ]] && mv "${t}" "${t}.pre-link"; }
   ln -sfn "${m}/${f}" "${t}"
 done
-ls -l "${STEWARD_PATHS_MISE_CONFIG_DIR}/config.toml" "${STEWARD_PATHS_MISE_CONFIG_DIR}/mise.lock"
+[[ "${DRY_RUN}" == 1 ]] || ls -l "${STEWARD_PATHS_MISE_CONFIG_DIR}/config.toml" "${STEWARD_PATHS_MISE_CONFIG_DIR}/mise.lock"
