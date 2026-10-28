@@ -1,0 +1,153 @@
+{
+ "name": "steward-skills-advisory",
+ "title": "workstation-steward in Claude Code: is this advisory a problem here?",
+ "desc": "An illustrative Claude Code session, looping, in one scene. Asked whether last week's LiteLLM backdoor affects the Mac, the supply-chain skill reads the GitHub advisory, notes that the steward's shared indicators already cover it, runs steward sc audit (clean), and checks for the package and the image directly. It answers that the Mac is not exposed and that it changed nothing.",
+ "window": "claude — ~",
+ "still": 0,
+ "scenes": [
+  [
+   {
+    "cmd": "is the LiteLLM backdoor from last week a problem on this Mac?",
+    "prompt": ">"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Skill",
+      "fg",
+      true
+     ],
+     [
+      "(steward:supply-chain)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Fetch",
+      "fg",
+      true
+     ],
+     [
+      "(https://github.com/advisories/GHSA-92x9-889m-jgmw)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ⎿  LiteLLM 1.107.0 on PyPI and Docker Hub: a malicious release, published 2026-10-21",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "The steward already watches for it: its shared indicators list the backdoor's files, its cook.pth",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  in Python's site-packages, its processes and the image digest. Checking this Mac:"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(steward sc audit)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ⎿  clean  LiteLLM 1.107.0 PyPI/Docker backdoor (2026-10-21) (default)",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(find ~ -path '*site-packages/litellm-1.107.0*' 2>/dev/null)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ⎿  (no output)",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(docker images --digests | grep -i litellm)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ⎿  (no output)",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "Not exposed. LiteLLM 1.107.0 isn't installed, no image has the bad digest, and none of its files or",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  processes are here. Every `steward sc audit` keeps checking for it. I changed nothing."
+   }
+  ]
+ ]
+}

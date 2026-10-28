@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="408" viewBox="0 0 940 408" role="img" aria-labelledby="t d">
+<title id="t">workstation-steward in Claude Code: what needs updating?</title>
+<desc id="d">An illustrative Claude Code session, looping, in two scenes. Asked what needs updating, the supply-chain skill runs steward sc audit and steward sc plan without asking, since both are read-only, and sorts the results: gh is past the 3-day gate, Chrome should be updated now, a two-day-old python waits, a postgres major is the user's call, and a Docker container uses a floating tag. It offers three choices; after the user picks the upgrade, it shows the dry run, asks before upgrading, verifies every tool, and says how to roll back.</desc>
+<style>
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px}
+@keyframes k1{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}1.905%{clip-path:inset(0 94.12% 0 0);opacity:1;animation-timing-function:steps(32, end)}8.762%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l1{opacity:1;animation:k1 21s linear infinite}
+@keyframes k2{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}11.381%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l2{opacity:1;animation:k2 21s linear infinite}
+@keyframes k3{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}13.381%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l3{opacity:1;animation:k3 21s linear infinite}
+@keyframes k4{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}15.381%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l4{opacity:1;animation:k4 21s linear infinite}
+@keyframes k5{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}17.381%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l5{opacity:1;animation:k5 21s linear infinite}
+@keyframes k6{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}19.381%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l6{opacity:1;animation:k6 21s linear infinite}
+@keyframes k7{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}21.381%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l7{opacity:1;animation:k7 21s linear infinite}
+@keyframes k8{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}23.381%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l8{opacity:1;animation:k8 21s linear infinite}
+@keyframes k9{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}25.381%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l9{opacity:1;animation:k9 21s linear infinite}
+@keyframes k10{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}27.381%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l10{opacity:1;animation:k10 21s linear infinite}
+@keyframes k11{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}29.381%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l11{opacity:1;animation:k11 21s linear infinite}
+@keyframes k12{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}31.381%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l12{opacity:1;animation:k12 21s linear infinite}
+@keyframes k13{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}33.381%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l13{opacity:1;animation:k13 21s linear infinite}
+@keyframes k14{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}33.952%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l14{opacity:1;animation:k14 21s linear infinite}
+@keyframes k15{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}35.952%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l15{opacity:1;animation:k15 21s linear infinite}
+@keyframes k16{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}36.524%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}53.286%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}54.952%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l16{opacity:1;animation:k16 21s linear infinite}
+@keyframes k17{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}55.190%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.381%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.048%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l17{opacity:0;animation:k17 21s linear infinite}
+@keyframes k18{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}57.190%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.381%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.048%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l18{opacity:0;animation:k18 21s linear infinite}
+@keyframes k19{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}59.190%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.381%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.048%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l19{opacity:0;animation:k19 21s linear infinite}
+@keyframes k20{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}61.190%{clip-path:inset(0 23.53% 0 0);opacity:1;animation-timing-function:step-end}64.762%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.381%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.048%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l20{opacity:0;animation:k20 21s linear infinite}
+@keyframes k21{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}66.190%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.381%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.048%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l21{opacity:0;animation:k21 21s linear infinite}
+@keyframes k22{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}68.190%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.381%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.048%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l22{opacity:0;animation:k22 21s linear infinite}
+@keyframes k23{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}70.190%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.381%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.048%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l23{opacity:0;animation:k23 21s linear infinite}
+@keyframes k24{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}72.190%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.381%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.048%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l24{opacity:0;animation:k24 21s linear infinite}
+@keyframes k25{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}74.190%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.381%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.048%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l25{opacity:0;animation:k25 21s linear infinite}
+@keyframes k26{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}76.190%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.381%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.048%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l26{opacity:0;animation:k26 21s linear infinite}
+@keyframes k27{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:step-end}78.190%{clip-path:inset(0 0.00% 0 0);opacity:1;animation-timing-function:step-end}96.381%{clip-path:inset(0 0 0 0);opacity:1;animation-timing-function:linear}98.048%{clip-path:inset(0 0 0 0);opacity:0;animation-timing-function:step-end}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.l27{opacity:0;animation:k27 21s linear infinite}
+@media (prefers-reduced-motion:reduce){text{animation:none!important}}
+</style>
+<rect x="0.5" y="0.5" width="939" height="407" rx="10" fill="#0d1117" stroke="#30363d"/>
+<path d="M0.5 10.5a10 10 0 0 1 10-10h919a10 10 0 0 1 10 10V36H0.5Z" fill="#161b22"/>
+<line x1="0.5" y1="36" x2="939.5" y2="36" stroke="#30363d"/>
+<circle cx="20" cy="18" r="6" fill="#ff5f57"/><circle cx="40" cy="18" r="6" fill="#febc2e"/><circle cx="60" cy="18" r="6" fill="#28c840"/>
+<text x="470" y="22" text-anchor="middle" fill="#8b949e" style="font-size:12px">claude — ~</text>
+<text class="l1" x="24" y="66" xml:space="preserve"><tspan fill="#d97757" font-weight="600">&gt; </tspan><tspan fill="#f0f6fc" font-weight="600">what needs updating on this Mac?</tspan></text>
+<text class="l2" x="24" y="86" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Skill</tspan><tspan fill="#c9d1d9">(steward:supply-chain)</tspan></text>
+<text class="l3" x="24" y="106" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Bash</tspan><tspan fill="#c9d1d9">(steward sc audit)</tspan></text>
+<text class="l4" x="24" y="126" xml:space="preserve"><tspan fill="#8b949e">  ⎿  Summary: 3 action(s), 0 alert(s)</tspan></text>
+<text class="l5" x="24" y="146" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Bash</tspan><tspan fill="#c9d1d9">(steward sc plan)</tspan></text>
+<text class="l6" x="24" y="166" xml:space="preserve"><tspan fill="#8b949e">  ⎿  plan: 0 formula(e), 0 cask(s), 1 mise tool(s)</tspan></text>
+<text class="l7" x="24" y="186" xml:space="preserve"><tspan fill="#d97757" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9">Nothing alarming: no indicator of compromise matched. Here's what needs you:</tspan></text>
+<text class="l8" x="24" y="206" xml:space="preserve"><tspan fill="#c9d1d9">    Now        gh 2.103.1 → 2.103.2 is past the 3-day gate</tspan></text>
+<text class="l9" x="24" y="226" xml:space="preserve"><tspan fill="#c9d1d9">               Google Chrome 156 is out; browsers are never held, so update it from the app</tspan></text>
+<text class="l10" x="24" y="246" xml:space="preserve"><tspan fill="#c9d1d9">    Waiting    python@3.15 3.15.2 is 2 days old; it clears tomorrow</tspan></text>
+<text class="l11" x="24" y="266" xml:space="preserve"><tspan fill="#c9d1d9">    Your call  postgres 16 → 18 is a major, so it waits until you ask for it</tspan></text>
+<text class="l12" x="24" y="286" xml:space="preserve"><tspan fill="#c9d1d9">    Docker     ollama runs the floating :latest tag; pin it to a digest so it can't change under you</tspan></text>
+<text class="l13" x="24" y="306" xml:space="preserve"><tspan fill="#c9d1d9"></tspan></text>
+<text class="l14" x="24" y="326" xml:space="preserve"><tspan fill="#79c0ff" font-weight="600">  ❯ 1. </tspan><tspan fill="#79c0ff" font-weight="600">Upgrade gh now (Recommended)</tspan></text>
+<text class="l15" x="24" y="346" xml:space="preserve"><tspan fill="#c9d1d9">    2. Show me the full plan first</tspan></text>
+<text class="l16" x="24" y="366" xml:space="preserve"><tspan fill="#c9d1d9">    3. Not now</tspan></text>
+<text class="l17" x="24" y="66" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Bash</tspan><tspan fill="#c9d1d9">(DRY_RUN=1 steward sc upgrade)</tspan></text>
+<text class="l18" x="24" y="86" xml:space="preserve"><tspan fill="#8b949e">  ⎿  take   gh 2.103.1 -&gt; 2.103.2</tspan></text>
+<text class="l19" x="24" y="106" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Bash</tspan><tspan fill="#c9d1d9">(steward sc upgrade)</tspan></text>
+<text class="l20" x="24" y="126" xml:space="preserve"><tspan fill="#c9d1d9">  Do you want to proceed? </tspan><tspan fill="#79c0ff" font-weight="600">❯ 1. Yes</tspan></text>
+<text class="l21" x="24" y="146" xml:space="preserve"><tspan fill="#8b949e">  ⎿  config backup: ~/.config/mise/backups/config.toml.20261028-112629</tspan></text>
+<text class="l22" x="24" y="166" xml:space="preserve"><tspan fill="#8b949e">  ⎿  all checks passed</tspan></text>
+<text class="l23" x="24" y="186" xml:space="preserve"><tspan fill="#3fb950" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9" font-weight="600">Bash</tspan><tspan fill="#c9d1d9">(steward sc verify)</tspan></text>
+<text class="l24" x="24" y="206" xml:space="preserve"><tspan fill="#8b949e">  ⎿  all checks passed</tspan></text>
+<text class="l25" x="24" y="226" xml:space="preserve"><tspan fill="#d97757" font-weight="600">⏺ </tspan><tspan fill="#c9d1d9">Done. gh 2.103.2 is installed and every tool passed verify. The old 2.103.1 stays on disk through</tspan></text>
+<text class="l26" x="24" y="246" xml:space="preserve"><tspan fill="#c9d1d9">  the 3-day soak, so `steward sc rollback` brings it back if anything breaks.</tspan></text>
+<text class="l27" x="24" y="266" xml:space="preserve"><tspan fill="#c9d1d9">  Chrome is yours: Chrome → About Google Chrome.</tspan></text>
+</svg>

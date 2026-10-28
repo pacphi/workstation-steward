@@ -1,0 +1,245 @@
+{
+ "name": "steward-skills-new-repo",
+ "title": "workstation-steward in Claude Code: set up a new repo",
+ "desc": "An illustrative Claude Code session, looping, in two scenes. Told about a newly cloned repo, the projects skill runs steward projects scan and facets, describes the repo, and offers three choices. After the user picks onboarding with AQE and Brain, it records the decision, shows the onboard plan (nine files, kept out of git status), asks, applies it with a receipt, and names the one step left to the user.",
+ "window": "claude — ~/Development",
+ "still": 0,
+ "scenes": [
+  [
+   {
+    "cmd": "I just cloned acme/web into ~/Development/web. Set it up.",
+    "prompt": ">"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Skill",
+      "fg",
+      true
+     ],
+     [
+      "(steward:projects)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(steward projects scan)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ⎿  new (1): git        ~/Development/web  stack: node/ts",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(steward projects facets ~/Development/web)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ⎿  stack node/ts · node 26.12.1 · no AI tool files yet",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "~/Development/web is new: a Node and TypeScript repo with no AI tool files. Your other node/ts repos",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  use AQE and Brain. How should the steward treat it?"
+   },
+   {
+    "segs": [
+     [
+      "  ❯ 1. ",
+      "ans",
+      true
+     ],
+     [
+      "Onboard with AQE and Brain (Recommended)",
+      "ans",
+      true
+     ]
+    ]
+   },
+   {
+    "out": "    2. Onboard with no AI tools",
+    "quick": true
+   },
+   {
+    "out": "    3. Ignore it",
+    "quick": true
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(steward projects decide ~/Development/web --decision onboarded --ai aqe,brain --yes)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "ask": "  Do you want to proceed? ",
+    "answer": "❯ 1. Yes"
+   },
+   {
+    "out": "  ⎿  recorded 1; registry has 13 project(s).",
+    "color": "dim"
+   }
+  ],
+  [
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(steward projects onboard ~/Development/web)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ⎿  0 edit, 9 create, 0 PR (not applied: rollout), 0 manual",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "The plan creates 9 files (Claude and Codex settings, the AQE hook, its skills, commands and agents),",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  and lists them in .git/info/exclude so git status stays clean. Nothing tracked changes. Apply it?"
+   },
+   {
+    "segs": [
+     [
+      "  ❯ 1. ",
+      "ans",
+      true
+     ],
+     [
+      "Apply (Recommended)",
+      "ans",
+      true
+     ]
+    ]
+   },
+   {
+    "out": "    2. Show me every file first",
+    "quick": true
+   },
+   {
+    "out": "    3. Not now",
+    "quick": true
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(steward projects onboard ~/Development/web --apply)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "ask": "  Do you want to proceed? ",
+    "answer": "❯ 1. Yes"
+   },
+   {
+    "out": "  ⎿  applied; receipt ~/.local/state/…/onboard-web-20261028T194417/receipt.json",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "Done. One step is yours: open Claude Code in ~/Development/web and approve the agentic-qe server",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  and the AQE hooks when asked. To undo: steward projects onboard --rollback <that receipt>."
+   }
+  ]
+ ]
+}

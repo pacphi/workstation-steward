@@ -1,0 +1,226 @@
+{
+ "name": "steward-skills-updates",
+ "title": "workstation-steward in Claude Code: what needs updating?",
+ "desc": "An illustrative Claude Code session, looping, in two scenes. Asked what needs updating, the supply-chain skill runs steward sc audit and steward sc plan without asking, since both are read-only, and sorts the results: gh is past the 3-day gate, Chrome should be updated now, a two-day-old python waits, a postgres major is the user's call, and a Docker container uses a floating tag. It offers three choices; after the user picks the upgrade, it shows the dry run, asks before upgrading, verifies every tool, and says how to roll back.",
+ "window": "claude — ~",
+ "still": 0,
+ "scenes": [
+  [
+   {
+    "cmd": "what needs updating on this Mac?",
+    "prompt": ">"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Skill",
+      "fg",
+      true
+     ],
+     [
+      "(steward:supply-chain)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(steward sc audit)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ⎿  Summary: 3 action(s), 0 alert(s)",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(steward sc plan)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ⎿  plan: 0 formula(e), 0 cask(s), 1 mise tool(s)",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "Nothing alarming: no indicator of compromise matched. Here's what needs you:",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "    Now        gh 2.103.1 → 2.103.2 is past the 3-day gate"
+   },
+   {
+    "out": "               Google Chrome 156 is out; browsers are never held, so update it from the app"
+   },
+   {
+    "out": "    Waiting    python@3.15 3.15.2 is 2 days old; it clears tomorrow"
+   },
+   {
+    "out": "    Your call  postgres 16 → 18 is a major, so it waits until you ask for it"
+   },
+   {
+    "out": "    Docker     ollama runs the floating :latest tag; pin it to a digest so it can't change under you"
+   },
+   {
+    "out": "",
+    "quick": true
+   },
+   {
+    "segs": [
+     [
+      "  ❯ 1. ",
+      "ans",
+      true
+     ],
+     [
+      "Upgrade gh now (Recommended)",
+      "ans",
+      true
+     ]
+    ]
+   },
+   {
+    "out": "    2. Show me the full plan first",
+    "quick": true
+   },
+   {
+    "out": "    3. Not now",
+    "quick": true
+   }
+  ],
+  [
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(DRY_RUN=1 steward sc upgrade)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ⎿  take   gh 2.103.1 -> 2.103.2",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(steward sc upgrade)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "ask": "  Do you want to proceed? ",
+    "answer": "❯ 1. Yes"
+   },
+   {
+    "out": "  ⎿  config backup: ~/.config/mise/backups/config.toml.20261028-112629",
+    "color": "dim"
+   },
+   {
+    "out": "  ⎿  all checks passed",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "ok",
+      true
+     ],
+     [
+      "Bash",
+      "fg",
+      true
+     ],
+     [
+      "(steward sc verify)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  ⎿  all checks passed",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "⏺ ",
+      "claude",
+      true
+     ],
+     [
+      "Done. gh 2.103.2 is installed and every tool passed verify. The old 2.103.1 stays on disk through",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  the 3-day soak, so `steward sc rollback` brings it back if anything breaks."
+   },
+   {
+    "out": "  Chrome is yours: Chrome → About Google Chrome."
+   }
+  ]
+ ]
+}

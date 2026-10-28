@@ -120,6 +120,11 @@ steward doctor        # what this machine still needs (--install fixes it)
 steward sc plan       # what an upgrade would take, hold or skip, and why
 ```
 
+**5. Or just ask.** With the Claude Code skills installed (`steward init` offers them, or run `steward skills install`),
+open Claude Code in any folder and ask in plain words: *"what needs updating on this Mac?"* The skill runs the right
+commands, explains what they found, and asks before it changes anything
+([what you can ask](skills/README.md#things-you-can-ask)).
+
 > [!TIP]
 > `steward` on its own lists every command and tells you when something needs you: new projects, a soak ending, a
 > review due.
@@ -161,8 +166,12 @@ The add-ons are off until you turn them on, in `steward init` or in `steward.tom
 
 ## Claude Code skills
 
-The steward ships as a Claude Code plugin, `steward`, with one skill per area. Each follows the runbook (or, for PR
-consolidation, the rules) beside it, and asks before anything that changes your machine.
+**Ask in plain words, without learning the commands.** The steward ships as a Claude Code plugin, `steward`, with one
+skill per area. Each turns a question like *"what needs updating?"* into the right `steward` commands, runs the
+read-only ones, explains what they found, and asks before anything changes. It follows the runbook (or, for PR
+consolidation, the rules) beside it, so it keeps the same release-age gate and the same plan, yes, backup and receipt.
+
+![Claude Code: asked what needs updating, the supply-chain skill audits and plans, sorts the results, then upgrades gh after a yes and verifies](docs/assets/steward-skills-updates.svg)
 
 | Skill | What to ask it |
 | --- | --- |
@@ -179,6 +188,9 @@ you've turned on.
 > Run `steward skills install` in your own terminal, not from inside a Claude Code session. Claude Code accepts a
 > plugin's command only from a person, so the install stops and tells you so.
 
+[`skills/README.md`](skills/README.md) has more to ask each skill, what they will and won't do, and three more
+sessions to watch: an advisory check, setting up a new repo, and the AI tooling.
+
 ## Read next
 
 | Doc | What it covers |
@@ -188,6 +200,7 @@ you've turned on.
 | [`docs/architecture.md`](docs/architecture.md) | How it's built, and every design decision with its reason |
 | [`docs/prereqs.md`](docs/prereqs.md) | What the steward needs on the machine (`steward doctor` checks it) |
 | [`docs/config-repo.md`](docs/config-repo.md) | Keeping your config in a private Git repo, and in step across your Macs |
+| [`skills/README.md`](skills/README.md) | The Claude Code skills: install, what to ask, and what they do |
 | [`examples/README.md`](examples/README.md) | What goes in your instance |
 | [`docs/maintainers.md`](docs/maintainers.md) | How releases are made, published and checked on a clean Mac |
 | [`docs/README.md`](docs/README.md) | Every doc, the runbooks and the skills |

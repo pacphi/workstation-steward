@@ -59,7 +59,8 @@ follow the installed steward.
 | `/steward:projects` | Projects | `scan`, `list` | [`../skills/projects/`](../skills/projects/README.md) |
 | `/steward:pr-consolidation` | Fleet | (none) | [`../skills/pr-consolidation/`](../skills/pr-consolidation/README.md) |
 
-Claude also starts a skill on its own when a request matches its description.
+Claude also starts a skill on its own when a request matches its description. [`../skills/README.md`](../skills/README.md)
+is the user's guide: installing them, what to ask, and four sessions to watch.
 
 Records of what happened on a particular machine (migrations, rollouts, evidence) belong in that machine's instance,
 not here.

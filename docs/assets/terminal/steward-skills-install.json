@@ -1,0 +1,144 @@
+{
+ "name": "steward-skills-install",
+ "title": "workstation-steward: installing the Claude Code skills",
+ "desc": "An illustrative session, looping, in two scenes. steward skills install shows what it will install (the four skills, from the installed steward's own marketplace file; nothing is fetched), what it changes and how to undo it, asks, and installs the steward plugin for every Claude Code session. Then, in Claude Code, typing /steward: lists the four skills.",
+ "window": "steward — zsh",
+ "still": 0,
+ "scenes": [
+  [
+   {
+    "cmd": "steward skills install"
+   },
+   {
+    "out": "steward skills install: the steward's Claude Code skills, in every Claude Code session you start, in any"
+   },
+   {
+    "out": "folder (Claude's user scope)"
+   },
+   {
+    "out": "  skills:   supply-chain, ai-tooling, projects, pr-consolidation (from your add-ons)"
+   },
+   {
+    "out": "  accepts:  the plugin's command `steward skills path`, which Claude Code runs each session (from this"
+   },
+   {
+    "out": "            release's own marketplace file, copied to ~/.local/state/…/skills/marketplace; nothing is fetched)"
+   },
+   {
+    "out": "  runs:     claude plugin install steward --marketplace ~/.local/state/…/skills/marketplace --scope user --yes"
+   },
+   {
+    "out": "  changes:  ~/.claude/settings.json, ~/.claude/plugins/"
+   },
+   {
+    "out": "  undo:     steward skills uninstall"
+   },
+   {
+    "ask": "Install? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "segs": [
+     [
+      "✔ ",
+      "ok",
+      true
+     ],
+     [
+      "Successfully added marketplace: workstation-steward (declared in user settings)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "✔ ",
+      "ok",
+      true
+     ],
+     [
+      "Successfully installed plugin: steward@workstation-steward (scope: user)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "Receipt: ~/.local/state/workstation-steward/backups/skills-install-20261028T155348/receipt.json",
+    "color": "dim"
+   },
+   {
+    "out": "Installed: steward@workstation-steward. A new Claude Code session loads /steward:supply-chain and the rest."
+   }
+  ],
+  [
+   {
+    "cmd": "claude"
+   },
+   {
+    "cmd": "/steward:",
+    "prompt": ">"
+   },
+   {
+    "segs": [
+     [
+      "  /steward:supply-chain      ",
+      "blue",
+      true
+     ],
+     [
+      "Keeps this machine's software supply chain current within policy…",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  /steward:ai-tooling        ",
+      "blue",
+      true
+     ],
+     [
+      "Keeps this machine's AI tooling consistent with policy…",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  /steward:projects          ",
+      "blue",
+      true
+     ],
+     [
+      "Discovers projects under the project roots set in steward.toml…",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  /steward:pr-consolidation  ",
+      "blue",
+      true
+     ],
+     [
+      "Consolidates open Dependabot and/or Renovate dependency PRs…",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "out": "",
+    "quick": true
+   },
+   {
+    "out": "# or skip the slash: ask in plain words, and Claude picks the skill",
+    "color": "dim"
+   }
+  ]
+ ]
+}
