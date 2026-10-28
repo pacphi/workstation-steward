@@ -4,34 +4,47 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-const installs = path.join(require('../../lib/config.js').load().values.paths.mise_data_dir, 'installs');
+const { values } = require('../../lib/config.js').load();
+// Only the AI tooling add-on's tools carry native addons: with it off there is nothing to check (the install check
+// found verify failing on a machine without them)
+if (!values.profiles.ai_tooling) {
+  console.log('  skipped: the AI tooling add-on is off ([profiles] ai_tooling), and only its tools carry native addons');
+  process.exit(0);
+}
+const installs = path.join(values.paths.mise_data_dir, 'installs');
 const npmRoot = execFileSync('npm', ['root', '-g']).toString().trim();
+// Each finder returns where a tool keeps its modules, or null when this machine doesn't have the tool: a tool that
+// isn't installed is reported, not a failure; one that is installed and won't load is
 const latest = tool => {
   const dir = path.join(installs, tool);
+  if (!fs.existsSync(dir)) return null;
   const v = fs.readdirSync(dir).filter(d => /^\d/.test(d) && !fs.lstatSync(path.join(dir, d)).isSymbolicLink()).sort().pop();
-  return path.join(dir, v);
+  return v ? path.join(dir, v) : null;
 };
 const aube = (tool, prefix) => {
-  const store = path.join(latest(tool), 'node_modules/.mise');
-  return path.join(store, fs.readdirSync(store).find(d => d.startsWith(prefix)), 'node_modules');
+  const at = latest(tool);
+  const store = at && path.join(at, 'node_modules/.mise');
+  const hit = store && fs.existsSync(store) && fs.readdirSync(store).find(d => d.startsWith(prefix));
+  return hit ? path.join(store, hit, 'node_modules') : null;
 };
+const npmG = name => (fs.existsSync(path.join(npmRoot, name)) ? path.join(npmRoot, name) : null);
 
-/** @type {[string, string, boolean?][]} */
+/** @type {[string, string | null, string, boolean?][]} */
 const checks = [
-  [aube('npm-agentic-qe', 'agentic-qe@'), 'better-sqlite3', true],
-  [aube('npm-agentic-qe', 'agentic-qe@'), 'hnswlib-node'],
-  [aube('npm-ruvector', 'ruvector@'), 'ruvector-core-darwin-arm64'],
-  [aube('npm-claude-flow-codex', '@claude-flow+codex@'), '@napi-rs/keyring'],
-  [path.join(npmRoot, 'ruflo'), 'better-sqlite3', true],
-  [path.join(npmRoot, 'ruflo'), 'hnswlib-node'],
-  [path.join(npmRoot, 'ruflo'), 'sharp'],
-  [path.join(npmRoot, 'agentdb'), 'hnswlib-node'],
-  [path.join(npmRoot, 'agentdb'), 'argon2'],
+  ['npm-agentic-qe', aube('npm-agentic-qe', 'agentic-qe@'), 'better-sqlite3', true],
+  ['npm-agentic-qe', aube('npm-agentic-qe', 'agentic-qe@'), 'hnswlib-node'],
+  ['npm-ruvector', aube('npm-ruvector', 'ruvector@'), 'ruvector-core-darwin-arm64'],
+  ['npm-claude-flow-codex', aube('npm-claude-flow-codex', '@claude-flow+codex@'), '@napi-rs/keyring'],
+  ['npm -g ruflo', npmG('ruflo'), 'better-sqlite3', true],
+  ['npm -g ruflo', npmG('ruflo'), 'hnswlib-node'],
+  ['npm -g ruflo', npmG('ruflo'), 'sharp'],
+  ['npm -g agentdb', npmG('agentdb'), 'hnswlib-node'],
+  ['npm -g agentdb', npmG('agentdb'), 'argon2'],
 ];
 let failed = 0;
 console.log(`  node ${process.version} modules=${process.versions.modules}`);
-for (const [base, mod, query] of checks) {
-  const where = base.startsWith(npmRoot) ? 'npm -g ' + path.relative(npmRoot, base) : path.relative(installs, base).split('/')[0];
+for (const [where, base, mod, query] of checks) {
+  if (!base) { console.log(`  --   ${where} → ${mod}: not installed`); continue; }
   try {
     const m = require(require.resolve(mod, { paths: [base, path.join(base, 'node_modules')] }));
     if (query) new m(':memory:').prepare('select 1').get();
