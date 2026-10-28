@@ -159,6 +159,22 @@ async function init(args) {
   // Where the steward will look from now on (with this new steward.toml in place); say so if it isn't here
   if (C.resolveInstance().root !== target) console.log(`The steward doesn't look here by default: export STEWARD_INSTANCE=${C.tilde(target)}`);
   console.log(`Next:\n  steward doctor             what this machine still needs\n  DRY_RUN=1 steward sc link  then steward sc link: point ~/.config/mise at this config's mise/\n  edit ${C.tilde(path.join(target, 'steward.toml'))}: your roots, and [profiles] to turn on AI tooling or projects`);
+  // The Claude Code skills (D48), last: only a person in their own terminal can accept the plugin's command
+  if (!yes && process.stdin.isTTY && !process.env.CLAUDECODE) await offerSkills(target);
+  else console.log('  steward skills install     the Claude Code skills, for you or --project <path> (from your own terminal)');
+}
+
+// offerSkills(target) — you, one project, or not now; `steward skills install` shows its plan and asks again
+async function offerSkills(target) {
+  const rl = require('readline').createInterface({ input: process.stdin, output: process.stdout });
+  const q = s => new Promise(res => rl.question(s, res));
+  console.log("\nInstall the steward's Claude Code skills (/steward:supply-chain and the rest)?\n  1) for you, in every project\n  2) for one project only\n  3) not now");
+  const a = (await q('Choose 1, 2 or 3 [3]: ')).trim();
+  const project = a === '2' ? (await q('Project folder: ')).trim() : '';
+  rl.close();
+  if (a !== '1' && !(a === '2' && project)) { console.log('Later: steward skills install [--project <path>]'); return; }
+  spawnSync(process.execPath, [path.join(ENGINE, 'lib', 'skills.js'), 'install', ...(project ? ['--project', project] : [])],
+    { cwd: ENGINE, stdio: 'inherit', env: { ...process.env, STEWARD_INSTANCE: target } });
 }
 
 function run(cmd, args) {

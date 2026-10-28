@@ -70,6 +70,10 @@ The engine never holds your data, and your config never holds code. A release ch
 - **`steward init`** copies [`examples/`](../examples/README.md) to `~/.config/workstation-steward` (or a folder you
   name), shows what it will write, asks, writes a receipt, and lists the next steps (`steward doctor`, `steward sc
   link`). It never overwrites: it refuses when a `steward.toml` or any file it would create is already there. *Built (R3a).*
+  Last, it offers the Claude Code skills: for you, for one project, or not now (D48). *Built.*
+- **`steward skills install [--project <path>]`** installs the skills as the `steward` plugin, from your own
+  terminal (Claude Code takes a plugin's command only from a person); `steward skills uninstall` takes them out. The
+  skills then follow the installed steward, with only the add-ons you turned on. *Built.*
 - **Where the config is found:** `$STEWARD_INSTANCE`, else the engine's own folder when it holds a `steward.toml`,
   else `~/.config/workstation-steward`. *Built (R1).* `steward config` shows which, and why.
 - **Keep the config in Git.** A private repo gives every policy change a review and a history, and lets Renovate

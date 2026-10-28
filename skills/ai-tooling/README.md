@@ -6,5 +6,5 @@ follows are in [`runbook.md`](runbook.md), and the qualification recipe in [`qua
 ## Install
 
 It ships with workstation-steward as part of its Claude Code skills (D48 in
-[`docs/architecture.md`](../../docs/architecture.md#decisions)). In a checkout of this repo, `just claude` loads it
+[`docs/architecture.md`](../../docs/architecture.md#decisions)). Install it with `steward skills install` (from your own terminal). In a checkout of this repo, `just claude` loads it
 as `/steward:ai-tooling`. Its read-only reports take an argument: `/steward:ai-tooling drift`.

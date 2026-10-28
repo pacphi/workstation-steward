@@ -40,6 +40,6 @@ are kept privately, with the owner's config.
 ## Install
 
 It ships with workstation-steward as part of its Claude Code skills (D48 in
-[`docs/architecture.md`](../../docs/architecture.md#decisions)). In a checkout of this repo, `just claude` loads it
+[`docs/architecture.md`](../../docs/architecture.md#decisions)). Install it with `steward skills install` (from your own terminal); it's off until `[skills] pr_consolidation = true` in `steward.toml`. In a checkout of this repo, `just claude` loads it
 as `/steward:pr-consolidation`. Invoke it by name, or ask something that matches its description ("consolidate the
 Dependabot PRs in owner/repo").
