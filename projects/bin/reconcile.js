@@ -9,7 +9,6 @@
 //        reconcile.js --rollback <receipt.json>                 undo a reconcile (refuses if anything it wrote has changed since)
 //        reconcile.js --banner     one line when the AI tools changed since the last full plan, or it found projects behind
 const fs = require('fs');
-const path = require('path');
 const readline = require('readline');
 const P = require('../../lib/projects.js');
 const R = require('../../lib/reconcile.js');
@@ -77,7 +76,7 @@ function show(p) {
   if (args.includes('--rollback')) {
     const receipt = args[args.indexOf('--rollback') + 1];
     if (!receipt || receipt.startsWith('--')) { console.error('usage: steward projects reconcile --rollback <receipt.json>'); process.exitCode = 2; return; }
-    const file = P.untilde(receipt);
+    const file = P.userPath(receipt);
     const rc = JSON.parse(fs.readFileSync(file, 'utf8'));
     if (rc.kind !== 'reconcile') { console.error(`refusing: ${receipt} is a ${rc.kind || 'unknown'} receipt, not a reconcile one`); process.exitCode = 2; return; }
     if (rc.rolled_back) { console.error(`refusing: already rolled back (${rc.rolled_back})`); process.exitCode = 1; return; }
@@ -120,7 +119,7 @@ function show(p) {
     return;
   }
   if (!target) { console.error('usage: steward projects reconcile <path> [--take <unit>…] [--diff <unit>] [--apply] [--json] | --all [--apply] | --rollback <receipt>'); process.exitCode = 2; return; }
-  const dir = path.resolve(P.untilde(target));
+  const dir = P.userPath(target);
   const p = R.plan(dir, { take });
   if (!p.stop) R.noteSeen([p]);
   if (diffUnit) {

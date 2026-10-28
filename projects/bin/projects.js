@@ -87,7 +87,7 @@ if (cmd === 'banner') {
   const allowFile = args[0];
   if (!allowFile) { console.error('usage: projects.js seed <project-tooling-allowlist.json>'); process.exit(2); }
   if (P.exists(P.REGISTRY) && process.env.DRY_RUN !== '1') { console.error(`refusing: ${P.tilde(P.REGISTRY)} exists`); process.exit(1); }
-  const allow = new Map(JSON.parse(fs.readFileSync(allowFile, 'utf8')).map(a => [fs.existsSync(a.project) ? fs.realpathSync(a.project) : a.project, a]));
+  const allow = new Map(JSON.parse(fs.readFileSync(P.userPath(allowFile), 'utf8')).map(a => [fs.existsSync(a.project) ? fs.realpathSync(a.project) : a.project, a]));
   const q = s => JSON.stringify(s);
   const lines = [
     `# Projects under ${P.ROOTS.map(P.tilde).join(', ')} and the owner's decision for each (D5 in docs/architecture.md).`,
@@ -120,7 +120,7 @@ if (cmd === 'banner') {
 function facetsCmd() {
   const target = args.find(a => !a.startsWith('--'));
   if (target) {
-    const dir = path.resolve(P.untilde(target));
+    const dir = P.userPath(target);
     if (!P.exists(dir)) { console.error(`no such folder: ${P.tilde(dir)}`); process.exit(1); }
     const f = P.facets(dir, { git: true, node: true });
     if (json) { console.log(JSON.stringify({ path: P.tilde(dir), ...f }, null, 1)); return; }
@@ -157,7 +157,7 @@ async function decide() {
   const found = new Map(P.discover().map(f => [f.path, f]));
   const d = new Date(), today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; // local date
   let wanted;
-  if (args.includes('--batch')) wanted = JSON.parse(fs.readFileSync(flag('--batch'), 'utf8'));
+  if (args.includes('--batch')) wanted = JSON.parse(fs.readFileSync(P.userPath(flag('--batch')), 'utf8'));
   else {
     const target = args.find(a => !a.startsWith('--') && args[args.indexOf(a) - 1] !== '--decision' && !['--ai', '--until', '--note', '--batch'].includes(args[args.indexOf(a) - 1]));
     if (!target) throw new Error('usage: decide <path> --decision … (or --batch <file>)');
@@ -165,7 +165,7 @@ async function decide() {
   }
   const changes = [], problems = [];
   for (const w of wanted) {
-    const abs = path.resolve(P.untilde(w.path));
+    const abs = P.userPath(w.path);
     const before = byAbs.get(abs);
     const disc = found.get(abs);
     if (!before && !disc) { problems.push(`${P.tilde(abs)}: not a discovered project and not in the registry`); continue; }

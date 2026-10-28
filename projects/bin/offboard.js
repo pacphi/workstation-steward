@@ -6,7 +6,6 @@
 //        offboard.js <path> --apply [--also <path>…]           plan, ask [y/N], apply (DRY_RUN=1 stops)
 //        offboard.js --rollback <receipt.json>                 move everything back (refuses if anything changed since)
 const fs = require('fs');
-const path = require('path');
 const readline = require('readline');
 const P = require('../../lib/projects.js');
 const B = require('../../lib/offboard.js');
@@ -60,7 +59,7 @@ function show(p) {
   if (args.includes('--rollback')) {
     const receipt = args[args.indexOf('--rollback') + 1];
     if (!receipt || receipt.startsWith('--')) { console.error('usage: steward projects offboard --rollback <receipt.json>'); process.exitCode = 2; return; }
-    const rc = JSON.parse(fs.readFileSync(P.untilde(receipt), 'utf8'));
+    const rc = JSON.parse(fs.readFileSync(P.userPath(receipt), 'utf8'));
     const changed = B.changedSince(rc);
     if (changed.length) { console.error(`refusing: changed since the apply: ${changed.slice(0, 5).join(', ')}${changed.length > 5 ? ` … ${changed.length - 5} more` : ''}`); process.exitCode = 1; return; }
     for (const e of rc.entries) console.log(`  ${e.action === 'move' ? 'move back' : e.action === 'edit' ? 'restore' : 'recreate'} ${e.path}`);
@@ -71,7 +70,7 @@ function show(p) {
     return;
   }
   if (!target) { console.error('usage: steward projects offboard <path> [--also <path>…] [--apply] [--json] | --rollback <receipt>'); process.exitCode = 2; return; }
-  const p = B.plan(path.resolve(P.untilde(target)), opts);
+  const p = B.plan(P.userPath(target), opts);
   if (json) { console.log(JSON.stringify(p, (k, v) => (k === 'next' || k === 'text' ? undefined : v), 1)); return; }
   show(p);
   const n = p.configs.length + p.moves.length + p.rmdirs.length;

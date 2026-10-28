@@ -181,7 +181,7 @@ async function walkSetup(target) {
   if (set.length) console.log(`Set in ${C.tilde(file)}: ${set.join('; ')}`);
   if (install) {
     spawnSync(process.execPath, [path.join(ENGINE, 'lib', 'skills.js'), 'install', ...(install.project ? ['--project', install.project] : [])],
-      { cwd: ENGINE, stdio: 'inherit', env: { ...process.env, STEWARD_INSTANCE: target } });
+      { cwd: ENGINE, stdio: 'inherit', env: { ...process.env, STEWARD_INSTANCE: target, STEWARD_CWD: process.cwd() } });
   } else console.log('Later: steward skills install [--project <path>]; [skills] pr_consolidation in steward.toml adds PR consolidation');
   return set;
 }
@@ -204,7 +204,7 @@ function run(cmd, args) {
   const cwd = path.join(ENGINE, cmd.cwd);
   const [exe, ...rest] = cmd.run;
   const bin = exe === 'node' ? process.execPath : path.join(cwd, exe);
-  const r = spawnSync(bin, [...rest, ...args], { cwd, stdio: 'inherit', env: { ...process.env, ...(cmd.env || {}) } });
+  const r = spawnSync(bin, [...rest, ...args], { cwd, stdio: 'inherit', env: { ...process.env, ...(cmd.env || {}), STEWARD_CWD: process.cwd() } });
   if (r.error) die(`${cmd.run.join(' ')}: ${r.error.message}`);
   process.exit(r.status === null ? 1 : r.status);
 }

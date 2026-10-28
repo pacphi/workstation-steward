@@ -83,6 +83,18 @@ refresh_env() {
   hash -r
 }
 
+# user_path PATH — a path the user typed, as an absolute path: ~ expanded, a relative one taken from the folder they
+# ran steward in (STEWARD_CWD; scripts run from the engine's area folders)
+user_path() {
+  # shellcheck disable=SC2088 # the patterns match a literal ~ the user typed; it is expanded below
+  case "$1" in
+    /*) printf '%s' "$1" ;;
+    "~") printf '%s' "${HOME}" ;;
+    "~/"*) printf '%s' "${HOME}/${1#\~/}" ;;
+    *) printf '%s' "${STEWARD_CWD:-${PWD}}/$1" ;;
+  esac
+}
+
 # hybrids_json — hybrids.toml as JSON (yq is installed via mise)
 hybrids_json() { yq -p toml -o json '.hybrid' "${SC_INSTANCE}/hybrids.toml"; }
 

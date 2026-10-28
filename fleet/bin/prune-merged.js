@@ -2,7 +2,7 @@
 // Delete local branches whose pull request merged. Plan by default; --apply asks, records each branch's tip in a
 // receipt (so `git branch <name> <sha>` brings it back) and deletes.
 // Usage: prune-merged.js <repo> [--apply] [--no-fetch]
-//   <repo>   a Git checkout (a path, or one relative to ~/Development/active)
+//   <repo>   a Git checkout: its path, absolute or from the folder you run steward in (`.` for this one)
 // A branch goes only when all three hold:
 //   1. its remote branch is gone (after `git fetch --prune`; a squash-merge with --delete-branch does this);
 //   2. GitHub shows a merged PR from a branch of that name;
@@ -20,12 +20,11 @@ const flag = f => args.includes(f);
 const rest = args.filter(a => !a.startsWith('--'));
 const die = m => { console.error(`prune-merged: ${m}`); process.exit(1); };
 if (rest.length !== 1) die('usage: prune-merged.js <repo> [--apply] [--no-fetch]');
-let dir = C.untilde(rest[0]);
-if (!path.isAbsolute(dir)) dir = path.join(C.HOME, 'Development', 'active', dir);
+let dir = C.userPath(rest[0]);
 const git = (...a) => execFileSync('git', ['-C', dir, ...a], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 const tryGit = (...a) => { try { return git(...a).trim(); } catch { return null; } };
 const gh = (...a) => execFileSync(process.env.STEWARD_GH || 'gh', a, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 << 20 });
-if (!fs.existsSync(dir) || tryGit('rev-parse', '--git-dir') === null) die(`${dir} is not a Git checkout`);
+if (!fs.existsSync(dir) || tryGit('rev-parse', '--git-dir') === null) die(`${C.tilde(dir)} is not a Git checkout (<repo> is a path: absolute, ~/…, or from the folder you run steward in)`);
 dir = tryGit('rev-parse', '--show-toplevel');
 
 const pg = progress(3);

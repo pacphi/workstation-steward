@@ -132,3 +132,21 @@ test('prune-merged: deletes only branches whose PR merged, remote is gone and no
   const r = JSON.parse(fs.readFileSync(path.join(bk, d, 'receipt.json'), 'utf8'));
   assert.deepEqual(r.branches.map(b => [b.name, b.tip]), [['merged', merged]]);
 });
+
+test('sync and prune-merged: a relative <repo> is read from the folder steward runs in, not ~/Development/active', () => {
+  const f = fixture({ 'a.txt': 'a\n' });
+  f.move({ 'a.txt': 'b\n' });
+  const env = { ...ENV, STEWARD_CWD: path.dirname(f.work) };
+  const sync = spawnSync('node', [path.join(BIN, 'sync.js'), path.basename(f.work)], { encoding: 'utf8', env });
+  assert.equal(sync.status, 0, sync.stderr + sync.stdout);
+  assert.ok(sync.stdout.includes(f.work), sync.stdout);
+  assert.match(sync.stdout, /1 commit\(s\) to fast-forward/);
+  // its origin is a local folder, so prune-merged stops at the GitHub check: past finding the checkout
+  const prune = spawnSync('node', [path.join(BIN, 'prune-merged.js'), path.basename(f.work), '--no-fetch'], { encoding: 'utf8', env });
+  assert.match(prune.stderr, /origin is not a GitHub remote/);
+  // and through the client, `.` is the checkout it runs in
+  const cli = spawnSync(process.execPath, [path.join(__dirname, '..', 'bin', 'steward.js'), 'fleet', 'sync', '.', '--no-fetch'],
+    { cwd: f.work, encoding: 'utf8', env: { ...ENV, STEWARD_INSTANCE: path.join(__dirname, '..', 'examples') } });
+  assert.equal(cli.status, 0, cli.stderr + cli.stdout);
+  assert.ok(cli.stdout.includes(f.work), cli.stdout);
+});

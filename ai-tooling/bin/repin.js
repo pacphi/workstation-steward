@@ -57,7 +57,7 @@ const trackedLocal = (() => {
   const a = process.argv.slice(2), i = a.indexOf('--tracked-local');
   if (i < 0) return new Set();
   const out = [];
-  for (const x of a.slice(i + 1)) { if (x.startsWith('--')) break; out.push(path.resolve(C.untilde(x))); }
+  for (const x of a.slice(i + 1)) { if (x.startsWith('--')) break; out.push(C.userPath(x)); }
   return new Set(out);
 })();
 
@@ -146,7 +146,7 @@ function apply(rows) {
 }
 
 function rollback(receiptPath) {
-  const rc = JSON.parse(fs.readFileSync(C.untilde(receiptPath), 'utf8'));
+  const rc = JSON.parse(fs.readFileSync(C.userPath(receiptPath), 'utf8'));
   const changed = rc.files.filter(f => fs.existsSync(C.untilde(f.path)) && sha(fs.readFileSync(C.untilde(f.path), 'utf8')) !== f.sha_after);
   if (changed.length) { console.error(`refusing: ${changed.length} file(s) changed since the repin, e.g. ${changed[0].path}`); process.exit(1); }
   return rc;

@@ -7,7 +7,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { audit, localDay } = require('../supply-chain/bin/audit.js');
-const { verLt, ageDays } = require('../supply-chain/checks/index.js');
+const { verLt, appVersion, appBehind, ageDays } = require('../supply-chain/checks/index.js');
 const brew = require('../lib/providers/brew.js');
 
 const ROOT = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'steward-audit-')));
@@ -29,6 +29,8 @@ function ctx(commands = {}, extra = {}) {
     { token: 'slack', version: '4.50.0', auto_updates: true, artifacts: [{ app: ['Slack.app'] }] },
     { token: 'iterm2', version: '3.6.5', artifacts: [{ app: ['iTerm.app'] }] },
     { token: 'google-chrome', version: '150.0.1,abc', artifacts: [{ app: ['Google Chrome.app'] }] },
+    { token: 'brave-browser', version: '1.98.60.0', artifacts: [{ app: ['Brave Browser.app'] }] },
+    { token: 'warp', version: '0.2026.10.21.08.25.stable_02', artifacts: [{ app: ['Warp.app'] }] },
   ]));
   const seen = [];
   const run = (cmd, args = []) => {
@@ -113,6 +115,29 @@ test('apps: behind the cask catalog, always_current, Electron outside its window
   ]);
   assert.ok(w.out.includes('  held   iTerm 3.6.4 -> 3.6.5 (1d old; matched cask iterm2)'));
   assert.ok(!c.seen.some(k => k.includes('Store.app')), 'an App Store app is left to mas');
+});
+
+test('apps: the same release written differently is not behind; a Chromium-based app shows its own version', async () => {
+  // 2026-10-28: Brave 156.1.98.60 (1.98.60) against cask 1.98.60.0, and Warp 0.2026.10.21.08.25.02 against cask
+  // 0.2026.10.21.08.25.stable_02, were both reported as updates
+  assert.equal(appVersion('156.1.98.60', '1.98.60.0'), '1.98.60');
+  assert.equal(appBehind('1.98.60', '1.98.60.0'), false);
+  assert.equal(appBehind('0.2026.10.21.08.25.02', '0.2026.10.21.08.25.stable_02'), false);
+  assert.equal(appBehind('1.98.60', '1.98.62.0'), true);
+  assert.equal(appBehind('1.24.2', '1.25.3'), true);
+  assert.equal(appBehind('2.0', '1.9'), false);
+  const apps = path.join(ROOT, 'Applications-same');
+  for (const a of ['Brave Browser.app', 'Warp.app']) put(path.join(apps, a, 'Contents', 'Info.plist'), '');
+  const plist = (app, v) => ({ [`defaults read ${path.join(apps, app, 'Contents', 'Info.plist')} CFBundleShortVersionString`]: `${v}\n` });
+  const c = ctx({
+    ...BREW, ...plist('Brave Browser.app', '156.1.98.58'), ...plist('Warp.app', '0.2026.10.21.08.25.02'),
+    'npm view electron dist-tags.latest': '40.2.0\n',
+    'gh api repos/Homebrew/homebrew-cask/commits?path=Casks/b/brave-browser.rb&per_page=30*': `${daysAgo(5)}\n`,
+  }, { appDirs: [apps] });
+  const w = lines();
+  const r = (await audit(c, { only: ['apps'], write: w.write }));
+  assert.deepEqual(r.actions, ['app: Brave Browser 1.98.58 -> 1.98.60.0 (5d old; vendor updater; matched cask brave-browser by app name)']);
+  assert.ok(!w.out.some(l => l.includes('Warp')), w.out.join('\n'));
 });
 
 test('trust: a distrusted root macOS still trusts is an action; denied, it is ok', async () => {
