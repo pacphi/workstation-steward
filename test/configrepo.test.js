@@ -64,8 +64,8 @@ test('configrepo: newer commits upstream show only after a fetch; the banner nev
   assert.equal(cr(f.inst, '--banner').stdout, '', 'no fetch yet: the banner does not know');
   const fetched = cr(f.inst, '--fetch');
   assert.equal(fetched.status, 0, fetched.stderr);
-  assert.match(fetched.stdout, /1 newer commit\(s\) on origin\/main \(as of \d{4}-\d\d-\d\d \d\d:\d\d\)\n +→ git -C .* pull --ff-only/);
-  assert.match(cr(f.inst, '--banner').stdout, /^config 1 newer on GitHub \(as of \d{4}-\d\d-\d\d \d\d:\d\d\): steward config\n$/);
+  assert.match(fetched.stdout, /1 newer commit\(s\) on origin\/main \(as of \d{4}-\d\d-\d\d \d\d:\d\d\)\n +→ steward config sync/);
+  assert.match(cr(f.inst, '--banner').stdout, /^config 1 newer on GitHub \(as of \d{4}-\d\d-\d\d \d\d:\d\d\): steward config sync\n$/);
   // with the remote gone the banner still answers at once from what it knew, and a fetch reports its failure
   fs.renameSync(f.remote, `${f.remote}-gone`);
   assert.match(cr(f.inst, '--banner').stdout, /1 newer on GitHub/);
