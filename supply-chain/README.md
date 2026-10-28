@@ -5,6 +5,12 @@ Homebrew, apps, the App Store, macOS, trust stores, Docker images and indicators
 (Ruflo, AgentDB, AQE, Brain, RuVector) is installed through mise and the hybrids too. The AI area owns
 those, so their upgrades follow its rules.
 
+A normal week here: `steward sc audit` checks the whole machine against your policy and lists what needs you,
+with the next step for each. After an upgrade, the old versions stay through the soak; when it ends, `steward sc prune`
+shows what it would remove, asks, and removes it.
+
+![steward sc audit: one finding per area and three actions; three days later the soak is over, and steward sc prune removes two old versions after a yes](../docs/assets/steward-supply-chain.svg)
+
 ## Policy
 
 | File | Governs |
