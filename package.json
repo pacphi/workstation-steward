@@ -44,6 +44,7 @@
     "fleet/bin/",
     "fleet/README.md",
     "skills/",
+    ".claude-plugin/",
     "SECURITY.md"
   ]
 }

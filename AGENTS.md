@@ -121,6 +121,7 @@ values and where the instance is. Paths below are relative to the instance unles
   area's `steward` commands and follow the runbook beside them; `pr-consolidation` (v2) turns a repo's bot PRs into
   one verified PR under the rules in its `rules.md`, and never merges (its `ORCHESTRATION.md` covers the merge).
   `just claude` loads this checkout's skills (`claude --plugin-dir .`); after editing one, run `/reload-plugins`.
+  Users get them through `steward skills install`, whose plugin runs `steward skills path` (`lib/skills.js`).
 - **New advisory or incident report:** verify each claim against primary sources, then sweep local
   exposure read-only (`steward sc audit`, plus targeted `find`/`ps`/`docker` checks). Add IOCs and distrusted
   roots to `supply-chain/host-defaults.toml` in the engine (a PR, so every machine gets them with the next release) or,

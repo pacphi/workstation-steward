@@ -40,7 +40,8 @@ Once it's on npm: `mise use -g npm:workstation-steward@<version>`, and then just
 `steward` on its own lists every command and says when something needs you (new projects, a soak ending, a review
 due). `steward review` gathers what needs a decision across every area. The Claude Code skills are in
 [`skills/`](skills/), one per area plus PR consolidation, each with its runbook; `just claude` loads them from a
-checkout as `/steward:supply-chain` and the rest.
+checkout as `/steward:supply-chain` and the rest, and `steward skills install` installs them for you (or one
+project) from your own terminal.
 
 ## Read next
 

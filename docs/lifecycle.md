@@ -70,6 +70,15 @@ The engine never holds your data, and your config never holds code. A release ch
 - **`steward init`** copies [`examples/`](../examples/README.md) to `~/.config/workstation-steward` (or a folder you
   name), shows what it will write, asks, writes a receipt, and lists the next steps (`steward doctor`, `steward sc
   link`). It never overwrites: it refuses when a `steward.toml` or any file it would create is already there. *Built (R3a).*
+  Then it walks the rest of setup, one question at a time (`lib/setup.js`), each answer one line in the new
+  `steward.toml`: the AI tooling add-on; the projects add-on and where your projects live; and the Claude Code skills: everywhere (every Claude Code session, turned on in `~/.claude/settings.json`),
+  one project (only sessions started in a folder you name, turned on in its `.claude/settings.local.json`), or not now
+  (D48), then whether to include PR consolidation, which it records as `[skills] pr_consolidation` in the new
+  `steward.toml`. Either way the plugin's files sit in Claude Code's own cache, not in `~/.claude/skills/`. Changing a
+  switch later needs no reinstall: the next session picks it up. *Built.*
+- **`steward skills install [--project <path>]`** installs the skills as the `steward` plugin, from your own
+  terminal (Claude Code takes a plugin's command only from a person); `steward skills uninstall` takes them out. The
+  skills then follow the installed steward, with only the add-ons you turned on. *Built.*
 - **Where the config is found:** `$STEWARD_INSTANCE`, else the engine's own folder when it holds a `steward.toml`,
   else `~/.config/workstation-steward`. *Built (R1).* `steward config` shows which, and why.
 - **Keep the config in Git.** A private repo gives every policy change a review and a history, and lets Renovate

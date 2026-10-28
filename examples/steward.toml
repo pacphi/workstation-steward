@@ -24,5 +24,8 @@ review_days = 7                            # `steward` says a review is due this
 ai_tooling = false                         # Ruflo, AgentDB, AQE, Brain and RuVector: drift, repin, guards (steward ai …)
 projects = false                           # discovery, the registry and onboarding of ~/Development (steward projects …)
 
+[skills]
+pr_consolidation = false                   # add the pr-consolidation skill to the steward plugin (steward skills …)
+
 [ioc]
 extra_roots = []                           # extra folders swept for indicators of compromise

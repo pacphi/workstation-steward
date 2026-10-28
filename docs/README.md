@@ -47,6 +47,9 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 The Claude Code skills are a plugin named `steward`, in [`../skills/`](../skills/): one folder per skill, each with
 the runbook it follows beside it (D48 in [`architecture.md`](architecture.md#decisions)). `just claude` starts a
 session with this checkout's skills loaded, ahead of any installed release; after editing one, run `/reload-plugins`.
+Anywhere else, `steward skills install` (or `--project <path>`, from your own terminal) installs them through the
+installed steward's own copy of [`../.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json), and they
+follow the installed steward.
 
 | Skill | Area | Read-only reports | Folder |
 | --- | --- | --- | --- |
