@@ -219,7 +219,7 @@ Two ways, chosen by how often you release. `steward-dev` runs your clone either 
 | | A worktree at a tag | The npm package through mise |
 | --- | --- | --- |
 | What `steward` runs | a detached checkout of your clone at a tag, in `~/.local/share/workstation-steward/release` | `npm:workstation-steward` at the version your config's `mise/config.toml` pins |
-| A new release reaches you | when you run `just release-worktree vX.Y.Z`: at once | when you merge Renovate's PR, once the release is as old as your gate |
+| A new release reaches you | when you run `just release-worktree vX.Y.Z`: at once | through `steward sc upgrade` or Renovate's PR, once the release is as old as your gate |
 | Supply-chain checks | your own CI, review and release; outside the release-age gate | the gate, provenance and Renovate, like every other tool |
 | `steward version` says | `release X.Y.Z (vX.Y.Z)` | `release X.Y.Z (npm)` |
 | Launchers | `steward` and `steward-dev` in `~/.local/bin`, written by the task | mise's `steward`; `steward-dev` still from the task |
@@ -231,15 +231,20 @@ those aside first. A release folder that is a worktree of another repository (a 
 one's tag: remove it with `git -C <that repository> worktree remove <folder>` first, and the task creates a fresh one.
 Check with `steward version`.
 
-**Switch to npm through mise.** *Planned; not yet run on a real machine.*
+**Switch to npm through mise.** *Built; the install check proves it on a clean Mac
+([`maintainers.md`](maintainers.md#checking-a-release-on-a-clean-mac)).* Keep the worktree: it becomes the fallback.
 
-1. Pin it in your config repo's `mise/config.toml` through a PR: `"npm:workstation-steward" = "X.Y.Z"`, a version
-   already past your gate. Renovate watches that file from then on.
-2. Install it: `mise install npm:workstation-steward`. With `mise activate`, mise's tools come before `~/.local/bin` on
-   `PATH`, so `steward` is now the package; `steward version` says `release X.Y.Z (npm)`.
-3. Retire the worktree: `git -C <your clone> worktree remove ~/.local/share/workstation-steward/release`, and remove
-   `~/.local/bin/steward`. Keep `steward-dev`: the package installs only `steward`. Without a release folder,
-   `steward-dev check` skips its format comparison with the release.
+1. Check the release's provenance (`npm view workstation-steward@X.Y.Z dist.attestations`), then pin it with the
+   steward's own command, which backs up your mise config, verifies and writes a receipt:
+   `steward sc upgrade-tool 'npm:workstation-steward[allow_low_downloads=true]' X.Y.Z`. The approval lets mise's npm
+   installer take a package name younger than 30 days (this one's until 2026-11-27); after that it changes nothing.
+2. `steward version` says `release X.Y.Z (npm)`: with `mise activate`, mise's tools come before `~/.local/bin` on
+   `PATH`, so the package wins over the launcher.
+3. Commit the changed `mise/config.toml` and `mise.lock` in your config repo through a PR, as for any tool. From then on
+   `steward sc upgrade` takes new releases once they pass the gate, and Renovate proposes them.
 
-**Back to the worktree.** Remove the pin from `mise/config.toml` through a PR, then `just release-worktree vX.Y.Z`
-from your clone, which writes the `steward` launcher again.
+**Back to the worktree.** `steward sc rollback` restores the mise config from before the pin (or remove the pin through
+a PR). The launcher takes over again at once: mise's leftover `steward` shim passes through to the next `steward` on
+`PATH` when no version is pinned. To retire the worktree for good instead, remove it with
+`git -C <your clone> worktree remove ~/.local/share/workstation-steward/release` and delete `~/.local/bin/steward`;
+keep `steward-dev`, since the package installs only `steward`.
