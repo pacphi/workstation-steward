@@ -70,7 +70,8 @@ justified. This animation retells a real run,
 **1. Check the release, then install it through mise**, so the same gate and Renovate keep the steward current:
 
 ```sh
-npm view workstation-steward@<version> dist.attestations.provenance.predicateType   # https://slsa.dev/provenance/v1
+# expect: https://slsa.dev/provenance/v1
+npm view workstation-steward@<version> dist.attestations.provenance.predicateType
 mise use -g 'npm:workstation-steward[allow_low_downloads=true]@<version>'
 ```
 
@@ -91,7 +92,7 @@ steward init
 **3. See where you stand.** Both are read-only:
 
 ```sh
-steward doctor        # what this machine still needs (mise, Homebrew, gh …), and --install to fix it
+steward doctor        # what this machine still needs (--install fixes it)
 steward sc plan       # what an upgrade would take, hold or skip, and why
 ```
 
