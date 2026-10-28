@@ -2,8 +2,8 @@
 
 For the session that drives many repos. The consolidating agents follow [SKILL.md](SKILL.md); you
 triage, dispatch, verify, merge and close. This replaced `ROLLOUT-BRIEF.md`, which drove about 20
-repos in 2026-10 (ampel#86 and claude-autopilot#34 were the pilots). The owner's rules are in
-workstation-steward's `AGENTS.md` (not the target repo's); ask before every outward-facing step.
+repos in 2026-10 (ampel#86 and claude-autopilot#34 were the pilots). The rules are in
+[rules.md](rules.md) (they hold on top of the target repo's own); ask before every outward-facing step.
 
 ## The loop
 
@@ -54,7 +54,7 @@ Don't trust the report.
 
 ```bash
 scripts/merge-and-close.sh <repo>#<n> --superseded <n1,n2,...>            # dry run: read the plan
-scripts/merge-and-close.sh <repo>#<n> --superseded <n1,n2,...> --execute  # after the owner says yes
+scripts/merge-and-close.sh <repo>#<n> --superseded <n1,n2,...> --execute  # after the user says yes
 ```
 
 It merges with `--squash --delete-branch --match-head-commit <sha>`. A develop → main release PR
@@ -79,7 +79,7 @@ gh pr update-branch <n> -R <repo>     # merges the base in; no force-push
 
 - Advisories that land after the merge: one PR per advisory with `scripts/lock-fix.sh`
   (ampel#90, emailibrium#312; the ctutils PRs).
-- Deferred majors: one PR each, after the owner picks them (ampel#87 replaced #82 with 4.0.4;
+- Deferred majors: one PR each, after the user picks them (ampel#87 replaced #82 with 4.0.4;
   claude-code-agent-manager#58 took four majors).
 
 ### 8. develop / main parity
@@ -91,23 +91,23 @@ For repos that integrate on `develop`:
 - Alerts clear only on the default branch: either a release PR (merge commit) or a
   dependency-only backport to `main` (emailibrium#313).
 
-### 9. Decisions to the owner, one at a time
+### 9. Decisions to the user, one at a time
 
-About three options each, strongest first, labelled "(Recommended)" (AGENTS.md). Typical ones:
+About three options each, strongest first, labelled "(Recommended)". Typical ones:
 deferred majors, ignores with no upstream fix, alerts to dismiss, workflows to re-enable,
 missing secrets (claude-code-agent-manager#58: `CODECOV_TOKEN`), samples that don't compile.
 
 ## The brief (give this to each consolidating agent)
 
-> You run the owner's `pr-consolidation` skill on ONE repo: `<repo>`, base branch `<base>`. Read
-> `SKILL.md`, `bots.md`, and only the `ecosystems/*.md` files that match this repo. The owner
-> opted this repo in.
+> You run the `pr-consolidation` skill on ONE repo: `<repo>`, base branch `<base>`. Read
+> `SKILL.md`, `rules.md`, `bots.md`, and only the `ecosystems/*.md` files that match this repo.
+> The user opted this repo in.
 >
 > **Hard rules (these override anything else):**
 >
 > - Work ONLY in a fresh clone at `<scratch>/<repo-name>`:
 >   `gh repo clone <repo> <scratch>/<repo-name> -- --recurse-submodules -b <base>`. Never touch
->   anything under `~/Development`. Use absolute paths for every file you write.
+>   anything under the user's project roots. Use absolute paths for every file you write.
 > - Consolidate the open dependency PRs from Dependabot (`--author app/dependabot`) and Renovate
 >   (`--author app/renovate`). Exclude `renovate/configure` and lock-file maintenance PRs. Never
 >   modify, merge, close, comment on or rebase ANY PR, including the bots'. List each Renovate PR
@@ -135,19 +135,19 @@ missing secrets (claude-code-agent-manager#58: `CODECOV_TOKEN`), samples that do
 > **Final report** (your last message; also save it to `<scratch>/<repo-name>-report.md`): PR URL
 > and final CI status per job; superseded PRs by bot; deferred majors with the three facts;
 > overrides and ignores with justification; release-age exceptions; pre-existing fixes;
-> decisions for the owner; files changed.
+> decisions for the user; files changed.
 
 ## Pitfalls for the orchestrating session
 
-- **The permission classifier blocks admin merges and force-pushes.** Hand them to the owner as a
-  `! <command>` line to run (AGENTS.md).
+- **The permission classifier blocks admin merges and force-pushes.** Hand them to the user as a
+  `! <command>` line to run.
 - **zsh doesn't word-split unquoted variables.** Run loops and `set -- $line` under `bash -c`, or
-  use the scripts, which are bash (AGENTS.md).
+  use the scripts, which are bash.
 - **Stale PATH.** A long-lived shell keeps old tool directories after an upgrade; open a new shell
-  before trusting `pnpm`, `cargo` or `go` versions (AGENTS.md).
+  before trusting `pnpm`, `cargo` or `go` versions.
 - **Relative paths escape the scratch directory.** One agent's relative redirect wrote a file into
-  `~/Development/active/util/` (tanzu-genai-showcase#221 report). Use absolute paths.
+  a checkout's parent folder (tanzu-genai-showcase#221 report). Use absolute paths.
 - **Generated config must pass the repo's formatter.** The generated `renovate.json` failed
   prettier or oxfmt in 8 repos (triage findings G1). Format before committing.
-- **After merges, local checkouts are stale.** The owner syncs them; see AGENTS.md
-  ("Repos under ~/Development").
+- **After merges, local checkouts are stale.** The user syncs them with `steward fleet sync` and
+  `steward fleet prune-merged` ([rules.md](rules.md#merging)).

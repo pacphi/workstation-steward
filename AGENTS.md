@@ -78,22 +78,15 @@ values and where the instance is. Paths below are relative to the instance unles
 - Test risky installs in an env-redirected sandbox first: `MISE_DATA_DIR`, `MISE_CONFIG_DIR`,
   `MISE_CACHE_DIR`, `MISE_STATE_DIR`, `HOME` **and `XDG_CACHE_HOME`** (aube ignores `HOME`).
 
-### Release age (applies everywhere: mise, Renovate, `host.toml`, consolidation PRs)
+### Release age (applies everywhere: mise, Renovate, `host.toml`, dependency PRs)
 
 - **3-day cooldown.** Take the newest version published at least 3 days ago. The number is set once in
   `steward.toml` (`[policy] min_release_age_days`, default 3); `steward sc release-age <days>` changes it there and in
   the copies mise and Renovate need, and `steward sc audit` flags any disagreement.
-- **Exception:** a version that is the first patched release for an advisory listed in the GitHub
-  Advisory DB, **RustSec** or **OSV**. Check all three, because the GitHub DB lags RustSec (seen with
-  webpki-roots and rustls-webpki in 2026-10). Take the first patched release, not a newer one (ctutils 0.4.4,
-  not 0.4.5). Record every exception with its advisory: in the PR body, or in `host.toml` with an expiry.
+- **Exception:** the first patched release for an advisory may skip the gate. How to check it (three advisory
+  databases) is in `skills/pr-consolidation/rules.md`; on a machine, record it in `host.toml` with an expiry.
 - Browsers (`always_current` in `host.toml`) are never held: nearly every release carries security fixes.
 - **Majors are deliberate.** A 0.x minor bump counts as a major; the exception is `golang.org/x/*`.
-  Consolidation PRs defer majors and report breaking changes, advisories and code impact.
-- Verify every new lockfile entry by its registry publish time. `pnpm --config.minimum-release-age` is
-  not reliable.
-- Advisories land mid-rollout (RUSTSEC-2026-0385 and -0386 appeared on 2026-10-23). Re-run every audit
-  tool right before merging, and fix new advisories in the repo where they occur.
 
 ### Changing a project's files
 
@@ -109,63 +102,25 @@ values and where the instance is. Paths below are relative to the instance unles
   `steward fleet prune-merged <repo>` (D34). Both fast-forward or delete only after a plan and the user's yes, back
   up or record what they drop in a receipt, and never rebase, reset, merge or commit. Agents run them without
   `--apply` only.
-- Merge with `gh pr merge --squash --delete-branch --match-head-commit <sha>`; `<sha>` must be the full
-  40-character commit ID (`gh pr view <n> --json headRefOid`), since a short SHA is rejected. A develop→main release PR
-  uses `--merge` (merge commit) and must not delete `develop`; a release-prep PR uses `--rebase`. Close
-  superseded **Dependabot** PRs with a "Superseded by #N." comment; leave **Renovate** PRs to autoclose.
-- Commit attribution follows the repo: check `.claude/settings.json` `attribution`, DCO/sign-off checks
-  and commitlint. Consolidation runs default to no Co-Authored-By trailer unless the repo asks for one.
-- Mirror the repo's CI audit commands exactly, including its own scripts and ignore files (for example
-  `.github/scripts/cargo-audit.sh` with `audit-ignore`). A job may chain several tools; make them all
-  pass. Add ignores only when no fix exists without a major, each with advisory, dependency path,
-  reachability and exit condition.
+- Dependency PRs in another repo (lockfile ages, majors, merging, attribution, CI audits) follow
+  `skills/pr-consolidation/rules.md`.
 
 ## Renovate
 
-- Use Renovate (the Mend app) for version updates, not Dependabot's. Config is `renovate.json` with
-  `minimumReleaseAge: "3 days"` and vulnerability alerts, which bypass the age gate. A config repo's rules come from
-  the preset `renovate/steward.json`, extended at a release tag; until there is one, they are carried inline and
+- Updates come from Renovate (the Mend app), not Dependabot's. A config repo's rules come from the preset
+  `renovate/steward.json`, extended at a release tag; until there is one, they are carried inline and
   `test/renovate.test.js` keeps them equal. The engine repo's own config is `.github/renovate.json`, which pins
   GitHub Actions by commit SHA with a version comment.
-- **Renovate and Dependabot read config only from the default branch.** For repos that integrate on
-  `develop`, put a byte-identical `renovate.json` on `main` and `develop` with
-  `"baseBranchPatterns": ["develop"]`. Verify parity with
-  `gh api repos/<r>/contents/renovate.json?ref=<branch> --jq .sha`.
-- GitHub security alerts are computed on the default branch only. Fixes merged to `develop` don't clear
-  alerts until they reach `main`; a dependency-only backport to `main` is the way to clear them without a
-  release.
-- Renovate's security PRs don't fire for advisories that exist only in RustSec, or for transitive-only
-  crates. Run `cargo audit` yourself.
-- The app is installed with selected repositories. A repo that isn't selected gets nothing: no onboarding
-  PR, no dashboard.
-- Use `docker:pinDigests` where compose files run images; pin `tag@sha256:digest`. Tags can be re-pushed
-  (LiteLLM's tags were hijacked on 2026-10-21); digests can't.
-- **0.x rule:** write it as `"matchCurrentVersion": "/^v?0\\./"`. The range form `"<1.0.0"` silently fails
-  for versioning schemes that don't support ranges (uv, kind).
-- **Matching mise tools by name:** for `npm:<pkg>` (and other backend-prefixed) tools, Renovate's
-  packageName is the bare `<pkg>`, so match on `matchDepNames`, not `matchPackageNames`. Use a regex
-  (`"/^npm:/"`), not a glob: `*` doesn't match the `/` in scoped names like `npm:@openai/codex`.
-- **Security PRs ignore `enabled: false` package rules.** Renovate still proposes a vulnerability fix
-  that crosses a major or touches an excluded folder. Keep files out with `ignorePaths`, which stops the
-  file being read at all, and treat a security PR that proposes a major as a decision.
-- **Verify a config change before merging it** with Renovate's local platform: check out the branch, commit
-  the effective `renovate.json` locally (the local platform reads committed files only), and run
-  `renovate --platform=local`. Read "Filtered out N disabled update(s)" and "flattened updates found" in the
-  debug log. A dry run with the config passed as global config is not faithful: the repo's own config and
-  presets override it.
+- How Renovate behaves (config read from the default branch only, security PRs, the 0.x and mise-tool matching
+  rules, checking a config change locally) is in `skills/pr-consolidation/rules.md`. Read it before changing
+  `renovate/steward.json`.
 
 ## Workflows that worked
 
-- **Area skills** (`supply-chain/skill/`, `ai-tooling/skill/`, `projects/skill/`): each wraps its area's
-  `steward` commands and follows that area's `docs/<area>/runbook.md`. They load automatically here through
-  `.claude/skills/`, along with `/sc-audit`, `/sc-plan`, `/ai-drift` and `/projects-scan` (read-only, invoked
-  by the user only). Paths in skills are relative to this checkout.
-- **PR consolidation** (`fleet/skill/`, v2): one PR per repo that supersedes the open Dependabot and/or Renovate
-  PRs, in any ecosystem (per-ecosystem notes under `ecosystems/`), with every CI audit gate green, majors deferred
-  with analysis, and every exception and ignore justified in the PR body. The agent never merges. The orchestrator
-  (`ORCHESTRATION.md`) verifies CI, merges, then closes superseded **Dependabot** PRs and leaves
-  superseded **Renovate** PRs to autoclose (closing a Renovate PR by hand tells it to ignore that
-  version; see `bots.md`). Not installed by default; see its `README.md`.
+- **Skills** (`skills/`, the `steward` plugin, D48): `supply-chain`, `ai-tooling` and `projects` each wrap their
+  area's `steward` commands and follow the runbook beside them; `pr-consolidation` (v2) turns a repo's bot PRs into
+  one verified PR under the rules in its `rules.md`, and never merges (its `ORCHESTRATION.md` covers the merge).
+  `just claude` loads this checkout's skills (`claude --plugin-dir .`); after editing one, run `/reload-plugins`.
 - **New advisory or incident report:** verify each claim against primary sources, then sweep local
   exposure read-only (`steward sc audit`, plus targeted `find`/`ps`/`docker` checks). Add IOCs and distrusted
   roots to `supply-chain/host-defaults.toml` in the engine (a PR, so every machine gets them with the next release) or,
@@ -195,7 +150,3 @@ values and where the instance is. Paths below are relative to the instance unles
 - **Elevated actions:** the permission classifier blocks admin merges and force-pushes; hand those to the
   user as `! <command>`. `!` can't read a `sudo` password, and macOS admin trust settings need an
   interactive prompt, so those run in Terminal.app.
-- **GitHub workflows:** workflows disabled for inactivity need `gh workflow enable` plus a PR close/reopen
-  (or a push) to fire. Dependency Review reports `golang.org/x/*` as
-  `LicenseRef-scancode-google-patent-license-golang` (Go's PATENTS grant); allowlist those purls in
-  `allow-dependencies-licenses`.

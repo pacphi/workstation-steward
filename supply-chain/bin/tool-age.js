@@ -8,7 +8,7 @@
 // redirected; the real Node is linked in, not downloaded), using the tool's own entry and the [settings] from
 // mise/config.toml so allow_builds, trust exclusions and the age gate match the real install. Then it compares the
 // sandbox's aube-lock.yaml with the installed version's and lists each NEW package with its registry publish time
-// (fleet/skill/scripts/lock-age.sh --files). Exit: 0 nothing under the cutoff, 1 something under it, 2 setup error.
+// (skills/pr-consolidation/scripts/lock-age.sh --files). Exit: 0 nothing under the cutoff, 1 something under it, 2 setup error.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -89,7 +89,7 @@ process.on('SIGINT', () => { cleanup(); process.exit(130); });
 
     // 4. publish times of the new packages
     s = pg.stage('looking up publish times of new packages');
-    const script = path.join(C.REPO_ROOT, 'fleet', 'skill', 'scripts', 'lock-age.sh');
+    const script = path.join(C.REPO_ROOT, 'skills', 'pr-consolidation', 'scripts', 'lock-age.sh');
     const out = [];
     let tail = '';
     const code = await new Promise(res => {

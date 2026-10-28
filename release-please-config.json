@@ -9,7 +9,7 @@
       "include-component-in-tag": false,
       "bump-minor-pre-major": true,
       "exclude-paths": [
-        ".claude",
+        ".claude-plugin",
         ".github",
         "docs",
         "test",

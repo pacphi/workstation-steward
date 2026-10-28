@@ -2,7 +2,7 @@
 # [paths] as {{NAME}} placeholders ({{AI_TOOLING_ROOT}}, {{MISE_DATA_DIR}}, {{CLAUDE_DIR}} …; `steward config` shows them),
 # except each [[repin]] `from`, which records a path that really existed. `ai repin`, `ai guard` and `ai transport`
 # change things after a plan and a yes, with a backup and a receipt; `ai qualify` and `ai promote` are still by hand (5c). Background and recipe:
-# archive/ai-tooling-ownership-and-qualification.md. Design: docs/architecture.md.
+# skills/ai-tooling/qualification.md. Design: docs/architecture.md.
 
 # Packages AI tooling owns. They install through mise (mise/config.toml) or the npm -g hybrids
 # (supply-chain/hybrids.toml), but `steward sc upgrade` skips them and Renovate opens their PRs only on

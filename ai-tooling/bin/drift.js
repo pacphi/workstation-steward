@@ -145,7 +145,7 @@ if (!offline) {
     say(s.startsWith('closed') ? 'WARN' : 'info', 'watch', `${w.issue}: ${s || 'unreadable'} — ${w.why}`);
     // a closed thread that a [[retire]] entry waits on: say what to do, so the workaround doesn't outlive its cause
     if (s.startsWith('closed')) for (const r of (policy.retire || []).filter(r => (r.watch || []).includes(w.issue))) {
-      say('WARN', 'retire', `${w.issue} is closed: ${r.what} may retire. Check the ${r.when.length} conditions, then: ${(r.steps || []).join('; ') || 'see docs/ai-tooling/runbook.md'}`);
+      say('WARN', 'retire', `${w.issue} is closed: ${r.what} may retire. Check the ${r.when.length} conditions, then: ${(r.steps || []).join('; ') || `see ${C.tilde(path.join(C.REPO_ROOT, 'skills', 'ai-tooling', 'runbook.md'))}`}`);
     }
   }
 }

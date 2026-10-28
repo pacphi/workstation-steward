@@ -27,35 +27,35 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | --- | --- | --- | --- |
 | Supply chain | [`../supply-chain/README.md`](../supply-chain/README.md) | — | Policy files, rules and commands |
 | AI tooling | [`../ai-tooling/README.md`](../ai-tooling/README.md) | — | Policy file, what `steward ai drift` checks |
-| AI tooling | [`ai-tooling/qualification.md`](ai-tooling/qualification.md) | 2, 2026-10-27 | What has to be true before a new AQE or Ruflo version reaches a project, and the standing guards |
+| AI tooling | [`../skills/ai-tooling/qualification.md`](../skills/ai-tooling/qualification.md) | 2, 2026-10-27 | What has to be true before a new AQE or Ruflo version reaches a project, and the standing guards |
 | AI tooling | [`ai-tooling/upstream-and-reconcile.md`](ai-tooling/upstream-and-reconcile.md) | 5, 2026-10-27 | The three layers (upstream, your machine, each project), from an upstream ask to a retired patch, what `projects reconcile` adds, challenges and mitigations (D42) |
 | Projects | [`../projects/README.md`](../projects/README.md) | — | What counts as a project, the registry fields, `scan` and `list` |
 | Projects | [`../projects/profiles/README.md`](../projects/profiles/README.md) | — | The per-tool onboarding profiles and how they're filled in |
-| Fleet | [`../fleet/README.md`](../fleet/README.md) | — | Renovate and PR consolidation; skill in `fleet/skill/` |
+| Fleet | [`../fleet/README.md`](../fleet/README.md) | — | Renovate and PR consolidation; skill in `skills/pr-consolidation/` |
 
 ## Runbooks
 
 | Area | Doc | Rev | Covers |
 | --- | --- | --- | --- |
-| Supply chain | [`supply-chain/runbook.md`](supply-chain/runbook.md) | 7, 2026-10-27 | Routine check, upgrades, mise itself, Renovate PRs, Node security releases, advisories, trust exceptions, prune, changing the release-age gate, rollback |
-| AI tooling | [`ai-tooling/runbook.md`](ai-tooling/runbook.md) | 18, 2026-10-27 | Drift, new AQE releases, Ruflo version changes, bringing projects in step after a promotion, retiring a patch when an upstream fix lands, Brain, launcher drift, guards, rollback |
-| Projects | [`projects/runbook.md`](projects/runbook.md) | 16, 2026-10-27 | New projects, decisions, vanished projects, onboarding and offboarding, what may be written |
+| Supply chain | [`../skills/supply-chain/runbook.md`](../skills/supply-chain/runbook.md) | 7, 2026-10-27 | Routine check, upgrades, mise itself, Renovate PRs, Node security releases, advisories, trust exceptions, prune, changing the release-age gate, rollback |
+| AI tooling | [`../skills/ai-tooling/runbook.md`](../skills/ai-tooling/runbook.md) | 18, 2026-10-27 | Drift, new AQE releases, Ruflo version changes, bringing projects in step after a promotion, retiring a patch when an upstream fix lands, Brain, launcher drift, guards, rollback |
+| Projects | [`../skills/projects/runbook.md`](../skills/projects/runbook.md) | 16, 2026-10-27 | New projects, decisions, vanished projects, onboarding and offboarding, what may be written |
 | Fleet | [`fleet/runbook.md`](fleet/runbook.md) | 2, 2026-10-26 | Bringing a repo under Renovate, bot-PR consolidation, merging, syncing checkouts and pruning merged branches, long-lived lines |
 
-## Skills and commands
+## Skills
 
-Every skill and command loads automatically in a Claude Code session started in this repo
-(`.claude/skills/`). Each skill's README covers a personal install for use elsewhere.
+The Claude Code skills are a plugin named `steward`, in [`../skills/`](../skills/): one folder per skill, each with
+the runbook it follows beside it (D48 in [`architecture.md`](architecture.md#decisions)). `just claude` starts a
+session with this checkout's skills loaded, ahead of any installed release; after editing one, run `/reload-plugins`.
 
-| Skill | Area | Invoked by | Folder |
+| Skill | Area | Read-only reports | Folder |
 | --- | --- | --- | --- |
-| `supply-chain-steward` | Supply chain | you or Claude | [`../supply-chain/skill/`](../supply-chain/skill/README.md) |
-| `ai-tooling-steward` | AI tooling | you or Claude | [`../ai-tooling/skill/`](../ai-tooling/skill/README.md) |
-| `projects-steward` | Projects | you or Claude | [`../projects/skill/`](../projects/skill/README.md) |
-| `pr-consolidation` | Fleet | you or Claude | [`../fleet/skill/`](../fleet/skill/README.md) |
-| `/sc-audit`, `/sc-plan` | Supply chain | you only (read-only) | [`../.claude/skills/`](../.claude/skills/) |
-| `/ai-drift` | AI tooling | you only (read-only) | [`../.claude/skills/`](../.claude/skills/) |
-| `/projects-scan` | Projects | you only (read-only) | [`../.claude/skills/`](../.claude/skills/) |
+| `/steward:supply-chain` | Supply chain | `audit`, `plan`, `status`, `verify` | [`../skills/supply-chain/`](../skills/supply-chain/README.md) |
+| `/steward:ai-tooling` | AI tooling | `drift` | [`../skills/ai-tooling/`](../skills/ai-tooling/README.md) |
+| `/steward:projects` | Projects | `scan`, `list` | [`../skills/projects/`](../skills/projects/README.md) |
+| `/steward:pr-consolidation` | Fleet | (none) | [`../skills/pr-consolidation/`](../skills/pr-consolidation/README.md) |
+
+Claude also starts a skill on its own when a request matches its description.
 
 Records of what happened on a particular machine (migrations, rollouts, evidence) belong in that machine's instance,
 not here.

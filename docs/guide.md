@@ -63,15 +63,15 @@ PRs and security alerts across the repos.
 1. Run `steward review` (or `steward review --quick` without the audit). It lists every item that needs a decision,
    each with the command that acts on it.
 2. Decide each one: act now, defer it with a reason, or make it an `owner-decision` issue so it isn't lost.
-3. Handle the week's Renovate PRs in this repo ([supply-chain runbook: A Renovate PR arrives](supply-chain/runbook.md#a-renovate-pr-arrives)).
+3. Handle the week's Renovate PRs in this repo ([supply-chain runbook: A Renovate PR arrives](../skills/supply-chain/runbook.md#a-renovate-pr-arrives)).
 
 **When something happens:**
 
 | Event | Do |
 | --- | --- |
-| A security advisory or incident report | [Supply-chain runbook](supply-chain/runbook.md): verify against primary sources, sweep, patch within policy |
+| A security advisory or incident report | [Supply-chain runbook](../skills/supply-chain/runbook.md): verify against primary sources, sweep, patch within policy |
 | A Node security release | `steward sc node-patch <x.y.z>`, never `mise upgrade node` |
-| A new AQE or Ruflo release past the gate | [AI tooling runbook](ai-tooling/runbook.md): qualify (`ai-tooling/qualify/aqe/run.sh`), then promote |
+| A new AQE or Ruflo release past the gate | [AI tooling runbook](../skills/ai-tooling/runbook.md): qualify (`ai-tooling/qualify/aqe/run.sh`), then promote |
 | A new project appears (`steward` says so) | `steward projects scan`, then `decide`, then `onboard` or `offboard` |
 | A soak ends | `DRY_RUN=1 steward sc prune`, then `steward sc prune` |
 | Bot PRs pile up in a repo | the `pr-consolidation` skill ([fleet runbook](fleet/runbook.md)) |
@@ -96,9 +96,9 @@ releases waiting to be qualified, and `steward projects list` to recheck project
 
 - The design and every decision (D1 onward): [`architecture.md`](architecture.md).
 - The runbooks:
-  - [supply chain](supply-chain/runbook.md);
-  - [AI tooling](ai-tooling/runbook.md);
-  - [projects](projects/runbook.md);
+  - [supply chain](../skills/supply-chain/runbook.md);
+  - [AI tooling](../skills/ai-tooling/runbook.md);
+  - [projects](../skills/projects/runbook.md);
   - [fleet](fleet/runbook.md).
 - Everything else, indexed: [`README.md`](README.md).
 - Rules for agents working here: [`../AGENTS.md`](../AGENTS.md).

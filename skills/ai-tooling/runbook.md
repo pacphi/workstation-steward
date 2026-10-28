@@ -4,8 +4,8 @@
 
 Procedures for the AI-tooling area: Ruflo and AgentDB, AQE, RuvNet Brain, RuVector, the shared launchers and
 the guards. The policy is `ai-tooling/ai-tooling.toml` in your instance ([an example](../../examples/ai-tooling/ai-tooling.toml)). Why it looks
-the way it does is in [`architecture.md`](../architecture.md); the full qualification recipe is in
-[`qualification.md`](qualification.md). Run commands from the repo root.
+the way it does is in [`architecture.md`](../../docs/architecture.md); the full qualification recipe is in
+[`qualification.md`](qualification.md). `steward` commands run from any folder.
 
 **Never, under any circumstances:**
 
@@ -106,7 +106,7 @@ updater stays off (D29); getting current is a qualification:
 ## After a promotion: bring projects in step
 
 After a new AQE, Ruflo or Brain version is promoted on the machine, the copies onboarding put into projects may be
-behind. Why and how: [`upstream-and-reconcile.md`](upstream-and-reconcile.md).
+behind. Why and how: [`upstream-and-reconcile.md`](../../docs/ai-tooling/upstream-and-reconcile.md).
 
 1. `steward check`, `steward review` and the `steward` banner list the projects behind; `steward ai drift` and
    `steward projects profile-check` give each difference and its reason.
@@ -199,7 +199,7 @@ with no vetting; the vetted Ruflo approvals are all read-only.
   them; a project's own servers stay. Claude gets Ruflo's hooks and plugins, not an MCP server; Codex has the pinned
   `ruflo` server.
 - **AQE servers off the shared runtime, missing hook shims or `autoStart`:** fixing these
-  edits project files. The allowed way is in [`../architecture.md`](../architecture.md#projects-detection-and-onboarding):
+  edits project files. The allowed way is in [`docs/architecture.md`](../../docs/architecture.md#projects-detection-and-onboarding):
   - untracked or ignored files are edited in place, after the plan and `[y/N]`, with a backup and a receipt;
   - tracked files change through a pull request.
 

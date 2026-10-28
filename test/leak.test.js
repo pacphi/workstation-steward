@@ -47,8 +47,7 @@ test('export: only allowed tracked files; never the instance, archive/ or owner/
   }
   assert.equal(fs.readFileSync(path.join(out, 'CLAUDE.md'), 'utf8'), '@AGENTS.md\n');
   assert.match(fs.readFileSync(path.join(out, '.gitignore'), 'utf8'), /^\/projects\/registry\.toml$/m);
-  const link = path.join(out, '.claude', 'skills', 'supply-chain-steward');
-  assert.ok(fs.lstatSync(link).isSymbolicLink(), 'skill links stay symlinks');
+  for (const f of ['.claude-plugin/plugin.json', 'skills/supply-chain/SKILL.md', 'skills/pr-consolidation/scripts/lock-age.sh']) assert.ok(fs.existsSync(path.join(out, f)), f);
   assert.equal(run('export.js', [out]).status, 2, 'refuses a folder that is not empty');
   const empty = path.join(ROOT, 'no-terms.txt'); fs.writeFileSync(empty, '');
   const chk = run('leak-check.js', [out, '--terms', empty]);   // not this checkout's own terms (it is also an instance)

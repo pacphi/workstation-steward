@@ -31,7 +31,7 @@ local platform (AGENTS.md: "Verify a config change before merging it").
 
 ## Bot PRs have piled up
 
-Use the [`pr-consolidation` skill](../../fleet/skill/README.md). It opens one PR per repo, superseding the open
+Use the [`pr-consolidation` skill](../../skills/pr-consolidation/README.md). It opens one PR per repo, superseding the open
 Dependabot and/or Renovate PRs, with every CI audit gate green and majors deferred with analysis. It never
 merges. The orchestrator verifies, merges, then handles the superseded PRs:
 

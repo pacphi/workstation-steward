@@ -9,22 +9,19 @@ bin/
 lib/
 supply-chain/bin/
 supply-chain/checks/
-supply-chain/skill/
 supply-chain/host-defaults.toml
 supply-chain/README.md
 ai-tooling/bin/
 ai-tooling/qualify/
 ai-tooling/transports/
-ai-tooling/skill/
 ai-tooling/README.md
 projects/bin/
 projects/profiles/
-projects/skill/
 projects/README.md
 fleet/bin/
-fleet/skill/
 fleet/README.md
-.claude/skills/
+skills/
+.claude-plugin/
 
 # what a newcomer reads and copies
 examples/

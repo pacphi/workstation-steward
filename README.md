@@ -38,8 +38,9 @@ Once it's on npm: `mise use -g npm:workstation-steward@<version>`, and then just
 | [Fleet](fleet/README.md) | The GitHub side: Renovate patterns, consolidating dependency PRs, bringing checkouts level after merges | `steward fleet …` |
 
 `steward` on its own lists every command and says when something needs you (new projects, a soak ending, a review
-due). `steward review` gathers what needs a decision across every area. In a Claude Code session in this repo, each
-area's skill loads automatically, plus `/sc-audit`, `/sc-plan`, `/ai-drift` and `/projects-scan`.
+due). `steward review` gathers what needs a decision across every area. The Claude Code skills are in
+[`skills/`](skills/), one per area plus PR consolidation, each with its runbook; `just claude` loads them from a
+checkout as `/steward:supply-chain` and the rest.
 
 ## Read next
 

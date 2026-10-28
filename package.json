@@ -33,20 +33,17 @@
     "supply-chain/bin/",
     "supply-chain/checks/",
     "supply-chain/host-defaults.toml",
-    "supply-chain/skill/",
     "supply-chain/README.md",
     "ai-tooling/bin/",
     "ai-tooling/qualify/",
     "ai-tooling/transports/",
-    "ai-tooling/skill/",
     "ai-tooling/README.md",
     "projects/bin/",
     "projects/profiles/",
-    "projects/skill/",
     "projects/README.md",
     "fleet/bin/",
-    "fleet/skill/",
     "fleet/README.md",
+    "skills/",
     "SECURITY.md"
   ]
 }

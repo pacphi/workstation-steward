@@ -4,8 +4,8 @@
 
 Procedures for the supply-chain area: mise, the npm -g hybrids, Homebrew, apps, the App Store, macOS, trust
 stores, Docker and IOCs. The rules behind them are in [`../../AGENTS.md`](../../AGENTS.md) (Toolchain, Release
-age); the files and commands are in [`../../supply-chain/README.md`](../../supply-chain/README.md). Run commands
-from the repo root. Every changing step asks first, and `DRY_RUN=1` previews it.
+age); the files and commands are in [`../../supply-chain/README.md`](../../supply-chain/README.md). `steward`
+commands run from any folder. Every changing step asks first, and `DRY_RUN=1` previews it.
 
 ## Contents
 

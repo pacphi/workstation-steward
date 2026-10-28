@@ -84,7 +84,7 @@ deferred major: that would silence the whole major line.
 
 - **Config is read from the default branch only.** For repos that integrate on `develop`, the
   `renovate.json` on `main` must carry `"baseBranchPatterns": ["develop"]`, byte-identical on
-  both branches (AGENTS.md; finima#171, ruflo-local#34's companion config PR). Check parity:
+  both branches ([rules.md](rules.md#renovate); finima#171, ruflo-local#34's companion config PR). Check parity:
   `gh api repos/<r>/contents/renovate.json?ref=<branch> --jq .sha`.
 - The fleet config (`renovate.json` in each repo, e.g. a Rust + Svelte app) sets `minimumReleaseAge: "3 days"`,
   `osvVulnerabilityAlerts: true` and `vulnerabilityAlerts`, which bypass the age gate.

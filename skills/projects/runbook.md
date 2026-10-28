@@ -2,9 +2,9 @@
 
 ![Revision 16](https://img.shields.io/badge/Revision-16-green) ![Revised 2026-10-27](https://img.shields.io/badge/Revised-2026--10--27-green)
 
-Procedures for the projects under `~/Development`. The registry is
+Procedures for the projects under the roots in `steward.toml` (`[projects] roots`). The registry is
 `projects/registry.toml` in your instance ([an example](../../examples/projects/registry.toml)), and its fields are described in
-[`../../projects/README.md`](../../projects/README.md). Run commands from the repo root.
+[`../../projects/README.md`](../../projects/README.md). `steward` commands run from any folder.
 
 ## Contents
 
@@ -22,7 +22,7 @@ Procedures for the projects under `~/Development`. The registry is
 
 ## New projects appear
 
-1. `steward` prints `!! N new project(s) under ~/Development` when the scan finds any.
+1. `steward` prints `!! N new project(s) under <root>` when the scan finds any.
 2. Run `steward projects scan` (read-only). For each new project it shows:
    - its kind (`git`, `worktree`, `submodule`, `nested-git` or `dir`);
    - its parent, for worktrees and submodules;
@@ -129,14 +129,14 @@ and `create` changes. `PR` items are listed and left for the rollout's pull requ
 - **Afterwards:** Claude Code picks up changed `settings.json` hooks when it next starts in the project, and asks to
   trust them (the plan's manual steps).
 
-`just test` runs the merge rules and writers, then onboarding end to end on throwaway Node, Maven and Rust repos:
+The engine's tests (`just test` in a checkout) run the merge rules and writers, then onboarding end to end on throwaway Node, Maven and Rust repos:
 apply, a second plan with nothing left, an AQE hook run through transport v2, rollback to the exact starting state,
 a failure partway, and a file changed after the plan.
 
 ## Reconcile after a promotion
 
-D42 in [`../architecture.md`](../architecture.md). What it does to a project and why, in plain words:
-[`../ai-tooling/upstream-and-reconcile.md`](../ai-tooling/upstream-and-reconcile.md#what-reconcile-does-to-your-project-in-plain-words). After a new Ruflo, AQE or Brain
+D42 in [`docs/architecture.md`](../../docs/architecture.md). What it does to a project and why, in plain words:
+[`docs/ai-tooling/upstream-and-reconcile.md`](../../docs/ai-tooling/upstream-and-reconcile.md#what-reconcile-does-to-your-project-in-plain-words). After a new Ruflo, AQE or Brain
 version is promoted, the copies onboarding made (helpers, skills, commands, agents, AQE's two hook files) may be
 behind.
 
@@ -156,7 +156,7 @@ behind.
 
 ## Offboard a project with no AI tools
 
-D31 in [`../architecture.md`](../architecture.md). For a registered project whose entry has `ai = []` but still has
+D31 in [`docs/architecture.md`](../../docs/architecture.md). For a registered project whose entry has `ai = []` but still has
 the tools' wiring or files (drift lists it as beyond its choice).
 
 1. `steward projects offboard <path>` shows the plan. It stops when tools are chosen for the project, the repo is
@@ -181,7 +181,7 @@ the tools' wiring or files (drift lists it as beyond its choice).
 4. `steward projects offboard --rollback <receipt>` refuses if a moved path exists again or an edited file changed since,
    then moves everything back and restores the edited files.
 
-`just test` covers it on a throwaway repo where the project's own tracked files sit in the same folders as the
+The engine's tests cover it on a throwaway repo where the project's own tracked files sit in the same folders as the
 copies: apply, a second plan with nothing left, and a rollback to the exact starting state; a plain folder with a
 file changed after the plan; and the running-process stop.
 
@@ -233,7 +233,7 @@ Seeded entries are `unconfirmed`; `ai_seed` is the seed list's choice.
 
 ## What may be written into a project
 
-D6 in [`../architecture.md`](../architecture.md#projects-detection-and-onboarding):
+D6 in [`docs/architecture.md`](../../docs/architecture.md#projects-detection-and-onboarding):
 
 - **Untracked or gitignored tooling files** (`.mcp.json`, `.codex/config.toml`, `.claude/settings*.json`,
   `node_modules/.bin` shims): edited in place only after the plan and the user's `[y/N]`, with a backup, a
@@ -241,5 +241,5 @@ D6 in [`../architecture.md`](../architecture.md#projects-detection-and-onboardin
   one with `--take`. Offboarding (D31) also moves the tools' untracked stores and copies into its backup.
 - **Refused:** tracked files, and any repo in the middle of a merge or rebase.
 - **Tracked files** (`AGENTS.md`, `CLAUDE.md`, `renovate.json`, `.nvmrc`): changed through a pull request from a
-  scratch clone, per the [fleet runbook](../fleet/runbook.md).
+  scratch clone, per the [fleet runbook](../../docs/fleet/runbook.md).
 - **No remote:** list the change as a manual step for the user.
