@@ -1,6 +1,6 @@
 {
   "name": "workstation-steward",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Keeps a Mac's software supply chain current within policy: a release-age gate, plans before changes, backups, receipts and rollback.",
   "license": "MIT",
   "author": "Chris Phillipson",
