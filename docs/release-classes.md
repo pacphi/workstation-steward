@@ -1,10 +1,10 @@
 # Release classes: what may skip the release-age gate
 
-![Revision 2](https://img.shields.io/badge/Revision-2-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
+![Revision 3](https://img.shields.io/badge/Revision-3-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
 
 > [!NOTE]
-> **Built (D52)**, except the weekly upstream watch and the maintainer runbook (*planned*, the next PR). The code is
-> `lib/updaters.js`; the schema by example is in `examples/supply-chain/host.toml`.
+> **Built (D52)**, with the weekly upstream watch and the maintainer runbook. The code is `lib/updaters.js`, and the
+> watch is `tools/upstream-watch.js`; the schema by example is in `examples/supply-chain/host.toml`.
 
 The steward holds every new release for the release-age gate (`[policy] min_release_age_days`, 3 days by default) and
 keeps old installs for the soak after a change. Two exceptions exist today, each a special case: `always_current`
@@ -96,9 +96,9 @@ A shipped pin is only as good as the maintainer's notice of a change upstream. F
 | Layer | What it catches | When |
 | --- | --- | --- |
 | A schema test (`test/host-defaults.test.js`) | a shipped `[[updater]]` missing `why`, `when`, `require_output` or `backup`, a `signed_data` one without a `pin`, an unknown class | every engine PR |
-| An upstream watch (a scheduled GitHub workflow in the engine repo, read-only) | each shipped `pin` with a `watch` URL: fetch it, apply `match`, compare the hash; on a change it opens or updates an issue labelled `owner-decision` | weekly |
+| An upstream watch (`.github/workflows/upstream-watch.yml`, a scheduled GitHub workflow in the engine repo, read-only) | each shipped `pin` with a `watch` URL: fetch it, apply `match`, compare the hash; on a change it opens or updates an issue labelled `owner-decision` | weekly |
 | Field reports | `steward sc audit` on any machine: a pin mismatch says the key changed and the engine's default may be behind | whenever it runs |
-| A maintainer runbook (`docs/maintainers.md`) | confirm the change from the publisher's own release notes or announcement, update the pin in a PR, release; the gate then delays it like any engine change | when either of the two above fires |
+| A maintainer runbook ([`maintainers.md`](maintainers.md#a-shipped-default-changed-upstream)) | confirm the change from the publisher's own release notes or announcement, update the pin in a PR, release; the gate then delays it like any engine change | when either of the two above fires |
 
 ## Brain, as the first case
 
@@ -137,7 +137,8 @@ table), so it can't skip a gate it doesn't know about.
 ## Docs that change when it's built
 
 The schema is documented with the code, never ahead of it. The implementation PR updated each of these except the
-last three: the maintainer runbook and the workflow come with the watch, and the animation is a docs chore after it:
+last three; the watch's PR added the maintainer runbook and the workflow. The animation, the last row, is still to
+come, as a docs chore:
 
 | Doc | What it gains |
 | --- | --- |
@@ -148,9 +149,9 @@ last three: the maintainer runbook and the workflow come with the watch, and the
 | `AGENTS.md`, Release age | the `signed_data` class beside the advisory exception |
 | `docs/lifecycle.md` | the promise, marked *planned* until it's built |
 | `skills/ai-tooling/runbook.md`, Brain | the knowledge base as a declared `signed_data` source |
-| `docs/maintainers.md` | "A shipped default changed upstream": the runbook above |
-| `.github/workflows/` | the weekly, read-only upstream watch |
-| `docs/assets/terminal/steward-supply-chain.json` | an updater line in `steward sc plan`, with the class |
+| `docs/maintainers.md` | "A shipped default changed upstream": the runbook above (built) |
+| `.github/workflows/` | the weekly, read-only upstream watch, `upstream-watch.yml` (built) |
+| `docs/assets/terminal/steward-supply-chain.json` | an updater line in `steward sc plan`, with the class (*to come*) |
 
 ## Rejected
 

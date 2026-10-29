@@ -1,6 +1,6 @@
 # Lifecycle
 
-![Revision 14](https://img.shields.io/badge/Revision-14-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
+![Revision 15](https://img.shields.io/badge/Revision-15-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
 
 How someone installs workstation-steward, sets it up, uses it, and keeps it, their config and their projects safe
 over release after release. It is the contract the code is built to: each part is marked **built** or **planned**.
@@ -128,8 +128,8 @@ included) has them; from R3b on, the engine refuses to run against a config form
 The same defaults carry **declared update sources** (`[[updater]]`, D52): data a tool updates itself, such as Brain's
 knowledge base, kept current by `steward sc upgrade` with a backup, a receipt and a pinned signing key. A default is
 active only where its tool is installed, and `[off] updater = ["…"]` turns one off. An engine older than D52 ignores
-the table, so it can't skip a gate it doesn't know. *Built (D52); the weekly watch that keeps shipped key pins current
-is planned* ([`release-classes.md`](release-classes.md)).
+the table, so it can't skip a gate it doesn't know. *Built (D52), with a weekly watch that tells the maintainer
+when a shipped key pin changes upstream* ([`release-classes.md`](release-classes.md)).
 
 ## Onboarded projects across releases
 

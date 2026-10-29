@@ -1,0 +1,45 @@
+# The maintainer's weekly upstream watch (D52, docs/release-classes.md): for each [[updater]] the engine ships whose
+# key pin names a `watch` URL, tools/upstream-watch.js fetches the publisher's copy, finds the pinned text and compares
+# its hash with the reviewed sha256. A change opens an issue labelled owner-decision, one per entry (or comments on the
+# open one when the hash moved again); the runbook is docs/maintainers.md, "A shipped default changed upstream". The
+# label is created the first time it's needed. Read-only toward the code: it never writes a file, commits or opens a
+# PR. Issues go only to the package's own repository (package.json), so a private copy of the engine reports without
+# filing. A pin that couldn't be checked (network, HTTP, or the match finds nothing) fails the run, so a broken watch
+# shows red; a change doesn't, since its issue is the signal. Started by hand: gh workflow run upstream-watch.yml
+name: Upstream watch
+
+on:
+  schedule:
+    - cron: '17 6 * * 1' # Mondays, 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write # the owner-decision issue and its label; nothing else
+
+concurrency:
+  group: upstream-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
+      # a checkout that is also an instance has its own mise/ at the root: not this job's toolchain (see lint.yml)
+      MISE_IGNORED_CONFIG_PATHS: ${{ github.workspace }}/mise
+      NO_COLOR: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+        with:
+          version: 2026.10.19
+          install: false # a lockfile in a parent folder would make the action use --locked (see test.yml)
+      - run: mise install node yq
+      - name: Check each shipped key pin against its publisher's copy
+        env:
+          GH_TOKEN: ${{ github.token }} # gh, preinstalled on the runner, files the issue
+        run: mise exec -- node tools/upstream-watch.js --issues

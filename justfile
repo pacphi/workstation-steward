@@ -36,6 +36,7 @@ lint:
     node --check projects/bin/reconcile.js
     node --check tools/known-units.js
     node --check tools/publish-guard.js
+    node --check tools/upstream-watch.js
     node --check lib/platform.js
     node --check lib/providers/brew.js
     node --check lib/providers/mise.js
