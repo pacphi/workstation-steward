@@ -1,6 +1,6 @@
 # Keep your config in a private Git repo
 
-![Revision 3](https://img.shields.io/badge/Revision-3-green) ![Revised 2026-10-28](https://img.shields.io/badge/Revised-2026--10--28-green)
+![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-10-28](https://img.shields.io/badge/Revised-2026--10--28-green)
 
 Your config (the *instance*: `steward.toml`, your policy files, the registry of your projects and your mise toolchain)
 is the one part of the steward that's yours alone. Putting it in a private Git repo gives you four things:
@@ -71,7 +71,23 @@ mise install         # the toolchain the config pins
 
 ## 4. Day to day
 
-Some steward commands change files in your config, and so do your own edits. After either, commit and push:
+One command keeps this Mac and GitHub in step, both ways: `steward config sync`. On its own it fetches and shows
+the plan, and changes nothing. With `--apply` it asks before each step.
+
+```sh
+steward config sync                        # the plan: what it would pull, and what it would send
+steward config sync --apply                # pulls, then sends, asking before each
+steward config sync --rollback <receipt>   # undoes a pull or a send (asks first)
+```
+
+**Pulling** (after you merge a Renovate pull request, or on your other Macs):
+
+1. fast-forwards your branch: never a rebase or a merge, and it never drops an edit of yours;
+2. writes a receipt;
+3. offers `mise install` if anything under `mise/` changed (a yes starts the soak, as an upgrade does);
+4. runs `steward check`, which says when the config now needs a newer steward.
+
+**Sending** this Mac's changes. Some steward commands change files in your config, and so do your own edits:
 
 | Changes | Files |
 | --- | --- |
@@ -80,43 +96,35 @@ Some steward commands change files in your config, and so do your own edits. Aft
 | `steward projects decide` | `projects/registry.toml` |
 | Your own edits | `steward.toml`, `supply-chain/host.toml`, `supply-chain/hybrids.toml`, `ai-tooling/ai-tooling.toml` |
 
-```sh
-git -C ~/.config/workstation-steward status --short
-git -C ~/.config/workstation-steward commit -am '<what changed>' && git -C ~/.config/workstation-steward push
-```
+`steward config sync --apply` sends all of them, and any commits you made here, as one pull request on a new branch
+(`steward/sync-<time>`), never straight to `main`. The pull request lists each file and, where a receipt says so,
+the steward command that changed it. Review and merge it on GitHub. Until then this Mac stays on that branch, so
+nothing you use changes, and new edits go onto the same pull request. After you merge, the next
+`steward config sync` switches back to `main`, brings it level, and deletes the branch, here and on GitHub.
 
-On your other Macs, and after merging a Renovate pull request, bring the config level with
-`steward config sync`. On its own it fetches and shows the plan: the commits it would pull, the files they change,
-and any edit of yours in their way. With `--apply` it asks, then:
+It stops, and says what to do, when an edit of yours touches a file a pull changes, when your branch and GitHub's
+have both moved (it never merges), and when a merge or rebase is in progress. `--rollback` undoes a pull with
+`git reset --keep`, which refuses rather than touch your edits; for a send, it closes the pull request (unless it was
+merged) and puts this Mac back exactly as it was before.
 
-1. fast-forwards your branch (never a rebase or a merge, and it never drops an edit of yours);
-2. writes a receipt;
-3. offers `mise install` if anything under `mise/` changed (a yes starts the soak, as an upgrade does);
-4. runs `steward check`, which says when the config now needs a newer steward.
-
-```sh
-steward config sync                  # the plan; changes nothing
-steward config sync --apply          # asks, fast-forwards, offers mise install, runs steward check
-steward config sync --rollback <receipt>   # moves the branch back to where the sync found it (asks first)
-```
-
-It stops, and says what to do, when an edit of yours touches a file the pull changes, when your branch and GitHub's
-have both moved (it never merges), and when a merge or rebase is in progress. The way back, `--rollback`, uses
-`git reset --keep`, which refuses rather than touch your local edits.
+> [!NOTE]
+> Config sync needs your config in a Git repository of its own, with a GitHub remote ([step 1](#1-make-your-config-a-repo)),
+> and sending needs the GitHub CLI, logged in. Until then it says it's off and gives the commands to set it up.
+> A repository hosted elsewhere can still pull; only sending needs GitHub.
 
 ## What the steward tells you
 
 Once your config is a Git repo, the steward keeps an eye on it for you (D50), read-only:
 
 - **The banner.** `steward` on its own adds a `config` line when files changed here, commits aren't pushed, or GitHub
-  has newer commits, pointing to `steward config sync` when there's something to pull. It never touches the network:
+  has newer commits, pointing to `steward config sync`. It never touches the network:
   "newer on GitHub" is as of the last fetch, and says when that was.
 - **`steward config`** ends with a `repo` section: the GitHub repository and branch, then each thing that needs you,
   with the command that acts on it.
 - **`steward review`** fetches first, then lists the same items, your config repo's open pull requests (Renovate's
   among them), and its issues labelled `owner-decision`.
 
-![steward: a config banner line; steward config: the repo section; steward review: the same, plus a Renovate pull request; steward config sync: the plan, then --apply pulls the Renovate merge, runs mise install and steward check](assets/steward-config-sync.svg)
+![steward: a config banner line; steward config and steward review: the same items, plus a Renovate pull request; steward config sync --apply: pulls the Renovate merge, runs mise install and steward check, and sends a local edit as pull request #7; after #7 merges, the next sync switches back to main and deletes the branch](assets/steward-config-sync.svg)
 
 Only a folder that is a Git repository of its own counts. A config inside another repository (the `examples/` folder
 of a steward clone, say) gets no banner.
