@@ -1,9 +1,10 @@
 # Releasing workstation-steward
 
-![Revision 2](https://img.shields.io/badge/Revision-2-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
+![Revision 3](https://img.shields.io/badge/Revision-3-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
 
-How a release happens, and the one-time npm setup behind it (D46 in [`architecture.md`](architecture.md#decisions)).
-For maintainers of this repository; users install releases as [`../README.md`](../README.md) describes.
+How a release happens, and the one-time npm setup behind it (D46 in [`architecture.md`](architecture.md#decisions)),
+plus what to do when the weekly upstream watch finds that a shipped default changed (D52). For maintainers of this
+repository; users install releases as [`../README.md`](../README.md) describes.
 
 ## Contents
 
@@ -16,6 +17,7 @@ For maintainers of this repository; users install releases as [`../README.md`](.
 - [Checking a release on a clean Mac](#checking-a-release-on-a-clean-mac)
 - [The publish guard](#the-publish-guard)
 - [A pre-push leak check for your clone](#a-pre-push-leak-check-for-your-clone)
+- [A shipped default changed upstream](#a-shipped-default-changed-upstream)
 
 ## How a release happens
 
@@ -200,3 +202,64 @@ rm -rf "${tmp}"; exit "${status}"
 ```
 
 Make it executable (`chmod +x .git/hooks/pre-push`). `git push --no-verify` skips it, deliberately and rarely.
+
+## A shipped default changed upstream
+
+The engine ships a key pin for each signed data source it knows: an `[[updater]]` in
+`supply-chain/host-defaults.toml` whose `[updater.pin]` holds the hash of the signing key you reviewed
+([`release-classes.md`](release-classes.md), D52). If the publisher changes that key, every machine that gets the new
+file refuses it until the pin is updated. You want to hear about that from the watch, not from a user.
+
+**The Upstream watch** (`.github/workflows/upstream-watch.yml`) runs every Monday, and when you start it by hand. Its
+script, `tools/upstream-watch.js`, fetches each pin's `watch` URL, finds the key with the pin's `match`, and hashes it
+exactly as `steward sc audit` hashes a machine's copy. It only reads: it never changes a file or opens a pull request.
+
+| The run says | What it means | What happens |
+| --- | --- | --- |
+| unchanged | the publisher's key is the one you reviewed | nothing |
+| CHANGED | the key's text now has a different hash | an issue, *Upstream watch: the key pinned for `<name>` changed*, labelled `owner-decision`; the run passes |
+| could not check | a network or HTTP error, or `match` found nothing | the run fails and says why; no issue |
+| skipped | the pin has no `watch` URL | nothing |
+
+There is one issue per entry. A later run finds it by its title and adds a comment only if the hash has moved again.
+The first run that needs the `owner-decision` label creates it. A network error usually clears by the next week; a
+"no match" that stays means the publisher reorganized the file, so treat it like a change. To run it now, or locally
+(locally it never files an issue; it exits 0 unchanged, 10 changed, 1 could not check):
+
+```sh
+gh workflow run upstream-watch.yml --repo pacphi/workstation-steward
+node tools/upstream-watch.js
+```
+
+### When the issue opens
+
+The watch says the key changed. It can't say whether the change is good: a planned key rotation and a hijacked
+publisher look the same from here. So check before you trust it.
+
+1. **Find the change.** The issue links the file's history. Open the commit that changed the key: who made it, when,
+   and what else changed with it.
+2. **Confirm it from a primary source.** Look for the publisher's own word on the new key: their release notes,
+   changelog, security advisory or announcement, on a channel they control (their GitHub releases or their site). A
+   social post isn't enough. The new key should appear there, or the rotation should be explained there.
+3. **Update the pin in an engine PR**, from a fresh clone on a new branch:
+   - in `supply-chain/host-defaults.toml`, set the entry's `[updater.pin] sha256` to the new hash (the issue and
+     `node tools/upstream-watch.js` both print it in full);
+   - rewrite `why` to say what you reviewed, the date and the version (the current text ends "Reviewed 2026-10-29 at
+     runtime 4.7.6");
+   - run `node tools/upstream-watch.js`: it must now say `unchanged`; then the usual gates (`just test` runs the
+     schema test on every shipped `[[updater]]`);
+   - title it `fix: <name>'s key pin, rotated upstream`, link the publisher's announcement and the commit in the body,
+     and add `Fixes #<issue>` so the merge closes the issue.
+4. **Release it.** Users get the new pin in the next release, after the release-age gate like any engine change.
+   Until then, `steward sc audit` reports the mismatch on a machine that has the new file. A user who can't wait can
+   review the key and put an `[[updater]]` with the same `name` and the new pin in their own `host.toml`: it replaces
+   the default.
+
+**If you can't confirm the change,** don't ship the new hash. Choose one, in an engine PR:
+
+- **Hold it:** set the entry's `class` to `gated`. `steward sc upgrade` never applies a declared `gated` source (the
+  plan lists it as held), while the audit keeps checking the pin and that the tool's own updater stays off.
+- **Turn it off:** remove the entry from `host-defaults.toml`. A user can do the same on one machine now, with
+  `[off] updater = ["<name>"]` in their `host.toml`.
+
+Say which you chose, and why, in the issue before you close it.
