@@ -85,7 +85,7 @@ test('a path the user typed: from the folder steward runs in (STEWARD_CWD), ~ ex
 
 test('githubRepo: owner/name from an HTTPS or SSH remote, keeping a dot in the name (2026-10-28)', () => {
   const r = node(['-e', 'const { githubRepo } = require("./lib/review.js"); for (const u of process.argv.slice(1)) console.log(githubRepo(u) || "-")',
-    'https://github.com/pacphi/chrisphillipson.me.git', 'git@github.com:pacphi/chrisphillipson.me.git', 'https://github.com/pacphi/workstation-steward',
-    'https://github.com/pacphi/sindri/', 'https://gitlab.com/a/b.git', '']);
-  assert.deepEqual(r.stdout.trim().split('\n'), ['pacphi/chrisphillipson.me', 'pacphi/chrisphillipson.me', 'pacphi/workstation-steward', 'pacphi/sindri', '-', '-'], r.stderr);
+    'https://github.com/example-owner/site.example.git', 'git@github.com:example-owner/site.example.git', 'https://github.com/example-owner/plain-repo',
+    'https://github.com/example-owner/slash-repo/', 'https://gitlab.com/a/b.git', '']);
+  assert.deepEqual(r.stdout.trim().split('\n'), ['example-owner/site.example', 'example-owner/site.example', 'example-owner/plain-repo', 'example-owner/slash-repo', '-', '-'], r.stderr);
 });
