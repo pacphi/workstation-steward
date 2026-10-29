@@ -38,8 +38,10 @@ const pg = progress(4);
 let s = pg.stage('checking the checkout');
 const branch = tryGit('symbolic-ref', '--short', '-q', 'HEAD');
 if (!branch) die('detached HEAD: check out a branch first');
-for (const m of ['MERGE_HEAD', 'REBASE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'rebase-merge', 'rebase-apply']) {
-  if (fs.existsSync(path.resolve(dir, tryGit('rev-parse', '--git-path', m)))) die(`a ${m.replace(/_HEAD$/, '').toLowerCase()} is in progress: finish or abort it first`);
+// A rebase is judged as git does, by rebase-merge/ or rebase-apply/: a REBASE_HEAD can outlive the rebase.
+for (const m of ['MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'rebase-merge', 'rebase-apply']) {
+  const what = m.startsWith('rebase') ? 'rebase' : m.replace(/_HEAD$/, '').replace('_', '-').toLowerCase();
+  if (fs.existsSync(path.resolve(dir, tryGit('rev-parse', '--git-path', m)))) die(`a ${what} is in progress: finish or abort it first`);
 }
 const upstream = tryGit('rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}') || (tryGit('rev-parse', '--verify', '-q', `origin/${branch}`) !== null ? `origin/${branch}` : null);
 if (!upstream) die(`${branch} has no upstream to follow`);

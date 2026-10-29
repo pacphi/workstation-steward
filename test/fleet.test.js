@@ -95,6 +95,21 @@ test('sync: refuses local commits, a detached HEAD and a merge in progress; no-o
   assert.match(run('sync.js', [f.work]).stderr, /merge is in progress/);
 });
 
+// Git can leave REBASE_HEAD behind once a rebase is over; it judges a rebase by rebase-merge/ or rebase-apply/.
+// A two-month-old leftover blocked a real checkout's sync until it was removed by hand.
+test('sync: a leftover REBASE_HEAD does not block; a rebase that is running does', () => {
+  const f = fixture({ 'a.txt': 'a\n' });
+  f.move({ 'b.txt': 'b\n' });
+  fs.writeFileSync(path.join(f.work, '.git', 'REBASE_HEAD'), git(f.work, 'rev-parse', 'HEAD'));
+  const stale = run('sync.js', [f.work]);
+  assert.equal(stale.status, 0, stale.stderr);
+  assert.match(stale.stdout, /main: 1 commit\(s\) to fast-forward/);
+  fs.mkdirSync(path.join(f.work, '.git', 'rebase-merge'));
+  const real = run('sync.js', [f.work]);
+  assert.equal(real.status, 1);
+  assert.match(real.stderr, /a rebase is in progress: finish or abort it first/);
+});
+
 // prune-merged: a fake gh answers `pr list --head <branch>` from a table in GH_FAKE
 function fakeGh() {
   const p = path.join(ROOT, `gh${++k}`);

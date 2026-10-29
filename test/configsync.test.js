@@ -124,6 +124,19 @@ test('refuses an edit in the way, a diverged branch, no upstream, and a folder t
   assert.match(sync(f.inst).stderr, /main has no upstream to follow: git -C .* push -u origin main/);
 });
 
+test('a leftover REBASE_HEAD does not block a pull; a rebase that is running does', () => {
+  const f = fixture();
+  f.upstream('notes.md', 'notes 2\n', 'up');
+  fs.writeFileSync(path.join(f.inst, '.git', 'REBASE_HEAD'), `${f.head()}\n`);
+  const stale = sync(f.inst);
+  assert.equal(stale.status, 0, stale.stderr);
+  assert.match(stale.stdout, /pull +1 commit\(s\)/);
+  fs.mkdirSync(path.join(f.inst, '.git', 'rebase-apply'));
+  const real = sync(f.inst);
+  assert.equal(real.status, 1);
+  assert.match(real.stderr, /a rebase is in progress: finish or abort it first/);
+});
+
 test('config sync is off, with the steps, when the config is not a repo, has no remote, or sits inside another repo', () => {
   const loose = path.join(ROOT, 'loose');
   fs.mkdirSync(loose); fs.writeFileSync(path.join(loose, 'steward.toml'), '');
