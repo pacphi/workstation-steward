@@ -3,6 +3,15 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.3.0](https://github.com/pacphi/workstation-steward/compare/v0.2.2...v0.3.0) (2026-10-29)
+
+
+### Features
+
+* steward config sync brings your config repo level with GitHub ([#26](https://github.com/pacphi/workstation-steward/issues/26)) ([e19b8e2](https://github.com/pacphi/workstation-steward/commit/e19b8e26ec735e6b1ce8e08064f6203e6d6998f9))
+* steward config sync sends this Mac's changes as a pull request ([#28](https://github.com/pacphi/workstation-steward/issues/28)) ([6bcf891](https://github.com/pacphi/workstation-steward/commit/6bcf891610a7f19730aa769321ed3580e74a4bc5))
+* the steward knows where your config repo stands (banner, steward config, review) ([#24](https://github.com/pacphi/workstation-steward/issues/24)) ([89657d8](https://github.com/pacphi/workstation-steward/commit/89657d8008f0f5f2b73368ad90422afd377833b1))
+
 ## [0.2.2](https://github.com/pacphi/workstation-steward/compare/v0.2.1...v0.2.2) (2026-10-28)
 
 
