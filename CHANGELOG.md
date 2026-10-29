@@ -3,6 +3,18 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.4.1](https://github.com/pacphi/workstation-steward/compare/v0.4.0...v0.4.1) (2026-10-29)
+
+
+### Bug Fixes
+
+* steward review reads the projects behind again; config sync names new and deleted files ([#38](https://github.com/pacphi/workstation-steward/issues/38)) ([7efc537](https://github.com/pacphi/workstation-steward/commit/7efc537aacfef762376b8e0b09b938a73c294e0d))
+
+
+### Documentation
+
+* a curated, commented-out tool collection in the example mise config ([#40](https://github.com/pacphi/workstation-steward/issues/40)) ([01fb41b](https://github.com/pacphi/workstation-steward/commit/01fb41b9db3c9bc0155e1b904b22ad615af9e90d))
+
 ## [0.4.0](https://github.com/pacphi/workstation-steward/compare/v0.3.2...v0.4.0) (2026-10-29)
 
 
