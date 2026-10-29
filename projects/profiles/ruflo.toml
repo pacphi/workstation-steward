@@ -10,6 +10,11 @@
 # lib/profiles.js; see projects/profiles/README.md.
 tool = "ruflo"
 
+# What must stay off at user level (D55): the Claude plugins below are project-scoped ([settings.enabledPlugins]);
+# `steward ai drift` reports any that is on in the user's Claude settings. Onboarding never reads this table.
+[user_off]
+claude_plugins = ["ruflo-mods@ruflo", "ruflo-swarm@ruflo", "ruflo-console@ruflo"]
+
 # Files copied from the qualified install, never from another project. A folder holding .LOCKED is owner-managed
 # (helpers refresh only through a reviewed migration), so onboarding adds missing names there and changes none.
 [[copy]]

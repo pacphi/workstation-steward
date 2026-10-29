@@ -21,7 +21,7 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | [`lifecycle.md`](lifecycle.md) | 15, 2026-10-29 | Install, set up, use, upgrade, migrate the config, reconcile projects, add tools, roll back, and the two channels (a worktree or npm for the release): the promises across releases, each marked built or planned (D40, D41) |
 | [`release-classes.md`](release-classes.md) | 3, 2026-10-29 | Built (D52): what may skip the release-age gate, as one release class per update source, update sources declared in `host.toml`, and the weekly upstream watch on shipped key pins |
 | [`maintainers.md`](maintainers.md) | 3, 2026-10-29 | Releasing: the release PR, Conventional Commit titles, the one-time npm setup (placeholder and Trusted Publishing), the publish guard, a pre-push leak check (D46); the maintainer skill (D53); what to do when the upstream watch finds a shipped default changed (D52) |
-| [`architecture.md`](architecture.md) | 35, 2026-10-29 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D42 |
+| [`architecture.md`](architecture.md) | 36, 2026-10-29 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D42 |
 
 ## Living docs by area
 
@@ -40,7 +40,7 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | Area | Doc | Rev | Covers |
 | --- | --- | --- | --- |
 | Supply chain | [`../skills/supply-chain/runbook.md`](../skills/supply-chain/runbook.md) | 7, 2026-10-27 | Routine check, upgrades, mise itself, Renovate PRs, Node security releases, advisories, trust exceptions, prune, changing the release-age gate, rollback |
-| AI tooling | [`../skills/ai-tooling/runbook.md`](../skills/ai-tooling/runbook.md) | 18, 2026-10-27 | Drift, new AQE releases, Ruflo version changes, bringing projects in step after a promotion, retiring a patch when an upstream fix lands, Brain, launcher drift, guards, rollback |
+| AI tooling | [`../skills/ai-tooling/runbook.md`](../skills/ai-tooling/runbook.md) | 19, 2026-10-29 | Drift, new AQE releases, Ruflo version changes, bringing projects in step after a promotion, retiring a patch when an upstream fix lands, Brain, launcher drift, guards, rollback |
 | Projects | [`../skills/projects/runbook.md`](../skills/projects/runbook.md) | 16, 2026-10-27 | New projects, decisions, vanished projects, onboarding and offboarding, what may be written |
 | Fleet | [`fleet/runbook.md`](fleet/runbook.md) | 3, 2026-10-28 | Bringing a repo under Renovate, bot-PR consolidation, merging, syncing checkouts and pruning merged branches, long-lived lines |
 

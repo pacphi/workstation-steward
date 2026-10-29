@@ -72,6 +72,9 @@ files Git doesn't track; tracked files are listed for a PR.
   - hybrid receipts;
   - `CLAUDE_FLOW_AUTO_UPDATE=false`;
   - the Brain knowledge base's age;
+  - a tool switched on per project only that is on at user level instead: Brain's Claude plugin, Codex plugin or
+    Codex MCP server, or a Ruflo Claude plugin, in `~/.claude/settings.json` or `~/.codex/config.toml` (D55; the
+    `[user_off]` table in each profile);
   - AQE releases newer than the runtime's base, with their age against the 3-day gate and whether their
     notes mention security;
   - the watched upstream threads;
