@@ -64,10 +64,13 @@ confirm() {
   [[ "${reply}" =~ ^[Yy]$ ]]
 }
 
-# Timestamped copy of the global config and lockfile before any mutation; prints the backup stem.
+# Timestamped copy of the global config and lockfile before any mutation; prints the backup stem. A second backup in
+# the same second gets -2, -3 …: `steward sc upgrade` runs tools back to back, and one name each keeps the backup
+# from before every tool (sharing a name, a later tool's copy overwrote it).
 backup_config() {
-  local stamp
-  stamp="$(date +%Y%m%d-%H%M%S)"
+  local base stamp n=1
+  base="$(date +%Y%m%d-%H%M%S)"; stamp="${base}"
+  while [[ -e "${BACKUP_DIR}/config.toml.${stamp}" ]]; do n=$((n + 1)); stamp="${base}-${n}"; done
   mkdir -p "${BACKUP_DIR}"
   if [[ "${DRY_RUN}" != "1" ]]; then
     cp -pL "${MISE_CONFIG}" "${BACKUP_DIR}/config.toml.${stamp}"
