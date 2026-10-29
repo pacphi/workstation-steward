@@ -49,12 +49,20 @@ apply = "node ~/.cache/ruvnet-brain/kb/forge-update.mjs --apply"
 require_output = "source: live release asset"                        # refuse a fallback to a moving branch
 backup = ["~/.cache/ruvnet-brain/kb"]                                # the steward copies it first (about 1.4 GB)
 self_update_off = { file = "~/.cache/ruvnet-brain/.auto-update-pref", value = "no" }
+# The signing key the updater checks bundles with, as reviewed: the text that `match` finds in `file` must hash to this
+pin = { file = "~/.cache/ruvnet-brain/kb/forge-update.mjs",
+        match = "-----BEGIN PUBLIC KEY-----[\\s\\S]*?-----END PUBLIC KEY-----",
+        sha256 = "ee12cea9da10accad46fe3a562fb392a54870576347ee99d87425d428709f103" }
 ```
 
 - **`steward sc audit`** runs each `check` (read-only) and reports a source that's behind, with its class.
 - **`steward sc plan`** lists what `upgrade` would run and why each is allowed: "signed_data: skips the gate".
 - **`steward sc upgrade`** asks, runs `apply`, refuses unless `require_output` appears, and writes a receipt
   (the before and after identities, the class, the command's output).
+- **`pin`** is checked before `apply` (the key that checks this update is the one you reviewed) and after it (the update
+  didn't bring a different key). Brain's corpus bundle replaces its own updater, key included, so without the pin a
+  signed update could rotate the key unnoticed. After a change the steward puts its copy back and stops; a key
+  rotation is reviewed, and `sha256` updated, in a config-repo PR.
 - **`self_update_off`** is checked by the audit like any keep-off setting, so the tool's own updater can't take
   releases behind the steward's back.
 - **`backup`** lists the paths the steward copies before `apply`. It can't be left to the updater: Brain's makes
@@ -83,6 +91,11 @@ table), so it can't skip a gate it doesn't know about.
   for good with a daily source, and old tool installs would never be pruned. Rolling the data back still works for
   `soak_days`.
 
+- **The evidence is kept in the `[[updater]]` entry, and the key is pinned** (the owner, 2026-10-29). `why` records
+  what was reviewed, `require_output` refuses a fallback to a moving branch, and `pin` holds the signing key's hash.
+  All three change only through a config-repo PR. The steward can't check a tool's signature itself; the pin makes
+  sure the code that does is still using the key you reviewed.
+
 ## Docs that change when it's built
 
 The schema is documented with the code, never ahead of it. The implementation PR updates each of these:
@@ -97,11 +110,6 @@ The schema is documented with the code, never ahead of it. The implementation PR
 | `docs/lifecycle.md` | the promise, marked *planned* until it's built |
 | `skills/ai-tooling/runbook.md`, Brain | the knowledge base as a declared `signed_data` source |
 | `docs/assets/terminal/steward-supply-chain.json` | an updater line in `steward sc plan`, with the class |
-
-## Open questions
-
-1. **Where the evidence lives.** The steward can't check Brain's signature itself. `why` and `require_output` record
-   what was reviewed, the way `trust_policy_excludes` does; a change to an `[[updater]]` is a config-repo PR.
 
 ## Rejected
 
