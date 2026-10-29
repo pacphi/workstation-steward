@@ -3,6 +3,18 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.7.0](https://github.com/pacphi/workstation-steward/compare/v0.6.0...v0.7.0) (2026-10-29)
+
+
+### Features
+
+* weekly upstream watch for shipped key pins, and the maintainer runbook (D52) ([#50](https://github.com/pacphi/workstation-steward/issues/50)) ([210c2bc](https://github.com/pacphi/workstation-steward/commit/210c2bc3ae16f2dad0adf528d9c69357f81f6dec))
+
+
+### Documentation
+
+* the supply-chain animation shows declared updaters (D52) ([#48](https://github.com/pacphi/workstation-steward/issues/48)) ([e3a8ac0](https://github.com/pacphi/workstation-steward/commit/e3a8ac09af039f56ef1c9559ed0a2e330eec11b2))
+
 ## [0.6.0](https://github.com/pacphi/workstation-steward/compare/v0.5.0...v0.6.0) (2026-10-29)
 
 
