@@ -76,6 +76,13 @@ self_update_off = { file = "~/.cache/ruvnet-brain/.auto-update-pref", value = "n
 `always_current` and `exception` classes. The `[[updater]]` table is new; an older engine ignores it (an unknown
 table), so it can't skip a gate it doesn't know about.
 
+## Decided
+
+- **A `signed_data` update doesn't restart the soak** (the owner, 2026-10-29). It writes its receipt and keeps the
+  steward's copy of the old data; copies older than `soak_days` are pruned. Restarting it would keep the soak running
+  for good with a daily source, and old tool installs would never be pruned. Rolling the data back still works for
+  `soak_days`.
+
 ## Docs that change when it's built
 
 The schema is documented with the code, never ahead of it. The implementation PR updates each of these:
@@ -93,11 +100,8 @@ The schema is documented with the code, never ahead of it. The implementation PR
 
 ## Open questions
 
-1. **Does a `signed_data` update restart the soak?** It would, for any change today. A source updated daily would then
-   keep the soak running for good, and the prune would never come. The proposal: it writes its receipt but doesn't
-   restart the soak, because the soak protects installs that `prune` removes; the data has its own copies (above),
-   pruned on the same `soak_days`.
-2. **Where the evidence lives.** The steward can't check Brain's signature itself. `why` and `require_output` record
+
+1. **Where the evidence lives.** The steward can't check Brain's signature itself. `why` and `require_output` record
    what was reviewed, the way `trust_policy_excludes` does; a change to an `[[updater]]` is a config-repo PR.
 
 ## Rejected
