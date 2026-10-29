@@ -3,6 +3,19 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.4.0](https://github.com/pacphi/workstation-steward/compare/v0.3.2...v0.4.0) (2026-10-29)
+
+
+### Features
+
+* steward sc audit shows its findings in columns, grouped by what to do (D51) ([#36](https://github.com/pacphi/workstation-steward/issues/36)) ([55368c2](https://github.com/pacphi/workstation-steward/commit/55368c25f5f333de4e07484e1dfc57e8a8dc5838))
+
+
+### Bug Fixes
+
+* an app is no longer compared with another product's cask of the same name ([#37](https://github.com/pacphi/workstation-steward/issues/37)) ([70b9400](https://github.com/pacphi/workstation-steward/commit/70b940062cf7f0a006fc675a7870c6729a407520))
+* steward review lists each finding once, under the command that fixes it ([#34](https://github.com/pacphi/workstation-steward/issues/34)) ([d2cb56c](https://github.com/pacphi/workstation-steward/commit/d2cb56c86b5243ed8d009b785e3a56c9c9a4640a))
+
 ## [0.3.2](https://github.com/pacphi/workstation-steward/compare/v0.3.1...v0.3.2) (2026-10-29)
 
 
