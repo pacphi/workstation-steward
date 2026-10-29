@@ -117,6 +117,10 @@ values and where the instance is. Paths below are relative to the instance unles
 
 ## Workflows that worked
 
+- **The maintainer's routine** (`/steward-maintain`, `.claude/skills/steward-maintain/`, D53): what's waiting, after a
+  merge, a release, a repin and a config sync, each a script that prints its plan, refuses what's outside its scope and stops on a failed check. Project
+  scope only: it isn't in the `steward` plugin or the npm package. It runs only where the owner's own rules
+  authorize it; otherwise hand the owner the command.
 - **Skills** (`skills/`, the `steward` plugin, D48): `supply-chain`, `ai-tooling` and `projects` each wrap their
   area's `steward` commands and follow the runbook beside them; `pr-consolidation` (v2) turns a repo's bot PRs into
   one verified PR under the rules in its `rules.md`, and never merges (its `ORCHESTRATION.md` covers the merge).

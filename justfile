@@ -10,7 +10,7 @@ default:
 lint:
     biome lint --error-on-warnings .
     tsc -p tsconfig.json
-    shellcheck -x lib/lib.sh tools/release-worktree supply-chain/bin/install-hybrids supply-chain/bin/link supply-chain/bin/mise-self-update supply-chain/bin/node-patch supply-chain/bin/prune supply-chain/bin/release-age supply-chain/bin/retire-hybrid supply-chain/bin/rollback supply-chain/bin/status supply-chain/bin/trust-review supply-chain/bin/upgrade-tool supply-chain/bin/verify
+    shellcheck -x lib/lib.sh tools/release-worktree .claude/skills/steward-maintain/bin/*.sh supply-chain/bin/install-hybrids supply-chain/bin/link supply-chain/bin/mise-self-update supply-chain/bin/node-patch supply-chain/bin/prune supply-chain/bin/release-age supply-chain/bin/retire-hybrid supply-chain/bin/rollback supply-chain/bin/status supply-chain/bin/trust-review supply-chain/bin/upgrade-tool supply-chain/bin/verify
     node --check bin/steward.js
     node --check tools/export.js
     node --check tools/terminal-svg.js

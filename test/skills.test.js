@@ -50,8 +50,12 @@ test('skills: pre-approved tools are read-only steward commands', () => {
   }
 });
 
-test('skills: no symlinks, and no .claude/skills folder in the repo', () => {
+test('skills: no symlinks; .claude/skills holds only the maintainer\'s own skills (D53), never a plugin skill (D48)', () => {
   const links = execFileSync('git', ['ls-files', '-s'], { cwd: REPO, encoding: 'utf8' }).split('\n').filter(l => l.startsWith('120000'));
   assert.deepEqual(links, []);
-  assert.ok(!fs.existsSync(path.join(REPO, '.claude', 'skills')));
+  const project = path.join(REPO, '.claude', 'skills');
+  const maintainer = fs.existsSync(project) ? fs.readdirSync(project).filter(d => !d.startsWith('.')) : [];
+  assert.deepEqual(maintainer, ['steward-maintain'], 'a new project skill is a deliberate change to this list');
+  const plugin = fs.readdirSync(path.join(REPO, 'skills')).filter(d => fs.existsSync(path.join(REPO, 'skills', d, 'SKILL.md')));
+  assert.deepEqual(maintainer.filter(d => plugin.includes(d)), [], 'no plugin skill is copied into .claude/skills');
 });

@@ -1,6 +1,6 @@
 # Releasing workstation-steward
 
-![Revision 1](https://img.shields.io/badge/Revision-1-green) ![Revised 2026-10-28](https://img.shields.io/badge/Revised-2026--10--28-green)
+![Revision 2](https://img.shields.io/badge/Revision-2-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
 
 How a release happens, and the one-time npm setup behind it (D46 in [`architecture.md`](architecture.md#decisions)).
 For maintainers of this repository; users install releases as [`../README.md`](../README.md) describes.
@@ -12,6 +12,7 @@ For maintainers of this repository; users install releases as [`../README.md`](.
 - [One-time npm setup](#one-time-npm-setup)
 - [Publishing an existing release](#publishing-an-existing-release)
 - [After each release](#after-each-release)
+- [The maintainer skill](#the-maintainer-skill)
 - [Checking a release on a clean Mac](#checking-a-release-on-a-clean-mac)
 - [The publish guard](#the-publish-guard)
 - [A pre-push leak check for your clone](#a-pre-push-leak-check-for-your-clone)
@@ -111,6 +112,36 @@ gh workflow run release.yml --repo pacphi/workstation-steward -f tag=v0.1.0
   ```
 
 - A config repo that pins the steward through mise gets a Renovate PR once the release is 3 days old.
+
+## The maintainer skill
+
+The routine after a merge is the same each time, so it's a project skill, **`/steward-maintain`**
+(`.claude/skills/steward-maintain/`, D53), loaded when Claude Code runs in this repository. Its arguments are a short
+sentence naming what happened:
+
+```text
+/steward-maintain                       what's waiting: the checkout against GitHub, open PRs, the config plan
+/steward-maintain merged 41             after #41 merged: fast-forward main, delete merged branches
+/steward-maintain merged 41 39 repin    the same; #39 was the release PR, so watch 0.4.1, verify it, repin
+/steward-maintain release 0.4.1         watch and verify only
+/steward-maintain repin 0.4.1           verify, then repin
+/steward-maintain config                take the config repo's merged changes
+```
+
+Each flow is a script that prints its plan, refuses anything outside its scope, and stops on any failed check:
+
+| Flow | Script | What it may change |
+| --- | --- | --- |
+| What's waiting | `status.sh` | nothing |
+| After a merge | `after-merge.sh [<pr>…]` | this checkout: `steward fleet sync` and `steward fleet prune-merged`, fast-forward and merged branches only |
+| A release | `release.sh <X.Y.Z>` | nothing: it waits for the run and npm, then verifies npm's latest, the provenance commit (the tag's) and the GitHub release |
+| A repin | `repin.sh <X.Y.Z> --why "<your words>"` | the release channel, after a backup of both launchers and a receipt |
+| Config sync | `config-sync.sh` | your config checkout: a fast-forward, or finishing a merged send; stops if the plan would send |
+
+The scripts never reset, rebase, merge, force-push or delete unmerged work, and touch only this checkout and the
+config instance `steward config` names. The skill pre-approves exactly these five scripts (`allowed-tools`), so an
+agent runs them without a prompt, but only where your own rules authorize it (your private `AGENTS.md`); otherwise it
+hands you the command. `test/steward-maintain.test.js` holds each refusal.
 
 ## Checking a release on a clean Mac
 
