@@ -2,10 +2,11 @@
 // The host audit in Node (R5c, D43): `steward sc audit`. Runs supply-chain/checks/ for this platform. Read-only.
 // Off a terminal (a pipe, CI, `steward review`) it prints what the Bash audit printed, line for line: on 2026-10-27 the
 // two gave identical output on the owner's Mac, audit switched, and R5c PR 3 retired the Bash one. On a terminal it
-// shows a step per check (lib/ui.js): a spinner and a live timer once a check takes 3 s, its result row, the check's
-// lines under it, and a table of what to act on.
+// shows a step per check (lib/ui.js): a spinner and a live timer once a check takes 3 s, its result row, and under it
+// the check's findings in columns (what to act on, then what the release-age gate holds); its other lines stay folded
+// unless --verbose or the check failed. The Summary lists what to act on under what to do about it.
 // Exit 0 = no alerts; 2 = an indicator of compromise matched.
-// Usage: audit.js [--only <check,…>] [--plain]
+// Usage: audit.js [--only <check,…>] [--plain] [--verbose]
 const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -52,6 +53,37 @@ function context(o = {}) {
 }
 
 const strip = s => s.replace(/\x1b\[[0-9;]*m/g, '');
+const OTHER = 'other: each line says what to do';
+const ALERTS = 'ALERT: an indicator of compromise matched; stop and investigate (the supply-chain runbook)';
+
+// cells(u, f, {note}) — a finding's row in columns: name, have → want, age (and its note), or its text when the check
+// gave no facts
+function cells(u, f, o = {}) {
+  const x = f.facts || {};
+  if (!x.name) return [f.text];
+  return [x.name, x.have || '', x.have && x.want ? (u.unicode ? '→' : '->') : '', x.want || '', { text: x.age >= 0 ? `${x.age}d` : '', right: true }, o.note ? x.note || '' : ''];
+}
+
+// summaryLines(u, found) — the Summary's lines: alerts first, then what to act on under what to do about it (the order
+// the checks found them in), all in one set of columns
+function summaryLines(u, found) {
+  const groups = new Map();
+  for (const f of found) {
+    const k = f.kind === 'alert' ? ALERTS : (f.facts && f.facts.fix) || OTHER;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(f);
+  }
+  const rank = k => (k === ALERTS ? 0 : k === OTHER ? 2 : 1);
+  const order = [...groups.keys()].sort((a, b) => rank(a) - rank(b));
+  const rows = u.rows(order.flatMap(k => groups.get(k).map(f => cells(u, f))), { indent: 6 });
+  const lines = [];
+  let i = 0;
+  for (const k of order) {
+    lines.push(`  ${u.paint(k === ALERTS ? '1;31' : '1', k)}`, ...rows.slice(i, i + groups.get(k).length));
+    i += groups.get(k).length;
+  }
+  return lines;
+}
 
 // audit(ctx, {only, write, ui}) — run the checks for ctx.platform; {actions, alerts, skipped}. With a drawing ui
 // (lib/ui.js, tty) the result is laid out as steps and a table; otherwise each line goes to write as the Bash audit's.
@@ -59,24 +91,28 @@ async function audit(ctx, o = {}) {
   const u = o.ui && o.ui.tty ? o.ui : null;
   const write = o.write || (s => process.stdout.write(`${s}\n`));
   const actions = [], alerts = [], skipped = [];
+  const found = []; // every action and alert with its facts, for the Summary
+  let folded = 0;
   const todo = CHECKS.filter(c => !o.only || o.only.includes(c.id));
   if (u) u.header('steward sc audit', `${ctx.platform} · ${todo.filter(c => c.platforms.includes(ctx.platform)).length} checks`);
   for (const c of todo) {
     if (!c.platforms.includes(ctx.platform)) { skipped.push(c.id); continue; }
-    // this check's lines: printed as they come (plain), or kept and printed under its row (ui)
-    const mine = { actions: 0, alerts: 0, held: 0, lines: [] };
+    // this check's lines: printed as they come (plain), or kept and printed under its row (ui): its other lines, then
+    // its findings in columns
+    const mine = { actions: 0, alerts: 0, held: 0, lines: [], findings: [] };
     const PLAIN = { line: '  ', ok: '  ok     ', held: '  held   ', info: '  info   ', clean: '  clean  ', action: '  \x1b[1;33mACTION\x1b[0m ', alert: '  \x1b[1;31mALERT\x1b[0m ' };
     const SHOWN = { ok: ['ok', '32'], clean: ['ok', '32'], held: ['held', '2'], info: ['info', '2'], line: [null, '2'], action: ['warn', '33'], alert: ['fail', '31'] };
-    const emit = (kind, t) => {
+    const emit = (kind, t, facts) => {
       if (!u) { write(`${PLAIN[kind]}${t}`); return; }
+      if (kind === 'action' || kind === 'alert' || kind === 'held') { mine.findings.push({ kind, text: strip(t), facts }); return; }
       const [sym, col] = SHOWN[kind];
       const body = kind === 'line' || kind === 'info' || kind === 'held' ? u.paint('2', u.cut(strip(t), u.cols() - 8)) : u.cut(strip(t), u.cols() - 8);
       mine.lines.push(`      ${sym ? `${u.paint(col, u.sym[sym])} ` : '  '}${body}`);
     };
     const out = {
-      line: t => emit('line', t), ok: t => emit('ok', t), held: t => { mine.held++; emit('held', t); }, info: t => emit('info', t), clean: t => emit('clean', t),
-      action: t => { actions.push(t); mine.actions++; emit('action', t); },
-      alert: t => { alerts.push(t); mine.alerts++; emit('alert', t); },
+      line: t => emit('line', t), ok: t => emit('ok', t), held: (t, f) => { mine.held++; emit('held', t, f); }, info: t => emit('info', t), clean: t => emit('clean', t),
+      action: (t, f) => { actions.push(t); found.push({ kind: 'action', text: t, facts: f }); mine.actions++; emit('action', t, f); },
+      alert: t => { alerts.push(t); found.push({ kind: 'alert', text: t }); mine.alerts++; emit('alert', t); },
       warn: t => process.stderr.write(`\x1b[1;33mWARN\x1b[0m ${t}\n`),
     };
     const step = u ? u.step(c.name) : null;
@@ -89,17 +125,24 @@ async function audit(ctx, o = {}) {
     if (step) {
       const n = (k, w) => (k ? `${k} ${w}${k === 1 ? '' : 's'}` : '');
       const summary = failed ? `failed: ${failed}` : [n(mine.alerts, 'alert'), n(mine.actions, 'action'), mine.held ? `${mine.held} held` : ''].filter(Boolean).join(' · ') || 'ok';
-      step.done(failed || mine.alerts ? 'fail' : mine.actions ? 'warn' : 'ok', summary, mine.lines);
+      const status = failed || mine.alerts ? 'fail' : mine.actions ? 'warn' : 'ok';
+      // what it found in columns: alerts, then what to act on (by what to do), then what's held; its other lines fold
+      // away unless --verbose, or the check failed and they may say why
+      const quiet = !failed && !o.verbose;
+      if (quiet && mine.lines.length) folded++;
+      const SYMS = { alert: ['fail', '31'], action: ['warn', '33'], held: ['held', '2'] };
+      const fix = f => (f.facts && f.facts.fix) || '';
+      const list = ['alert', 'action', 'held'].flatMap(k => mine.findings.filter(f => f.kind === k).sort((a, b) => (k === 'action' ? fix(a).localeCompare(fix(b)) : 0)));
+      const rows = u.rows(list.map(f => [{ text: u.sym[SYMS[f.kind][0]], color: SYMS[f.kind][1] }, ...cells(u, f, { note: true })]), { indent: 6 });
+      step.done(status, summary, [...(quiet ? [] : mine.lines), ...rows]);
     }
   }
   if (u) {
     u.print('');
     u.header('Summary', `${actions.length} action(s) · ${alerts.length} alert(s) · ${u.fmt(Date.now() - T0)}`);
-    // one row per finding: its symbol, its kind (the word before the first colon: app, brew, docker…) and the rest
-    const row = (kind, t) => { const i = t.indexOf(': '); const short = i > 0 && i <= 12; return [{ text: u.sym[kind], color: kind === 'fail' ? '31' : '33' }, short ? t.slice(0, i) : '', short ? t.slice(i + 2) : t]; };
-    u.table([...alerts.map(t => row('fail', t)), ...actions.map(t => row('warn', t))]);
+    for (const l of summaryLines(u, found)) u.print(l);
     if (!actions.length && !alerts.length) u.print(`  ${u.paint('32', u.sym.ok)}  nothing to act on`);
-    if (actions.length) u.print(u.paint('2', '  Next: steward sc plan (Homebrew + mise); apps, App Store, macOS and trust are manual.'));
+    if (folded) u.print(u.paint('2', `  ${folded} check(s) have more lines: steward sc audit --verbose`));
     return { actions, alerts, skipped };
   }
   write(`\x1b[1;34m==>\x1b[0m Summary: ${actions.length} action(s), ${alerts.length} alert(s) \x1b[2m[${elapsed()}]\x1b[0m`);
@@ -115,6 +158,6 @@ if (require.main === module) {
   const i = process.argv.indexOf('--only');
   const only = i > 0 ? process.argv[i + 1].split(',') : null;
   const u = process.argv.includes('--plain') ? null : makeUi();
-  audit(context(), { only, ui: u }).then(r => { if (r.alerts.length) process.exitCode = 2; })
+  audit(context(), { only, ui: u, verbose: process.argv.includes('--verbose') }).then(r => { if (r.alerts.length) process.exitCode = 2; })
     .catch(e => { console.error(`ERROR ${e.message}`); process.exitCode = 1; });
 }

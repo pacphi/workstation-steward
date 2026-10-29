@@ -9,7 +9,7 @@ A normal week here: `steward sc audit` checks the whole machine against your pol
 with the next step for each. After an upgrade, the old versions stay through the soak; when it ends, `steward sc prune`
 shows what it would remove, asks, and removes it.
 
-![steward sc audit: one finding per area and three actions; three days later the soak is over, and steward sc prune removes two old versions after a yes](../docs/assets/steward-supply-chain.svg)
+![steward sc audit: a row per check with what it found in columns, and three actions listed under what to do about each; three days later the soak is over, and steward sc prune removes two old versions after a yes](../docs/assets/steward-supply-chain.svg)
 
 ## Policy
 
@@ -46,6 +46,7 @@ Procedures: [`../skills/supply-chain/runbook.md`](../skills/supply-chain/runbook
 
 ```sh
 steward sc audit                              # read-only: Homebrew, apps, App Store, macOS, trust stores, Docker, IOCs
+steward sc audit --verbose                    # the same, with the lines each check folds away on a terminal
 steward sc status                             # read-only: outdated tools, Node security status, hybrids, vendored Node
 steward sc verify                             # read-only: every CLI, native addons, npm doctor
 steward sc plan                               # read-only: what `upgrade` would take, and what's held and why

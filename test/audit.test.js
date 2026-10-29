@@ -7,6 +7,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { audit, localDay } = require('../supply-chain/bin/audit.js');
+const { ui: makeUi } = require('../lib/ui.js');
 const { verLt, appVersion, appBehind, ageDays } = require('../supply-chain/checks/index.js');
 const brew = require('../lib/providers/brew.js');
 
@@ -190,3 +191,72 @@ test('brew provider: the same names and versions lib/lib.sh brew_outdated gives'
 });
 
 test.after(() => fs.rmSync(ROOT, { recursive: true, force: true }));
+
+// tty(c, only, o) — the audit drawn on a fake 120-column UTF-8 terminal, colour off: its lines
+async function tty(c, only, o = {}) {
+  let text = '';
+  const u = makeUi({ out: { isTTY: true, columns: 120, write: s => { text += s; } }, env: { LANG: 'en_US.UTF-8', NO_COLOR: '' }, now: () => 0 });
+  (await audit(c, { only, ui: u, ...o }));
+  return text.split('\n');
+}
+
+test('terminal: findings in columns under their check, act-on (by what to do) before held; other lines fold away', async () => {
+  const apps = path.join(ROOT, 'Applications-tty');
+  for (const a of ['iTerm.app', 'Google Chrome.app', 'Old.app']) put(path.join(apps, a, 'Contents', 'Info.plist'), '');
+  put(path.join(apps, 'Old.app', 'Contents', 'Frameworks', 'Electron Framework.framework', 'Resources', 'Info.plist'), '');
+  const plist = (app, v) => ({ [`defaults read ${path.join(apps, app, 'Contents', 'Info.plist')} CFBundleShortVersionString`]: `${v}\n` });
+  const c = ctx({
+    ...BREW, ...plist('iTerm.app', '3.6.4'), ...plist('Google Chrome.app', '149.0.0'), ...plist('Old.app', '1.0'),
+    [`defaults read ${path.join(apps, 'Old.app', 'Contents', 'Frameworks', 'Electron Framework.framework', 'Resources', 'Info.plist')} CFBundleVersion`]: '30.1.0\n',
+    'npm view electron dist-tags.latest': '40.2.0\n',
+    'gh api repos/Homebrew/homebrew-cask/commits?path=Casks/i/iterm2.rb&per_page=30*': `${daysAgo(1)}\n`,
+    'gh api repos/Homebrew/homebrew-cask/commits?path=Casks/g/google-chrome.rb&per_page=30*': `${daysAgo(0)}\n`,
+    'brew list --formula --versions': 'openssl@3 3.6.0\n', 'brew list --formula --full-name': 'openssl@3\n', ...gh('openssl@3', daysAgo(1)),
+    'brew outdated --formula --verbose': 'some/tap/thing (1.0) < 1.1\n',
+    'docker info': '', 'docker ps --format {{.Image}}\t{{.Names}}': 'ollama/ollama:latest\tollama\nredis:8\tcache\n',
+  }, { appDirs: [apps] });
+  c.policy.always_current = ['google-chrome'];
+  const out = await tty(c, ['brew-formulae', 'apps', 'docker']);
+  const at = s => out.findIndex(l => l.includes(s));
+  // Homebrew formulae passed: its held row shows, the tap line is folded away
+  assert.match(out[at('Homebrew formulae')], /✔ {2}Homebrew formulae +1 held/);
+  assert.match(out[at('Homebrew formulae') + 1], /^ {6}⏸ {2}openssl@3 +3\.6\.0 +→ +3\.6\.1_1 +1d {2}eligible in 2d$/);
+  assert.equal(at('some/tap/thing'), -1, out.join('\n'));
+  // apps: the two to act on, in columns (grouped by what to do: browsers, then Electron), then the held one
+  const a = at('Apps and Electron');
+  assert.deepEqual(out.slice(a + 1, a + 4).map(l => l.trim().split(/ {2,}/)), [
+    ['⚠', 'Google Chrome', '149.0.0', '→', '150.0.1', '0d', 'always_current'],
+    ['⚠', 'Old', 'Electron 30.1.0', '→', '38+'],
+    ['⏸', 'iTerm', '3.6.4', '→', '3.6.5', '1d', 'eligible in 2d'],
+  ]);
+  assert.equal(out[a + 1].indexOf('→'), out[a + 3].indexOf('→'), 'one set of columns');
+  // docker has an action, and its info line still folds away
+  assert.equal(out.findIndex(l => l.includes('cache: redis:8')), -1);
+  // the Summary: each heading once, its findings under it; then where the folded lines are
+  const s = at('Summary');
+  assert.deepEqual(out.slice(s + 1).filter(Boolean).map(l => l.trim().split(/ {2,}/)), [
+    ['by hand: browsers, update now (always_current)'], ['Google Chrome', '149.0.0', '→', '150.0.1', '0d'],
+    ['by hand: Electron below 38: update the app, or ask its vendor'], ['Old', 'Electron 30.1.0', '→', '38+'],
+    ['by hand: pin each image by tag@digest'], ['ollama', 'ollama/ollama:latest'],
+    ['2 check(s) have more lines: steward sc audit --verbose'],
+  ]);
+  // --verbose shows the folded line, and says nothing about folding
+  const v = await tty(c, ['brew-formulae'], { verbose: true });
+  assert.ok(v.some(l => l.includes('tap (as of last brew update): some/tap/thing')), v.join('\n'));
+  assert.ok(!v.some(l => l.includes('--verbose')));
+});
+
+test('terminal: alerts head the Summary; a finding without facts is listed whole under "other"', async () => {
+  const c = ctx({ [`node ${path.join(__dirname, '..', 'lib', 'host.js')}`]: 'host policy: fine\nWARN odd_key is not a known setting\n' }, { instance: path.join(ROOT, 'no-instance') });
+  c.policy.ioc = [{ name: 'Bad thing', _source: 'default', files: [__filename] }];
+  const out = await tty(c, ['host-policy', 'release-age', 'ioc']);
+  const s = out.findIndex(l => l.startsWith('Summary'));
+  const rest = out.slice(s + 1).filter(Boolean).map(l => l.trim());
+  assert.match(rest[0], /^ALERT: an indicator of compromise matched/);
+  assert.ok(rest[1].startsWith('Bad thing: file present /'), rest[1]);
+  assert.equal(rest[2], 'steward sc release-age 3');
+  assert.match(rest[3], /^mise\/config\.toml minimum_release_age +unset +→ +3 day\(s\)$/);
+  assert.match(rest[4], /^renovate\.json minimumReleaseAge +unset +→ +3 day\(s\)$/, 'two rows under one heading');
+  assert.deepEqual(rest.slice(5), ['other: each line says what to do', 'host.toml odd_key is not a known setting',
+    '1 check(s) have more lines: steward sc audit --verbose'], rest.join('\n'));
+});

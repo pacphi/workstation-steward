@@ -1,7 +1,7 @@
 {
  "name": "steward-supply-chain",
  "title": "workstation-steward: a host audit, then tidying up after the soak",
- "desc": "An illustrative session, looping, in three scenes. steward sc audit checks the mise toolchain, the release-age gate, Homebrew, apps, trust stores, Docker and indicators of compromise (trimmed to one line each), and ends with three actions: a gated mise release, a browser to update now, and a container on a floating tag. Three days after an upgrade, the steward banner and steward sc soak say the soak is over. steward sc prune lists the old versions no config needs, previews the removal, asks, and removes them.",
+ "desc": "An illustrative session, looping, in three scenes. steward sc audit runs its twelve checks, one row each, with what it found in columns under the check (a mise release past the gate, a Homebrew formula still held, a browser to update now, a container on a floating tag), and ends with a summary listing the three actions under what to do about each. Three days after an upgrade, the steward banner and steward sc soak say the soak is over. steward sc prune lists the old versions no config needs, previews the removal, asks, and removes them.",
  "window": "steward — zsh",
  "still": 0,
  "scenes": [
@@ -12,120 +12,58 @@
    {
     "segs": [
      [
-      "==> ",
-      "blue",
-      true
-     ],
-     [
-      "mise toolchain (bin/status)",
-      "fg",
-      true
-     ]
-    ]
-   },
-   {
-    "segs": [
-     [
-      "  ACTION ",
-      "hold",
-      true
-     ],
-     [
-      "mise: 2026.10.18 -> 2026.10.19 (3d old): steward sc upgrade-tool mise",
+      "  ",
       "fg"
-     ]
-    ]
-   },
-   {
-    "segs": [
-     [
-      "==> ",
-      "blue",
-      true
      ],
      [
-      "Release-age gate (steward.toml is the authority; mise and Renovate must agree)",
-      "fg",
-      true
-     ]
-    ]
-   },
-   {
-    "segs": [
-     [
-      "  ok     ",
+      "✔",
       "ok",
       true
      ],
      [
-      "mise/config.toml minimum_release_age = 3d",
+      "  mise toolchain            ok                                                           ",
       "fg"
-     ]
-    ]
-   },
-   {
-    "segs": [
-     [
-      "  ok     ",
-      "ok",
-      true
      ],
      [
-      "renovate.json minimumReleaseAge = 3 days",
-      "fg"
+      "6.4s",
+      "dim"
      ]
     ]
    },
    {
     "segs": [
      [
-      "==> ",
-      "blue",
-      true
+      "  ",
+      "fg"
      ],
      [
-      "Homebrew formulae",
-      "fg",
-      true
-     ]
-    ]
-   },
-   {
-    "segs": [
-     [
-      "  held   ",
+      "⚠",
       "hold",
       true
      ],
      [
-      "python@3.15 3.15.1 -> 3.15.2 (2d old; eligible in 1d)",
+      "  mise itself               1 action                                                     ",
       "fg"
-     ]
-    ]
-   },
-   {
-    "segs": [
-     [
-      "==> ",
-      "blue",
-      true
      ],
      [
-      "Apps (bundle version vs Homebrew cask catalog; Electron vs its 3 supported majors)",
-      "fg",
-      true
+      "3.1s",
+      "dim"
      ]
     ]
    },
    {
     "segs": [
      [
-      "  ACTION ",
+      "      ",
+      "fg"
+     ],
+     [
+      "⚠",
       "hold",
       true
      ],
      [
-      "app: Google Chrome 155.0.8059.86 -> 156.0.8078.74 (0d old; always_current: update now)",
+      "  mise  2026.10.18  →  2026.10.19    3d old",
       "fg"
      ]
     ]
@@ -133,53 +71,138 @@
    {
     "segs": [
      [
-      "==> ",
-      "blue",
-      true
+      "  ",
+      "fg"
      ],
      [
-      "Trust stores",
-      "fg",
-      true
-     ]
-    ]
-   },
-   {
-    "segs": [
-     [
-      "  ok     ",
+      "✔",
       "ok",
       true
      ],
      [
-      "emSign ECC Root CA - G3 (default): in macOS system roots, admin trust setting = Deny",
+      "  Host policy               ok                                                           ",
       "fg"
+     ],
+     [
+      "0.0s",
+      "dim"
      ]
     ]
    },
    {
     "segs": [
      [
-      "==> ",
-      "blue",
+      "  ",
+      "fg"
+     ],
+     [
+      "✔",
+      "ok",
       true
      ],
      [
-      "Docker",
-      "fg",
-      true
+      "  Release-age gate          ok                                                           ",
+      "fg"
+     ],
+     [
+      "0.0s",
+      "dim"
      ]
     ]
    },
    {
     "segs": [
      [
-      "  ACTION ",
+      "  ",
+      "fg"
+     ],
+     [
+      "✔",
+      "ok",
+      true
+     ],
+     [
+      "  Homebrew formulae         1 held                                                       ",
+      "fg"
+     ],
+     [
+      "7.7s",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "⏸",
+      "dim",
+      true
+     ],
+     [
+      "  python@3.15  3.15.1  →  3.15.2  2d  eligible in 1d",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "✔",
+      "ok",
+      true
+     ],
+     [
+      "  Homebrew casks            ok                                                           ",
+      "fg"
+     ],
+     [
+      "0.0s",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "⚠",
       "hold",
       true
      ],
      [
-      "docker: container ollama runs floating ollama/ollama:latest; pin tag@digest",
+      "  Apps and Electron         1 action                                                    ",
+      "fg"
+     ],
+     [
+      "19.8s",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      "  Google Chrome  155.0.8059.86  →  156.0.8078.74  0d  always_current",
       "fg"
      ]
     ]
@@ -187,26 +210,100 @@
    {
     "segs": [
      [
-      "==> ",
-      "blue",
-      true
+      "  ",
+      "fg"
      ],
      [
-      "Indicators of compromise (ioc: the engine's defaults and yours; read-only)",
-      "fg",
-      true
-     ]
-    ]
-   },
-   {
-    "segs": [
-     [
-      "  clean  ",
+      "✔",
       "ok",
       true
      ],
      [
-      "LiteLLM 1.107.0 PyPI/Docker backdoor (2026-10-21) (default)",
+      "  App Store                 ok                                                           ",
+      "fg"
+     ],
+     [
+      "0.0s",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "✔",
+      "ok",
+      true
+     ],
+     [
+      "  macOS updates             ok                                                           ",
+      "fg"
+     ],
+     [
+      "3.6s",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "✔",
+      "ok",
+      true
+     ],
+     [
+      "  Trust stores              ok                                                           ",
+      "fg"
+     ],
+     [
+      "0.0s",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      "  Docker                    1 action                                                     ",
+      "fg"
+     ],
+     [
+      "0.0s",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      "  ollama  ollama/ollama:latest",
       "fg"
      ]
     ]
@@ -214,19 +311,68 @@
    {
     "segs": [
      [
-      "==> ",
-      "blue",
+      "  ",
+      "fg"
+     ],
+     [
+      "✔",
+      "ok",
       true
      ],
      [
-      "Summary: 3 action(s), 0 alert(s)",
-      "fg",
-      true
+      "  Indicators of compromise  ok                                                          ",
+      "fg"
+     ],
+     [
+      "1m57s",
+      "dim"
      ]
     ]
    },
    {
-    "out": "  Next: steward sc plan (Homebrew + mise); apps, App Store, macOS and trust are manual."
+    "segs": [
+     [
+      "Summary",
+      "fg",
+      true
+     ],
+     [
+      "                                                          ",
+      "fg"
+     ],
+     [
+      "3 action(s) · 0 alert(s) · 2m39s",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "out": "  steward sc upgrade-tool mise",
+    "bold": true
+   },
+   {
+    "out": "      mise           2026.10.18            →  2026.10.19",
+    "color": "fg"
+   },
+   {
+    "out": "  by hand: browsers, update now (always_current)",
+    "bold": true
+   },
+   {
+    "out": "      Google Chrome  155.0.8059.86         →  156.0.8078.74  0d",
+    "color": "fg"
+   },
+   {
+    "out": "  by hand: pin each image by tag@digest",
+    "bold": true
+   },
+   {
+    "out": "      ollama         ollama/ollama:latest",
+    "color": "fg"
+   },
+   {
+    "out": "  7 check(s) have more lines: steward sc audit --verbose",
+    "color": "dim"
    }
   ],
   [

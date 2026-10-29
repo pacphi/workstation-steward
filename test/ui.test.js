@@ -70,3 +70,12 @@ test('off a terminal nothing is drawn; ASCII symbols without a UTF-8 locale; NO_
   assert.match(ascii.text(), /^ {2}!! {2}Docker/);
   assert.ok(!ascii.text().includes('\x1b['), 'NO_COLOR: no colour escapes');
 });
+
+test('rows: returned, not written; a right-aligned cell; a short row says the rest in its last cell, cut to fit', () => {
+  const T = term();
+  const r = T.u.rows([['iTerm', '3.6.4', { text: '1d', right: true }, 'held'], ['Chrome', '149.0.0', { text: '12d', right: true }, ''], ['other', 'x'.repeat(100)]], { indent: 4 });
+  assert.equal(T.text(), '');
+  assert.deepEqual(r.slice(0, 2), ['    iTerm   3.6.4     1d  held', '    Chrome  149.0.0  12d']);
+  assert.equal(r[2].length, 80);
+  assert.ok(r[2].startsWith('    other   xxx') && r[2].endsWith('…'));
+});
