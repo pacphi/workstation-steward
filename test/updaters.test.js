@@ -117,7 +117,7 @@ test('apply: backs up, applies, requires the output, writes a receipt; rollback 
   assert.ok(fs.readdirSync(d).some(f => /^rollback-.*\.json$/.test(f)));
 });
 
-test('apply: refuses a fallback source, a failed run, a gated class and a changed key; puts a rotated key back', async () => {
+test('apply: refuses a fallback source, a failed run, a gated class, a changed key and a missing backup; puts a rotated key back', async () => {
   const fb = tool('fallback');
   assert.equal(await U.apply(fb.u, { newDir, today: '2026-10-29' }), 1);
   assert.match(receiptIn(lastDir()).outcome, /failed: its output doesn't say "source: live release asset"/);
@@ -131,6 +131,7 @@ test('apply: refuses a fallback source, a failed run, a gated class and a change
   assert.equal(await U.apply({ ...g.u, class: 'gated' }, { newDir, today: '2026-10-29' }), 1);
   assert.equal(await U.apply({ ...g.u, class: 'exception', expires: '2026-10-28' }, { newDir, today: '2026-10-29' }), 1, 'an expired exception is gated');
   assert.equal(await U.apply({ ...g.u, pin: { ...g.u.pin, sha256: 'ab'.repeat(32) } }, { newDir, today: '2026-10-29' }), 1);
+  assert.equal(await U.apply({ ...g.u, backup: [...g.u.backup, path.join(g.dir, 'not-there')] }, { newDir, today: '2026-10-29' }), 1, 'signed_data: every backup path must exist');
   assert.equal(lastDir(), before, 'refused before any backup');
   assert.equal(fs.readFileSync(path.join(g.dir, 'db', 'v'), 'utf8'), 'old\n');
 

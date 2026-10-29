@@ -136,8 +136,8 @@ table), so it can't skip a gate it doesn't know about.
 
 ## Docs that change when it's built
 
-The schema is documented with the code, never ahead of it. The implementation PR updated each of these; the last
-three come with the watch:
+The schema is documented with the code, never ahead of it. The implementation PR updated each of these except the
+last three: the maintainer runbook and the workflow come with the watch, and the animation is a docs chore after it:
 
 | Doc | What it gains |
 | --- | --- |
