@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 # Restore the newest (or a named) config + lockfile backup taken by upgrade/node-patch, then reshim.
 # Nothing is uninstalled, so the previous versions are still on disk.
-# `rollback mise` restores the mise binary from the newest mise-self-update backup instead (D38).
-# Usage: rollback [backup-file]      rollback mise      DRY_RUN=1 rollback
+# `rollback mise` restores the mise binary from the newest mise-self-update backup instead (D38), and
+# `rollback <receipt>` what a declared updater's apply replaced (D52; lib/updaters.js).
+# Usage: rollback [backup-file]      rollback mise      rollback <updater receipt>      DRY_RUN=1 rollback
 # shellcheck source=lib/lib.sh
 source "$(dirname "$0")/../../lib/lib.sh"
+
+if [[ -n "${1:-}" && ( "$1" == */receipt.json || -f "$(user_path "$1")/receipt.json" ) ]]; then
+  exec node "${REPO_ROOT}/lib/updaters.js" --rollback "$(user_path "$1")"
+fi
 
 if [[ "${1:-}" == mise ]]; then
   dir="$(find "${STATE_DIR}/backups" -maxdepth 1 -name 'mise-self-update-*' -type d 2>/dev/null | sort | tail -1)"

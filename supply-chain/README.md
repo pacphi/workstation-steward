@@ -17,8 +17,8 @@ shows what it would remove, asks, and removes it.
 | --- | --- |
 | `../mise/config.toml`, `../mise/mise.lock` | mise tools: versions, `minimum_release_age = "3d"`, install-script allow-lists, trust exceptions |
 | `../steward.toml` | `[policy] min_release_age_days`: the release-age gate for every area (default 3). `steward sc release-age <days>` sets it and mise's and Renovate's copies. |
-| `host-defaults.toml` (engine) | The shared host policy every machine gets: `always_current` browsers, apps with a bundled Node (`vendored_node`), the Electron window, distrusted roots, IOC sets. A release brings the newest |
-| `host.toml` (instance) | Yours, on top of the defaults: additions, a same-name entry replaces a default, `[off]` turns defaults off; dated security exceptions. An entry for some platforms only says `platforms = ["macos"]` (D43). `steward sc host` shows the merged result and each value's source |
+| `host-defaults.toml` (engine) | The shared host policy every machine gets: `always_current` browsers, apps with a bundled Node (`vendored_node`), the Electron window, distrusted roots, IOC sets, and declared update sources (`[[updater]]`, active only where their tool is installed). A release brings the newest |
+| `host.toml` (instance) | Yours, on top of the defaults: additions (your own `[[updater]]` too), a same-name entry replaces a default, `[off]` turns defaults off; dated security exceptions. An entry for some platforms only says `platforms = ["macos"]` (D43). `steward sc host` shows the merged result and each value's source |
 | `hybrids.toml` | CLIs that need `npm install -g` into the active Node, with each one's reason, upstream issue and allowed install scripts |
 | `verify.tsv` | Expected output for every CLI, used by `steward sc verify` |
 | `vendor/` | `github-token-utilities-3.4.0.tgz` (not on the npm registry) |
@@ -63,13 +63,31 @@ steward sc release-age 5                      # set it in all three (plan, asks,
 steward sc tool-age npm:renovate 44.181.0 # age of every package a new npm: tool version pulls in (sandbox install)
 steward sc trust-review pkg@1.2.3             # evidence check before adding a trust exception
 steward sc soak                               # is a soak running (prune waits), and which receipts started it
-steward sc prune                              # after the soak: remove versions no config needs (asks first; refuses while a launcher points into one)
+steward sc prune                              # after the soak: remove versions no config needs, and updater copies older than the soak (asks first)
 steward sc rollback                           # restore the newest config/lock backup
+steward sc rollback <receipt>                 # put back what a declared updater's apply replaced
 steward sc link                               # re-link ~/.config/mise to ../mise
 ```
 
 Every mutating recipe backs up `config.toml` and `mise.lock` to `~/.config/mise/backups/` first. A mise update backs
 up the binary to `~/.local/state/workstation-steward/backups/mise-self-update-*`.
+
+## What may skip the gate
+
+Every update source has one **release class** (D52, [`release-classes.md`](../docs/release-classes.md)), and only
+`gated` waits for the release-age gate. Every class still gets a backup before it changes anything, and a receipt.
+
+| Class | Gate | For |
+| --- | --- | --- |
+| `gated` | waits | everything, by default |
+| `always_current` | never held | browsers: nearly every release is a security release |
+| `signed_data` | skips it; starts no soak | data, never code: signed by a key the entry pins, checked against the gated runtime that reads it. Brain's knowledge base, a new corpus about daily, is the first |
+| `exception` | skips it until it expires | the first patched release for an advisory (`[[security_exception]]`), or a declared source with a written reason |
+
+Sources the steward doesn't install itself are declared as `[[updater]]` entries: `steward sc audit` runs each
+`check`, `steward sc plan` lists what `upgrade` would apply and why, and `steward sc upgrade` copies the `backup`
+paths, runs `apply`, refuses unless `require_output` appears, stops if the signing key changed, and writes a receipt.
+The schema is in [`examples/supply-chain/host.toml`](../examples/supply-chain/host.toml).
 
 ## When a Renovate PR arrives
 

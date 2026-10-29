@@ -148,7 +148,7 @@ async function audit(ctx, o = {}) {
   write(`\x1b[1;34m==>\x1b[0m Summary: ${actions.length} action(s), ${alerts.length} alert(s) \x1b[2m[${elapsed()}]\x1b[0m`);
   for (const a of alerts) write(`  ALERT  ${a}`);
   for (const a of actions) write(`  ACTION ${a}`);
-  if (actions.length) write('  Next: steward sc plan (Homebrew + mise); apps, App Store, macOS and trust are manual.');
+  if (actions.length) write('  Next: steward sc plan (Homebrew, mise and declared updaters); apps, App Store, macOS and trust are manual.');
   return { actions, alerts, skipped };
 }
 

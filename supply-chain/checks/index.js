@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const { X509Certificate } = require('crypto');
 const brew = require('../../lib/providers/brew.js');
+const U = require('../../lib/updaters.js');
 
 const ALL = ['macos', 'linux', 'windows'];
 const DAY = 86400e3;
@@ -85,6 +86,8 @@ const FIX = {
   appstore: 'by hand: the App Store',
   macos: 'by hand: System Settings, Software Update',
   docker: 'by hand: pin each image by tag@digest',
+  pin: 'review the new key, then update the pin in a config-repo PR (the supply-chain runbook)',
+  selfUpdate: name => `turn ${name}'s own updater off`,
 };
 const tomlGet = async (ctx, file, expr) => { const r = (await ctx.run('yq', ['-p', 'toml', '-oy', '-r', expr, file])); return r.status === 0 ? r.stdout.trim() : ''; };
 
@@ -121,6 +124,27 @@ const CHECKS = [
       for (const [where, val] of [['mise/config.toml minimum_release_age', mise], ['renovate.json minimumReleaseAge', ren]]) {
         if (val.replace(/\D/g, '') === String(min)) out.ok(`${where} = ${val}`);
         else out.action(`${where} = ${val || 'unset'}, steward.toml says ${min} day(s) (steward sc release-age ${min})`, { fix: `steward sc release-age ${min}`, name: where, have: val || 'unset', want: `${min} day(s)` });
+      }
+    },
+  },
+  {
+    // [[updater]] (D52): sources the steward doesn't install itself; the class says whether one waits for the gate
+    id: 'updaters', name: 'Declared updaters', platforms: ALL,
+    title: () => "Declared updaters ([[updater]]: the engine's defaults and yours, where their tool is installed; the class decides the gate)",
+    async run(ctx, out) {
+      const list = U.active(ctx.policy);
+      if (!list.length) { out.line('none active here'); return; }
+      for (const u of list) {
+        const cls = U.classOf(u, ctx.today);
+        const off = U.selfUpdate(u);
+        if (!off.ok) out.action(`${u.name}: its own updater isn't off (${u.self_update_off.file} = ${off.have}); set it to ${u.self_update_off.value}`, { fix: FIX.selfUpdate(u.name), name: `${u.name} self-update`, have: off.have, want: String(u.self_update_off.value) });
+        const pin = U.pinState(u);
+        if (!pin.ok) { out.action(`${u.name}: ${pin.why}; review the new key, then update the pin in a config-repo PR`, { fix: FIX.pin, name: u.name, note: 'signing key changed' }); continue; }
+        const c = await U.check(u, ctx.run);
+        if (c.state === 'current') out.ok(`${u.name} (${cls}, ${u._source}): up to date`);
+        else if (c.state === 'unknown') out.info(`${u.name}: its check couldn't tell (exit ${c.status})`);
+        else if (cls === 'gated') out.held(`${u.name} (gated): behind; a declared source has no release date, so it waits for you`, { name: u.name, note: 'gated' });
+        else out.action(`${u.name}: behind (${cls}: ${U.SKIPS[cls]})`, { fix: FIX.upgrade, name: u.name, note: cls });
       }
     },
   },

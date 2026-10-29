@@ -15,6 +15,8 @@ commands run from any folder. Every changing step asks first, and `DRY_RUN=1` pr
 - [A same-day Node security release](#a-same-day-node-security-release)
 - [A new advisory or incident report](#a-new-advisory-or-incident-report)
 - [A trust exception](#a-trust-exception)
+- [A declared source is behind](#a-declared-source-is-behind)
+- [Adding an `[[updater]]`](#adding-an-updater)
 - [Soak and prune](#soak-and-prune)
 - [Change the release-age gate](#change-the-release-age-gate)
 - [Rollback](#rollback)
@@ -39,7 +41,9 @@ commands run from any folder. Every changing step asks first, and `DRY_RUN=1` pr
    - **hold:** too young;
    - **skip:** a major, or a 0.x minor;
    - **ai:** owned by AI tooling, see [its runbook](../ai-tooling/runbook.md);
-   - **manual:** Node or a tap formula.
+   - **manual:** Node or a tap formula;
+   - under **Declared updaters**, each `[[updater]]` that's behind, with its class (see
+     [A declared source is behind](#a-declared-source-is-behind)).
 2. `steward sc upgrade` applies the take lines after asking. It backs up `config.toml` and `mise.lock`, runs
    `--no-prune`, and verifies after each tool.
 3. Commit `mise/config.toml` and `mise/mise.lock` with the list of what moved, and push once the owner
@@ -102,6 +106,40 @@ mise's `trust_policy_excludes` takes exact versions only.
 1. `steward sc trust-review <pkg@version>` gathers publisher, provenance and commit evidence.
 2. Add the exclude only when that evidence holds. Put the reason and the review date in a comment beside it.
 
+## A declared source is behind
+
+`steward sc audit` lists each active `[[updater]]` (D52) under **Declared updaters**:
+
+- **ACTION `<name>: behind (<class>: …)`:** `steward sc plan` shows it as `take`; `steward sc upgrade` applies it after
+  your yes. It checks the key pin, copies the `backup` paths to
+  `~/.local/state/workstation-steward/backups/updater-<name>-*` (an APFS clone on macOS), runs `apply`, and refuses
+  unless the output says `require_output`. The receipt there holds what `check` printed before and after.
+- **held `<name> (gated)`:** a declared source has no release date, so the plan never takes it. Read the tool's own
+  release notes and run its updater yourself when it's past the gate.
+- **ACTION `the signing key … hashes to …`:** the key the updater checks bundles with is not the one reviewed. Stop.
+  Confirm the change from the publisher's own release notes or announcement, then update `pin.sha256` in a PR (the
+  engine's `host-defaults.toml` for a shipped default, your `host.toml` for yours). If an apply brought the new key,
+  the steward has already put the reviewed updater back.
+- **ACTION `its own updater isn't off`:** the tool can take releases behind the steward's back. Set the file named
+  in `self_update_off` back to its value.
+- **info `its check couldn't tell`:** usually offline. Nothing is taken; run the audit again later.
+
+If an apply fails, the receipt says why and how to go back: `steward sc rollback <receipt>`. For Brain, an old updater
+can fail on a newer bundle; update the runtime first (it's gated), then try again.
+
+## Adding an `[[updater]]`
+
+1. Read the tool's updater. It qualifies for `signed_data` only if it's data, never code, and **all** of these hold:
+   it checks a signature with a key built into the updater, the content is addressed by its hash, it checks the data
+   against the installed runtime before it lands, and it refuses an older generation.
+2. Write the entry in your `host.toml` (the example in `examples/supply-chain/host.toml` lists every field). `why`
+   records what you reviewed: who signs it, how the updater checks it, and why the gate can't apply.
+3. Find the text that `require_output` must match in the updater's own output for its normal source, so a fallback
+   to a pinned or moving source is refused.
+4. Pin the key: `pin.match` finds the key's text in the updater, and `pin.sha256` is the sha256 of that text.
+5. `steward sc host` shows the entry, or why it was left out. `steward sc audit --only updaters` runs its `check`.
+6. Commit it through a config-repo PR. `why`, `require_output` and `pin` change only that way.
+
 ## Soak and prune
 
 1. Wait out the soak. `steward` shows it in a one-line banner, and `steward sc soak` lists the receipts behind it. It
@@ -121,6 +159,8 @@ mise's `trust_policy_excludes` takes exact versions only.
    - a project's launcher config (`.mcp.json`, `.codex/config.toml`, `.claude/settings*.json`) points into an
      install it would remove. Repin those launchers to stable paths first; `steward ai drift` lists them.
 4. `steward sc prune` asks before deleting. A full prune records itself, which clears the banner.
+5. A full prune also lists the copies a declared updater's apply kept, once they're older than `soak_days`, and asks
+   before removing them; their receipts stay. A `signed_data` apply doesn't start a soak.
 
 ## Change the release-age gate
 
@@ -136,6 +176,8 @@ mise's `trust_policy_excludes` takes exact versions only.
 - **mise itself:** `steward sc rollback mise` restores the binary from the newest
   `~/.local/state/workstation-steward/backups/mise-self-update-*` (copied beside it, then renamed into place: a signed
   binary written over in place gets killed by macOS). Then run `steward sc verify`.
+- **A declared updater:** `steward sc rollback <receipt>` (the path its apply printed) puts its copies back; what's
+  there now moves beside them in the receipt's folder, so nothing is lost. Then `steward sc audit --only updaters`.
 - **Homebrew:** `brew upgrade` cleans up old kegs, so there's no keg rollback. Reinstall the previous bottle if
   needed.
 - **Hybrids:** re-run `steward sc install-hybrids` from the restored config. For Ruflo state, restore the

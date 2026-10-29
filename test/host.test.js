@@ -76,6 +76,17 @@ test('merge: an entry with platforms holds only there; one without holds everywh
   assert.match(merge({ ioc: [{ name: 'x', platforms: ['mac'] }] }, {}, 'macos').warnings[0], /platforms must list macos, linux, windows \(not mac\)/);
 });
 
+test('merge: [[updater]] merges by name and turns off with [off]; an incomplete one is left out and reported (D52)', () => {
+  const full = { why: 'w', check: 'c', apply: 'a', backup: ['b'] };
+  const defaults = { updater: [{ name: 'kb', class: 'signed_data', require_output: 'ok', pin: { file: 'f', match: 'm', sha256: 'aa' }, ...full }, { name: 'sigs', class: 'always_current', ...full }] };
+  const mine = { updater: [{ name: 'kb', class: 'signed_data', ...full }, { name: 'own', ...full }], off: { updater: ['sigs'] } };
+  const { policy, sources, warnings } = merge(defaults, mine);
+  assert.deepEqual(policy.updater.map(u => [u.name, u._source]), [['own', 'yours']], 'yours replaced kb, and without a pin it is left out');
+  assert.ok(sources.some(s => s.key === 'updater' && s.item === 'sigs' && s.source === 'off'));
+  assert.deepEqual(warnings, ['updater kb (yours): signed_data needs a pin (file, match, sha256); left out', 'updater kb (yours): signed_data needs require_output; left out']);
+  assert.deepEqual(merge(defaults, {}).policy.updater.map(u => u.name), ['kb', 'sigs']);
+});
+
 test('host.js: the engine defaults parse, and an instance\'s [off] shows in the report and the JSON', () => {
   const ROOT = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'steward-host-')));
   fs.writeFileSync(path.join(ROOT, 'steward.toml'), 'schema = 1\n');

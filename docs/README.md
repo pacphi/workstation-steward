@@ -18,10 +18,10 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 
 | Doc | Rev | What it is |
 | --- | --- | --- |
-| [`lifecycle.md`](lifecycle.md) | 13, 2026-10-28 | Install, set up, use, upgrade, migrate the config, reconcile projects, add tools, roll back, and the two channels (a worktree or npm for the release): the promises across releases, each marked built or planned (D40, D41) |
-| [`release-classes.md`](release-classes.md) | 1, 2026-10-29 | Design, not built (D52): what may skip the release-age gate, as one release class per update source, and update sources declared in `host.toml` |
+| [`lifecycle.md`](lifecycle.md) | 14, 2026-10-29 | Install, set up, use, upgrade, migrate the config, reconcile projects, add tools, roll back, and the two channels (a worktree or npm for the release): the promises across releases, each marked built or planned (D40, D41) |
+| [`release-classes.md`](release-classes.md) | 2, 2026-10-29 | Built (D52; the upstream watch is planned): what may skip the release-age gate, as one release class per update source, and update sources declared in `host.toml` |
 | [`maintainers.md`](maintainers.md) | 2, 2026-10-29 | Releasing: the release PR, Conventional Commit titles, the one-time npm setup (placeholder and Trusted Publishing), the publish guard, a pre-push leak check (D46); the maintainer skill (D53) |
-| [`architecture.md`](architecture.md) | 33, 2026-10-27 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D42 |
+| [`architecture.md`](architecture.md) | 34, 2026-10-29 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D42 |
 
 ## Living docs by area
 

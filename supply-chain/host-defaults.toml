@@ -4,8 +4,9 @@
 # How your host.toml combines with this file (lib/host.js):
 #   - a plain value (electron_supported_majors): yours wins;
 #   - a list (always_current, vendored_node, vendored_node_dirs): yours adds to it;
-#   - a named entry ([[distrusted_root]], [[ioc]]): yours adds one, or replaces the one with the same name;
-#   - [off] in your host.toml turns a default off by name or value, e.g. always_current = ["firefox"].
+#   - a named entry ([[distrusted_root]], [[ioc]], [[updater]]): yours adds one, or replaces the one with the same name;
+#   - [off] in your host.toml turns a default off by name or value, e.g. always_current = ["firefox"] or
+#     updater = ["brain-kb"].
 # security_exception entries are yours alone: they name your versions and expire.
 # An entry for some platforms only says so: `platforms = ["macos"]` on a table, or a list item written as a table,
 # { name = "…", platforms = ["macos"] } (path = for a path). Without the key an entry holds on every platform.
@@ -59,3 +60,24 @@ files = []
 site_packages_files = []
 processes = ["myawesomeproxy", "mylovelyminer"]
 docker_digests = []
+
+# Update sources the steward doesn't install itself (D52, docs/release-classes.md): it runs each entry's commands
+# through `steward sc audit`, `plan` and `upgrade`. A default is active only where its `when` path exists. Its class
+# says whether it waits for the release-age gate; every class gets a backup and a receipt. A shipped `pin` is reviewed
+# in the engine PR that adds or changes it (test/host-defaults.test.js checks each entry's fields).
+[[updater]]
+name = "brain-kb"
+class = "signed_data"
+when = "~/.cache/ruvnet-brain/kb/forge-update.mjs"
+why = "Brain's knowledge base: a new corpus about daily, Ed25519-signed (the key is built into its updater and pinned below), content-addressed (corpus-sha256-<hash>), checked against the gated runtime before it lands; its updater takes only GitHub's releases/latest, so a 3-day gate could never be met. Reviewed 2026-10-29 at runtime 4.7.6"
+check = "node ~/.cache/ruvnet-brain/kb/forge-update.mjs --check"   # exit 0 = current, 10 = behind, 2 = offline
+apply = "node ~/.cache/ruvnet-brain/kb/forge-update.mjs --apply"
+require_output = "source: live release asset"   # refuse its fallback to a pinned or moving source
+backup = ["~/.cache/ruvnet-brain/kb"]           # about 1.4 GB; an APFS clone on macOS, so it costs little space
+self_update_off = { file = "~/.cache/ruvnet-brain/.auto-update-pref", value = "no" }
+
+[updater.pin]   # the signing key the updater checks bundles with; the text `match` finds must hash to sha256
+file = "~/.cache/ruvnet-brain/kb/forge-update.mjs"
+match = "-----BEGIN PUBLIC KEY-----[\\s\\S]*?-----END PUBLIC KEY-----"
+sha256 = "ee12cea9da10accad46fe3a562fb392a54870576347ee99d87425d428709f103"
+watch = "https://raw.githubusercontent.com/stuinfla/ruvnet-brain/main/kb/forge-update.mjs"   # the maintainer's weekly watch

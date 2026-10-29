@@ -172,6 +172,30 @@ test('ioc: a file, a process, a site-packages file or an image digest is an aler
   assert.ok(w.out.includes('  clean  Quiet (yours)'));
 });
 
+test('updaters: behind is an action when its class skips the gate and held when gated; a changed key or an updater left on is an action (D52)', async () => {
+  const pref = path.join(ROOT, 'auto-update-pref');
+  put(pref, 'yes\n');
+  const u = (name, cls, extra = {}) => ({ name, class: cls, _source: 'default', why: 'w', check: `check-${name}`, apply: 'a', backup: ['b'], ...extra });
+  const updater = [u('data', 'signed_data', { self_update_off: { file: pref, value: 'no' } }), u('mine', 'gated', { _source: 'yours' }), u('fine', 'signed_data'), u('offline', 'signed_data'),
+    u('rotated', 'signed_data', { pin: { file: pref, match: 'yes', sha256: 'ab' } }), u('absent', 'signed_data', { when: path.join(ROOT, 'not-installed') })];
+  const c = ctx({ 'bash -c check-data': { status: 10, stdout: '' }, 'bash -c check-mine': { status: 10, stdout: '' }, 'bash -c check-fine': '', 'bash -c check-offline': { status: 2, stdout: '' } }, { policy: { updater } });
+  const w = lines();
+  const r = await audit(c, { only: ['updaters'], write: w.write });
+  assert.deepEqual(r.actions, [
+    `data: its own updater isn't off (${pref} = yes); set it to no`,
+    'data: behind (signed_data: skips the gate)',
+    `rotated: the signing key in ${pref} hashes to ${require('crypto').createHash('sha256').update('yes').digest('hex').slice(0, 12)}…, not the pinned ab…; review the new key, then update the pin in a config-repo PR`,
+  ]);
+  assert.ok(w.out.includes('  held   mine (gated): behind; a declared source has no release date, so it waits for you'));
+  assert.ok(w.out.includes('  ok     fine (signed_data, default): up to date'));
+  assert.ok(w.out.includes("  info   offline: its check couldn't tell (exit 2)"));
+  assert.ok(!c.seen.includes('bash -c check-rotated'), 'a changed key: the check is not run');
+  assert.ok(!w.out.some(l => l.includes('absent')), 'not installed here: silent');
+  const none = lines();
+  await audit(ctx({}, { policy: {} }), { only: ['updaters'], write: none.write });
+  assert.ok(none.out.includes('  none active here'));
+});
+
 test('platforms: on Linux the macOS-only checks are skipped; Homebrew formulae still run where brew is', async () => {
   const c = ctx({ ...BREW, 'brew list --formula --versions': '', 'brew list --formula --full-name': '' }, { platform: 'linux' });
   const w = lines();
