@@ -1,7 +1,7 @@
 {
  "name": "steward-supply-chain",
- "title": "workstation-steward: a host audit, then tidying up after the soak",
- "desc": "An illustrative session, looping, in three scenes. steward sc audit runs its twelve checks, one row each, with what it found in columns under the check (a mise release past the gate, a Homebrew formula still held, a browser to update now, a container on a floating tag), and ends with a summary listing the three actions under what to do about each. Three days after an upgrade, the steward banner and steward sc soak say the soak is over. steward sc prune lists the old versions no config needs, previews the removal, asks, and removes them.",
+ "title": "workstation-steward: a host audit, the upgrade plan, then tidying up after the soak",
+ "desc": "An illustrative session, looping, in four scenes. steward sc audit runs its checks, one row each, with what it found in columns under the check (a mise release past the gate, a Homebrew formula still held, a browser to update now, a container on a floating tag), and ends with a summary listing the three actions under what to do about each. steward sc plan previews the upgrade, one row per part: the Homebrew formula is held at two days old, the declared updater brain-kb is taken because its class, signed_data, skips the release-age gate, and mise itself is taken at three days old; the scene stops at the plan's summary. Three days after an upgrade, the steward banner and steward sc soak say the soak is over. steward sc prune lists the old versions no config needs, previews the removal, asks, and removes them.",
  "window": "steward — zsh",
  "still": 0,
  "scenes": [
@@ -373,6 +373,205 @@
    {
     "out": "  7 check(s) have more lines: steward sc audit --verbose",
     "color": "dim"
+   }
+  ],
+  [
+   {
+    "cmd": "steward sc plan"
+   },
+   {
+    "out": "   $ brew update --quiet",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "steward sc plan",
+      "fg",
+      true
+     ],
+     [
+      "                                                      ",
+      "fg"
+     ],
+     [
+      "macos · release-age gate 3d",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "✔",
+      "ok",
+      true
+     ],
+     [
+      "  Homebrew formulae         1 held                                                       ",
+      "fg"
+     ],
+     [
+      "0.0s",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "⏸",
+      "dim",
+      true
+     ],
+     [
+      " hold   python@3.15 3.15.1 -> 3.15.2 (2d old)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "✔",
+      "ok",
+      true
+     ],
+     [
+      "  Homebrew casks            nothing to do                                                ",
+      "fg"
+     ],
+     [
+      "0.0s",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "✔",
+      "ok",
+      true
+     ],
+     [
+      "  mise tools                nothing to do                                                ",
+      "fg"
+     ],
+     [
+      "0.0s",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      "  Declared updaters         1 to take                                                    ",
+      "fg"
+     ],
+     [
+      "0.0s",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      " take   brain-kb (signed_data: skips the gate)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      "  mise itself               1 to take                                                    ",
+      "fg"
+     ],
+     [
+      "0.1s",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      " take   mise 2026.10.18 -> 2026.10.19 (3d old; newest 2026.10.19, 1 release(s) behind)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==>",
+      "blue",
+      true
+     ],
+     [
+      " plan: 0 formula(e), 0 cask(s), 0 mise tool(s), 1 declared updater(s), mise 2026.10.19 ",
+      "fg"
+     ],
+     [
+      "[0:00]",
+      "dim"
+     ]
+    ]
    }
   ],
   [
