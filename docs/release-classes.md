@@ -36,13 +36,16 @@ it is gated, and because the updater refuses data that runtime can't read.
 
 ## Declaring an update source
 
-A source the steward doesn't install itself goes in your `supply-chain/host.toml` as an `[[updater]]`. The steward runs
-its commands; it doesn't know what the tool is.
+A source the steward doesn't install itself is an `[[updater]]`. The steward runs its commands; it doesn't know what
+the tool is. **Known sources ship in the engine's `supply-chain/host-defaults.toml`**, the shared defaults every machine
+gets (like the IOCs and distrusted roots there), so a new user who installs Brain gets its knowledge base kept current
+with no setup. Your own `supply-chain/host.toml` can add sources, replace a default by its `name`, or turn one off.
 
 ```toml
-[[updater]]
+[[updater]]                            # in the engine's host-defaults.toml
 name = "brain-kb"
 class = "signed_data"
+when = "~/.cache/ruvnet-brain/kb/forge-update.mjs"                   # active only where this exists
 why = "Brain's corpus: Ed25519-signed, content-addressed (corpus-sha256-<hash>), checked against the pinned runtime"
 check = "node ~/.cache/ruvnet-brain/kb/forge-update.mjs --check"     # exit 0 = up to date, 10 = behind
 apply = "node ~/.cache/ruvnet-brain/kb/forge-update.mjs --apply"
@@ -64,6 +67,10 @@ sha256 = "ee12cea9da10accad46fe3a562fb392a54870576347ee99d87425d428709f103"
   didn't bring a different key). Brain's corpus bundle replaces its own updater, key included, so without the pin a
   signed update could rotate the key unnoticed. After a change the steward puts its copy back and stops; a key
   rotation is reviewed, and `sha256` updated, in a config-repo PR.
+- **`when`** names a path that must exist. A default for a tool you don't have is inactive and silent.
+- **Merging**, as for the other defaults: an `[[updater]]` in your `host.toml` with a default's `name` replaces it, and
+  `[off] updater = ["brain-kb"]` turns it off. A shipped key `pin` is reviewed in the engine PR that adds or changes it,
+  and a key rotation reaches you in an age-gated engine release.
 - **`self_update_off`** is checked by the audit like any keep-off setting, so the tool's own updater can't take
   releases behind the steward's back.
 - **`backup`** lists the paths the steward copies before `apply`. It can't be left to the updater: Brain's makes
@@ -97,14 +104,18 @@ table), so it can't skip a gate it doesn't know about.
   All three change only through a config-repo PR. The steward can't check a tool's signature itself; the pin makes
   sure the code that does is still using the key you reviewed.
 
+- **Known sources ship as engine defaults, active only where the tool is installed** (the owner, 2026-10-29). New users
+  get them without setup; `[off]` turns one off; the maintainer reviews each shipped key pin in an engine PR, the way
+  IOCs and distrusted roots are reviewed today.
+
 ## Docs that change when it's built
 
 The schema is documented with the code, never ahead of it. The implementation PR updates each of these:
 
 | Doc | What it gains |
 | --- | --- |
-| `examples/supply-chain/host.toml` | the schema by example: a commented `[[updater]]` with every field, and the classes in its header |
-| `supply-chain/host-defaults.toml` (header) | how `[[updater]]` merges: yours only, like `[[security_exception]]` |
+| `examples/supply-chain/host.toml` | the schema by example: a commented `[[updater]]` with every field, replacing or turning off a default, and the classes in its header |
+| `supply-chain/host-defaults.toml` | the `brain-kb` `[[updater]]`, and in its header how `[[updater]]` merges (by `name`, `[off]`) |
 | `supply-chain/README.md` | the host-policy row, and a short "What may skip the gate" section |
 | `skills/supply-chain/runbook.md` | "A declared source is behind", and "Adding an `[[updater]]`" (the evidence `why` records) |
 | `AGENTS.md`, Release age | the `signed_data` class beside the advisory exception |
