@@ -3,6 +3,13 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.6.0](https://github.com/pacphi/workstation-steward/compare/v0.5.0...v0.6.0) (2026-10-29)
+
+
+### Features
+
+* release classes and declared updaters, Brain's knowledge base the first (D52) ([#44](https://github.com/pacphi/workstation-steward/issues/44)) ([77b7ef2](https://github.com/pacphi/workstation-steward/commit/77b7ef283070746cf24c9dd0fdd799b6a16cf58b))
+
 ## [0.5.0](https://github.com/pacphi/workstation-steward/compare/v0.4.1...v0.5.0) (2026-10-29)
 
 
