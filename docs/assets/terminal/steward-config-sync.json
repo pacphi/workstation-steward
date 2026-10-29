@@ -1,9 +1,9 @@
 {
  "name": "steward-config-sync",
  "title": "workstation-steward: your config repo, watched and kept in step",
- "desc": "An illustrative session, looping, in five scenes. A bare steward shows a banner line: one file changed here and one newer commit on GitHub, as of the last fetch, pointing to steward config sync. steward config ends with the repo section: the GitHub repository and branch, the changed policy file, and the newer commit, each with the command that acts on it. steward review fetches the config repo and lists the same items, plus its open pull requests on GitHub, such as Renovate's. After Renovate's pull request is merged, steward config sync shows the plan (one commit, the mise files it changes, the local edit that stays, then mise install and steward check); with --apply it asks, fast-forwards, prints the receipt and the rollback command, runs mise install after a yes, and runs steward check.",
+ "desc": "An illustrative session, looping, in five scenes. A bare steward shows a banner line: a policy file changed here and one newer commit on GitHub, as of the last fetch, pointing to steward config sync. steward config ends with the repo section, each item with steward config sync. steward review fetches the config repo and lists the same, plus its open pull requests, such as Renovate's. steward config sync --apply then shows its plan (pull Renovate's merged commit, send the local edit), fast-forwards after a yes, runs mise install after a yes and steward check, and sends the edit as pull request #7 on a new steward/sync branch, where this Mac stays until the merge. After #7 is merged on GitHub, the next sync switches back to main, fast-forwards, deletes the branch and runs steward check.",
  "window": "steward — zsh",
- "still": 1,
+ "still": 3,
  "scenes": [
   [
    {
@@ -61,7 +61,7 @@
     "out": "             1 file(s) changed here: supply-chain/host.toml"
    },
    {
-    "out": "               → git -C ~/.config/workstation-steward status",
+    "out": "               → steward config sync",
     "color": "dim"
    },
    {
@@ -109,7 +109,7 @@
     "out": "- 1 file(s) changed here: supply-chain/host.toml"
    },
    {
-    "out": "  → git -C ~/.config/workstation-steward status",
+    "out": "  → steward config sync",
     "color": "dim"
    },
    {
@@ -137,7 +137,7 @@
     "color": "dim"
    },
    {
-    "cmd": "steward config sync"
+    "cmd": "steward config sync --apply"
    },
    {
     "out": "~/.config/workstation-steward  (you/steward-config, main → origin/main)"
@@ -152,27 +152,13 @@
     "out": "  files   mise/config.toml, mise/mise.lock"
    },
    {
-    "out": "  stays   1 local edit(s) GitHub doesn't touch"
-   },
-   {
     "out": "  then    mise install (mise/ changed; asks), steward check"
    },
    {
-    "out": "",
-    "quick": true
+    "out": "  send    1 file(s) as a PR to you/steward-config, on a new steward/sync-<time> branch:"
    },
    {
-    "out": "plan only. Add --apply to do it (asks first; fast-forward only, never a rebase or merge).",
-    "color": "dim"
-   }
-  ],
-  [
-   {
-    "cmd": "steward config sync --apply"
-   },
-   {
-    "out": "  … the same plan …",
-    "color": "dim"
+    "out": "            supply-chain/host.toml       an edit on this Mac"
    },
    {
     "ask": "Fast-forward main to origin/main? [y/N] ",
@@ -191,14 +177,6 @@
       true
      ]
     ]
-   },
-   {
-    "out": "  receipt:  ~/.local/state/workstation-steward/backups/config-sync-20261028T212323/receipt.json",
-    "color": "dim"
-   },
-   {
-    "out": "  rollback: steward config sync --rollback ~/.local/state/…/config-sync-20261028T212323/receipt.json",
-    "color": "dim"
    },
    {
     "ask": "mise/ changed: run mise install for its pins? [y/N] ",
@@ -224,6 +202,105 @@
       "fg"
      ]
     ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "steward check",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "ok     ",
+      "ok",
+      true
+     ],
+     [
+      "config format 1: current",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "ask": "Send 1 file(s) as a PR to you/steward-config? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "sent as PR #7: https://github.com/you/steward-config/pull/7",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "out": "  this Mac stays on steward/sync-20261028-2140 until you merge; then steward config sync switches back to main"
+   }
+  ],
+  [
+   {
+    "out": "# after merging #7 on GitHub",
+    "color": "dim"
+   },
+   {
+    "cmd": "steward config sync --apply"
+   },
+   {
+    "out": "~/.config/workstation-steward  (you/steward-config, steward/sync-20261028-2140, PR #7 merged)"
+   },
+   {
+    "out": "  finish  PR #7 is merged: switch to main, fast-forward 1 commit(s), delete steward/sync-20261028-2140"
+   },
+   {
+    "ask": "Switch to main, fast-forward and delete steward/sync-20261028-2140? [y/N] ",
+    "answer": "y"
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "steward/sync-20261028-2140 deleted (it was f7ca8aa, merged as PR #7)",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==> ",
+      "blue",
+      true
+     ],
+     [
+      "fast-forwarded 59b69ee → eff67ff",
+      "fg",
+      true
+     ]
+    ]
+   },
+   {
+    "out": "  receipt:  ~/.local/state/workstation-steward/backups/config-sync-20261028T214512/receipt.json",
+    "color": "dim"
    },
    {
     "segs": [
