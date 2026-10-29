@@ -5,6 +5,8 @@
 # Usage: upgrade <tool> [version]      e.g. upgrade npm:typescript   |  upgrade npm@12.3.0
 #        upgrade mise [version]       mise itself: bin/mise-self-update (D38)
 #        DRY_RUN=1 upgrade <tool>
+# Verifies (bin/verify) before it locks, unless STEWARD_DEFER_VERIFY=1: `steward sc upgrade` sets that so it verifies
+# once, after every step of its plan, instead of after each tool.
 # shellcheck source=lib/lib.sh
 source "$(dirname "$0")/../../lib/lib.sh"
 
@@ -24,6 +26,7 @@ refresh_env
 [[ "${DRY_RUN}" == "1" ]] && { log "dry run: nothing changed"; exit 0; }
 write_change_receipt upgrade "${tool}${version:+@${version}}"
 log "after"; mise ls "${tool}" | sed 's/^/  /'
-"${SC_ROOT}/bin/verify" || die "verification failed — roll back with: steward sc rollback"
+if [[ "${STEWARD_DEFER_VERIFY:-0}" == 1 ]]; then log "verify: left to the end of steward sc upgrade (STEWARD_DEFER_VERIFY=1)"
+else "${SC_ROOT}/bin/verify" || die "verification failed — roll back with: steward sc rollback"; fi
 run mise lock --global "${tool}"
 log "done. rollback: steward sc rollback   (restores ${backup/#${HOME}/~})"

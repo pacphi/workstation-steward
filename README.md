@@ -62,7 +62,8 @@ that acts on it. The `steward` banner says when a review is due.
 ### A safe upgrade, and its undo
 
 `steward sc upgrade` takes only what passed the gate, asks before acting, backs up your mise config, upgrades without
-pruning, and verifies every tool. `steward sc rollback` puts the config back.
+pruning, and verifies every tool once at the end. If a step fails, the rest still run, and the end lists what failed
+with its way back. `steward sc rollback` puts the config back.
 
 ![steward sc upgrade: the plan, a yes, a backup, the upgrade and a verify; then steward sc rollback](docs/assets/steward-upgrade.svg)
 
