@@ -9,7 +9,7 @@ complete and valid.
 | File | What it decides |
 | --- | --- |
 | `steward.toml` | Project roots, paths, the release-age gate and soak, which optional areas are on |
-| `mise/config.toml` | Your global toolchain; `steward sc link` points `~/.config/mise/` here |
+| `mise/config.toml` | Your global toolchain; `steward sc link` points `~/.config/mise/` here. Below the active tools, a curated collection to uncomment, with what each needed to install cleanly |
 | `renovate.json` | How Renovate proposes toolchain updates, with the same 3-day gate: the rules of the preset `renovate/steward.json`, which you'll extend at a release tag once there is one |
 | `supply-chain/host.toml` | Your additions to the engine's shared defaults (browsers that are never held, apps with a bundled Node, distrusted roots, indicators of compromise), `[off]` for defaults you don't want, and your security exceptions; `steward sc host` shows the merged result |
 | `supply-chain/hybrids.toml` | CLIs installed with `npm -g`, each with its reviewed install scripts (empty to start) |
