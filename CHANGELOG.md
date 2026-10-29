@@ -3,6 +3,13 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.3.2](https://github.com/pacphi/workstation-steward/compare/v0.3.1...v0.3.2) (2026-10-29)
+
+
+### Bug Fixes
+
+* drift and onboarding catch npx launchers with no version, not only [@latest](https://github.com/latest) ([#32](https://github.com/pacphi/workstation-steward/issues/32)) ([e4a0475](https://github.com/pacphi/workstation-steward/commit/e4a04750dbae489ca7cb399682e0536ab8c628d9))
+
 ## [0.3.1](https://github.com/pacphi/workstation-steward/compare/v0.3.0...v0.3.1) (2026-10-29)
 
 
