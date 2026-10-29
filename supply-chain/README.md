@@ -9,7 +9,7 @@ A normal week here: `steward sc audit` checks the whole machine against your pol
 with the next step for each. After an upgrade, the old versions stay through the soak; when it ends, `steward sc prune`
 shows what it would remove, asks, and removes it.
 
-![steward sc audit: a row per check with what it found in columns, and three actions listed under what to do about each; three days later the soak is over, and steward sc prune removes two old versions after a yes](../docs/assets/steward-supply-chain.svg)
+![steward sc audit: a row per check with what it found in columns, and three actions listed under what to do about each; steward sc plan previews the upgrade: a formula held, the declared updater brain-kb taken because signed_data skips the gate, and mise itself taken; three days later the soak is over, and steward sc prune removes two old versions after a yes](../docs/assets/steward-supply-chain.svg)
 
 ## Policy
 
