@@ -76,6 +76,21 @@ self_update_off = { file = "~/.cache/ruvnet-brain/.auto-update-pref", value = "n
 `always_current` and `exception` classes. The `[[updater]]` table is new; an older engine ignores it (an unknown
 table), so it can't skip a gate it doesn't know about.
 
+## Docs that change when it's built
+
+The schema is documented with the code, never ahead of it. The implementation PR updates each of these:
+
+| Doc | What it gains |
+| --- | --- |
+| `examples/supply-chain/host.toml` | the schema by example: a commented `[[updater]]` with every field, and the classes in its header |
+| `supply-chain/host-defaults.toml` (header) | how `[[updater]]` merges: yours only, like `[[security_exception]]` |
+| `supply-chain/README.md` | the host-policy row, and a short "What may skip the gate" section |
+| `skills/supply-chain/runbook.md` | "A declared source is behind", and "Adding an `[[updater]]`" (the evidence `why` records) |
+| `AGENTS.md`, Release age | the `signed_data` class beside the advisory exception |
+| `docs/lifecycle.md` | the promise, marked *planned* until it's built |
+| `skills/ai-tooling/runbook.md`, Brain | the knowledge base as a declared `signed_data` source |
+| `docs/assets/terminal/steward-supply-chain.json` | an updater line in `steward sc plan`, with the class |
+
 ## Open questions
 
 1. **Does a `signed_data` update restart the soak?** It would, for any change today. A source updated daily would then
