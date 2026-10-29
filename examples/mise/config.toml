@@ -15,6 +15,72 @@ lychee = "latest"
 biome = "2.6.3"
 "npm:typescript" = "7.0.2"
 
+# ---------------------------------------------------------------------------------------------------------------------
+# A curated collection, off until you uncomment it. Tools a steward-managed machine has run, with what it took to make
+# each one install cleanly. Uncomment what you use, then `mise install` (or `steward config sync --apply`): mise writes
+# their lock entries, and the release-age gate below applies. Each short name is mise's registry default unless the
+# line says otherwise. Keep one name per tool: two names for one tool (aws and aws-cli, azure and azure-cli) leave
+# mise.lock with one entry, and the other fails under `mise install --locked`.
+#
+# Languages and build tools
+# go = "latest"
+# python = "latest"
+# uv = "latest"                             # the PyPI backend (pypi:…) installs with it
+# pnpm = "latest"
+# java = "liberica-25.0.4"                  # name a distribution; a bare major picks one for you
+# maven = "latest"
+# gradle = "latest"
+# leiningen = "2.13"                        # vfox:jdx/vfox-leiningen; needs java
+# cmake = "latest"
+# rust = "latest"                           # core:rust (rustup); set RUSTUP_HOME and CARGO_HOME in [env], see below
+# "core:dotnet" = "latest"                  # the explicit core backend: the short name has resolved to a vfox plugin
+#
+# Containers and Kubernetes
+# kubectl = "latest"
+# helm = "latest"
+# kind = "latest"
+# k3d = "latest"
+# "asdf:Banno/asdf-kustomize" = "5.8"
+# terraform = "latest"
+#
+# Cloud CLIs
+# aws = "latest"                            # not also aws-cli: the same tool
+# gcloud = "latest"                         # vfox:jdx/vfox-gcloud; Google's own SDK tarball
+# flyctl = "latest"
+# # azure-cli from PyPI on its own Python: on 2026-10-29 its dependency pymsalruntime had no CPython 3.15 wheel. Drop
+# # `python = "3.14"` once it does. Not also `azure`: the same tool.
+# azure-cli = { version = "latest", python = "3.14" }
+# # The native Apple silicon build: the GitHub backend otherwise takes the Intel tarball, which needs Rosetta.
+# cf = { version = "latest", platforms = { macos-arm64 = { asset_pattern = "cf8-cli_*_macosarm.tgz" } } }
+# "vfox:mise-plugins/vfox-android-sdk" = "latest"   # the asdf plugin fails on cmdline-tools 23.0 and later
+#
+# Security and supply chain
+# cosign = "latest"
+# gitleaks = "latest"
+# snyk = "latest"
+#
+# Docs and linters
+# pandoc = "latest"
+# yamllint = "latest"                       # pypi:yamllint
+# powershell = "latest"
+#
+# Databases
+# # postgres = "16": mise's registry now prefers conda:postgresql, and the conda backend gates the tool by release
+# # age but not its dependencies (it pinned packages a day old on 2026-10-29). Check every conda-packages entry's
+# # age in mise.lock before taking it, or name vfox:jdx/vfox-postgres (builds from source). ffmpeg is the same case.
+#
+# AI coding CLIs. npm 12 blocks install scripts, so allow each one a package needs (and nothing more)
+# gemini = "latest"
+# "npm:@openai/codex" = "latest"
+# "npm:opencode-ai" = { version = "latest", allow_builds = ["opencode-ai"] }
+# "npm:agent-browser" = { version = "latest", allow_builds = ["agent-browser"] }
+# ---------------------------------------------------------------------------------------------------------------------
+
+# [env] for the curated rust line above: rustup's homes, so they don't move with mise's data folder
+# [env]
+# RUSTUP_HOME = "{{env.HOME}}/.rustup"
+# CARGO_HOME = "{{env.HOME}}/.cargo"
+
 [settings]
 experimental = true
 lockfile = true
