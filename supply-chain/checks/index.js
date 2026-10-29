@@ -3,6 +3,8 @@
 // anything. Every command goes through ctx.run (async, so a live display keeps moving), so tests hand them canned output.
 //   check: { id, name (the step's short name), title(ctx) (the plain output's header), platforms, async run(ctx, out) }
 //   out:   line(text) (an indented line as it comes), ok/held/info/clean(text), action(text), alert(text)
+//          action and held also take facts, which only the terminal view reads (the plain text stays as it is):
+//          { fix (what to do, the heading a finding is listed under), name, have, want, age (days), note }
 // ctx: { run, cfg (lib/config.js values), policy (lib/host.js merged), instance, engine, cache, today, home, now,
 //        platform, appDirs (where apps live; tests only) }
 const fs = require('fs');
@@ -55,6 +57,16 @@ const securityException = (ctx, kind, name, version) => {
 };
 
 const minAge = ctx => ctx.cfg.policy.min_release_age_days;
+// what to do about a finding: the headings the terminal view lists findings under
+const FIX = {
+  upgrade: 'steward sc plan, then steward sc upgrade',
+  browser: 'by hand: browsers, update now (always_current)',
+  vendor: 'by hand: update in the app (its own updater)',
+  electron: n => `by hand: Electron below ${n}: update the app, or ask its vendor`,
+  appstore: 'by hand: the App Store',
+  macos: 'by hand: System Settings, Software Update',
+  docker: 'by hand: pin each image by tag@digest',
+};
 const tomlGet = async (ctx, file, expr) => { const r = (await ctx.run('yq', ['-p', 'toml', '-oy', '-r', expr, file])); return r.status === 0 ? r.stdout.trim() : ''; };
 
 const CHECKS = [
@@ -67,9 +79,9 @@ const CHECKS = [
     id: 'mise-self', name: 'mise itself', platforms: ALL, title: null,
     async run(ctx, out) {
       const [act, current, target, reason, auto] = (await ctx.run('node', [path.join(ctx.engine, 'supply-chain', 'bin', 'mise-self.js'), '--plan'])).stdout.trim().split('\t');
-      if (act === 'take') out.action(`mise: ${current} -> ${target} (${reason}): steward sc upgrade-tool mise`);
+      if (act === 'take') out.action(`mise: ${current} -> ${target} (${reason}): steward sc upgrade-tool mise`, { fix: 'steward sc upgrade-tool mise', name: 'mise', have: current, want: target, note: reason });
       if (act === 'hold' && String(reason).includes('security_exception')) out.action(`mise: ${current} (${reason})`);
-      if (auto === 'true') out.action('mise: self_update.auto is on; it replaces the binary without a backup or receipt: mise settings set self_update.auto false');
+      if (auto === 'true') out.action('mise: self_update.auto is on; it replaces the binary without a backup or receipt: mise settings set self_update.auto false', { fix: 'mise settings set self_update.auto false', name: 'mise self_update.auto', have: 'on', want: 'off', note: 'it replaces the binary without a backup or receipt' });
     },
   },
   {
@@ -89,7 +101,7 @@ const CHECKS = [
       try { ren = String(JSON.parse(fs.readFileSync(path.join(ctx.instance, 'renovate.json'), 'utf8')).minimumReleaseAge || ''); } catch { /* unset */ }
       for (const [where, val] of [['mise/config.toml minimum_release_age', mise], ['renovate.json minimumReleaseAge', ren]]) {
         if (val.replace(/\D/g, '') === String(min)) out.ok(`${where} = ${val}`);
-        else out.action(`${where} = ${val || 'unset'}, steward.toml says ${min} day(s) (steward sc release-age ${min})`);
+        else out.action(`${where} = ${val || 'unset'}, steward.toml says ${min} day(s) (steward sc release-age ${min})`, { fix: `steward sc release-age ${min}`, name: where, have: val || 'unset', want: `${min} day(s)` });
       }
     },
   },
@@ -101,9 +113,10 @@ const CHECKS = [
       for (const { name, have, want } of (await brew.outdated(ctx, 'formula'))) {
         const age = ageDays((await brew.releaseDate(ctx, 'formula', name, want)), ctx.now);
         const exc = securityException(ctx, 'formula', name, want.replace(/_[^_]*$/, ''));
-        if (exc) out.action(`brew: ${name} ${have} -> ${want} (security exception: ${exc})`);
-        else if (age >= min) out.action(`brew: ${name} ${have} -> ${want} (${age}d old)`);
-        else out.held(`${name} ${have} -> ${want} (${age}d old; eligible in ${min - age}d)`);
+        const facts = { fix: FIX.upgrade, name, have, want, age };
+        if (exc) out.action(`brew: ${name} ${have} -> ${want} (security exception: ${exc})`, { ...facts, note: `security exception: ${exc}` });
+        else if (age >= min) out.action(`brew: ${name} ${have} -> ${want} (${age}d old)`, facts);
+        else out.held(`${name} ${have} -> ${want} (${age}d old; eligible in ${min - age}d)`, { ...facts, note: `eligible in ${min - age}d` });
       }
       for (const l of (await ctx.run('brew', ['outdated', '--formula', '--verbose'])).stdout.split('\n').filter(l => l.includes('/'))) out.line(`tap (as of last brew update): ${l}`);
     },
@@ -115,8 +128,9 @@ const CHECKS = [
       for (const { name, have, want, auto } of (await brew.outdated(ctx, 'cask'))) {
         if (auto) continue;
         const age = ageDays((await brew.releaseDate(ctx, 'cask', name, want)), ctx.now);
-        if (age >= min) out.action(`cask: ${name} ${have} -> ${want} (${age}d old)`);
-        else out.held(`${name} ${have} -> ${want} (${age}d old)`);
+        const facts = { fix: FIX.upgrade, name, have, want, age };
+        if (age >= min) out.action(`cask: ${name} ${have} -> ${want} (${age}d old)`, facts);
+        else out.held(`${name} ${have} -> ${want} (${age}d old)`, { ...facts, note: `eligible in ${min - age}d` });
       }
     },
   },
@@ -146,16 +160,17 @@ const CHECKS = [
         const ep = path.join(app, 'Contents', 'Frameworks', 'Electron Framework.framework', 'Resources', 'Info.plist');
         if (fs.existsSync(ep)) {
           const ev = (await plist(ep, 'CFBundleVersion')) || '0';
-          if (parseInt(ev, 10) < electronMin) out.action(`app: ${short} bundles Electron ${ev} (supported: ${electronMin}+); update it, or ask the vendor`);
+          if (parseInt(ev, 10) < electronMin) out.action(`app: ${short} bundles Electron ${ev} (supported: ${electronMin}+); update it, or ask the vendor`, { fix: FIX.electron(electronMin), name: short, have: `Electron ${ev.replace(/-.*$/, '')}`, want: `${electronMin}+` });
         }
         const c = byApp.get(base);
         if (!c || !have) continue;
         const v = appVersion(have, c.want);
         if (!appBehind(v, c.want)) continue;
         const age = ageDays((await brew.releaseDate(ctx, 'cask', c.token, c.want)), ctx.now);
-        if (always.has(c.token)) out.action(`app: ${short} ${v} -> ${c.want} (${age}d old; always_current: update now)`);
-        else if (age >= min || age < 0) out.action(`app: ${short} ${v} -> ${c.want} (${age}d old; vendor updater; matched cask ${c.token} by app name)`);
-        else out.held(`${short} ${v} -> ${c.want} (${age}d old; matched cask ${c.token})`);
+        const facts = { name: short, have: v, want: c.want, age };
+        if (always.has(c.token)) out.action(`app: ${short} ${v} -> ${c.want} (${age}d old; always_current: update now)`, { ...facts, fix: FIX.browser, note: 'always_current' });
+        else if (age >= min || age < 0) out.action(`app: ${short} ${v} -> ${c.want} (${age}d old; vendor updater; matched cask ${c.token} by app name)`, { ...facts, fix: FIX.vendor, note: 'vendor updater' });
+        else out.held(`${short} ${v} -> ${c.want} (${age}d old; matched cask ${c.token})`, { ...facts, note: `eligible in ${min - age}d` });
       }
     },
   },
@@ -164,7 +179,9 @@ const CHECKS = [
     async run(ctx, out) {
       if ((await ctx.run('mas', ['version'])).status !== 0) { out.warn('mas not installed (brew install mas): App Store not checked'); return; }
       const lines = (await ctx.run('mas', ['outdated'], { label: 'mas outdated' })).stdout.split('\n').filter(Boolean);
-      if (lines.length) for (const l of lines) out.action(`appstore: ${l}`); else out.line('up to date');
+      // mas outdated: `<id>  <name>  (<have> -> <want>)`
+      const facts = l => { const m = l.match(/^\s*\d+\s+(.*?)\s+\((\S+) -> (\S+)\)\s*$/); return m ? { fix: FIX.appstore, name: m[1], have: m[2], want: m[3] } : { fix: FIX.appstore }; };
+      if (lines.length) for (const l of lines) out.action(`appstore: ${l}`, facts(l)); else out.line('up to date');
     },
   },
   {
@@ -172,7 +189,7 @@ const CHECKS = [
     async run(ctx, out) {
       const r = (await ctx.run('softwareupdate', ['-l'], { label: "softwareupdate -l (Apple's server can take a minute)", stderr: true }));
       const labels = r.stdout.split('\n').filter(l => /^\s*\* Label:/.test(l));
-      if (labels.length) for (const l of labels) out.action(`macOS: ${l.slice(l.indexOf('Label: ') + 7)}`);
+      if (labels.length) for (const l of labels) out.action(`macOS: ${l.slice(l.indexOf('Label: ') + 7)}`, { fix: FIX.macos, name: l.slice(l.indexOf('Label: ') + 7) });
       else out.line(`${(await ctx.run('sw_vers', ['-productVersion'])).stdout.trim()}: no updates`);
     },
   },
@@ -207,7 +224,7 @@ const CHECKS = [
       for (const l of (await ctx.run('docker', ['ps', '--format', '{{.Image}}\t{{.Names}}'])).stdout.split('\n').filter(Boolean)) {
         const [image, name] = l.split('\t');
         if (image.includes('@sha256:')) continue;
-        if (image.endsWith(':latest') || !image.slice(image.lastIndexOf('/') + 1).includes(':')) out.action(`docker: container ${name} runs floating ${image}; pin tag@digest`);
+        if (image.endsWith(':latest') || !image.slice(image.lastIndexOf('/') + 1).includes(':')) out.action(`docker: container ${name} runs floating ${image}; pin tag@digest`, { fix: FIX.docker, name, have: image });
         else out.info(`${name}: ${image} (tag, no digest)`);
       }
     },
@@ -238,4 +255,4 @@ const CHECKS = [
   },
 ];
 
-module.exports = { CHECKS, ALL, verLt, appVersion, appBehind, ageDays, securityException };
+module.exports = { CHECKS, ALL, FIX, verLt, appVersion, appBehind, ageDays, securityException };

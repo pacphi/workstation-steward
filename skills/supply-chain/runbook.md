@@ -22,7 +22,8 @@ commands run from any folder. Every changing step asks first, and `DRY_RUN=1` pr
 ## Routine check
 
 1. `steward sc audit`. It's read-only. Read the summary:
-   - **ACTION** lines are things to do;
+   - **ACTION** lines are things to do; on a terminal the Summary lists them in columns under what to do about each
+     (`--verbose` also shows the lines it folds away);
    - **ALERT** means an indicator of compromise matched. Stop and investigate before anything else.
 2. **Browsers** (`always_current`): update now from each app's About page. They aren't Homebrew casks, so
    `brew upgrade` doesn't apply.
