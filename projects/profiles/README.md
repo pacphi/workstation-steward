@@ -48,6 +48,7 @@ What `steward projects onboard` gives a project for each AI tool its registry en
 | `[[copy]]` | a file or folder copied from a qualified install; a folder with `.LOCKED` gets missing names only |
 | `[[write]]` | a small file created whole if absent (`text` or `json`) |
 | `[[manual]]` | a step onboarding lists and never runs |
+| `[user_off]` | nothing: what must stay off at user level for a tool switched on per project only (D55). `claude_plugins` (`~/.claude/settings.json` `enabledPlugins`), `codex_plugins` (`~/.codex/config.toml` `[plugins."…"]`) and `codex_mcp_servers` (`[mcp_servers.…]`); `steward ai drift` reports any that is on |
 
 ## Placeholders
 

@@ -121,6 +121,12 @@ for (const f of policy.guards.auto_update_files) {
   say(st === 'installed' ? 'ok' : 'DRIFT', 'aqe', `hook transport v2 ${P.tilde(dest)}: ${st}${st === 'installed' ? '' : ' (steward ai transport)'}`);
 }
 
+// A tool switched on per project only, switched on at user level instead (D55): each profile's [user_off].
+{
+  const F = require('../../lib/profiles.js'), paths = C.load().values.paths;
+  for (const r of F.userOff(F.TOOLS, { claudeDir: paths.claude_dir, codexHome: paths.codex_home })) say(r.level, 'user-level off', r.msg);
+}
+
 const kb = P.untilde(policy.brain.kb_source);
 if (P.exists(kb)) say('info', 'brain', `knowledge base last updated ${fs.statSync(kb).mtime.toISOString().slice(0, 10)} (update deferred by owner; owner-run script)`);
 
