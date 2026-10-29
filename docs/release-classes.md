@@ -137,8 +137,8 @@ table), so it can't skip a gate it doesn't know about.
 ## Docs that change when it's built
 
 The schema is documented with the code, never ahead of it. The implementation PR updated each of these except the
-last three; the watch's PR added the maintainer runbook and the workflow. The animation, the last row, is still to
-come, as a docs chore:
+last three; the watch's PR added the maintainer runbook and the workflow, and a docs chore added the animation's plan
+scene:
 
 | Doc | What it gains |
 | --- | --- |
