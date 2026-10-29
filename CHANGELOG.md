@@ -3,6 +3,13 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.5.0](https://github.com/pacphi/workstation-steward/compare/v0.4.1...v0.5.0) (2026-10-29)
+
+
+### Features
+
+* /steward-maintain, the maintainer's routine after a merge as a project skill (D53) ([#42](https://github.com/pacphi/workstation-steward/issues/42)) ([c8ab031](https://github.com/pacphi/workstation-steward/commit/c8ab03110ca07124218ce402ffba768176d4b4ef))
+
 ## [0.4.1](https://github.com/pacphi/workstation-steward/compare/v0.4.0...v0.4.1) (2026-10-29)
 
 
