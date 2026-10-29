@@ -50,6 +50,25 @@ function appBehind(have, want) {
   return false;
 }
 
+// caskIds(cask) — the bundle IDs a cask names in its uninstall and zap steps (com.vendor.app, from paths such as
+// ~/Library/Containers/com.vendor.app), without an app group's `group.` or a team ID's prefix
+const caskIds = c => [...new Set((JSON.stringify(c.artifacts || []).match(/[A-Za-z0-9]{2,}(?:\.[A-Za-z0-9-]+){2,}/g) || [])
+  .map(s => s.replace(/^group\./, '').replace(/^[A-Z0-9]{10}\./, ''))
+  .filter(s => /^[a-z]/i.test(s) && !/\.(plist|app|pkg|dmg|zip|json|log|db|sqlite|savedState|binarycookies)$/i.test(s)))];
+// vendor(id) — a bundle ID's first two parts: com.microsoft.m365copilot is com.microsoft's
+const vendor = id => String(id).toLowerCase().split('.').slice(0, 2).join('.');
+
+// pickCask(casks, id) — {cask} for an app with bundle ID id, among the casks that install an app of its name: one
+// that names a bundle ID from the app's vendor, else one that names none (the name is all there is to go on); or
+// {other} when every one names only other vendors' IDs (another product with the same name: Copilot.app is both
+// Microsoft 365 Copilot and the Copilot Money app)
+function pickCask(casks, id) {
+  if (!id) return { cask: casks[0] };
+  const named = casks.map(c => ({ c, ids: caskIds(c) }));
+  const mine = named.find(x => x.ids.some(i => vendor(i) === vendor(id))) || named.find(x => !x.ids.length);
+  return mine ? { cask: mine.c } : { other: named[0] };
+}
+
 // securityException(ctx, kind, name, version) — the advisory of an unexpired security_exception for that version
 const securityException = (ctx, kind, name, version) => {
   const e = (ctx.policy.security_exception || []).find(x => x.kind === kind && x.name === name && x.version === version && x.expires >= ctx.today);
@@ -139,9 +158,9 @@ const CHECKS = [
     title: ctx => `Apps (bundle version vs Homebrew cask catalog; Electron vs its ${ctx.policy.electron_supported_majors ?? 3} supported majors)`,
     async run(ctx, out) {
       const min = minAge(ctx), majors = ctx.policy.electron_supported_majors ?? 3;
-      const byApp = new Map();
+      const byApp = new Map(); // an app's name -> the casks that install an app of that name
       for (const c of (await brew.api(ctx, 'cask'))) for (const a of c.artifacts || []) for (const app of [].concat((a && a.app) || [])) {
-        if (typeof app === 'string' && !byApp.has(app)) byApp.set(app, { token: c.token, want: String(c.version).split(',')[0] });
+        if (typeof app === 'string') byApp.set(app, [...(byApp.get(app) || []), c]);
       }
       const always = new Set(ctx.policy.always_current || []);
       const latest = (await ctx.run('npm', ['view', 'electron', 'dist-tags.latest'])).stdout.trim() || '0';
@@ -162,8 +181,11 @@ const CHECKS = [
           const ev = (await plist(ep, 'CFBundleVersion')) || '0';
           if (parseInt(ev, 10) < electronMin) out.action(`app: ${short} bundles Electron ${ev} (supported: ${electronMin}+); update it, or ask the vendor`, { fix: FIX.electron(electronMin), name: short, have: `Electron ${ev.replace(/-.*$/, '')}`, want: `${electronMin}+` });
         }
-        const c = byApp.get(base);
-        if (!c || !have) continue;
+        if (!byApp.has(base) || !have) continue;
+        const id = await plist(path.join(app, 'Contents', 'Info.plist'), 'CFBundleIdentifier');
+        const pick = pickCask(byApp.get(base), id);
+        if (pick.other) { out.info(`${short} (${id}): cask ${pick.other.c.token} is another app of that name (${pick.other.ids.slice(0, 2).join(', ')}); not compared`); continue; }
+        const c = { token: pick.cask.token, want: String(pick.cask.version).split(',')[0] };
         const v = appVersion(have, c.want);
         if (!appBehind(v, c.want)) continue;
         const age = ageDays((await brew.releaseDate(ctx, 'cask', c.token, c.want)), ctx.now);
@@ -255,4 +277,4 @@ const CHECKS = [
   },
 ];
 
-module.exports = { CHECKS, ALL, FIX, verLt, appVersion, appBehind, ageDays, securityException };
+module.exports = { CHECKS, ALL, FIX, caskIds, pickCask, verLt, appVersion, appBehind, ageDays, securityException };
