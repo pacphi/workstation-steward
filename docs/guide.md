@@ -61,7 +61,7 @@ issue, "Steward review", lists what GitHub can see on its own: releases past the
 PRs and security alerts across the repos.
 
 1. Run `steward review` (or `steward review --quick` without the audit). It lists every item that needs a decision,
-   each with the command that acts on it.
+   grouped under the command that acts on it (or the step to take by hand), and the fleet as one table, worst first.
 2. Decide each one: act now, defer it with a reason, or make it an `owner-decision` issue so it isn't lost.
 3. Handle the week's Renovate PRs in this repo ([supply-chain runbook: A Renovate PR arrives](../skills/supply-chain/runbook.md#a-renovate-pr-arrives)).
 
