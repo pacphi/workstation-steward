@@ -57,6 +57,7 @@ self_update_off = { file = "~/.cache/ruvnet-brain/.auto-update-pref", value = "n
 file = "~/.cache/ruvnet-brain/kb/forge-update.mjs"
 match = "-----BEGIN PUBLIC KEY-----[\\s\\S]*?-----END PUBLIC KEY-----"
 sha256 = "ee12cea9da10accad46fe3a562fb392a54870576347ee99d87425d428709f103"
+watch = "https://raw.githubusercontent.com/stuinfla/ruvnet-brain/main/kb/forge-update.mjs"   # the maintainer's watch
 ```
 
 - **`steward sc audit`** runs each `check` (read-only) and reports a source that's behind, with its class.
@@ -77,6 +78,17 @@ sha256 = "ee12cea9da10accad46fe3a562fb392a54870576347ee99d87425d428709f103"
   rollback copies for the length of one run and deletes them when it succeeds. `steward sc rollback <receipt>` puts
   the copy back. Copies older than the soak are removed by `steward sc prune`, so a daily source keeps a few, not
   dozens.
+
+## Keeping shipped defaults current
+
+A shipped pin is only as good as the maintainer's notice of a change upstream. Four layers:
+
+| Layer | What it catches | When |
+| --- | --- | --- |
+| A schema test (`test/host-defaults.test.js`) | a shipped `[[updater]]` missing `why`, `when`, `require_output` or `backup`, a `signed_data` one without a `pin`, an unknown class | every engine PR |
+| An upstream watch (a scheduled GitHub workflow in the engine repo, read-only) | each shipped `pin` with a `watch` URL: fetch it, apply `match`, compare the hash; on a change it opens or updates an issue labelled `owner-decision` | weekly |
+| Field reports | `steward sc audit` on any machine: a pin mismatch says the key changed and the engine's default may be behind | whenever it runs |
+| A maintainer runbook (`docs/maintainers.md`) | confirm the change from the publisher's own release notes or announcement, update the pin in a PR, release; the gate then delays it like any engine change | when either of the two above fires |
 
 ## Brain, as the first case
 
@@ -108,6 +120,10 @@ table), so it can't skip a gate it doesn't know about.
   get them without setup; `[off]` turns one off; the maintainer reviews each shipped key pin in an engine PR, the way
   IOCs and distrusted roots are reviewed today.
 
+- **The maintainer keeps shipped defaults current with four layers** (the owner, 2026-10-29): a schema test, a weekly
+  read-only upstream watch that opens an issue, field reports from the audit, and a maintainer runbook. The watch is
+  the engine repo's first scheduled job; it only reads and opens issues.
+
 ## Docs that change when it's built
 
 The schema is documented with the code, never ahead of it. The implementation PR updates each of these:
@@ -121,6 +137,8 @@ The schema is documented with the code, never ahead of it. The implementation PR
 | `AGENTS.md`, Release age | the `signed_data` class beside the advisory exception |
 | `docs/lifecycle.md` | the promise, marked *planned* until it's built |
 | `skills/ai-tooling/runbook.md`, Brain | the knowledge base as a declared `signed_data` source |
+| `docs/maintainers.md` | "A shipped default changed upstream": the runbook above |
+| `.github/workflows/` | the weekly, read-only upstream watch |
 | `docs/assets/terminal/steward-supply-chain.json` | an updater line in `steward sc plan`, with the class |
 
 ## Rejected
