@@ -49,10 +49,11 @@ apply = "node ~/.cache/ruvnet-brain/kb/forge-update.mjs --apply"
 require_output = "source: live release asset"                        # refuse a fallback to a moving branch
 backup = ["~/.cache/ruvnet-brain/kb"]                                # the steward copies it first (about 1.4 GB)
 self_update_off = { file = "~/.cache/ruvnet-brain/.auto-update-pref", value = "no" }
-# The signing key the updater checks bundles with, as reviewed: the text that `match` finds in `file` must hash to this
-pin = { file = "~/.cache/ruvnet-brain/kb/forge-update.mjs",
-        match = "-----BEGIN PUBLIC KEY-----[\\s\\S]*?-----END PUBLIC KEY-----",
-        sha256 = "ee12cea9da10accad46fe3a562fb392a54870576347ee99d87425d428709f103" }
+
+[updater.pin]   # the signing key the updater checks bundles with, as reviewed: the text `match` finds must hash to sha256
+file = "~/.cache/ruvnet-brain/kb/forge-update.mjs"
+match = "-----BEGIN PUBLIC KEY-----[\\s\\S]*?-----END PUBLIC KEY-----"
+sha256 = "ee12cea9da10accad46fe3a562fb392a54870576347ee99d87425d428709f103"
 ```
 
 - **`steward sc audit`** runs each `check` (read-only) and reports a source that's behind, with its class.
