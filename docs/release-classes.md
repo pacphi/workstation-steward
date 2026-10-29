@@ -19,7 +19,7 @@ whether it waits for the gate. Updates the steward doesn't install itself (a dat
 | Clock | What it protects | Which classes |
 | --- | --- | --- |
 | **Release-age gate** | You don't take a release in its first days, when a bad or malicious publish is most often caught | `gated` waits; the other three may not |
-| **Soak** | You can still roll back: old installs aren't pruned until a change has run for `soak_days` | every class: a skip of the gate never skips the backup, the receipt or the soak |
+| **Soak** | You can still roll back: old installs aren't pruned until a change has run for `soak_days` | every class but `signed_data`, whose own data copies are kept for `soak_days` instead (Decided, below). A skip of the gate never skips the backup or the receipt |
 
 ## The classes
 
@@ -99,7 +99,6 @@ The schema is documented with the code, never ahead of it. The implementation PR
 | `docs/assets/terminal/steward-supply-chain.json` | an updater line in `steward sc plan`, with the class |
 
 ## Open questions
-
 
 1. **Where the evidence lives.** The steward can't check Brain's signature itself. `why` and `require_output` record
    what was reviewed, the way `trust_policy_excludes` does; a change to an `[[updater]]` is a config-repo PR.
