@@ -3,6 +3,13 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.3.1](https://github.com/pacphi/workstation-steward/compare/v0.3.0...v0.3.1) (2026-10-29)
+
+
+### Bug Fixes
+
+* steward fleet sync and config sync no longer mistake a leftover REBASE_HEAD for a rebase ([#30](https://github.com/pacphi/workstation-steward/issues/30)) ([d03362e](https://github.com/pacphi/workstation-steward/commit/d03362ecc132e367e7cd00dbacb85e219fb8d1a8))
+
 ## [0.3.0](https://github.com/pacphi/workstation-steward/compare/v0.2.2...v0.3.0) (2026-10-29)
 
 
