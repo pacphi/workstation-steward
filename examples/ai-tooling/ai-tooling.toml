@@ -270,7 +270,8 @@ paths = [
 # when it is a Codex copy of a Ruflo command (`source-command-*`), or when its SKILL.md says `author: rUv`
 copy_dirs = [".claude/agents", ".claude/commands", ".claude/skills", ".agents/skills"]
 
-# Project launchers (.mcp.json, .codex/config.toml) must not fetch an unpinned version at session start.
+# Project launchers (.mcp.json, .codex/config.toml) must not fetch an unpinned version at session start. Beyond these
+# tags, `npx`, `bunx` or `pnpm dlx` of a package with no version at all always counts as unpinned (D30).
 [launchers]
 forbid = ["@latest"]
 
