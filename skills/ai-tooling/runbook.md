@@ -193,11 +193,15 @@ with no vetting; the vetted Ruflo approvals are all read-only.
   `.claude-flow/memory-package.json` `distPath` doesn't fail loudly: the Ruflo memory hook falls back and
   self-learning can stop. Add a `[[repin]]` rule to `ai-tooling/ai-tooling.toml` for the new path and run
   `steward ai repin`, or roll back the upgrade while the soak still holds the old install.
-- **`@latest` launchers** (D30): `ruflo`, `ruv-swarm` or `flow-nexus` in `.mcp.json` or the Codex config, as an older
-  `ruflo init` wrote them (current `init`, 3.63.1 included, still writes `npx -y ruflo@latest` under `claude-flow`, plus
-  `ruv-swarm` and `flow-nexus@latest` with its full preset). `steward projects onboard <path> --remove-unpinned` removes
-  them; a project's own servers stay. Claude gets Ruflo's hooks and plugins, not an MCP server; Codex has the pinned
-  `ruflo` server.
+- **Unpinned launchers** (D30): `ruflo`, `ruv-swarm` or `flow-nexus` in `.mcp.json` or the Codex config that fetch
+  `@latest`, or run `npx` with no version at all (`npx -y ruv-swarm`, which is just as unpinned), as an older `ruflo init`
+  wrote them (current `init`, 3.63.1 included, still writes `npx -y ruflo@latest` under `claude-flow`, plus `ruv-swarm`
+  and `flow-nexus@latest` with its full preset). `steward projects onboard <path> --remove-unpinned` removes them; a
+  project's own servers stay. Claude gets Ruflo's hooks and plugins, not an MCP server; Codex has the pinned `ruflo`
+  server.
+- **An `mcpServers` block in `.claude/settings.json`** (drift info): an older `ruflo init` wrote `npx ruflo@3.5.18`
+  there, but Claude Code reads MCP servers only from `.mcp.json` and `~/.claude.json`, so it launches nothing. Delete
+  it when convenient; tracked files change through a PR.
 - **AQE servers off the shared runtime, missing hook shims or `autoStart`:** fixing these
   edits project files. The allowed way is in [`docs/architecture.md`](../../docs/architecture.md#projects-detection-and-onboarding):
   - untracked or ignored files are edited in place, after the plan and `[y/N]`, with a backup and a receipt;

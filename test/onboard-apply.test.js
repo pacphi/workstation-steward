@@ -222,24 +222,27 @@ itest('--fix-keep-off sets the keep-off values in settings.json and nothing else
   assert.deepEqual(snapshot(dir), before);
 });
 
-itest('--remove-unpinned removes only keep-off launchers that fetch @latest, from .mcp.json and Codex', () => {
+itest('--remove-unpinned removes only keep-off launchers that fetch an unpinned version, from .mcp.json and Codex', () => {
   const dir = repo('unpinned', { 'go.mod': 'module x\n', '.gitignore': '.mcp.json\n.codex/\n.claude/\n' }, ['.']);
   write(dir, '.mcp.json', JSON.stringify({ mcpServers: {
     ruflo: { command: 'npx', args: ['-y', 'ruflo@latest', 'mcp', 'start'] },
     'flow-nexus': { command: 'npx', args: ['-y', 'flow-nexus@latest', 'mcp', 'start'] },
+    'ruv-swarm': { command: 'npx', args: ['-y', 'ruv-swarm', 'mcp', 'start'] }, // no version: as unpinned as @latest
     mine: { command: 'npx', args: ['-y', 'my-tool@latest'] },
   } }, null, 2) + '\n');
-  write(dir, '.codex/config.toml', 'model = "x"\n\n[mcp_servers.flow-nexus]\ncommand = "npx"\nargs = ["-y", "flow-nexus@latest", "mcp", "start"]\n\n[mcp_servers.flow-nexus.tools.sandbox_create]\napproval_mode = "approve"\n');
+  write(dir, '.codex/config.toml', 'model = "x"\n\n[mcp_servers.flow-nexus]\ncommand = "npx"\nargs = ["-y", "flow-nexus@latest", "mcp", "start"]\n\n[mcp_servers.flow-nexus.tools.sandbox_create]\napproval_mode = "approve"\n\n[mcp_servers.ruv-swarm]\ncommand = "npx"\nargs = ["ruv-swarm", "mcp", "start"]\n');
   const before = snapshot(dir);
   const p = O.plan(dir, { entry: entry(dir), removeUnpinned: true });
-  assert.equal(p.files.find(f => f.path === '.mcp.json').changes.filter(c => c.startsWith('- ')).length, 2);
+  assert.equal(p.files.find(f => f.path === '.mcp.json').changes.filter(c => c.startsWith('- ')).length, 3);
   const rc = JSON.parse(fs.readFileSync(apply(dir, p), 'utf8'));
   const m = json(dir, '.mcp.json').mcpServers;
   assert.equal(m.ruflo, undefined);
   assert.equal(m['flow-nexus'], undefined);
+  assert.equal(m['ruv-swarm'], undefined);
   assert.ok(m.mine, 'a launcher not on the keep-off list stays, @latest or not');
   const cx = P.toml(path.join(dir, '.codex/config.toml'));
   assert.equal(cx.mcp_servers['flow-nexus'], undefined);
+  assert.equal(cx.mcp_servers['ruv-swarm'], undefined);
   assert.equal(cx.model, 'x');
   assert.deepEqual(pending(O.plan(dir, { entry: entry(dir), removeUnpinned: true })).filter(f => f === '.mcp.json' || f === '.codex/config.toml'), []);
   O.undo(rc);

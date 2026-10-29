@@ -176,8 +176,10 @@ for (const f of all) {
   const extra = ['ruflo', 'aqe', 'brain'].filter(t => ev[t].length && !expected.includes(t));
   if (extra.length && !r) out('info', `not registered yet; shows ${extra.join(', ')}`);
   else if (extra.length) out('WARN', `shows ${extra.map(t => `${t} (${ev[t][0]})`).join(', ')}, beyond its ${basis} tools [${expected.join(', ')}]`);
+  // mcpServers in .claude/settings*.json: an older `ruflo init` wrote them, but Claude Code never reads that key.
+  for (const i of P.inertSettingsServers(settings)) out('info', `${i.file} has an mcpServers block (${i.names.join(', ')}) that Claude Code doesn't read; it launches nothing and can be deleted`);
   for (const s of servers) {
-    if (forbid.some(x => s.cmd.includes(x))) out('DRIFT', `${s.file} server "${s.name}" fetches an unpinned version: ${s.cmd.slice(0, 60)}${['ruflo', 'ruv-swarm', 'flow-nexus'].includes(s.name) && declared && declared.length ? ` (steward projects onboard ${where} --remove-unpinned)` : ''}`);
+    if (P.unpinnedLauncher(s.cmd, forbid)) out('DRIFT', `${s.file} server "${s.name}" fetches an unpinned version: ${s.cmd.slice(0, 60)}${['ruflo', 'ruv-swarm', 'flow-nexus'].includes(s.name) && declared && declared.length ? ` (steward projects onboard ${where} --remove-unpinned)` : ''}`);
     if (/agentic-qe|aqe-mcp/.test(s.name + ' ' + s.cmd)) {
       // An explicit path into the runtime, or a bare name a fresh shell resolves to it ("aqe on PATH" above, D33).
       if (!P.sharedAqeCommand(s.cmd, { roots: aqeRoots, bare: bareShared })) {
