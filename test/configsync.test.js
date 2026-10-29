@@ -168,6 +168,16 @@ test('pull --rollback: moves the branch back after a yes, once; refuses when it 
   assert.match(sync(f.inst, ['--rollback', rp2], 'y\n').stderr, /main moved since the sync/);
 });
 
+test('send: the plan says which local files are new and which are deleted, so a stray file stands out', () => {
+  const f = fixture();
+  fs.rmSync(path.join(f.inst, 'notes.md'));
+  fs.writeFileSync(path.join(f.inst, 'mise', 'config.toml.bak-1'), 'a backup\n');
+  const r = sync(f.inst);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /notes\.md +deleted on this Mac/);
+  assert.match(r.stdout, /mise\/config\.toml\.bak-1 +new on this Mac/);
+});
+
 test('send: the plan lists every local file with the steward command behind it; nothing changes', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.inst, 'mise', 'mise.lock'), 'lock 2\n');

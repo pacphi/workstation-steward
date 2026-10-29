@@ -5,7 +5,9 @@ const assert = require('node:assert/strict');
 const path = require('path');
 
 process.env.STEWARD_INSTANCE = process.env.STEWARD_INSTANCE || path.join(__dirname, '..', 'examples');
-const { auditItems, driftItems, fleetTable, render } = require('../lib/review.js');
+const fs = require('fs');
+const os = require('os');
+const { runAsync, auditItems, driftItems, fleetTable, render } = require('../lib/review.js');
 
 // the audit off a terminal: each finding as its check finds it, then again under the Summary
 const AUDIT = [
@@ -97,4 +99,16 @@ test('render: each shared command shows once over its items; items with their ow
   assert.ok(md.includes('- #1 a  \n  → `gh pr view 1`\n- #2 b  \n  → `gh pr view 2`'));
   assert.ok(md.includes('## Fleet · 1\n\n2 repos checked\n\n| repo | critical | high | medium | low | bot PRs |\n| --- | ---: |'));
   assert.ok(md.includes('## Projects\n\nnothing new or gone'));
+});
+
+test('runAsync: a command\'s --json stays readable though it reports progress on stderr; both streams reach onLine', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'steward-review-'));
+  const js = path.join(dir, 'child.js');
+  // as reconcile.js --all --json does: progress on stderr before and after, the JSON on stdout
+  fs.writeFileSync(js, "process.stderr.write('[1/1] plan every onboarded project …\\n'); process.stdout.write(JSON.stringify([{ project: 'p' }], null, 1) + '\\n'); process.stderr.write('✓ 1 planned\\n');");
+  const seen = [];
+  const r = await runAsync('node', [js], l => seen.push(l));
+  assert.equal(r.status, 0);
+  assert.deepEqual(JSON.parse(r.stdout), [{ project: 'p' }]);
+  assert.ok(seen.includes('[1/1] plan every onboarded project …') && seen.includes('✓ 1 planned'), seen.join('\n'));
 });
