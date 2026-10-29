@@ -1,7 +1,7 @@
 {
  "name": "steward-review",
  "title": "workstation-steward: the weekly review",
- "desc": "An illustrative steward review, looping. Seven read-only stages run (soak, supply-chain audit, AI tooling, projects, GitHub, fleet), then one report lists four items to decide, each with the command that acts on it: prune now that the soak has ended, two Homebrew updates past the release-age gate, and a new project to decide on. Nothing is changed.",
+ "desc": "An illustrative steward review, looping. Seven read-only stages run (soak, supply-chain audit, AI tooling, projects, GitHub, fleet), then one report lists four items to decide, each under the command that acts on it: prune now that the soak has ended, two Homebrew updates past the release-age gate under the one command they share, and a new project to decide on. Nothing is changed.",
  "window": "steward — zsh",
  "still": 1,
  "scenes": [
@@ -143,7 +143,7 @@
     "out": "4 item(s) to decide. Each names the command that acts on it; nothing here was changed."
    },
    {
-    "out": "## Soak and prune",
+    "out": "## Soak and prune · 1",
     "color": "blue",
     "bold": true
    },
@@ -163,42 +163,31 @@
     ]
    },
    {
-    "out": "## Supply chain",
+    "out": "## Supply chain · 2",
     "color": "blue",
     "bold": true
+   },
+   {
+    "segs": [
+     [
+      "### → ",
+      "blue",
+      true
+     ],
+     [
+      "steward sc plan, then steward sc upgrade",
+      "ans"
+     ]
+    ]
    },
    {
     "out": "- brew: python@3.15 3.15.1 -> 3.15.2 (3d old)"
    },
    {
-    "segs": [
-     [
-      "  → ",
-      "dim"
-     ],
-     [
-      "steward sc plan, then steward sc upgrade",
-      "ans"
-     ]
-    ]
-   },
-   {
     "out": "- brew: cloudflared 2026.10.3 -> 2026.10.5 (3d old)"
    },
    {
-    "segs": [
-     [
-      "  → ",
-      "dim"
-     ],
-     [
-      "steward sc plan, then steward sc upgrade",
-      "ans"
-     ]
-    ]
-   },
-   {
-    "out": "## Projects",
+    "out": "## Projects · 1",
     "color": "blue",
     "bold": true
    },
