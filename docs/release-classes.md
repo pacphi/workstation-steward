@@ -1,7 +1,10 @@
 # Release classes: what may skip the release-age gate
 
+![Revision 2](https://img.shields.io/badge/Revision-2-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
+
 > [!NOTE]
-> **Design, not built (D52).** This page proposes the model for review. Nothing here exists in the engine yet.
+> **Built (D52)**, except the weekly upstream watch and the maintainer runbook (*planned*, the next PR). The code is
+> `lib/updaters.js`; the schema by example is in `examples/supply-chain/host.toml`.
 
 The steward holds every new release for the release-age gate (`[policy] min_release_age_days`, 3 days by default) and
 keeps old installs for the soak after a change. Two exceptions exist today, each a special case: `always_current`
@@ -29,6 +32,10 @@ whether it waits for the gate. Updates the steward doesn't install itself (a dat
 | `always_current` | none | a reason (security fixes ship in nearly every release) | `always_current = […]` in `host.toml` |
 | `signed_data` | none | **all of:** signed by a key the updater pins, content-addressed, checked against the installed runtime before it lands, and backed up first. The runtime that reads the data stays `gated` | new |
 | `exception` | none until it expires | an advisory (GHSA, RustSec or OSV) or a written reason, and an expiry date | `[[security_exception]]` |
+
+A declared source has no release date the steward can read, so a `gated` `[[updater]]` that's behind is never applied
+by `steward sc upgrade`: the plan holds it, and you apply it yourself after review. An `exception` past its `expires`
+is `gated` again.
 
 `signed_data` is deliberately narrow. Code never qualifies, however it is signed: a signature proves who published it,
 not that the release is good, and the gate is what catches a bad release. Data qualifies because the runtime that reads
@@ -60,10 +67,13 @@ sha256 = "ee12cea9da10accad46fe3a562fb392a54870576347ee99d87425d428709f103"
 watch = "https://raw.githubusercontent.com/stuinfla/ruvnet-brain/main/kb/forge-update.mjs"   # the maintainer's watch
 ```
 
+- **`check`** is read-only and answers by its exit status: 0 = current, 10 = behind, anything else = it couldn't
+  tell (offline, say), which is reported, never taken as behind.
 - **`steward sc audit`** runs each `check` (read-only) and reports a source that's behind, with its class.
 - **`steward sc plan`** lists what `upgrade` would run and why each is allowed: "signed_data: skips the gate".
-- **`steward sc upgrade`** asks, runs `apply`, refuses unless `require_output` appears, and writes a receipt
-  (the before and after identities, the class, the command's output).
+- **`steward sc upgrade`** asks, checks the pin, copies the `backup` paths, runs `apply`, refuses unless
+  `require_output` appears, checks the pin again, and writes a receipt: what `check` printed before and after (the
+  identities), the class, and the end of the command's output.
 - **`pin`** is checked before `apply` (the key that checks this update is the one you reviewed) and after it (the update
   didn't bring a different key). Brain's corpus bundle replaces its own updater, key included, so without the pin a
   signed update could rotate the key unnoticed. After a change the steward puts its copy back and stops; a key
@@ -126,7 +136,8 @@ table), so it can't skip a gate it doesn't know about.
 
 ## Docs that change when it's built
 
-The schema is documented with the code, never ahead of it. The implementation PR updates each of these:
+The schema is documented with the code, never ahead of it. The implementation PR updated each of these; the last
+three come with the watch:
 
 | Doc | What it gains |
 | --- | --- |

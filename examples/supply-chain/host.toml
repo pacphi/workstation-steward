@@ -1,9 +1,11 @@
 # Your host policy (D40). The audit reads it on top of the engine's shared defaults (supply-chain/host-defaults.toml
 # in the engine): the browsers that are never held, apps with a bundled Node, the Electron support window, distrusted
-# root certificates and indicators of compromise from published incidents. A release brings the newest of those.
+# root certificates, indicators of compromise from published incidents, and update sources the steward runs for tools it
+# doesn't install itself ([[updater]]). A release brings the newest of those.
 # `steward sc host` shows the merged policy and where each value came from. Empty is fine.
 
-# Add your own: they join the defaults. A [[distrusted_root]] or [[ioc]] with a default's name replaces that default.
+# Add your own: they join the defaults. A [[distrusted_root]], [[ioc]] or [[updater]] with a default's name replaces
+# that default.
 # vendored_node = ["/Applications/Some App.app/Contents/Resources/node"]
 #
 # [[ioc]]
@@ -18,6 +20,32 @@
 # [off]
 # always_current = ["firefox"]
 # ioc = ["Plex2Shell (CVE-2026-96652..96656) miner/proxy payloads"]
+# updater = ["brain-kb"]
+
+# Release classes (D52): each update source has one, and it says whether the source waits for the release-age gate.
+#   gated           the default: waits (a declared source has no release date, so one that's behind waits for you)
+#   always_current  never held: nearly every release is a security release (the browsers in always_current above)
+#   signed_data     data, never code: signed by a key the updater pins, content-addressed, checked against the gated
+#                   runtime that reads it. Skips the gate, and starts no soak; its copies are kept for soak_days
+#   exception       skips the gate until expires (an advisory, or a written reason), then is gated again
+# Every class gets a backup before it changes anything, and a receipt. `steward sc audit` runs each `check`, `plan`
+# lists what `upgrade` would apply and why, and `steward sc rollback <receipt>` puts the copies back.
+# [[updater]]
+# name = "some-signatures"
+# class = "signed_data"
+# when = "~/.local/share/some-tool/update.sh"   # active only where this exists
+# why = "what you reviewed: who signs it, how the updater checks it, why the gate can't apply"
+# check = "~/.local/share/some-tool/update.sh --check"   # exit 0 = current, 10 = behind, anything else = can't tell
+# apply = "~/.local/share/some-tool/update.sh --apply"
+# require_output = "signature verified"         # refused unless its output says this
+# backup = ["~/.local/share/some-tool/db"]      # copied first (an APFS clone on macOS)
+# self_update_off = { file = "~/.local/share/some-tool/auto-update", value = "off" }   # the audit checks it stays off
+# expires = "2026-11-30"                        # an exception only
+#
+# [updater.pin]   # signed_data must have one: the signing key the updater checks with, as you reviewed it
+# file = "~/.local/share/some-tool/update.sh"
+# match = "-----BEGIN PUBLIC KEY-----[\\s\\S]*?-----END PUBLIC KEY-----"   # the text whose sha256 must match
+# sha256 = "<sha256 of that text>"
 
 # A version younger than the release-age gate is taken only when it is the first patched release for an advisory
 # listed in the GitHub Advisory DB, RustSec or OSV. Each entry names the exact version and expires.

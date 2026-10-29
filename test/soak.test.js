@@ -30,3 +30,11 @@ test('soak: what each receipt changed, counted from files or from entries', () =
   assert.equal(w['repin-20261020T000000'], '0 file(s)');
   assert.equal(w['onboard-x-20261021T000000'], 'a change');
 });
+
+test('soak: a declared updater starts one, except signed_data (D52: a daily source would keep it running for good)', () => {
+  receipt('updater-kb-20261027T000000', { kind: 'updater-signed_data', at: '2026-10-27T00:00:00Z' });
+  receipt('updater-sigs-20261027T010000', { kind: 'updater-always_current', at: '2026-10-27T01:00:00Z' });
+  const kinds = S.events().map(e => e.kind);
+  assert.ok(kinds.includes('updater-always_current'));
+  assert.ok(!kinds.includes('updater-signed_data'));
+});

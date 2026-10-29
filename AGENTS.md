@@ -86,6 +86,9 @@ values and where the instance is. Paths below are relative to the instance unles
 - **Exception:** the first patched release for an advisory may skip the gate. How to check it (three advisory
   databases) is in `skills/pr-consolidation/rules.md`; on a machine, record it in `host.toml` with an expiry.
 - Browsers (`always_current` in `host.toml`) are never held: nearly every release carries security fixes.
+- **Signed data** (`class = "signed_data"` on an `[[updater]]`, D52) skips the gate too: data, never code, signed by a
+  key the entry pins, checked against the gated runtime that reads it. Its `why`, `require_output` and `pin` change only
+  in a reviewed PR (`docs/release-classes.md`).
 - **Majors are deliberate.** A 0.x minor bump counts as a major; the exception is `golang.org/x/*`.
 
 ### Changing a project's files

@@ -3,10 +3,21 @@
 # running (steward.toml [policy] soak_days after the last upgrade, Node patch, hybrid install or repin), if an
 # npm -g hybrid exists only in a Node about to be removed, or if a project's launcher config points into an
 # install about to be removed, dry-runs, then asks.
+# A full prune also removes the copies a declared updater's apply kept (D52) once they're older than soak_days.
 # Usage: prune [tool...]      DRY_RUN=1 prune (reports a running soak and checks the rest)
 #        STEWARD_SKIP_SOAK=1 prune   prune before the soak ends (the other checks still apply)
 # shellcheck source=lib/lib.sh
 source "$(dirname "$0")/../../lib/lib.sh"
+
+# Each copy is judged by its own age, so this runs whatever the soak says, and before mise's list can end the run.
+if [[ $# -eq 0 ]]; then
+  copies="$(node "${REPO_ROOT}/lib/updaters.js" --prunable)"
+  if [[ -n "${copies}" ]]; then
+    log "declared updaters' copies older than the soak"
+    while IFS= read -r line; do printf '  %s\n' "${line}"; done <<<"${copies}"
+    if confirm "Delete these copies?"; then run node "${REPO_ROOT}/lib/updaters.js" --prune >/dev/null; else log "kept"; fi
+  fi
+fi
 
 log "prunable (mise ls --prunable)"
 list="$(mise ls --prunable "$@" 2>/dev/null || true)"

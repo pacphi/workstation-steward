@@ -80,8 +80,30 @@ test('plan: takes what is old enough or excepted, holds the rest, and says what 
     'take   npm:renovate 44.176.1 -> 44.181.5',
     'take   mise 2026.10.18 -> 2026.10.19 (3d old)',
   ]);
-  assert.deepEqual(p, { formulae: ['git', 'openssl@3'], casks: [], tools: ['gh', 'npm:renovate'], miseSelf: '2026.10.19' });
-  assert.deepEqual(sections, ['Homebrew formulae', 'Homebrew casks (self-updating casks are left to their own updaters)', 'mise tools (mise already applies minimum_release_age)', "mise itself (D38: the gate and advisories decide; Homebrew's mise is judged with the formulae)"]);
+  assert.deepEqual(p, { formulae: ['git', 'openssl@3'], casks: [], tools: ['gh', 'npm:renovate'], updaters: [], miseSelf: '2026.10.19' });
+  assert.deepEqual(sections, ['Homebrew formulae', 'Homebrew casks (self-updating casks are left to their own updaters)', 'mise tools (mise already applies minimum_release_age)', 'Declared updaters ([[updater]]: signed_data, always_current and an unexpired exception skip the gate)', "mise itself (D38: the gate and advisories decide; Homebrew's mise is judged with the formulae)"]);
+});
+
+test('plan: a declared updater that is behind is taken when its class skips the gate, held when gated; a changed key or an unclear check is skipped (D52)', async () => {
+  const u = (name, cls, extra = {}) => ({ name, class: cls, why: 'w', check: `check-${name}`, apply: 'a', backup: ['b'], expires: '2026-11-01', ...extra });
+  const c = ctx({
+    'brew --prefix': '/opt/homebrew\n', 'brew list --formula --versions': '', 'brew list --formula --full-name': '', 'brew list --cask --versions': '', 'mise outdated --bump --json': '{}',
+    'bash -c check-data': { status: 10, stdout: 'BEHIND\n' }, 'bash -c check-always': { status: 10, stdout: '' }, 'bash -c check-exc': { status: 10, stdout: '' },
+    'bash -c check-expired': { status: 10, stdout: '' }, 'bash -c check-current': { status: 0, stdout: '' }, 'bash -c check-offline': { status: 2, stdout: '' },
+  });
+  c.policy.updater = [u('data', 'signed_data'), u('always', 'always_current'), u('exc', 'exception'), u('expired', 'exception', { expires: '2026-10-26' }), u('current', 'signed_data'), u('offline', 'signed_data'),
+    u('rotated', 'signed_data', { pin: { file: path.join(ROOT, 'missing.mjs'), match: 'x', sha256: 'ab' } })];
+  const lines = [];
+  const p = await plan(c, { section: () => {}, line: l => lines.push(l), warn: () => {} });
+  assert.deepEqual(p.updaters, ['data', 'always', 'exc']);
+  assert.deepEqual(lines.filter(l => !l.includes(' mise ')), [
+    'take   data (signed_data: skips the gate)',
+    'take   always (always_current: never held)',
+    'take   exc (exception: skips the gate until it expires)',
+    'hold   expired (gated: a declared source has no release date; apply it yourself after review)',
+    "skip   offline (its check couldn't tell: exit 2)",
+    'skip   rotated (its signing key changed: steward sc audit)',
+  ]);
 });
 
 test.after(() => fs.rmSync(ROOT, { recursive: true, force: true }));

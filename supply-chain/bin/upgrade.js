@@ -5,9 +5,10 @@
 //     gate (steward.toml [policy]), or that match an unexpired host.toml security_exception;
 //   - mise tools (mise holds them to minimum_release_age; majors are skipped and listed; Node goes through node-patch;
 //     AI tooling's own tools follow its qualification);
+//   - declared updaters ([[updater]], D52) that are behind and whose class may skip the gate (lib/updaters.js);
 //   - mise itself, when it is the standalone build (bin/mise-self.js chooses; bin/mise-self-update applies, last).
 // Applying asks first, then runs the Bash steps that back up, record and verify: brew upgrade, bin/upgrade-tool per
-// mise tool, bin/mise-self-update, bin/verify. Never touches app updaters, the App Store, macOS, trust stores or Docker;
+// mise tool, lib/updaters.js --apply per declared updater, bin/mise-self-update, bin/verify. Never touches app updaters, the App Store, macOS, trust stores or Docker;
 // `steward sc audit` lists those. Off a terminal it prints what the Bash upgrade printed, line for line (compared on
 // the owner's Mac before the switch, R5c PR 3); on a terminal the planning shows as steps (lib/ui.js).
 // Usage: upgrade.js [--plain]     (DRY_RUN=1: the plan and its commands only; nothing changes)
@@ -20,6 +21,7 @@ const mise = require('../../lib/providers/mise.js');
 const { ui: makeUi } = require('../../lib/ui.js');
 const { ageDays, securityException } = require('../checks/index.js');
 const { context } = require('./audit.js');
+const U = require('../../lib/updaters.js');
 
 const SC = path.join(__dirname, '..');
 const DRY = process.env.DRY_RUN === '1';
@@ -49,11 +51,11 @@ function crossesMajor(current, target) {
   return c !== t && /^[0-9]/.test(current);
 }
 
-// plan(ctx, out) — {formulae, casks, tools, miseSelf}: what applying would take. out.section(name, title) starts a
+// plan(ctx, out) — {formulae, casks, tools, updaters, miseSelf}: what applying would take. out.section(name, title) starts a
 // part; out.line(text) is one of its lines (take, hold, skip, manual, ai)
 async function plan(ctx, out) {
   const min = ctx.cfg.policy.min_release_age_days;
-  const p = { formulae: [], casks: [], tools: [], miseSelf: '' };
+  const p = { formulae: [], casks: [], tools: [], updaters: [], miseSelf: '' };
 
   out.section('Homebrew formulae', 'Homebrew formulae');
   for (const { name, have, want } of await brew.outdated(ctx, 'formula')) {
@@ -81,6 +83,17 @@ async function plan(ctx, out) {
     if (aiOwned.has(name)) { out.line(`ai     ${name} ${have} -> ${want} (AI tooling owns it: steward ai drift)`); continue; }
     if (crossesMajor(have, want)) out.line(`skip   ${name} ${have} -> ${want} (major: upgrade deliberately with steward sc upgrade-tool ${name} <version>)`);
     else { p.tools.push(name); out.line(`take   ${name} ${have} -> ${want}`); }
+  }
+
+  out.section('Declared updaters', 'Declared updaters ([[updater]]: signed_data, always_current and an unexpired exception skip the gate)');
+  for (const u of U.active(ctx.policy)) {
+    const cls = U.classOf(u, ctx.today);
+    if (!U.pinState(u).ok) { out.line(`skip   ${u.name} (its signing key changed: steward sc audit)`); continue; }
+    const c = await U.check(u, ctx.run);
+    if (c.state === 'current') continue;
+    if (c.state === 'unknown') out.line(`skip   ${u.name} (its check couldn't tell: exit ${c.status})`);
+    else if (cls === 'gated') out.line(`hold   ${u.name} (gated: a declared source has no release date; apply it yourself after review)`);
+    else { p.updaters.push(u.name); out.line(`take   ${u.name} (${cls}: ${U.SKIPS[cls]})`); }
   }
 
   out.section('mise itself', "mise itself (D38: the gate and advisories decide; Homebrew's mise is judged with the formulae)");
@@ -133,21 +146,25 @@ async function main() {
   const p = await plan(ctx, out);
   finish();
 
-  if (!p.formulae.length && !p.casks.length && !p.tools.length && !p.miseSelf) { log('nothing eligible; see steward sc audit for held and manual items'); return 0; }
-  log(`plan: ${p.formulae.length} formula(e), ${p.casks.length} cask(s), ${p.tools.length} mise tool(s)${p.miseSelf ? `, mise ${p.miseSelf}` : ''}`);
+  if (!p.formulae.length && !p.casks.length && !p.tools.length && !p.updaters.length && !p.miseSelf) { log('nothing eligible; see steward sc audit for held and manual items'); return 0; }
+  log(`plan: ${p.formulae.length} formula(e), ${p.casks.length} cask(s), ${p.tools.length} mise tool(s)${p.updaters.length ? `, ${p.updaters.length} declared updater(s)` : ''}${p.miseSelf ? `, mise ${p.miseSelf}` : ''}`);
   if (!(await ask('Apply this plan?'))) { console.error('\x1b[1;31mERROR\x1b[0m aborted'); return 1; }
 
   if (p.formulae.length) await step('brew', ['upgrade', '--formula', ...p.formulae]);
   if (p.casks.length) await step('brew', ['upgrade', '--cask', ...p.casks]);
   // bin/upgrade-tool backs up config + lock, upgrades with --no-prune, verifies and locks each tool, and honours DRY_RUN
   for (const t of p.tools) await script(path.join(SC, 'bin', 'upgrade-tool'), [t]);
+  // lib/updaters.js checks the pin again, backs up, applies, checks the output and the pin, writes a receipt; honours DRY_RUN
+  let failed = 0;
+  for (const n of p.updaters) if ((await script('node', [path.join(SC, '..', 'lib', 'updaters.js'), '--apply', n])) !== 0) failed++;
   // Last, so the tools above upgrade under the mise that planned them; it backs up the binary, verifies and records
   if (p.miseSelf) await script(path.join(SC, 'bin', 'mise-self-update'), [p.miseSelf]);
 
   if (DRY) { log('dry run: nothing changed'); return 0; }
+  if (failed) console.error(`\x1b[1;31mERROR\x1b[0m ${failed} declared updater(s) failed; each printed its receipt and rollback`);
   if ((await script(path.join(SC, 'bin', 'verify'), [])) !== 0) { console.error('\x1b[1;31mERROR\x1b[0m verification failed; mise: steward sc rollback; Homebrew: brew reinstall the previous bottle'); return 1; }
   log('done. Remaining manual items: steward sc audit');
-  return 0;
+  return failed ? 1 : 0;
 }
 
 module.exports = { plan, crossesMajor };

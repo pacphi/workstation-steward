@@ -136,8 +136,17 @@ When a release fixes something a local patch or workaround covers (each is liste
 
 ## Brain
 
-The knowledge-base update is deliberately deferred: it needs its own qualification, and an agent never runs it. A Brain package bump through mise is separate. It's AI-owned, so it
-arrives as an `ai-tooling` Renovate PR only when ticked on the dashboard.
+Brain has three parts, each updated its own way (D52, [`release-classes.md`](../../docs/release-classes.md)):
+
+- **The CLI** (`npm:ruvnet-brain` in mise) is `gated`. It's AI-owned, so it arrives as an `ai-tooling` Renovate PR
+  only when ticked on the dashboard.
+- **The runtime** (the plugin and hooks in `~/.cache/ruvnet-brain`) is `gated`: the pinned CLI's installer, for a
+  release past the gate.
+- **The knowledge base** (`kb/`) is a declared `signed_data` source, `brain-kb` in the engine's host defaults.
+  `steward sc audit` reports it behind; `steward sc upgrade` applies it after the owner's yes, with a copy of `kb/`
+  and a receipt, and refuses a fallback source or a changed signing key. An agent runs only the read-only audit and
+  plan. An old updater can fail on a newer bundle: if `apply` fails, update the runtime first (it's gated), then try
+  again. `steward sc rollback <receipt>` puts the old `kb/` back.
 
 ## Hook timeouts in milliseconds
 
