@@ -8,7 +8,7 @@ const os = require('os');
 const path = require('path');
 const { audit, localDay } = require('../supply-chain/bin/audit.js');
 const { ui: makeUi } = require('../lib/ui.js');
-const { verLt, appVersion, appBehind, ageDays } = require('../supply-chain/checks/index.js');
+const { verLt, appVersion, appBehind, ageDays, caskIds, pickCask } = require('../supply-chain/checks/index.js');
 const brew = require('../lib/providers/brew.js');
 
 const ROOT = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'steward-audit-')));
@@ -259,4 +259,33 @@ test('terminal: alerts head the Summary; a finding without facts is listed whole
   assert.match(rest[4], /^renovate\.json minimumReleaseAge +unset +→ +3 day\(s\)$/, 'two rows under one heading');
   assert.deepEqual(rest.slice(5), ['other: each line says what to do', 'host.toml odd_key is not a known setting',
     '1 check(s) have more lines: steward sc audit --verbose'], rest.join('\n'));
+});
+
+// two casks whose app is Copilot.app, as Homebrew's API has them (2026-10-29): Copilot Money's names its own IDs
+const MONEY = { token: 'copilot-money', version: '6.7.0,336-0bbb0dcd', artifacts: [{ app: ['Copilot.app'] }, { zap: [{ trash: ['~/Library/Application Scripts/com.copilot.production*', '~/Library/Group Containers/group.com.copilot.production', '~/Library/Preferences/com.copilot.production.plist'] }] }] };
+const OWN = { token: 'copilot-own', version: '1.0', artifacts: [{ app: ['Copilot.app'] }, { uninstall: [{ quit: 'com.microsoft.autoupdate2', pkgutil: 'com.microsoft.m365copilot' }] }] };
+const BARE = { token: 'copilot-bare', version: '1.0', artifacts: [{ app: ['Copilot.app'] }] };
+
+test('caskIds and pickCask: a cask from the app\'s vendor; one naming no IDs on its name alone; another vendor\'s is not it', () => {
+  assert.deepEqual(caskIds(MONEY), ['com.copilot.production']);
+  assert.deepEqual(caskIds(OWN), ['com.microsoft.autoupdate2', 'com.microsoft.m365copilot']);
+  assert.deepEqual(caskIds(BARE), []);
+  assert.equal(pickCask([MONEY, OWN], 'com.microsoft.m365copilot').cask, OWN, 'the vendor\'s cask, though listed second');
+  assert.equal(pickCask([MONEY, BARE], 'com.microsoft.m365copilot').cask, BARE, 'no IDs: the name is all there is');
+  assert.equal(pickCask([MONEY], 'com.microsoft.m365copilot').other.c, MONEY);
+  assert.equal(pickCask([MONEY], 'com.copilot.production').cask, MONEY);
+  assert.equal(pickCask([MONEY], '').cask, MONEY, 'no bundle ID read: as before');
+});
+
+test('apps: an app is not compared with another product\'s cask of the same name (Microsoft 365 Copilot vs Copilot Money)', async () => {
+  const apps = path.join(ROOT, 'Applications-copilot');
+  put(path.join(apps, 'Copilot.app', 'Contents', 'Info.plist'), '');
+  const plist = `defaults read ${path.join(apps, 'Copilot.app', 'Contents', 'Info.plist')}`;
+  const c = ctx({ ...BREW, [`${plist} CFBundleShortVersionString`]: '156.0.4314.41\n', [`${plist} CFBundleIdentifier`]: 'com.microsoft.m365copilot\n', 'npm view electron dist-tags.latest': '40.2.0\n' }, { appDirs: [apps] });
+  put(path.join(c.cache, 'cask-20261027.json'), JSON.stringify([MONEY]));
+  const w = lines();
+  const r = (await audit(c, { only: ['apps'], write: w.write }));
+  assert.deepEqual(r.actions, []);
+  assert.ok(!w.out.some(l => l.includes('held')), w.out.join('\n'));
+  assert.ok(w.out.includes('  info   Copilot (com.microsoft.m365copilot): cask copilot-money is another app of that name (com.copilot.production); not compared'), w.out.join('\n'));
 });
