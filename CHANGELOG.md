@@ -3,6 +3,13 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.8.1](https://github.com/pacphi/workstation-steward/compare/v0.8.0...v0.8.1) (2026-10-30)
+
+
+### Maintenance
+
+* rebuild known-units after qualifying ruflo 3.63.4 ([#55](https://github.com/pacphi/workstation-steward/issues/55)) ([8e68db1](https://github.com/pacphi/workstation-steward/commit/8e68db13580a8abe926e9f966ea7acf57907b7a7))
+
 ## [0.8.0](https://github.com/pacphi/workstation-steward/compare/v0.7.0...v0.8.0) (2026-10-30)
 
 
