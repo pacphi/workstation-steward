@@ -38,7 +38,7 @@ from the notes of [the background refresh](#the-background-refresh).
 | Source | Where |
 | --- | --- |
 | The soak | the receipts under `[paths] state` (the same as `steward sc soak`) |
-| Your config repo | `git status` and the commits GitHub has, **as of the last fetch** (`steward review` fetches) |
+| Your config repo | `git status` and the commits GitHub has, **as of the last fetch** (`steward review` and the background refresh fetch) |
 | The npm -g hybrids | each receipt in `<state>/hybrids/` against `supply-chain/hybrids.toml` |
 | The shared AQE runtime | what `current` points at, the `releases/` folder and `[aqe]` in `ai-tooling/ai-tooling.toml` (AI tooling add-on) |
 | Every receipt and backup | `<state>/backups/*` |
