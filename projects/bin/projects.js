@@ -25,17 +25,8 @@ const MAY = {
 };
 const SHORT = { tracked: 'T', ignored: 'i', untracked: 'u', absent: '-', 'absent-ignored': '_', 'not-git': 'n' };
 
-function state() {
-  const reg = P.loadRegistry();
-  const known = new Map(reg.map(r => [r.abs, r]));
-  const found = P.discover();
-  const onDisk = new Set(found.map(f => f.path));
-  return {
-    reg, found,
-    fresh: found.filter(f => !known.has(f.path) && !(f.kind === 'worktree' && P.WORKTREES !== 'prompt')),
-    gone: reg.filter(r => !onDisk.has(r.abs) && !P.exists(r.abs)),
-  };
-}
+// state() — the registry, what is on disk, what's new and what's gone (lib/projects.js newAndGone)
+const state = opts => P.newAndGone(opts);
 
 function fmtTools(list) { return list && list.length ? list.join(',') : '-'; }
 
@@ -48,9 +39,13 @@ if (cmd === 'banner') {
   if (gone.length) parts.push(`${gone.length} registered project(s) no longer on disk`);
   if (parts.length) console.log(`\x1b[1;33m!!\x1b[0m ${parts.join('; ')} — steward projects scan\n`);
 } else if (cmd === 'scan') {
-  const { fresh, gone, reg } = state();
+  // the walk takes seconds on a big tree: a stage on stderr names the folder it's searching (lib/progress.js)
+  const pg = require('../../lib/progress.js').progress(1);
+  const st = pg.stage(`searching ${P.ROOTS.map(P.tilde).join(', ')}`);
+  const { fresh, gone, reg, found } = state({ onDir: d => st.detail(P.tilde(d)) });
+  st.done(`${found.length} project(s), ${fresh.length} new, ${gone.length} gone`);
   if (json) { console.log(JSON.stringify({ fresh: fresh.map(f => ({ ...f, path: P.tilde(f.path), parent: f.parent && P.tilde(f.parent), evidence: P.evidence(f.path).ev })), gone: gone.map(g => g.path) }, null, 1)); process.exit(0); }
-  console.log(`registry: ${reg.length} project(s); discovered: ${state().found.length}`);
+  console.log(`registry: ${reg.length} project(s); discovered: ${found.length}`);
   if (!fresh.length && !gone.length) { console.log('nothing new'); process.exit(0); }
   if (fresh.length) {
     console.log(`\nnew (${fresh.length}) — needs a decision (then steward projects onboard <path>):`);
@@ -65,7 +60,7 @@ if (cmd === 'banner') {
     for (const g of gone) console.log(`  ${g.path}`);
   }
 } else if (cmd === 'list') {
-  const { reg } = state();
+  const reg = P.loadRegistry();
   const rows = reg.map(r => {
     const ev = P.exists(r.abs) ? P.evidence(r.abs).ev : null;
     return { path: r.path, kind: r.kind, decision: r.decision, ai: r.ai || [], ai_seed: r.ai_seed || [], shows: ev ? TOOLS.filter(t => ev[t].length) : null, stack: ev ? P.facets(r.abs).label : null };

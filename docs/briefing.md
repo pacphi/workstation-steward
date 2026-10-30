@@ -1,6 +1,6 @@
 # The briefing: `steward brief`
 
-![Revision 1](https://img.shields.io/badge/Revision-1-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 2](https://img.shields.io/badge/Revision-2-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 **One question, answered in under a second: what needs me, and what do I run next?** `steward brief` reads what is
 already on your disk and names **one** next step, with its exact command. When nothing needs you, it says so in one
@@ -32,25 +32,28 @@ the receipt's way back.
 
 ## What it reads
 
-Everything is local. It uses no network and starts no slow scan.
+The briefing itself is local: it uses no network and starts no slow scan. What needs the network or a long walk comes
+from the notes of [the background refresh](#the-background-refresh).
 
 | Source | Where |
 | --- | --- |
 | The soak | the receipts under `[paths] state` (the same as `steward sc soak`) |
-| Your config repo | `git status` and the commits GitHub has, **as of the last fetch** (`steward review` fetches) |
+| Your config repo | `git status` and the commits GitHub has, **as of the last fetch** (`steward review` and the background refresh fetch) |
 | The npm -g hybrids | each receipt in `<state>/hybrids/` against `supply-chain/hybrids.toml` |
 | The shared AQE runtime | what `current` points at, the `releases/` folder and `[aqe]` in `ai-tooling/ai-tooling.toml` (AI tooling add-on) |
 | Every receipt and backup | `<state>/backups/*` |
 | Projects behind the AI tools | what the last full `steward projects reconcile --all` noted (it never plans again) |
 | The release-age gate | the queue the last `steward review` saved |
 | The weekly review | when the last one ran |
+| The background refresh's notes | `<state>/brief/refresh.json`: your config repo fetched, the newest steward on npm, new projects, AI tooling drift, the active Node |
 
-It writes nothing, not even a record of its own run.
+The briefing writes nothing itself. After it prints, it may start the background refresh, which writes only its own
+notes.
 
 ### Old caches wait
 
-Two of these are caches another command wrote: the gate's queue (`steward review`) and the projects behind (the last
-full `steward projects reconcile --all`). When a cache is older than `stale_hours`, its finding says "as of" when it
+Three of these are caches: the gate's queue (`steward review`), the projects behind (the last full
+`steward projects reconcile --all`) and the background refresh's notes. When a cache is older than `stale_hours`, its finding says "as of" when it
 was written, and it becomes a **wait**: it is shown, but it is never the next step. Run the command that writes it to
 bring it up to date. Set the number in your `steward.toml`; `0` means a cache never goes stale:
 
@@ -79,11 +82,14 @@ Each check is a **detector**. A detector looks at what was read and either finds
 | `aqe-partial` | fix | `releases/<r>.partial` in the AQE runtime | Remove it, then promote again |
 | `repin-unfinished` | fix | Maintainers only: the release channel isn't at the commit the last repin receipt names | Finish the repin, or its rollback |
 | `aqe-vs-policy` | act | AQE promoted but `ai-tooling.toml` not updated, or the other way round | The matching step: update the policy, promote, or qualify first |
-| `hybrid-vs-policy` | act | A hybrid behind, ahead of or missing from `hybrids.toml`, or GitHub has a newer `hybrids.toml` | `steward sc install-hybrids`, after the config sync when one is waiting |
+| `hybrid-vs-policy` | act | A hybrid behind, ahead of or missing from `hybrids.toml`, or GitHub has a newer `hybrids.toml`, or a hybrid installed for another Node than the active one (from the refresh) | `steward sc install-hybrids`, after the config sync when one is waiting |
 | `config-behind`, `config-changed`, `config-ahead`, `config-pr` | act, do | Your config repo: newer on GitHub (with the files that changed), changed here, not pushed, or a pull request waiting | `steward config sync` |
 | `soak` | do, wait | The soak ended, so old installs can be pruned (or it is still running: wait) | The prune, after any hybrid is back in step |
 | `projects-behind` | do | Projects behind the qualified AI tools | `steward projects reconcile --all` |
+| `projects-new` | do | New projects under your roots, or registered ones gone (from the refresh) | `steward projects scan` |
+| `ai-drift` | do | AI tooling drift the other checks don't cover (from the refresh) | The command the drift line names, else `steward ai drift` |
 | `gate-cleared` | do | Updates the gate held that have cleared it since the last review | `steward review` |
+| `release-newer` | do, wait | A newer steward on npm, past the release-age gate (from the refresh). Before the gate clears it is a wait. Never for a dev clone | `steward sc upgrade-tool npm:workstation-steward`; for the release channel's worktree, `/steward-maintain release X repin X` |
 | `review-due` | do | The weekly review is due | `steward review` |
 
 A started step is not called unfinished for its first 15 minutes, since it may still be running. A stopped run that a
@@ -102,6 +108,60 @@ next: steward config sync, then steward sc install-hybrids, then DRY_RUN=1 stewa
 - **Sync before install.** If GitHub has a newer `hybrids.toml`, installing first would install the old policy.
 - **Install before prune.** `steward sc prune` refuses until every hybrid has a matching receipt.
 
+## The background refresh
+
+Some questions need the network or a long walk: is GitHub ahead of your config, is there a newer steward, are there
+new projects. The briefing doesn't ask them itself, so it stays under a second. A **background refresh** asks them
+now and then, and leaves its answers in `<state>/brief/refresh.json` for the next briefing (D57 in
+[`architecture.md`](architecture.md#decisions)).
+
+**When it runs.** After `steward brief` prints, it checks how old the notes are. When they're older than
+`refresh_hours`, it starts the refresh in the background and returns at once. You never wait for it.
+`steward brief --refresh` runs it now instead, with a progress line for each step, then shows the briefing.
+
+**What it does.** Each step only reads:
+
+| Step | What it asks | Time limit |
+| --- | --- | --- |
+| `config` | `git fetch` in your config repo, when it is a Git repository of its own with an upstream. No prompts: `GIT_TERMINAL_PROMPT=0`, and ssh in batch mode. A fetch changes only `FETCH_HEAD` and what Git knows of GitHub's branches, never your branch or your files | 30 s |
+| `npm` | the newest `workstation-steward` on npm, and when it was published | 20 s |
+| `projects` | new projects under your roots, and registered ones gone (the projects add-on) | 30 s |
+| `drift` | `steward ai drift --offline --json`, its DRIFT and WARN lines (the AI tooling add-on) | 60 s |
+| `node` | `mise current node`, from your home folder: the Node the hybrids should be installed for | 5 s |
+
+**Its limits.**
+
+- It runs at low priority, detached from your terminal, and stops after 120 s in all.
+- A step that fails or runs out of time is written down with its error, and the other steps still run.
+- It writes one file, its notes, by writing a temporary file and renaming it. Only you can read it (mode 0600).
+  The tools it asks (git, npm, mise) keep their own caches and logs, as they do whenever you run them.
+- A lock file (`refresh.lock`) keeps a second one from starting. A lock older than 10 minutes, or whose process is
+  gone, was left by a run that died, and the next refresh takes it over.
+
+**What it never runs:** a full reconcile plan (that writes `seen.json`), the release-age gate's queue (that moves
+the review's anchor), `steward sc audit`, `gh`, or anything that installs, upgrades or fixes.
+
+**What it never starts under:** `refresh_hours = 0`, or `STEWARD_NO_REFRESH` or `CI` set in the environment.
+
+**Findings that go quiet when you act.** The notes are up to `refresh_hours` old, so a finding from them must not
+nag after you've dealt with it:
+
+- `release-newer` compares with the steward running now, so it goes away once you upgrade.
+- `projects-new` says nothing once `projects/registry.toml` changed after the count: a decision you recorded, or a
+  config sync that brought one. The next refresh counts again.
+- `ai-drift` drops to a wait when a steward command made a backup after the check, since that command may have
+  fixed it.
+- The Node check in `hybrid-vs-policy` judges only receipts written before the refresh looked at Node. After a
+  `steward sc node-patch`, the cached Node may be the old one.
+
+**Settings**, in your `steward.toml`:
+
+```toml
+[brief]
+refresh_hours = 6   # the default; 0 = never, so nothing touches the network unprompted
+fetch = true        # the default; false skips the git fetch of your config repo
+```
+
 ## Output
 
 | Command | What you get |
@@ -109,6 +169,7 @@ next: steward config sync, then steward sc install-hybrids, then DRY_RUN=1 stewa
 | `steward brief` | At most three lines: what happened, `next: <command>`, and `+N more` when there is more. One quiet line when nothing needs you |
 | `steward brief --all` | Every finding, each with its command and why |
 | `steward brief --json` | The same as data: `{v, at, next, more, findings}` |
+| `steward brief --refresh` | The background refresh run now, with progress, then the briefing |
 
 `more` counts the findings besides `next`; when `next` is null, they are all waits. Each finding has an `id`, a
 `severity`, a stable `key` (it changes only when what it points at changes), the `text`, the
@@ -128,7 +189,9 @@ for its half-finished states**, with a test (`AGENTS.md`).
 1. Write down the evidence the command leaves when it stops midway: a receipt field (`complete: false`,
    `outcome: "started"`), a folder, a link.
 2. If `facts()` in `lib/brief.js` doesn't read it yet, add the read there. Reads only: local files and local `git`,
-   no network, no plans that walk every project.
+   no network, no plans that walk every project. Anything that needs the network or a long walk becomes a step in
+   `lib/refresh.js`, with its own time limit, and the detector reads its notes (`fromRefresh`), "as of" when they're
+   old.
 3. Add an entry to `DETECTORS`: an `id`, a `severity`, any `after`, and `check(facts)`. It returns nothing, one
    finding or a list. For an unfinished receipt, add its kind to `recover()` instead.
 4. In `test/brief.test.js`, build the facts with the field names the real receipt uses, and show the detector both

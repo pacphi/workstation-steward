@@ -1,6 +1,6 @@
 # Start here
 
-![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 5](https://img.shields.io/badge/Revision-5-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 This guide is for you, after time away or new to the steward. It says why the repo exists, what it
 looks after, how to start, and what a normal week looks like. For how each part works, follow the links to the area
@@ -38,8 +38,11 @@ every change reversible. Without it, the decisions are scattered across tools' o
 - **Old versions stay 3 days after a change** (the soak), so going back is a link away, not a reinstall.
 - **GitHub is the record.** Updates arrive as Renovate PRs. Decisions that wait are issues labelled
   `owner-decision`. Files tracked in a repo change only through PRs.
-- **Nothing runs on its own.** No launchd or cron. The reminders are the `steward` banner and a weekly
-  GitHub issue.
+- **Nothing changes on its own; looking is automatic.** Checks that only read may run without being asked: the
+  `steward` banner, `steward brief`, and a short refresh in the background that looks at GitHub, npm and your
+  projects, and writes only its own notes. Anything that changes your machine, your projects or your config still
+  waits for your yes. There are no launchd or cron jobs. The reminders are the banner, the briefing and a weekly
+  GitHub issue (D57 in [`architecture.md`](architecture.md#decisions)).
 
 ## First run
 
@@ -53,8 +56,14 @@ On a new machine, or the first time on this one:
 5. `steward ai drift`: check the AI tooling against its policy. It only reads.
 6. `steward projects scan`, then `steward projects decide <path>` for each new project.
 7. `steward review`: the combined list. From now on this is the weekly habit.
+8. `steward brief`: the answer to "what's next". It names one next step with its exact command, or says nothing
+   needs you ([`briefing.md`](briefing.md)).
 
 ## The routine
+
+**Any time:** `steward brief` names the one next step, or says nothing needs you. It reads what is on your disk, and
+about every 6 hours it looks again in the background: your config repo on GitHub, the newest steward, new projects,
+AI tooling drift and the active Node. That look only reads.
 
 **Weekly, about 15 minutes.** `steward` says "review due" after 7 days (`[policy] review_days`). Each Monday a GitHub
 issue, "Steward review", lists what GitHub can see on its own: releases past the gate, advisories, and open bot
@@ -81,6 +90,7 @@ PRs and security alerts across the repos.
 | A new project appears (`steward` says so) | `steward projects scan`, then `decide`, then `onboard` or `offboard` |
 | A soak ends | `DRY_RUN=1 steward sc prune`, then `steward sc prune` |
 | Bot PRs pile up in a repo | the `pr-consolidation` skill ([fleet runbook](fleet/runbook.md)) |
+| A command stopped midway, or steps ran out of order | `steward brief`: it names the step that finishes the job, or the receipt's way back |
 
 **Monthly:** `steward sc plan`, then `steward sc upgrade` for everything past the gate. Then `steward ai drift` for AI tool
 releases waiting to be qualified, and `steward projects list` to recheck project decisions.

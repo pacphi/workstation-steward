@@ -18,7 +18,8 @@ const AIT = path.join(ROOT, 'ai-tooling');
 // git with no global or system config (no signing, no hooks), the same for the tests and for brief.js
 const GITCFG = path.join(ROOT, 'gitconfig');
 fs.writeFileSync(GITCFG, '[user]\n\tname = Test\n\temail = test@example.invalid\n[init]\n\tdefaultBranch = main\n');
-Object.assign(process.env, { GIT_CONFIG_GLOBAL: GITCFG, GIT_CONFIG_NOSYSTEM: '1', STEWARD_INSTANCE: INST, NO_COLOR: '1' });
+// STEWARD_NO_REFRESH: a briefing run here never starts the background refresh (test/refresh.test.js covers that)
+Object.assign(process.env, { GIT_CONFIG_GLOBAL: GITCFG, GIT_CONFIG_NOSYSTEM: '1', STEWARD_INSTANCE: INST, NO_COLOR: '1', STEWARD_NO_REFRESH: '1' });
 const git = (dir, ...a) => execFileSync('git', ['-C', dir, ...a], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 const write = (f, s) => { fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, s); };
 
@@ -56,7 +57,8 @@ const facts = (o = {}) => {
   return {
     now: NOW, state: STATE, instance: INST, engine: '/opt/steward', profiles: { ai_tooling: true, projects: true }, policy: {},
     soak: { running: false, awaitingPrune: false, until: null, newest: null }, hybrids: { policy: [], receipts: {} }, backups: [], aqe: null, repin: null,
-    reconcile: null, reconcileAt: null, gate: null, gateAt: null, staleHours: 48, review: { due: false, age: 1, days: 7 }, ...o, config, configNeeds: CR.needs(config),
+    reconcile: null, reconcileAt: null, gate: null, gateAt: null, staleHours: 48, review: { due: false, age: 1, days: 7 },
+    refresh: null, refreshAt: null, registryAt: null, channel: 'npm', engineVersion: '0.9.0', minAge: 3, ...o, config, configNeeds: CR.needs(config),
   };
 };
 const found = (f, id) => B.run(f).filter(x => x.id === id);
@@ -227,6 +229,23 @@ test('[brief] stale_hours in steward.toml: 48 by default, yours when set, and an
   assert.equal(B.facts().staleHours, 48);
 });
 
+test('[brief] refresh_hours and fetch in steward.toml: 6 and true by default, yours when set, the wrong type an error', () => {
+  const cfg = toml => {
+    const d = fs.mkdtempSync(path.join(ROOT, 'cfg-'));
+    fs.writeFileSync(path.join(d, 'steward.toml'), toml);
+    const r = spawnSync(process.execPath, [path.join(REPO, 'lib', 'config.js'), '--json'], { encoding: 'utf8', env: { ...process.env, STEWARD_INSTANCE: d } });
+    return { status: r.status, values: JSON.parse(r.stdout) };
+  };
+  assert.deepEqual(cfg('').values.brief, { stale_hours: 48, refresh_hours: 6, fetch: true });
+  const set = cfg('[brief]\nrefresh_hours = 0\nfetch = false\n');
+  assert.equal(set.status, 0);
+  assert.equal(set.values.brief.refresh_hours, 0);
+  assert.equal(set.values.brief.fetch, false);
+  assert.equal(cfg('[brief]\nfetch = "no"\n').status, 1);
+  assert.equal(cfg('[brief]\nrefresh_hours = -1\n').status, 1);
+  assert.equal(cfg('[brief]\nrefresh_hour = 6\n').status, 1);
+});
+
 test('unreadable: a source that can\'t be read is said, as a wait; the rest of the briefing stands', () => {
   const p = B.pick(B.run(facts({ errors: [{ what: 'the last reconcile check', message: 'no [launch] table' }], review: { due: true, age: 8, days: 7 } })));
   assert.equal(p.next.id, 'review-due');
@@ -306,6 +325,110 @@ test('cmpVer: numbers, then a release above its prerelease, suffixes numerically
   assert.ok(B.cmpVer('1.2.0', '1.2.0-rc.1') > 0);
   assert.ok(B.cmpVer('3.0.0-alpha.20', '3.0.0-alpha.9') > 0);
   assert.equal(B.cmpVer('v1.2.3', '1.2.3'), 0);
+});
+
+// --- findings from the background refresh's cache (lib/refresh.js, D57)
+// rf(steps, min) — the cache as the refresh writes it, every step ok, run `min` minutes before NOW
+const rf = (steps, min = 60) => ({ v: 1, at: ago(min).toISOString(), engine: '0.9.0',
+  steps: Object.fromEntries(Object.entries(steps).map(([k, d]) => [k, d && d.ok === false ? { ...d, at: ago(min).toISOString(), ms: 5 } : { ok: true, at: ago(min).toISOString(), ms: 5, data: d }])) });
+const withRf = (steps, min = 60, o = {}) => facts({ refresh: rf(steps, min), refreshAt: ago(min), ...o });
+const npmAt = (v, days) => ({ latest: v, published: new Date(NOW.getTime() - days * 864e5).toISOString() });
+
+test('release-newer: past the gate it names the channel\'s step; held by the gate, same or older, a dev clone, a failed lookup: no step', () => {
+  const x = one(withRf({ npm: npmAt('0.10.0', 5) }), 'release-newer');
+  assert.equal(x.severity, 'do');
+  assert.equal(x.cmd, 'steward sc upgrade-tool npm:workstation-steward');
+  assert.equal(x.skill, 'supply-chain');
+  assert.equal(x.writes, true);
+  assert.match(x.text, /^steward 0\.10\.0 is past the release-age gate; this is 0\.9\.0$/);
+  const w = one(withRf({ npm: npmAt('0.10.0', 5) }, 60, { channel: 'worktree' }), 'release-newer');
+  assert.equal(w.cmd, '/steward-maintain release 0.10.0 repin 0.10.0');
+  assert.equal(w.skill, 'steward-maintain');
+  none(withRf({ npm: npmAt('0.10.0', 5) }, 60, { channel: 'dev' }), 'release-newer');
+  none(withRf({ npm: npmAt('0.9.0', 5) }), 'release-newer');
+  none(withRf({ npm: npmAt('0.8.1', 5) }), 'release-newer');
+  none(withRf({ npm: { ok: false, error: 'npm view ran out of time' } }), 'release-newer');
+  none(facts(), 'release-newer');
+  // published a day ago: the gate (3 days here) holds it, so it only waits, with when it clears
+  const held = one(withRf({ npm: npmAt('0.10.0', 1) }), 'release-newer');
+  assert.equal(held.severity, 'wait');
+  assert.match(held.text, /the release-age gate holds it until \d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
+  assert.equal(held.cmd, null);
+  assert.equal(one(withRf({ npm: npmAt('0.10.0', 1) }, 60, { minAge: 0 }), 'release-newer').severity, 'do');
+  // a cache older than stale_hours: "as of", and a wait
+  const old = one(withRf({ npm: npmAt('0.10.0', 9) }, 72 * 60), 'release-newer');
+  assert.equal(old.severity, 'wait');
+  assert.match(old.text, /\(as of \d{4}-\d{2}-\d{2} \d{2}:\d{2}\)$/);
+});
+
+test('projects-new: the count and the first three paths, scan to see them; quiet when none, off, or after a decision; stale waits', () => {
+  const d = { found: 40, fresh: 4, gone: 1, first: ['~/Development/a', '~/Development/b', '~/Development/c'], roots: ['~/Development'] };
+  const x = one(withRf({ projects: d }), 'projects-new');
+  assert.equal(x.text, '4 new project(s): ~/Development/a, ~/Development/b, ~/Development/c …; 1 registered project(s) no longer on disk');
+  assert.equal(x.cmd, 'steward projects scan');
+  assert.equal(x.writes, false);
+  assert.equal(x.skill, 'projects');
+  assert.equal(x.severity, 'do');
+  assert.doesNotMatch(one(withRf({ projects: { ...d, fresh: 2, first: ['~/a', '~/b'], gone: 0 } }), 'projects-new').text, /…|no longer/);
+  none(withRf({ projects: { ...d, fresh: 0, gone: 0, first: [] } }), 'projects-new');
+  none(withRf({ projects: d }, 60, { profiles: { ai_tooling: true, projects: false } }), 'projects-new');
+  // the registry changed after the refresh counted: a decision was recorded, so the count is unknown until the next one
+  none(withRf({ projects: d }, 60, { registryAt: ago(30) }), 'projects-new');
+  assert.equal(one(withRf({ projects: d }, 60, { registryAt: ago(90) }), 'projects-new').severity, 'do');
+  assert.equal(one(withRf({ projects: d }, 72 * 60), 'projects-new').severity, 'wait');
+});
+
+test('ai-drift: a DRIFT no other detector covers, with the command it names; covered areas and warnings alone stay quiet; a change since waits', () => {
+  const guard = { level: 'DRIFT', area: 'guards', msg: 'a setting off the policy in ~/.claude/settings.json: steward ai guard' };
+  const plain = { level: 'DRIFT', area: 'launcher targets', msg: '2 config file(s) → ~/x, which doesn\'t exist' };
+  const drift = items => ({ drift: items.filter(i => i.level === 'DRIFT').length, warn: items.filter(i => i.level === 'WARN').length, items });
+  const x = one(withRf({ drift: drift([guard, plain]) }), 'ai-drift');
+  assert.equal(x.cmd, 'steward ai guard');
+  assert.equal(x.writes, true);
+  assert.equal(x.skill, 'ai-tooling');
+  assert.equal(x.text, 'AI tooling drift: guards: a setting off the policy in ~/.claude/settings.json (+1 more)');
+  const y = one(withRf({ drift: drift([plain]) }), 'ai-drift');
+  assert.equal(y.cmd, 'steward ai drift');
+  assert.equal(y.writes, false);
+  // the hybrids and the AQE runtime have their own detectors; a WARN alone is not a step
+  none(withRf({ drift: drift([{ level: 'DRIFT', area: 'hybrids', msg: 'ruflo: no matching receipt (steward sc install-hybrids)' }, { level: 'DRIFT', area: 'aqe runtime', msg: 'current → x' }, { level: 'WARN', area: 'retire', msg: 'closed' }]) }), 'ai-drift');
+  none(withRf({ drift: drift([guard]) }, 60, { profiles: { ai_tooling: false, projects: true } }), 'ai-drift');
+  // a steward command ran since the check (its backup folder is newer): it may have fixed it, so it only waits
+  const since = one(withRf({ drift: drift([guard]) }, 60, { backups: [bk('guard', { kind: 'guard', at: ago(30).toISOString() }, 30)] }), 'ai-drift');
+  assert.equal(since.severity, 'wait');
+  assert.match(since.text, /something changed since\)$/);
+  assert.equal(one(withRf({ drift: drift([guard]) }, 60, { backups: [bk('guard', { kind: 'guard', at: ago(90).toISOString() }, 90)] }), 'ai-drift').severity, 'do');
+  assert.equal(one(withRf({ drift: drift([guard]) }, 72 * 60), 'ai-drift').severity, 'wait');
+});
+
+test('hybrid-vs-policy: a receipt for another Node than the active one (as the refresh saw it); a receipt written since is not judged', () => {
+  const policy = { policy: [RUFLO_LIKE], receipts: { toolbox: hreceipt('1.2.0') } };   // node 26.1.0, installed 10-29 10:00Z
+  const x = one(withRf({ node: { node: '26.1.1' } }, 60, { hybrids: policy }), 'hybrid-vs-policy');
+  assert.equal(x.severity, 'act');
+  assert.equal(x.cmd, 'steward sc install-hybrids');
+  assert.equal(x.text, 'hybrids out of step with the active Node 26.1.1: toolbox is installed for Node 26.1.0');
+  assert.match(x.why, /node-patch/);
+  none(withRf({ node: { node: '26.1.0' } }, 60, { hybrids: policy }), 'hybrid-vs-policy');
+  // installed after the refresh looked (a node-patch since): the cached Node may be the old one
+  none(withRf({ node: { node: '26.1.1' } }, 60, { hybrids: { ...policy, receipts: { toolbox: { ...hreceipt('1.2.0'), installed_at: ago(10).toISOString() } } } }), 'hybrid-vs-policy');
+  none(withRf({ node: { ok: false, error: 'mise current node ran out of time' } }, 60, { hybrids: policy }), 'hybrid-vs-policy');
+  // older than stale_hours: "as of", a wait
+  const old = one(withRf({ node: { node: '26.1.1' } }, 20 * 60, { hybrids: policy, staleHours: 12 }), 'hybrid-vs-policy');
+  assert.equal(old.severity, 'wait');
+  assert.match(old.text, /\(as of /);
+  // a version behind as well: one finding, both said, still act
+  const both = one(withRf({ node: { node: '26.1.1' } }, 60, { hybrids: { policy: [{ ...RUFLO_LIKE, version: '1.3.0' }], receipts: { toolbox: hreceipt('1.2.0') } } }), 'hybrid-vs-policy');
+  assert.equal(both.text, 'hybrids out of step with hybrids.toml: toolbox 1.2.0 → 1.3.0');
+});
+
+test('channelOf: a clone is dev, the release worktree (STEWARD_CHANNEL=release with .git) is worktree, an install without .git is npm', () => {
+  const withGit = fs.mkdtempSync(path.join(ROOT, 'eng-')), bare = fs.mkdtempSync(path.join(ROOT, 'eng-'));
+  fs.writeFileSync(path.join(withGit, '.git'), 'gitdir: /somewhere/.git/worktrees/release\n');
+  assert.equal(B.channelOf({}, withGit), 'dev');
+  assert.equal(B.channelOf({ STEWARD_CHANNEL: 'release' }, withGit), 'worktree');
+  assert.equal(B.channelOf({ STEWARD_CHANNEL: 'dev' }, bare), 'dev');
+  assert.equal(B.channelOf({}, bare), 'npm');
+  assert.equal(B.channelOf({ STEWARD_CHANNEL: 'release' }, bare), 'npm');
 });
 
 // --- a whole run, on disk
