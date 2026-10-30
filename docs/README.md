@@ -40,7 +40,7 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | Area | Doc | Rev | Covers |
 | --- | --- | --- | --- |
 | Supply chain | [`../skills/supply-chain/runbook.md`](../skills/supply-chain/runbook.md) | 8, 2026-10-30 | Routine check, upgrades, mise itself, Renovate PRs, checking the queue the release-age gate holds, Node security releases, advisories, trust exceptions, prune, changing the release-age gate, rollback |
-| AI tooling | [`../skills/ai-tooling/runbook.md`](../skills/ai-tooling/runbook.md) | 19, 2026-10-29 | Drift, new AQE releases, Ruflo version changes, bringing projects in step after a promotion, retiring a patch when an upstream fix lands, Brain, launcher drift, guards, rollback |
+| AI tooling | [`../skills/ai-tooling/runbook.md`](../skills/ai-tooling/runbook.md) | 20, 2026-10-30 | Drift, new AQE releases, Ruflo version changes, bringing projects in step after a promotion, retiring a patch when an upstream fix lands, Brain, launcher drift, guards, rollback |
 | Projects | [`../skills/projects/runbook.md`](../skills/projects/runbook.md) | 16, 2026-10-27 | New projects, decisions, vanished projects, onboarding and offboarding, what may be written |
 | Fleet | [`fleet/runbook.md`](fleet/runbook.md) | 3, 2026-10-28 | Bringing a repo under Renovate, bot-PR consolidation, merging, syncing checkouts and pruning merged branches, long-lived lines |
 
