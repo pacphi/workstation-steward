@@ -1,6 +1,6 @@
 # Start here
 
-![Revision 3](https://img.shields.io/badge/Revision-3-green) ![Revised 2026-10-27](https://img.shields.io/badge/Revised-2026--10--27-green)
+![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 This guide is for you, after time away or new to the steward. It says why the repo exists, what it
 looks after, how to start, and what a normal week looks like. For how each part works, follow the links to the area
@@ -62,8 +62,14 @@ PRs and security alerts across the repos.
 
 1. Run `steward review` (or `steward review --quick` without the audit). It lists every item that needs a decision,
    grouped under the command that acts on it (or the step to take by hand), and the fleet as one table, worst first.
-2. Decide each one: act now, defer it with a reason, or make it an `owner-decision` issue so it isn't lost.
-3. Handle the week's Renovate PRs in this repo ([supply-chain runbook: A Renovate PR arrives](../skills/supply-chain/runbook.md#a-renovate-pr-arrives)).
+2. Read **Waiting on the release-age gate**. Renovate holds some updates back, and lists them in a Dependency
+   Dashboard issue in each repo. This section reads those issues in your config repo and the fleet's repos. Each
+   update says where it waits (held by the 3-day gate, waiting for your tick, or waiting for its weekly slot), when it
+   clears the gate in UTC, and the next step. It only reads, and `--quick` skips it. Between reviews, `steward` adds a
+   `gate` line when one of them has cleared: run `steward review` again. What to do for each kind is in the
+   [supply-chain runbook: Check the queue](../skills/supply-chain/runbook.md#check-the-queue).
+3. Decide each one: act now, defer it with a reason, or make it an `owner-decision` issue so it isn't lost.
+4. Handle the week's Renovate PRs in this repo ([supply-chain runbook: A Renovate PR arrives](../skills/supply-chain/runbook.md#a-renovate-pr-arrives)).
 
 **When something happens:**
 

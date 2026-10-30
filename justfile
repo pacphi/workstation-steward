@@ -27,6 +27,7 @@ lint:
     node --check projects/bin/onboard.js
     node --check lib/onboard.js
     node --check lib/review.js
+    node --check lib/gatequeue.js
     node --check lib/progress.js
     node --check lib/doctor.js
     node --check projects/bin/offboard.js
