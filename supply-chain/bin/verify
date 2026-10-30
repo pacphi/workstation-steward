@@ -5,6 +5,22 @@
 source "$(dirname "$0")/../../lib/lib.sh"
 
 fails=0
+# The shared, patched AQE runtime (ai-tooling.toml [aqe] runtime, D24) is meant to come first on PATH, ahead of the
+# stock npm:agentic-qe that mise resolves: a PATH winner under it is by design, not a stale shell. Empty without the
+# AI tooling add-on or that policy, so every mismatch is reported as before.
+shared_aqe=""
+if [[ "${STEWARD_PROFILES_AI_TOOLING}" == true ]]; then
+  shared_aqe="$(node -e 'const C = require(process.argv[1]); const r = ((C.policy("ai-tooling/ai-tooling.toml") || {}).aqe || {}).runtime; if (r) process.stdout.write(C.untilde(r))' "${REPO_ROOT}/lib/config.js" 2>/dev/null || true)"
+fi
+# by_design PATH — true when PATH (or where it links to) sits under the shared AQE runtime
+by_design() {
+  [[ -n "${shared_aqe}" ]] || return 1
+  local real root_real
+  real="$(readlink -f "$1" 2>/dev/null || printf '%s' "$1")"
+  root_real="$(readlink -f "${shared_aqe}" 2>/dev/null || printf '%s' "${shared_aqe}")"
+  [[ "$1" == "${shared_aqe}"/* || "${real}" == "${shared_aqe}"/* || "${real}" == "${root_real}"/* ]]
+}
+
 log "CLIs (verify.tsv)"
 while IFS=$'\t' read -r bin args want_rc want_out; do
   [[ -z "${bin}" || "${bin}" == \#* ]] && continue
@@ -13,9 +29,11 @@ while IFS=$'\t' read -r bin args want_rc want_out; do
   fi
   # Test the binary mise resolves for the config, not whatever this (possibly long-lived) shell's PATH
   # finds first: after an upgrade, an old install dir can stay ahead on PATH until a new shell starts.
+  # The shared AQE runtime ahead of mise's copy is by design (D24), so it gets no warning.
   exe="$(mise which "${bin}" 2>/dev/null || command -v "${bin}")"
-  [[ "$(command -v "${bin}")" == "${exe}" ]] \
-    || warn "${bin}: this shell's PATH resolves $(command -v "${bin}"); mise resolves ${exe} (new shells are fine)"
+  on_path="$(command -v "${bin}")"
+  [[ "${on_path}" == "${exe}" ]] || by_design "${on_path}" \
+    || warn "${bin}: this shell's PATH resolves ${on_path}; mise resolves ${exe} (new shells are fine)"
   # shellcheck disable=SC2086 # args intentionally word-split
   out="$(perl -e 'alarm shift; exec @ARGV' 60 "${exe}" ${args} </dev/null 2>&1)" && rc=0 || rc=$?
   if [[ "${rc}" == "${want_rc}" ]] && grep -qE -- "${want_out}" <<<"${out}"; then

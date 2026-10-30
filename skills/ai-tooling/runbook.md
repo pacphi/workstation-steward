@@ -1,6 +1,6 @@
 # AI tooling runbook
 
-![Revision 18](https://img.shields.io/badge/Revision-18-green) ![Revised 2026-10-27](https://img.shields.io/badge/Revised-2026--10--27-green)
+![Revision 19](https://img.shields.io/badge/Revision-19-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
 
 Procedures for the AI-tooling area: Ruflo and AgentDB, AQE, RuvNet Brain, RuVector, the shared launchers and
 the guards. The policy is `ai-tooling/ai-tooling.toml` in your instance ([an example](../../examples/ai-tooling/ai-tooling.toml)). Why it looks
@@ -183,6 +183,12 @@ with no vetting; the vetted Ruflo approvals are all read-only.
 
 ## Launcher and project drift
 
+- **A per-project-only tool switched on at user level** (`ai drift` "user-level off", D55): Brain, and Ruflo's
+  Claude plugins, are switched on in each project that chose them, never for the whole user. Brain's installer, in
+  any mode, writes a `[mcp_servers.ruvnet-brain]` block into `~/.codex/config.toml`, and then Brain's tools load in
+  every Codex session. The DRIFT line names the file and the key. Remove the block (the lines between its
+  `# --- ruvnet-brain` markers, markers included), or set the plugin to `false`. These are the user's own files, so
+  drift only reports; the user makes the edit, after a backup. Then run `steward ai drift` again.
 - **Launchers pinned to a version-specific install** (`ai drift` "pinned launchers"): run `steward ai repin` and
   read the plan. Every file must show `apply`, or a reason it can't be applied: tracked, mid-merge, an
   unmapped path, or a missing target. Then run `steward ai repin --apply`, which asks first. Each file is backed up

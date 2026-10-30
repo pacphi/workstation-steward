@@ -6,6 +6,14 @@
 # Never run Brain's installer update, --yes/--auto/--force or `npx ruvnet-brain`: they switch Brain on globally.
 tool = "brain"
 
+# What must stay off at user level (D55): Brain's installer writes a [mcp_servers.ruvnet-brain] block into the user's
+# Codex config on every run, which loads Brain's tools in every Codex session. `steward ai drift` reports each one
+# that is on; onboarding never reads this table.
+[user_off]
+claude_plugins = ["ruvnet-brain@ruvnet-brain"]
+codex_plugins = ["ruvnet-brain@ruvnet-brain"]
+codex_mcp_servers = ["ruvnet-brain"]
+
 [settings.enabledPlugins]
 "ruvnet-brain@ruvnet-brain" = true
 

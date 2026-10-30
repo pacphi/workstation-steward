@@ -44,8 +44,11 @@ commands run from any folder. Every changing step asks first, and `DRY_RUN=1` pr
    - **manual:** Node or a tap formula;
    - under **Declared updaters**, each `[[updater]]` that's behind, with its class (see
      [A declared source is behind](#a-declared-source-is-behind)).
-2. `steward sc upgrade` applies the take lines after asking. It backs up `config.toml` and `mise.lock`, runs
-   `--no-prune`, and verifies after each tool.
+2. `steward sc upgrade` applies the take lines after asking. It backs up `config.toml` and `mise.lock` before each
+   tool, runs `--no-prune`, and runs `steward sc verify` once, after every step. A step that fails (a tool, a Homebrew
+   batch, a declared updater, mise itself) doesn't stop the others: it's reported when it happens, the end lists each
+   failure with its way back, and the run exits 1 instead of saying `done`. Read each failure's error, fix it, and run
+   the upgrade again; it takes only what is still behind.
 3. Commit `mise/config.toml` and `mise/mise.lock` with the list of what moved, and push once the owner
    approves. Renovate then closes its own PRs for versions already applied.
 4. **Majors stay deliberate.** Read the release notes, then
@@ -53,8 +56,9 @@ commands run from any folder. Every changing step asks first, and `DRY_RUN=1` pr
 5. **mise itself** (D38) is the plan's last line: `take mise <current> -> <version>` when a release is past the gate.
    `steward sc upgrade` applies it after the tools; `steward sc upgrade-tool mise` applies it alone. Either one backs up the
    binary to `~/.local/state/workstation-steward/backups/mise-self-update-*`, runs
-   `mise self-update --yes --no-plugins <version>`, checks the new version and that the config still reads, runs
-   `steward sc verify`, and writes a receipt that starts a soak. Never run a bare `mise self-update`: before 2026.10.18
+   `mise self-update --yes --no-plugins <version>`, checks the new version and that the config still reads, writes a
+   receipt that starts a soak, and verifies (alone, it runs `steward sc verify` itself; inside `steward sc upgrade`, the
+   upgrade's single verify at the end covers it). Never run a bare `mise self-update`: before 2026.10.18
    it takes the newest release with no age gate, and it updates plugins too. An advisory fixed in a release under the
    gate shows as a note; add a `security_exception` with `kind = "mise"`, `name = "mise"` to `host.toml` to take it.
 

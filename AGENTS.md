@@ -150,7 +150,8 @@ values and where the instance is. Paths below are relative to the instance unles
   inline it into `bash -c`. The safety check refuses `rm -rf` inside a `bash -c` string, so use a fresh
   directory name instead of clearing one.
 - **Stale PATH:** a long-lived shell keeps old install dirs on `PATH` after an upgrade. `supply-chain/bin/verify`
-  tests what `mise which` resolves and warns about the mismatch. Open a new shell to pick up upgrades.
+  tests what `mise which` resolves and warns about the mismatch, except when the PATH winner is the shared AQE
+  runtime (`[aqe] runtime`, D24), which comes first by design. Open a new shell to pick up upgrades.
 - **Homebrew:** the local API cache only refreshes on `brew update`; use the live API
   (`formulae.brew.sh/api/*.json`), which `lib.sh` caches daily. Tap formula short names can collide with
   core names. `brew upgrade` auto-cleans old kegs, so there's no keg rollback. Self-updating casks

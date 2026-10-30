@@ -7,11 +7,15 @@
 //     AI tooling's own tools follow its qualification);
 //   - declared updaters ([[updater]], D52) that are behind and whose class may skip the gate (lib/updaters.js);
 //   - mise itself, when it is the standalone build (bin/mise-self.js chooses; bin/mise-self-update applies, last).
-// Applying asks first, then runs the Bash steps that back up, record and verify: brew upgrade, bin/upgrade-tool per
-// mise tool, lib/updaters.js --apply per declared updater, bin/mise-self-update, bin/verify. Never touches app updaters, the App Store, macOS, trust stores or Docker;
+// Applying asks first, then runs the Bash steps that back up and record: brew upgrade, bin/upgrade-tool per mise tool,
+// lib/updaters.js --apply per declared updater, bin/mise-self-update; then bin/verify once, for all of them
+// (STEWARD_DEFER_VERIFY=1 tells upgrade-tool and mise-self-update to leave it to this run). Every step's exit status is
+// kept: a failed step is reported as it happens and the run carries on with the others (each is independent); the end
+// lists each failure with its way back and exits 1, never "done". Never touches app updaters, the App Store, macOS, trust stores or Docker;
 // `steward sc audit` lists those. Off a terminal it prints what the Bash upgrade printed, line for line (compared on
 // the owner's Mac before the switch, R5c PR 3); on a terminal the planning shows as steps (lib/ui.js).
 // Usage: upgrade.js [--plain]     (DRY_RUN=1: the plan and its commands only; nothing changes)
+const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const { spawn } = require('child_process');
@@ -37,12 +41,20 @@ function step(cmd, args) {
   if (DRY) return Promise.resolve(0);
   return script(cmd, args);
 }
-// script(cmd, args) — run with this terminal (a script that honours DRY_RUN itself, or asks); its exit status
-const script = (cmd, args) => new Promise(resolve => {
-  const p = spawn(cmd, args, { stdio: 'inherit' });
+// script(cmd, args, env) — run with this terminal (a script that honours DRY_RUN itself, or asks); its exit status
+// (127 when it can't start, 1 when a signal ended it)
+const script = (cmd, args, env = process.env) => new Promise(resolve => {
+  const p = spawn(cmd, args, { stdio: 'inherit', env });
   p.on('error', () => resolve(127));
-  p.on('close', code => resolve(code));
+  p.on('close', code => resolve(code === null ? 1 : code));
 });
+
+// snap(dir, match) — the names in dir that match; fresh(dir, match, before) — the newest one not in that snapshot: the
+// backup a step just made (each backup gets its own name), or ''
+function snap(dir, match) {
+  try { return new Set(fs.readdirSync(dir).filter(n => match.test(n))); } catch { return new Set(); }
+}
+const fresh = (dir, match, before) => [...snap(dir, match)].filter(n => !before.has(n)).sort().map(n => path.join(dir, n)).pop() || '';
 
 // crossesMajor(current, target) — whether target crosses a major (a 0.x minor counts as one), as the Bash plan judged it
 function crossesMajor(current, target) {
@@ -150,23 +162,66 @@ async function main() {
   log(`plan: ${p.formulae.length} formula(e), ${p.casks.length} cask(s), ${p.tools.length} mise tool(s)${p.updaters.length ? `, ${p.updaters.length} declared updater(s)` : ''}${p.miseSelf ? `, mise ${p.miseSelf}` : ''}`);
   if (!(await ask('Apply this plan?'))) { console.error('\x1b[1;31mERROR\x1b[0m aborted'); return 1; }
 
-  if (p.formulae.length) await step('brew', ['upgrade', '--formula', ...p.formulae]);
-  if (p.casks.length) await step('brew', ['upgrade', '--cask', ...p.casks]);
-  // bin/upgrade-tool backs up config + lock, upgrades with --no-prune, verifies and locks each tool, and honours DRY_RUN
-  for (const t of p.tools) await script(path.join(SC, 'bin', 'upgrade-tool'), [t]);
-  // lib/updaters.js checks the pin again, backs up, applies, checks the output and the pin, writes a receipt; honours DRY_RUN
-  let failed = 0;
-  for (const n of p.updaters) if ((await script('node', [path.join(SC, '..', 'lib', 'updaters.js'), '--apply', n])) !== 0) failed++;
-  // Last, so the tools above upgrade under the mise that planned them; it backs up the binary, verifies and records
-  if (p.miseSelf) await script(path.join(SC, 'bin', 'mise-self-update'), [p.miseSelf]);
-
-  if (DRY) { log('dry run: nothing changed'); return 0; }
-  if (failed) console.error(`\x1b[1;31mERROR\x1b[0m ${failed} declared updater(s) failed; each printed its receipt and rollback`);
-  if ((await script(path.join(SC, 'bin', 'verify'), [])) !== 0) { console.error('\x1b[1;31mERROR\x1b[0m verification failed; mise: steward sc rollback; Homebrew: brew reinstall the previous bottle'); return 1; }
-  log('done. Remaining manual items: steward sc audit');
-  return failed ? 1 : 0;
+  const paths = ctx.cfg.paths;
+  return apply(p, { backups: path.join(paths.mise_config_dir, 'backups'), stateBackups: path.join(paths.state, 'backups') });
 }
 
-module.exports = { plan, crossesMajor };
+const err = s => console.error(`\x1b[1;31mERROR\x1b[0m ${s}`);
+
+// apply(p, o) — run the plan's steps in order, verify once, and report; the exit code. Every step's status is kept and a
+// failed step doesn't stop the others: each tool, formula batch, updater and mise itself is its own change, with its
+// own backup. o.backups: where upgrade-tool's config backups land, o.stateBackups: the state folder's backups (for the
+// rollback hints); o.script and o.step: the runners (tests pass stand-ins); o.dry: DRY_RUN
+async function apply(p, o = {}) {
+  const run = o.script || script, show = o.step || step, dry = o.dry === undefined ? DRY : o.dry;
+  // the scripts leave verification to the single run at the end (they still verify when run on their own)
+  const deferred = { ...process.env, STEWARD_DEFER_VERIFY: '1' };
+  /** @type {{what: string, code: number, back: string}[]} */
+  const failed = [];
+  const fail = (what, code, back) => { failed.push({ what, code, back }); err(`${what} failed (exit ${code}); the other steps still run, and the end lists it`); };
+
+  // Homebrew keeps no old keg to roll back to (brew upgrade cleans up), so its way back is a reinstall
+  const brewBack = 'brew reinstall the previous bottle (Homebrew keeps no old keg; brew named what failed above)';
+  if (p.formulae.length) { const c = await show('brew', ['upgrade', '--formula', ...p.formulae]); if (c) fail(`brew upgrade --formula ${p.formulae.join(' ')}`, c, brewBack); }
+  if (p.casks.length) { const c = await show('brew', ['upgrade', '--cask', ...p.casks]); if (c) fail(`brew upgrade --cask ${p.casks.join(' ')}`, c, brewBack); }
+  // bin/upgrade-tool backs up config + lock, upgrades with --no-prune, records and locks each tool, and honours DRY_RUN
+  for (const [i, t] of p.tools.entries()) {
+    log(`mise tool ${i + 1}/${p.tools.length}: ${t}`);
+    const before = o.backups ? snap(o.backups, /^config\.toml\./) : new Set();
+    const c = await run(path.join(SC, 'bin', 'upgrade-tool'), [t], deferred);
+    if (!c) continue;
+    const b = o.backups ? fresh(o.backups, /^config\.toml\./, before) : '';
+    fail(`mise tool ${t}`, c, b ? `if it changed the config, steward sc rollback ${C.tilde(b)} (puts back the config from before it, and undoes the tools after it)` : 'none needed: it stopped before its config backup, so it changed nothing');
+  }
+  // lib/updaters.js checks the pin again, backs up, applies, checks the output and the pin, writes a receipt; honours DRY_RUN
+  for (const n of p.updaters) {
+    const c = await run('node', [path.join(SC, '..', 'lib', 'updaters.js'), '--apply', n]);
+    if (c) fail(`declared updater ${n}`, c, 'steward sc rollback <receipt> (it printed its receipt above)');
+  }
+  // Last, so the tools above upgrade under the mise that planned them; it backs up the binary and records
+  if (p.miseSelf) {
+    const before = o.stateBackups ? snap(o.stateBackups, /^mise-self-update-/) : new Set();
+    const c = await run(path.join(SC, 'bin', 'mise-self-update'), [p.miseSelf], deferred);
+    if (c) fail(`mise self-update to ${p.miseSelf}`, c, !o.stateBackups || fresh(o.stateBackups, /^mise-self-update-/, before) ? 'if mise changed, steward sc rollback mise (puts the previous binary back)' : 'none needed: it stopped before its binary backup, so mise is as it was');
+  }
+
+  let verified = true;
+  if (dry) log('dry run: nothing changed');
+  else {
+    log('verify: once, for every change above');
+    if ((await run(path.join(SC, 'bin', 'verify'), [])) !== 0) { verified = false; err('verification failed; mise: steward sc rollback; Homebrew: brew reinstall the previous bottle'); }
+  }
+  if (failed.length) {
+    err(`${failed.length} step(s) of this upgrade failed${dry ? ' in the dry run' : ''}; the others ran:`);
+    for (const f of failed) console.error(`  ✗ ${f.what} (exit ${f.code})\n      way back: ${f.back}`);
+    log('not done: fix each failed step (its error is above), then run steward sc upgrade again. Manual items: steward sc audit');
+    return 1;
+  }
+  if (!verified) return 1;
+  if (!dry) log('done. Remaining manual items: steward sc audit');
+  return 0;
+}
+
+module.exports = { plan, apply, crossesMajor };
 
 if (require.main === module) main().then(code => { process.exitCode = code; }).catch(e => { console.error(`\x1b[1;31mERROR\x1b[0m ${e.message}`); process.exitCode = 1; });

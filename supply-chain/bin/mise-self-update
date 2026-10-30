@@ -4,6 +4,8 @@
 # (a security fix; record why). The version is always named: a bare `mise self-update` before 2026.10.18 takes the
 # newest release with no age gate. Plugins are left alone (--no-plugins), one change at a time.
 # Backs the binary up first; the receipt starts a soak; roll back with `steward sc rollback mise`.
+# Verifies (bin/verify) at the end, unless STEWARD_DEFER_VERIFY=1: `steward sc upgrade` sets that and verifies once,
+# after every step of its plan.
 # Usage: mise-self-update [version]      DRY_RUN=1 mise-self-update
 # shellcheck source=lib/lib.sh
 source "$(dirname "$0")/../../lib/lib.sh"
@@ -44,5 +46,6 @@ now="$("${bin}" --version 2>/dev/null | awk '{print $1}')"
 [[ "${now}" == "${target}" ]] || die "mise reports ${now:-nothing}, expected ${target}; roll back with: steward sc rollback mise"
 "${bin}" ls >/dev/null || die "mise ${target} cannot read the config; roll back with: steward sc rollback mise"
 run "${bin}" reshim
-"${SC_ROOT}/bin/verify" || die "verification failed; roll back with: steward sc rollback mise"
+if [[ "${STEWARD_DEFER_VERIFY:-0}" == 1 ]]; then log "verify: left to the end of steward sc upgrade (STEWARD_DEFER_VERIFY=1)"
+else "${SC_ROOT}/bin/verify" || die "verification failed; roll back with: steward sc rollback mise"; fi
 log "done: mise ${current} -> ${target}. Rollback: steward sc rollback mise (restores ${backup/#${HOME}/~}/mise)"
