@@ -134,6 +134,7 @@ now and then, and leaves its answers in `<state>/brief/refresh.json` for the nex
 - It runs at low priority, detached from your terminal, and stops after 120 s in all.
 - A step that fails or runs out of time is written down with its error, and the other steps still run.
 - It writes one file, its notes, by writing a temporary file and renaming it. Only you can read it (mode 0600).
+  The tools it asks (git, npm, mise) keep their own caches and logs, as they do whenever you run them.
 - A lock file (`refresh.lock`) keeps a second one from starting. A lock older than 10 minutes, or whose process is
   gone, was left by a run that died, and the next refresh takes it over.
 
@@ -146,8 +147,8 @@ the review's anchor), `steward sc audit`, `gh`, or anything that installs, upgra
 nag after you've dealt with it:
 
 - `release-newer` compares with the steward running now, so it goes away once you upgrade.
-- `projects-new` says nothing once `projects/registry.toml` changed after the count (you recorded a decision). The
-  next refresh counts again.
+- `projects-new` says nothing once `projects/registry.toml` changed after the count: a decision you recorded, or a
+  config sync that brought one. The next refresh counts again.
 - `ai-drift` drops to a wait when a steward command made a backup after the check, since that command may have
   fixed it.
 - The Node check in `hybrid-vs-policy` judges only receipts written before the refresh looked at Node. After a

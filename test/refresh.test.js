@@ -124,6 +124,32 @@ test('the detached refresh, started by steward brief: writes only brief/refresh.
   assert.ok(ids.includes('projects-new'), ids.join(' '));
 });
 
+test('steward brief --refresh: the refresh now, a stage per step on stderr, then the briefing; the lock gone, the cache written', () => {
+  const state = freshState();
+  const inst = path.join(ROOT, 'inst-fg');
+  write(path.join(inst, 'steward.toml'), `[paths]\nstate = "${state}"\n\n[brief]\nfetch = false\n`);
+  const env = /** @type {any} */ ({ ...process.env, PATH: `${STUBS}:${process.env.PATH}`, STEWARD_INSTANCE: inst });
+  delete env.CI; delete env.STEWARD_NO_REFRESH;
+  const r = spawnSync(process.execPath, [path.join(REPO, 'lib', 'brief.js'), '--refresh'], { encoding: 'utf8', env });
+  assert.equal(r.status, 0, r.stderr);
+  const done = r.stderr.split('\n').filter(l => /^✓ \[\d\/5\] /.test(l));
+  assert.equal(done.length, 5, r.stderr);
+  assert.match(r.stderr, /^✓ \[1\/5\] fetching your config repo: skipped: \[brief\] fetch = false \(\d+s\)$/m);
+  assert.match(r.stderr, /^✓ \[2\/5\] the newest steward on npm: 0\.99\.0, published 2026-10-20 00:00Z \(this is .+\) \(\d+s\)$/m);
+  assert.match(r.stderr, /^✓ \[5\/5\] the active Node: 26\.1\.1 \(\d+s\)$/m);
+  assert.match(r.stdout, /^steward /m);
+  const { lock, cache } = RF.files(state);
+  assert.ok(!fs.existsSync(lock), 'no lock left');
+  assert.equal(JSON.parse(fs.readFileSync(cache, 'utf8')).steps.node.data.node, '26.1.1');
+  // a refresh already running: it says so and still shows the briefing
+  fs.writeFileSync(lock, JSON.stringify({ pid: process.pid, at: new Date().toISOString() }));
+  const busy = spawnSync(process.execPath, [path.join(REPO, 'lib', 'brief.js'), '--refresh'], { encoding: 'utf8', env });
+  assert.equal(busy.status, 0, busy.stderr);
+  assert.match(busy.stderr, /a refresh is already running \(pid \d+/);
+  assert.match(busy.stdout, /^steward /m);
+  fs.unlinkSync(lock);
+});
+
 test('maybeRefresh: a second start while one runs does nothing; a left-over lock (dead process, or older than 10 minutes) is taken over', () => {
   const state = freshState(), values = vals({ state });
   const { lock } = RF.files(state);
