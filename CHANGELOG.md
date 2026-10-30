@@ -3,6 +3,18 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.9.0](https://github.com/pacphi/workstation-steward/compare/v0.8.1...v0.9.0) (2026-10-30)
+
+
+### Features
+
+* steward review and the banner show what the release-age gate holds back (D56) ([#59](https://github.com/pacphi/workstation-steward/issues/59)) ([df4a84c](https://github.com/pacphi/workstation-steward/commit/df4a84ca8d01f6f4366bef78cfac740cfb3b2cdd))
+
+
+### Bug Fixes
+
+* onboarding recognizes AQE 3.15.12 and 3.15.16 vendor files; the defaults follow the qualified release ([#60](https://github.com/pacphi/workstation-steward/issues/60)) ([e6be10e](https://github.com/pacphi/workstation-steward/commit/e6be10e48ad889933caca7da861aa99648c8c086))
+
 ## [0.8.1](https://github.com/pacphi/workstation-steward/compare/v0.8.0...v0.8.1) (2026-10-30)
 
 
