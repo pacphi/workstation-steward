@@ -120,7 +120,10 @@ test('backup-no-receipt: an AQE promote that stopped after the store backup; han
   assert.match(x.text, /current is 3\.15\.12-local\.1/);
   none(f({ backups: [bk('demo-app-sync', null), bk('ruflo-policy-20261030-120000', null), bk('config-local-edits', null)] }), 'backup-no-receipt');
   none(f({ backups: [bk('aqe-promote', null, 5)] }), 'backup-no-receipt');
-  none(f({ backups: [bk('aqe-promote', null, 90), bk('aqe-promote', { kind: 'aqe-promote', at: ago(30).toISOString(), release: '3.15.16-local.1', previous: '3.15.12-local.1', storeFiles: 2, files: [], complete: true }, 30)] }), 'backup-no-receipt');
+  const repin = { kind: 'release-worktree', at: ago(30).toISOString(), from: { tag: 'v0.8.1', commit: 'c'.repeat(40) }, to: { tag: 'v0.9.0', commit: 'd'.repeat(40) }, backups: ['steward', 'steward-dev'], rollback: 'x' };
+  assert.equal(one(f({ backups: [bk('repin-release', null, 90)] }), 'backup-no-receipt').cmd, 'steward version');
+  none(f({ backups: [bk('repin-release', null, 90), bk('repin-release', repin, 30)] }), 'backup-no-receipt');
+  none(f({ backups: [bk('aqe-promote', null, 90), bk('aqe-promote', { kind: 'aqe-promote', at: ago(30).toISOString(), release: '3.15.16-local.1', previous: '3.15.12-local.1', qualification: '~/q/receipt.json', storeFiles: 2, treeSha256: 'e'.repeat(64), files: [] }, 30)] }), 'backup-no-receipt');
 });
 
 // --- aqe-partial

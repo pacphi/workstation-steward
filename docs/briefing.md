@@ -95,7 +95,8 @@ next: steward config sync, then steward sc install-hybrids, then DRY_RUN=1 stewa
 | `steward brief --all` | Every finding, each with its command and why |
 | `steward brief --json` | The same as data: `{v, at, next, more, findings}` |
 
-Each finding has an `id`, a `severity`, a stable `key` (no times in it, so a change is easy to spot), the `text`, the
+`more` counts the findings besides `next`; when `next` is null, they are all waits. Each finding has an `id`, a
+`severity`, a stable `key` (it changes only when what it points at changes), the `text`, the
 `cmd`, `writes` (true when the command can change your machine, projects or config; it still asks first), the `skill`
 that covers it, `why`, and a `rollback` when there is one. Text taken from receipts and paths is cleaned before it is
 shown: no control characters or escape codes, your home folder as `~`, and at most 200 characters.
