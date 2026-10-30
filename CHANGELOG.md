@@ -3,6 +3,19 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.8.0](https://github.com/pacphi/workstation-steward/compare/v0.7.0...v0.8.0) (2026-10-30)
+
+
+### Features
+
+* ai drift flags a per-project tool switched on at user level ([#51](https://github.com/pacphi/workstation-steward/issues/51)) ([2f81309](https://github.com/pacphi/workstation-steward/commit/2f81309e1699664306db93e67c7a001af6b196d2))
+
+
+### Bug Fixes
+
+* config sync pulls and finishes a send around local edits git can combine ([#54](https://github.com/pacphi/workstation-steward/issues/54)) ([3fd47f3](https://github.com/pacphi/workstation-steward/commit/3fd47f3fe3162a588a83aac0b59e27f8a9b3f79c))
+* sc upgrade reports a failed tool and exits non-zero, and verifies once ([#52](https://github.com/pacphi/workstation-steward/issues/52)) ([d65db84](https://github.com/pacphi/workstation-steward/commit/d65db84cb0bd94dca05f9e6c50766340f7a31dc3))
+
 ## [0.7.0](https://github.com/pacphi/workstation-steward/compare/v0.6.0...v0.7.0) (2026-10-29)
 
 
