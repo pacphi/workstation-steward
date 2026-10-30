@@ -26,6 +26,7 @@ the way it does is in [`architecture.md`](../../docs/architecture.md); the full 
 - [Hook timeouts in milliseconds](#hook-timeouts-in-milliseconds)
 - [Brain's Codex approvals](#brains-codex-approvals)
 - [A guard is missing](#a-guard-is-missing)
+- [Finishing a half-done step](#finishing-a-half-done-step)
 - [Rollback](#rollback)
 
 ## Routine check
@@ -266,6 +267,22 @@ with no vetting; the vetted Ruflo approvals are all read-only.
   line is still there and that `~/.config/mise/config.toml` is this repo's (`steward sc link`), then open a new shell. A
   project's AQE server that runs a bare name is judged by this same resolution, so it shows as drift only while the
   bare name reaches a stock install (or nothing).
+
+## Finishing a half-done step
+
+When the session's `<steward-brief>`, or `steward brief --all`, names one of these detectors, start here. Each row
+is a step that stopped midway or ran out of order, and the step that finishes it. Show the plan first (`DRY_RUN=1`, or
+the command's own plan), and ask before anything that writes. The briefing's checks are in
+[`docs/briefing.md`](../../docs/briefing.md#what-it-checks).
+
+| Detector | What happened | What finishes it |
+| --- | --- | --- |
+| `aqe-partial` | `releases/<r>.partial` is left from a promote that stopped. Nothing switched to it | Remove that folder, then `promote.sh <version>` again (`promote.sh` refuses while it is there) |
+| `backup-no-receipt`, an AQE promote | A promote stopped after backing up the stores. `current` didn't move | `promote.sh <version>` again: it checks, backs up again, installs, and switches only after the copy checks out |
+| `aqe-vs-policy`, ahead | AQE is promoted, but `ai-tooling.toml` still names the old release | Set `[aqe] current` in `ai-tooling.toml`, then `steward config sync` to send it |
+| `aqe-vs-policy`, a stopped switch | `releases/<r>` is installed, but `current` still points at the old one | Move `releases/<r>` aside (`mv` to `<r>.stopped`), then `promote.sh <version>` again |
+| `aqe-vs-policy`, behind | The policy names a newer AQE than this Mac runs | Qualified here: `promote.sh <version>`. Not yet: `run.sh <version> build` and the gates first ([qualification](qualification.md)) |
+| `ai-drift` | Drift the other checks don't cover (from the background refresh) | The command the drift line names, else `steward ai drift` |
 
 ## Rollback
 

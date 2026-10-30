@@ -1,6 +1,6 @@
 # Releasing workstation-steward
 
-![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 5](https://img.shields.io/badge/Revision-5-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 How a release happens, and the one-time npm setup behind it (D46 in [`architecture.md`](architecture.md#decisions)),
 plus what to do when the weekly upstream watch finds that a shipped default changed (D52), and how to check that no
@@ -15,6 +15,7 @@ repository; users install releases as [`../README.md`](../README.md) describes.
 - [Publishing an existing release](#publishing-an-existing-release)
 - [After each release](#after-each-release)
 - [The maintainer skill](#the-maintainer-skill)
+- [Trying the session hook before a release](#trying-the-session-hook-before-a-release)
 - [Checking a release on a clean Mac](#checking-a-release-on-a-clean-mac)
 - [The publish guard](#the-publish-guard)
 - [A pre-push leak check for your clone](#a-pre-push-leak-check-for-your-clone)
@@ -124,7 +125,7 @@ The routine after a merge is the same each time, so it's a project skill, **`/st
 sentence naming what happened:
 
 ```text
-/steward-maintain                       what's waiting: the checkout against GitHub, open PRs, the config plan
+/steward-maintain                       what's waiting: steward brief --json, then the checkout, open PRs, the config plan
 /steward-maintain merged 41             after #41 merged: fast-forward main, delete merged branches
 /steward-maintain merged 41 39 repin    the same; #39 was the release PR, so watch 0.4.1, verify it, repin
 /steward-maintain release 0.4.1         watch and verify only
@@ -136,7 +137,7 @@ Each flow is a script that prints its plan, refuses anything outside its scope, 
 
 | Flow | Script | What it may change |
 | --- | --- | --- |
-| What's waiting | `status.sh` | nothing |
+| What's waiting | `steward brief --json`, then `status.sh` | nothing |
 | After a merge | `after-merge.sh [<pr>…]` | this checkout: `steward fleet sync` and `steward fleet prune-merged`, fast-forward and merged branches only |
 | A release | `release.sh <X.Y.Z>` | nothing: it waits for the run and npm, then verifies npm's latest, the provenance commit (the tag's) and the GitHub release |
 | A repin | `repin.sh <X.Y.Z> --why "<your words>"` | the release channel, after a backup of both launchers and a receipt |
@@ -145,7 +146,35 @@ Each flow is a script that prints its plan, refuses anything outside its scope, 
 The scripts never reset, rebase, merge, force-push or delete unmerged work, and touch only this checkout and the
 config instance `steward config` names. The skill pre-approves exactly these five scripts (`allowed-tools`), so an
 agent runs them without a prompt, but only where your own rules authorize it (your private `AGENTS.md`); otherwise it
-hands you the command. `test/steward-maintain.test.js` holds each refusal.
+hands you the command. `test/steward-maintain.test.js` holds each refusal. With no arguments it reads the briefing
+first (`steward brief --json`; `steward-dev brief --real --json` while the pinned release predates it) and leads with
+its `next`.
+
+## Trying the session hook before a release
+
+The plugin's session-start hook runs `steward brief --hook` ([the briefing](briefing.md#in-claude-code-the-session-start-hook)).
+`steward` is the pinned release, so a change to the hook can't be seen in a session until a release ships it. Two
+ways to try it from this checkout first:
+
+```sh
+just try-hook             # what the hook would hand Claude Code, against examples/: no session needed
+just try-hook --real      # the same against your config and state, read only
+```
+
+`just try-hook` sends the JSON Claude Code sends for each way a session starts (startup, clear, compact, resume) and
+prints the hook's JSON, what you would see, what Claude would be told, and how long each took. It runs with
+`DRY_RUN=1` and `STEWARD_NO_REFRESH=1`, so it writes no stamp and starts no background refresh.
+
+To see it in a real session, start Claude Code with the plugin a dev build makes:
+
+```sh
+claude --plugin-dir "$(steward-dev skills path --real)"
+```
+
+A dev clone's build calls `steward-dev brief --hook --real` instead of `steward brief --hook`, so the hook runs this
+checkout's code against your config. That session writes the hook's real stamp (`<state>/brief/shown.json`), as an
+installed release would. `just claude` loads the repo's own `plugin.json`, whose hook calls the pinned `steward`: it
+does nothing until the release has `brief --hook`.
 
 ## Checking a release on a clean Mac
 

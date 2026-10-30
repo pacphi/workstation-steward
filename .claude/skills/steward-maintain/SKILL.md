@@ -8,7 +8,7 @@ description: >
   plan, refuses anything outside its scope, and stops on any failed check. Use when the owner says "I merged #N",
   "pull and clean up", "watch the release", "repin", "sync the config", or runs /steward-maintain.
 argument-hint: "[merged <pr>… [repin]] [release <X.Y.Z>] [repin <X.Y.Z>] [config]"
-allowed-tools: Bash(.claude/skills/steward-maintain/bin/status.sh) Bash(.claude/skills/steward-maintain/bin/after-merge.sh) Bash(.claude/skills/steward-maintain/bin/after-merge.sh *) Bash(.claude/skills/steward-maintain/bin/release.sh *) Bash(.claude/skills/steward-maintain/bin/repin.sh *) Bash(.claude/skills/steward-maintain/bin/config-sync.sh)
+allowed-tools: Bash(steward brief --json) Bash(steward-dev brief --real --json) Bash(.claude/skills/steward-maintain/bin/status.sh) Bash(.claude/skills/steward-maintain/bin/after-merge.sh) Bash(.claude/skills/steward-maintain/bin/after-merge.sh *) Bash(.claude/skills/steward-maintain/bin/release.sh *) Bash(.claude/skills/steward-maintain/bin/repin.sh *) Bash(.claude/skills/steward-maintain/bin/config-sync.sh)
 metadata:
   author: pacphi
 ---
@@ -25,7 +25,7 @@ The arguments are a short sentence: `$ARGUMENTS`. Run the flows it names, in thi
 
 | Words | Flow |
 | --- | --- |
-| *(none)* | `bin/status.sh`, then suggest the next command in this table |
+| *(none)* | `steward brief --json` first (a release before 0.10.0 has no `brief`: then `steward-dev brief --real --json`), then `bin/status.sh`. Lead with the brief's `next`, then suggest the next command in this table |
 | `merged <pr>…` | `bin/after-merge.sh <pr>…`. Each line `release: X.Y.Z` it prints means a release PR merged: go on to `release` for X.Y.Z |
 | `release <X.Y.Z>` | `bin/release.sh X.Y.Z` (it waits up to 40 minutes: run it in the background and wait to be told it finished) |
 | `repin`, with a version or after a `release:` line | `bin/repin.sh X.Y.Z --why "<the owner's whole message>"`, only after `release.sh` verified X.Y.Z |
@@ -42,6 +42,13 @@ say it's ready to repin.
 | `release.sh <X.Y.Z> [--verify-only]` | nothing (it waits and verifies) |
 | `repin.sh <X.Y.Z> --why "…"` | the release channel (`~/.local/share/workstation-steward/release`) and the two launchers, after a backup |
 | `config-sync.sh` | the config checkout: a fast-forward, or finishing a merged send; `mise install` when `mise/` changed |
+
+When the brief's `next.skill` is `steward-maintain`, a repin stopped midway:
+
+- `repin-unfinished`: the release channel isn't at the commit the last repin receipt names. Finish it with
+  `bin/repin.sh <tag>` (only if the owner asks in this message), or hand the owner the receipt's rollback.
+- `backup-no-receipt` for a repin: `steward version` shows which release runs; then repin again, or copy the launchers
+  back from the backup the finding names.
 
 ## Reporting
 

@@ -20,6 +20,7 @@ commands run from any folder. Every changing step asks first, and `DRY_RUN=1` pr
 - [Adding an `[[updater]]`](#adding-an-updater)
 - [Soak and prune](#soak-and-prune)
 - [Change the release-age gate](#change-the-release-age-gate)
+- [Finishing a half-done step](#finishing-a-half-done-step)
 - [Rollback](#rollback)
 
 ## Routine check
@@ -196,6 +197,23 @@ can fail on a newer bundle; update the runtime first (it's gated), then try agai
 2. `DRY_RUN=1 steward sc release-age <days>`, then `steward sc release-age <days>`. It shows the plan, asks, backs up
    all three files to `~/.config/mise/backups/`, edits only the one line in each, and validates `steward.toml`.
 3. Commit the three files together, through a PR.
+
+## Finishing a half-done step
+
+When the session's `<steward-brief>`, or `steward brief --all`, names one of these detectors, start here. Each row
+is a step that stopped midway or ran out of order, and the step that finishes it. Show the plan first (`DRY_RUN=1`, or
+the command's own plan), and ask before anything that writes. The briefing's checks are in
+[`docs/briefing.md`](../../docs/briefing.md#what-it-checks).
+
+| Detector | What happened | What finishes it |
+| --- | --- | --- |
+| `receipt-unfinished`, a config sync | A config sync stopped. If it set your edits aside, they are in `git stash` and copied to the folder it names | `steward config sync` again; its plan shows where the branch is. Never `--rollback`: it refuses an unfinished sync. If an edit is missing from the files, `git stash pop` in the config folder puts it back |
+| `receipt-unfinished`, sending your config | The push or the pull request didn't happen | `steward config sync` retries both; `steward config sync --rollback <receipt>` goes back |
+| `receipt-unfinished`, a declared updater | An `[[updater]]` stopped after its backup | Its rollback (the receipt names it, else `steward sc rollback <receipt>`), then the update again |
+| `backup-no-receipt`, a mise self-update | It stopped after backing up the binary | `mise --version`; if it isn't the version you expect, `steward sc rollback mise` |
+| `hybrid-vs-policy` | A hybrid is behind, ahead of or missing from `hybrids.toml`, or was installed for another Node | `steward sc install-hybrids`. When GitHub has a newer `hybrids.toml`, `steward config sync` first, or you install the old policy |
+| `config-behind`, `config-changed`, `config-ahead`, `config-pr` | Your config repo is out of step with GitHub | `steward config sync` |
+| `soak` | The soak ended | `DRY_RUN=1 steward sc prune`, then `steward sc prune`, after every hybrid is back in step (prune refuses until then) |
 
 ## Rollback
 
