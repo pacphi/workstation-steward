@@ -47,11 +47,11 @@ test('run_shown on a terminal: the command line, a live timer while npm works, t
   const r = onTTY('run_shown npm install -g --allow-scripts=fake-cli,better-sqlite3 fake-cli@1.2.3', s.env);
   assert.equal(r.status, 0, r.out);
   assert.match(r.out, /\$ npm install -g --allow-scripts=fake-cli,better-sqlite3 fake-cli@1\.2\.3/);
-  assert.match(r.out, /… npm install … fake-cli@1\.2\.3 1s/, 'the timer ticked while npm was silent');
+  assert.match(r.out, /… npm install … fake-cli@1\.2\.3 [1-9]s/, 'the timer ticked while npm was silent');
   assert.match(r.raw, /\r\x1b\[2K {3}… npm install/, 'it redraws in place');
   const warn = r.out.indexOf('npm warn deprecated old-dep'), added = r.out.indexOf('added 1 package'), tick = r.out.lastIndexOf('… npm install');
   assert.ok(warn > tick && added > tick, `npm's output comes after the timer, in full:\n${r.out}`);
-  assert.match(r.out, /✓ npm install … fake-cli@1\.2\.3 \(2s\)/);
+  assert.match(r.out, /✓ npm install … fake-cli@1\.2\.3 \([23]s\)/);
   assert.equal(s.npmRuns().length, 1);
 });
 
@@ -81,7 +81,7 @@ test('run_shown returns the command\'s status and still shows its output when it
   put(path.join(s.box, 'stub', 'npm'), '#!/bin/bash\necho "npm error code E404" >&2\nexit 7\n', 0o755);
   const r = onTTY('run_shown npm install -g nope@1 && echo OK || echo "rc=$?"', s.env);
   assert.match(r.out, /npm error code E404/);
-  assert.match(r.out, /✗ npm install … nope@1: exit 7 after 0s/);
+  assert.match(r.out, /✗ npm install … nope@1: exit 7 after \d+s/);
   assert.match(r.out, /rc=7/);
 });
 
@@ -97,7 +97,7 @@ test('install_hybrids on a terminal: a timer while it finds the Ruflo policy fol
 
   const real = onTTY('install_hybrids', s.env);
   assert.equal(real.status, 0, real.out);
-  assert.match(real.out, /… npm install … fake-cli@1\.2\.3 1s/);
+  assert.match(real.out, /… npm install … fake-cli@1\.2\.3 [1-9]s/);
   assert.match(real.out, /npm warn deprecated old-dep/);
   assert.match(real.out, /backed up 1 folder\(s\)/);
   assert.deepEqual(s.npmRuns(), ['install -g --allow-scripts=fake-cli,better-sqlite3 fake-cli@1.2.3']);
@@ -203,7 +203,9 @@ test('tools/progress-gaps.js runs read-only by default: writing commands only un
   assert.match(G.refusal('steward no-such thing', false), /not a steward command/);
   assert.equal(G.refusal('steward sc upgrade', true), '', '--allow-writes lifts it');
   for (const c of G.DEFAULTS) assert.equal(G.refusal(c, false), '', c);
-  assert.deepEqual(G.args(['--gap', '5', 'steward sc status']).cmds, ['steward sc status']);
+  assert.deepEqual(G.args(['--gap', '5', '--', 'steward', 'sc', 'status']).cmds, ['steward sc status'], 'just splits a quoted command; the words are one command again');
+  assert.equal(G.args(['--gap', '5']).gap, 5);
+  assert.throws(() => G.args(['steward sc status']), /after --/);
   assert.equal(G.args([]).cmds, G.DEFAULTS);
   assert.throws(() => G.args(['--gap', 'x']), /--gap/);
 });

@@ -276,7 +276,8 @@ with the line printed just before it:
 ```sh
 just progress-gaps                                   # this checkout, examples/: the read-only defaults
 just progress-gaps --real                            # the same against your config: the measure that counts
-just progress-gaps --real -- "steward sc status"     # one command
+just progress-gaps --real -- steward sc status       # one command
+just progress-gaps --real --file my-commands.txt     # a list, one command per line
 ```
 
 It runs read-only. A command that can change things (`writes` in `lib/commands.js`) runs only as `DRY_RUN=1 steward …`,

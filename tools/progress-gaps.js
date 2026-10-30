@@ -10,8 +10,9 @@
 // you care about. `steward` is this checkout's bin/steward.js, a dev build, so it uses examples/ unless given --real
 // (your config: the measure that counts) or $STEWARD_INSTANCE; --installed runs the `steward` on PATH instead.
 // Usage: progress-gaps.js [--gap <s>] [--out <file.json>] [--file <commands.txt>] [--real | --installed]
-//                         [--allow-writes] [--] [command …]
-//   commands: the arguments, else the lines of --file (# comments), else DEFAULTS below
+//                         [--allow-writes] [-- <one command, its words>]
+//   commands: the words after --, as one command (just splits a quoted argument, so they are joined again), else the
+//   lines of --file (# comments), else DEFAULTS below
 // Exit: 0 = no gap; 1 = at least one gap; 2 = usage, or a command refused.
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -40,9 +41,8 @@ function args(argv) {
     else if (a === '--real') o.real = true;
     else if (a === '--installed') o.installed = true;
     else if (a === '--allow-writes') o.writes = true;
-    else if (a === '--') { o.cmds.push(...argv.slice(i + 1)); break; }
-    else if (a.startsWith('--')) throw new Error(`unknown option ${a}`);
-    else o.cmds.push(a);
+    else if (a === '--') { if (argv.length > i + 1) o.cmds.push(argv.slice(i + 1).join(' ')); break; }
+    else throw new Error(`unknown argument ${a} (one command goes after --; more go in a --file)`);
   }
   if (!(o.gap > 0)) throw new Error('--gap takes a number of seconds');
   if (!o.cmds.length && o.file) o.cmds = fs.readFileSync(o.file, 'utf8').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));

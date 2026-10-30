@@ -265,7 +265,7 @@ for (const f of all) {
 // npm-<tool>/<major.minor>/….
 {
   st.detail('launchers pinned to a version');
-  const pins = require('../../lib/pins.js').scan();
+  const pins = require('../../lib/pins.js').scan({ detail: d => st.detail(`launchers pinned to a version: ${d}`) });
   const active = sh('bash', ['-lc', 'node -p process.versions.node']);
   const byInstall = {};
   for (const h of pins.filter(h => h.permissionOnly)) say('info', 'pinned launchers', `${P.tilde(h.file)}: ${h.file.endsWith('.claude.json') ? 'a history entry' : 'a permission rule'} names ${P.tilde(h.install)}${h.exists ? '' : ' (no longer installed)'}; it launches nothing`);
@@ -285,7 +285,7 @@ for (const f of all) {
 // fall back without saying so. Check after every upgrade, Node patch, hybrid install or repin.
 {
   st.detail('launcher targets');
-  const missing = require('../../lib/pins.js').targets();
+  const missing = require('../../lib/pins.js').targets({ detail: d => st.detail(`launcher targets: ${d}`) });
   const byTarget = {};
   for (const m of missing) (byTarget[m.target] = byTarget[m.target] || []).push(m.file);
   for (const [target, files] of Object.entries(byTarget)) {
