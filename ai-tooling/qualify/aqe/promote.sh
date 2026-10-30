@@ -33,8 +33,16 @@ fi
 version="${1:?usage: promote.sh <version>}"; release="${version}-local.1"
 ws="${STEWARD_PATHS_CACHE}/qualify/aqe-${release}" stage="${STEWARD_PATHS_CACHE}/qualify/aqe-${release}/stage/${release}"
 [[ "$(node -p 'require(process.argv[1]).allPass' "${ws}/receipt.json" 2>/dev/null)" == true ]] || die "no passing qualification receipt in ${ws/#${HOME}/~} (run.sh ${version} receipt)"
-[[ -e "${runtime}/releases/${release}" ]] && die "releases/${release} already exists"
 prev="$(basename "$(readlink "${runtime}/current")")"
+# a run that stopped part-way leaves evidence: refuse it with the step that finishes the job, never build on top of it
+# (a rerun would copy the stage INTO a leftover releases/<r>.partial, and the tree hash would never match)
+part="${runtime}/releases/${release}.partial"
+[[ -e "${part}" ]] && die "a previous promote of ${release} stopped while installing it; current still -> ${prev}. Remove the leftover, then run this again: rm -rf ${part/#${HOME}/~}"
+if [[ -e "${runtime}/releases/${release}" ]]; then
+  [[ "${prev}" == "${release}" ]] && die "${release} is already promoted (current -> releases/${release})"
+  # kept by a rollback (promote.sh --rollback keeps releases), or installed by a promote that stopped before the switch
+  die "releases/${release} exists but current -> ${prev} (a rollback keeps it; or a promote stopped before switching). This won't overwrite it: to reinstall, remove it first (rm -rf ${runtime/#${HOME}/~}/releases/${release})"
+fi
 stores=()
 while IFS= read -r f; do stores+=("${f}"); done < <(node -e '
 const P=require(process.argv[1]),fs=require("fs"),path=require("path");
@@ -42,7 +50,7 @@ for(const r of P.loadRegistry().filter(r=>r.decision==="onboarded"&&(r.ai||[]).i
   for(const f of ["memory.db","memory.db-wal","memory.db-shm"]){const p=path.join(r.abs,".agentic-qe",f);if(fs.existsSync(p))console.log(p)}' "${REPO_ROOT}/lib/projects.js")
 log "promote AQE ${release}: current ${prev} -> ${release}; ${#stores[@]} store file(s) to back up"
 held=()
-for f in "${stores[@]}"; do lsof -t -- "${f}" >/dev/null 2>&1 && held+=("${f/#${HOME}/~}"); done
+for f in ${stores[@]+"${stores[@]}"}; do lsof -t -- "${f}" >/dev/null 2>&1 && held+=("${f/#${HOME}/~}"); done
 [[ ${#held[@]} -eq 0 ]] || die "held open by a running process (close it first): ${held[*]}"
 [[ "${DRY_RUN}" == 1 ]] && { log "dry run: nothing changed"; exit 0; }
 confirm "Back up ${#stores[@]} store file(s), install ${release} and switch current?" || { log "nothing changed"; exit 0; }
@@ -50,7 +58,7 @@ confirm "Back up ${#stores[@]} store file(s), install ${release} and switch curr
 dir="$(node -e 'process.stdout.write(require(process.argv[1]).newBackupDir("aqe-promote"))' "${REPO_ROOT}/lib/config.js")"
 log "store backups → ${dir/#${HOME}/~}/stores"
 i=0
-for f in "${stores[@]}"; do
+for f in ${stores[@]+"${stores[@]}"}; do
   i=$((i + 1)); [[ -t 2 ]] && printf '\r\033[2K   … store %s/%s' "${i}" "${#stores[@]}" >&2
   rel="${f#"${HOME}"/}" dst="${dir}/stores/${f#"${HOME}"/}"
   mkdir -p "$(dirname "${dst}")"

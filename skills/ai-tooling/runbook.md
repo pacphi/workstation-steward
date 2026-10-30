@@ -1,6 +1,6 @@
 # AI tooling runbook
 
-![Revision 19](https://img.shields.io/badge/Revision-19-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
+![Revision 20](https://img.shields.io/badge/Revision-20-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 Procedures for the AI-tooling area: Ruflo and AgentDB, AQE, RuvNet Brain, RuVector, the shared launchers and
 the guards. The policy is `ai-tooling/ai-tooling.toml` in your instance ([an example](../../examples/ai-tooling/ai-tooling.toml)). Why it looks
@@ -64,7 +64,10 @@ notes mention security.
    `ai-tooling/qualify/aqe/run.sh <version> build`, then `smoke`, `g1` … `g8` and `receipt`, does all of it in
    a workspace under `[paths] cache` (README there). `promote.sh <version>` then backs up every store, installs
    the release and switches `current` after the user's yes; `promote.sh --rollback <receipt>` relinks the
-   previous one. A release that says to re-run `aqe init` (3.15.12 does, for its worker-daemon script) skips that:
+   previous one. If a promote stopped part-way, it says so on the next run and won't build on what was left: a
+   leftover `releases/<release>.partial` means it stopped while installing (`current` never moved), so remove that
+   folder and run it again. A `releases/<release>` that `current` doesn't point to is either kept by a rollback or
+   left before the switch; it is never overwritten. A release that says to re-run `aqe init` (3.15.12 does, for its worker-daemon script) skips that:
    `init` is on the never list, and the shared runtime keeps workers off (G8).
 3. Update `[aqe]` in `ai-tooling.toml` (`current`, `based_on`, `patches`) in the same PR as the receipt's
    summary, and move the stock `npm:agentic-qe` pin in `mise/config.toml` to the same base version (`mise lock
