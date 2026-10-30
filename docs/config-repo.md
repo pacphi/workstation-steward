@@ -1,6 +1,6 @@
 # Keep your config in a private Git repo
 
-![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-10-28](https://img.shields.io/badge/Revised-2026--10--28-green)
+![Revision 5](https://img.shields.io/badge/Revision-5-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
 
 Your config (the *instance*: `steward.toml`, your policy files, the registry of your projects and your mise toolchain)
 is the one part of the steward that's yours alone. Putting it in a private Git repo gives you four things:
@@ -82,7 +82,8 @@ steward config sync --rollback <receipt>   # undoes a pull or a send (asks first
 
 **Pulling** (after you merge a Renovate pull request, or on your other Macs):
 
-1. fast-forwards your branch: never a rebase or a merge, and it never drops an edit of yours;
+1. fast-forwards your branch: never a rebase or a merge, and it never drops an edit of yours. An edit to a file the
+   pull also changes, on other lines, is set aside and put back, and the plan says so;
 2. writes a receipt;
 3. offers `mise install` if anything under `mise/` changed (a yes starts the soak, as an upgrade does);
 4. runs `steward check`, which says when the config now needs a newer steward.
@@ -102,10 +103,18 @@ the steward command that changed it. Review and merge it on GitHub. Until then t
 nothing you use changes, and new edits go onto the same pull request. After you merge, the next
 `steward config sync` switches back to `main`, brings it level, and deletes the branch, here and on GitHub.
 
-It stops, and says what to do, when an edit of yours touches a file a pull changes, when your branch and GitHub's
-have both moved (it never merges), and when a merge or rebase is in progress. `--rollback` undoes a pull with
-`git reset --keep`, which refuses rather than touch your edits; for a send, it closes the pull request (unless it was
-merged) and puts this Mac back exactly as it was before.
+Steward commands keep editing while you wait: `steward sc upgrade` bumps a pin in `mise/config.toml`, and Renovate
+bumps another. When your edit and a pull touch the same file on different lines, config sync sets your edit aside,
+pulls, and puts it back, so both moves go through. Finishing a merged send works the same way: an edit made since goes
+along to `main`.
+
+It stops, and says what to do, when an edit of yours and a pull change the same lines (or the edit is staged, new or
+deleted), when your branch and GitHub's have both moved (it never merges), and when a merge or rebase is in progress.
+If an edit it set aside doesn't go back cleanly after all, it undoes the pull and puts your files back byte for
+byte. Before it sets anything aside, it copies each file into the receipt's folder, outside your config.
+
+`--rollback` undoes a pull with `git reset --keep`, setting your edits aside and back the same way; for a send, it
+closes the pull request (unless it was merged) and puts this Mac back exactly as it was before.
 
 > [!NOTE]
 > Config sync needs your config in a Git repository of its own, with a GitHub remote ([step 1](#1-make-your-config-a-repo)),
