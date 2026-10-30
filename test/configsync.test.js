@@ -300,3 +300,167 @@ test('up to date with nothing local says so; steward config sync and steward con
   const c = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'config'], { encoding: 'utf8', env });
   assert.match(plain(c.stdout), /^instance: /m);
 });
+
+// Edits git can combine (2026-10-29): an upgrade's pin edit on one line of mise/config.toml, a Renovate merge on
+// another, used to stop the pull and the send; finishing a merged send stopped on an edit made after it.
+const LINES = Array.from({ length: 12 }, (_, i) => `tool${i + 1} = "1.0.0"`);
+const text = (changes = {}) => `${LINES.map((l, i) => changes[i + 1] || l).join('\n')}\n`;
+// seed(f) — a 12-line mise/config.toml, committed and pushed, so edits can sit on lines apart
+const seed = f => { fs.writeFileSync(path.join(f.inst, 'mise', 'config.toml'), text()); git(f.inst, 'add', '.'); git(f.inst, 'commit', '-qm', 'seed'); git(f.inst, 'push', '-q'); };
+const CFG = f => path.join(f.inst, 'mise', 'config.toml');
+// snapshot(f) — everything a refusal must leave as it was (after the fetch a sync makes): HEAD, branches, status,
+// the edited files' bytes, the stash
+const snapshot = f => (git(f.inst, 'fetch', '-q', '--prune'), { head: f.head(), branches: git(f.inst, 'branch', '-a', '-v', '--no-abbrev'), status: git(f.inst, 'status', '--porcelain', '--untracked-files=all'), cfg: fs.readFileSync(CFG(f), 'utf8'), lock: fs.readFileSync(path.join(f.inst, 'mise', 'mise.lock'), 'utf8'), stash: git(f.inst, 'stash', 'list') });
+
+test('pull: an edit on other lines of a file the pull changes is set aside and put back; the send then takes it', () => {
+  const f = fixture();
+  seed(f);
+  f.upstream('mise/config.toml', text({ 3: 'tool3 = "1.1.0"' }), 'chore(deps): update tool3 (#4)');
+  fs.writeFileSync(CFG(f), text({ 9: 'tool9 = "2.0.0"' }));
+  const before = f.head();
+  const plan = sync(f.inst);
+  assert.equal(plan.status, 0, plan.stdout + plan.stderr);
+  assert.match(plan.stdout, /keeps +your edits to mise\/config\.toml are set aside and put back \(git combines them with the pull\)/);
+  assert.match(plan.stdout, /send +1 file\(s\)/);
+  assert.equal(f.head(), before, 'the plan changes nothing');
+  const r = sync(f.inst, ['--apply'], 'y\nn\nn\n'); // pull yes, mise install no, send no
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.equal(f.head(), f.origin());
+  assert.equal(fs.readFileSync(CFG(f), 'utf8'), text({ 3: 'tool3 = "1.1.0"', 9: 'tool9 = "2.0.0"' }), 'both changes, the edit still uncommitted');
+  assert.equal(git(f.inst, 'status', '--porcelain'), 'M mise/config.toml');
+  assert.equal(git(f.inst, 'stash', 'list'), '', 'nothing left in the stash');
+  assert.match(r.stdout, /your edits to mise\/config\.toml: set aside and put back \(a copy: /);
+  const rc = JSON.parse(fs.readFileSync(receiptOf(r.stdout), 'utf8'));
+  assert.equal(rc.complete, true);
+  assert.deepEqual(rc.carried.files, ['mise/config.toml']);
+  assert.equal(fs.readFileSync(path.join(rc.carried.copies, 'mise', 'config.toml'), 'utf8'), text({ 9: 'tool9 = "2.0.0"' }), 'a copy of the edit as it was');
+  assert.ok(!rc.carried.copies.startsWith(f.inst), 'the copy is outside the checkout');
+  const send = sync(f.inst, ['--apply'], 'y\n');
+  assert.equal(send.status, 0, send.stderr);
+  assert.match(send.stdout, /==> sent as PR/);
+});
+
+test('pull: edits on the same lines as the pull, or staged, are refused and nothing changes', () => {
+  const f = fixture();
+  seed(f);
+  f.upstream('mise/config.toml', text({ 3: 'tool3 = "1.1.0"' }), 'up');
+  fs.writeFileSync(CFG(f), text({ 3: 'tool3 = "9.9.9"' }));
+  const was = snapshot(f);
+  const r = sync(f.inst, ['--apply'], 'y\ny\ny\n');
+  assert.equal(r.status, 2);
+  assert.match(r.stdout, /not syncing: your edits to mise\/config\.toml are in the way of the pull \(both change the same lines of mise\/config\.toml\)/);
+  assert.deepEqual(snapshot(f), was);
+  fs.writeFileSync(CFG(f), text({ 9: 'tool9 = "2.0.0"' })); git(f.inst, 'add', 'mise/config.toml');
+  const staged = sync(f.inst);
+  assert.equal(staged.status, 2);
+  assert.match(staged.stdout, /in the way of the pull \(mise\/config\.toml is staged \(git add\), which the steward doesn't set aside: git -C .* restore --staged mise\/config\.toml\)/);
+});
+
+test('pull: when the edits do not go back cleanly after all, the pull is undone and the checkout is byte for byte as before', () => {
+  const f = fixture();
+  seed(f);
+  f.upstream('mise/config.toml', text({ 3: 'tool3 = "1.1.0"' }), 'up');
+  fs.writeFileSync(CFG(f), text({ 9: 'tool9 = "2.0.0"' }));
+  fs.writeFileSync(path.join(f.inst, 'notes.md'), 'an edit the pull does not touch\n');
+  fs.writeFileSync(path.join(f.inst, 'supply-chain', 'host.toml'), 'mine to stash\n'); git(f.inst, 'stash', 'push', '-q', '-m', 'a stash of yours', '--', 'supply-chain'); // stays yours
+  // the plan's check (git merge-file) says the edit combines; a -merge attribute makes git stash pop conflict anyway,
+  // the one way to reach the put-back-and-refuse path
+  fs.writeFileSync(path.join(f.inst, '.git', 'info', 'attributes'), 'mise/config.toml -merge\n');
+  const was = snapshot(f);
+  assert.match(sync(f.inst).stdout, /keeps +your edits to mise\/config\.toml are set aside and put back/);
+  const r = sync(f.inst, ['--apply'], 'y\ny\ny\n');
+  assert.equal(r.status, 2, r.stdout + r.stderr);
+  assert.match(r.stdout, /not syncing: your edits to mise\/config\.toml are in the way of the pull \(they did not go back cleanly\)/);
+  assert.deepEqual(snapshot(f), was, 'HEAD, status, files and your own stash as they were');
+  assert.equal(fs.readFileSync(path.join(f.inst, 'notes.md'), 'utf8'), 'an edit the pull does not touch\n');
+  const rp = fs.readdirSync(path.join(ROOT, 'state', 'workstation-steward', 'backups')).filter(d => d.startsWith('config-sync-2')).sort().pop();
+  const rc = JSON.parse(fs.readFileSync(path.join(ROOT, 'state', 'workstation-steward', 'backups', rp, 'receipt.json'), 'utf8'));
+  assert.equal(rc.complete, false);
+  assert.match(rc.restored, /nothing changed/);
+  assert.match(sync(f.inst, ['--rollback', path.join(ROOT, 'state', 'workstation-steward', 'backups', rp, 'receipt.json')]).stderr, /not a config sync receipt/);
+});
+
+test('pull --rollback: a pull that carried an edit moves back with the edit as it was before the pull', () => {
+  const f = fixture();
+  seed(f);
+  f.upstream('mise/config.toml', text({ 3: 'tool3 = "1.1.0"' }), 'chore(deps): update tool3 (#5)');
+  fs.writeFileSync(CFG(f), text({ 9: 'tool9 = "2.0.0"' }));
+  const before = f.head();
+  const rp = receiptOf(sync(f.inst, ['--apply'], 'y\nn\nn\n').stdout);
+  assert.equal(f.head(), f.origin());
+  const plan = sync(f.inst, ['--rollback', rp], 'n\n');
+  assert.match(plan.stdout, /your edits to mise\/config\.toml are set aside and put back/);
+  assert.equal(f.head(), f.origin(), 'a no changes nothing');
+  const back = sync(f.inst, ['--rollback', rp], 'y\nn\n');
+  assert.equal(back.status, 0, back.stdout + back.stderr);
+  assert.equal(f.head(), before);
+  assert.equal(fs.readFileSync(CFG(f), 'utf8'), text({ 9: 'tool9 = "2.0.0"' }));
+  assert.equal(git(f.inst, 'status', '--porcelain'), 'M mise/config.toml');
+  assert.equal(git(f.inst, 'stash', 'list'), '');
+  assert.ok(JSON.parse(fs.readFileSync(rp, 'utf8')).rolled_back);
+});
+
+// sendAndMerge(f) — send the line-2 edit, squash-merge its PR on "GitHub"; returns the send branch
+function sendAndMerge(f) {
+  seed(f);
+  fs.writeFileSync(CFG(f), text({ 2: 'tool2 = "1.2.0"' }));
+  fs.writeFileSync(path.join(f.inst, 'mise', 'mise.lock'), 'lock from the send\n');
+  assert.equal(sync(f.inst, ['--apply'], 'y\n').status, 0);
+  const branch = f.branch(), [pr] = prs().slice(-1);
+  f.merge(branch); setPr(pr.number, { state: 'MERGED' });
+  return branch;
+}
+
+test('send: finishing a merged send carries an edit made since to a file the send changed (main was one commit behind)', () => {
+  const f = fixture();
+  const branch = sendAndMerge(f);
+  fs.writeFileSync(path.join(f.inst, 'mise', 'mise.lock'), 'lock after an upgrade-tool\n');
+  const plan = sync(f.inst);
+  assert.match(plan.stdout, /stays +1 local edit\(s\), carried over to main/);
+  assert.doesNotMatch(plan.stdout, /keeps/, 'the send branch has GitHub\'s files: no setting aside needed');
+  const r = sync(f.inst, ['--apply'], 'y\n');
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.equal(f.branch(), 'main');
+  assert.equal(f.head(), f.origin());
+  assert.equal(fs.readFileSync(path.join(f.inst, 'mise', 'mise.lock'), 'utf8'), 'lock after an upgrade-tool\n');
+  assert.equal(git(f.inst, 'status', '--porcelain'), 'M mise/mise.lock');
+  assert.equal(git(f.inst, 'branch', '--list', branch), '', 'the send branch is gone here');
+  assert.equal(git(f.inst, 'ls-remote', '--heads', 'origin', branch), '', 'and on GitHub');
+  assert.match(r.stdout, /==> fast-forwarded \w{7} → \w{7}/);
+});
+
+test('send: finishing carries an edit across a later merge on other lines, and refuses one on the same lines', () => {
+  const f = fixture();
+  const branch = sendAndMerge(f);
+  f.upstream('mise/config.toml', text({ 2: 'tool2 = "1.2.0"', 11: 'tool11 = "1.3.0"' }), 'chore(deps): update tool11 (#6)');
+  fs.writeFileSync(CFG(f), text({ 2: 'tool2 = "1.2.0"', 11: 'tool11 = "7.0.0"' }));
+  const was = snapshot(f);
+  const clash = sync(f.inst, ['--apply'], 'y\ny\n');
+  assert.equal(clash.status, 2);
+  assert.match(clash.stdout, /not finishing: your edits to mise\/config\.toml are in the way of the switch \(both change the same lines/);
+  assert.deepEqual(snapshot(f), was);
+  assert.equal(f.branch(), branch);
+  fs.writeFileSync(CFG(f), text({ 2: 'tool2 = "1.2.0"', 6: 'tool6 = "6.0.0"' }));
+  assert.match(sync(f.inst).stdout, /keeps +your edits to mise\/config\.toml are set aside and put back \(git combines them with what GitHub merged\)/);
+  const r = sync(f.inst, ['--apply'], 'y\nn\n'); // finish yes, mise install no
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.equal(f.branch(), 'main');
+  assert.equal(f.head(), f.origin());
+  assert.equal(fs.readFileSync(CFG(f), 'utf8'), text({ 2: 'tool2 = "1.2.0"', 6: 'tool6 = "6.0.0"', 11: 'tool11 = "1.3.0"' }));
+  assert.equal(git(f.inst, 'stash', 'list'), '');
+  assert.equal(git(f.inst, 'branch', '--list', branch), '');
+});
+
+test('send: finishing puts everything back when a carried edit does not go back cleanly', () => {
+  const f = fixture();
+  const branch = sendAndMerge(f);
+  f.upstream('mise/config.toml', text({ 2: 'tool2 = "1.2.0"', 11: 'tool11 = "1.3.0"' }), 'up');
+  fs.writeFileSync(CFG(f), text({ 2: 'tool2 = "1.2.0"', 6: 'tool6 = "6.0.0"' }));
+  fs.writeFileSync(path.join(f.inst, '.git', 'info', 'attributes'), 'mise/config.toml -merge\n'); // see the pull's test
+  const was = snapshot(f);
+  const r = sync(f.inst, ['--apply'], 'y\ny\n');
+  assert.equal(r.status, 2, r.stdout + r.stderr);
+  assert.match(r.stdout, /not finishing: .* \(they did not go back cleanly\)\. .*Nothing changed\./);
+  assert.deepEqual(snapshot(f), was, 'still on the send branch, main where it was, the edit byte for byte');
+  assert.equal(f.branch(), branch);
+});
