@@ -47,6 +47,21 @@ Everything is local. It uses no network and starts no slow scan.
 
 It writes nothing, not even a record of its own run.
 
+### Old caches wait
+
+Two of these are caches another command wrote: the gate's queue (`steward review`) and the projects behind (the last
+full `steward projects reconcile --all`). When a cache is older than `stale_hours`, its finding says "as of" when it
+was written, and it becomes a **wait**: it is shown, but it is never the next step. Run the command that writes it to
+bring it up to date. Set the number in your `steward.toml`; `0` means a cache never goes stale:
+
+```toml
+[brief]
+stale_hours = 48    # the default
+```
+
+A finding that compares today's installs, such as "aqe changed since the last reconcile check", is read now, so it
+never goes stale.
+
 ## What it checks
 
 Each check is a **detector**. A detector looks at what was read and either finds something or stays quiet. Each has a

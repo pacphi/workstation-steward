@@ -56,7 +56,7 @@ const facts = (o = {}) => {
   return {
     now: NOW, state: STATE, instance: INST, engine: '/opt/steward', profiles: { ai_tooling: true, projects: true }, policy: {},
     soak: { running: false, awaitingPrune: false, until: null, newest: null }, hybrids: { policy: [], receipts: {} }, backups: [], aqe: null, repin: null,
-    reconcile: null, gate: null, review: { due: false, age: 1, days: 7 }, ...o, config, configNeeds: CR.needs(config),
+    reconcile: null, reconcileAt: null, gate: null, gateAt: null, staleHours: 48, review: { due: false, age: 1, days: 7 }, ...o, config, configNeeds: CR.needs(config),
   };
 };
 const found = (f, id) => B.run(f).filter(x => x.id === id);
@@ -192,6 +192,39 @@ test('projects-behind, gate-cleared, review-due: the banner lines and the last r
   assert.match(one(facts({ review: { due: true, age: 9, days: 7 } }), 'review-due').text, /last 9 days ago/);
   assert.match(one(facts({ review: { due: true, age: null, days: 7 } }), 'review-due').text, /never run/);
   for (const id of ['projects-behind', 'gate-cleared', 'review-due']) none(facts(), id);
+});
+
+test('[brief] stale_hours: a cached fact older than it says "as of" and only waits; 0 never goes stale', () => {
+  const gate = '3 queued update(s) cleared the gate since the last review: steward review';
+  const fresh = one(facts({ gate, gateAt: ago(24 * 60) }), 'gate-cleared');
+  assert.equal(fresh.severity, 'do');
+  assert.doesNotMatch(fresh.text, /as of/);
+  const old = one(facts({ gate, gateAt: ago(72 * 60) }), 'gate-cleared');
+  assert.equal(old.severity, 'wait');
+  assert.match(old.text, /cleared the gate since the last review \(as of \d{4}-\d{2}-\d{2} \d{2}:\d{2}\)$/);
+  assert.equal(B.pick(B.run(facts({ gate, gateAt: ago(72 * 60) }))).next, null);
+  assert.equal(one(facts({ gate, gateAt: ago(72 * 60), staleHours: 12 }), 'gate-cleared').severity, 'wait');
+  assert.equal(one(facts({ gate, gateAt: ago(24 * 60), staleHours: 12 }), 'gate-cleared').severity, 'wait');
+  assert.equal(one(facts({ gate, gateAt: ago(9999 * 60), staleHours: 0 }), 'gate-cleared').severity, 'do');
+  const behind = '2 project(s) behind the qualified AI tools: steward projects reconcile --all';
+  assert.equal(one(facts({ reconcile: behind, reconcileAt: ago(72 * 60) }), 'projects-behind').severity, 'wait');
+  // today's installs moved since the check: that is read now, so it never goes stale
+  const moved = 'aqe changed since the last reconcile check: steward projects reconcile --all';
+  assert.equal(one(facts({ reconcile: moved, reconcileAt: ago(72 * 60) }), 'projects-behind').severity, 'do');
+});
+
+test('[brief] stale_hours in steward.toml: 48 by default, yours when set, and an unknown [brief] key is an error', () => {
+  const cfg = toml => {
+    const d = fs.mkdtempSync(path.join(ROOT, 'cfg-'));
+    fs.writeFileSync(path.join(d, 'steward.toml'), toml);
+    const r = spawnSync(process.execPath, [path.join(REPO, 'lib', 'config.js'), '--json'], { encoding: 'utf8', env: { ...process.env, STEWARD_INSTANCE: d } });
+    return { status: r.status, values: JSON.parse(r.stdout) };
+  };
+  assert.equal(cfg('').values.brief.stale_hours, 48);
+  assert.equal(cfg('[brief]\nstale_hours = 12\n').values.brief.stale_hours, 12);
+  assert.equal(cfg('[brief]\nstale_hours = 12\n').status, 0);
+  assert.equal(cfg('[brief]\nunknown_key = 1\n').status, 1);
+  assert.equal(B.facts().staleHours, 48);
 });
 
 test('unreadable: a source that can\'t be read is said, as a wait; the rest of the briefing stands', () => {
