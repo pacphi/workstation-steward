@@ -17,6 +17,10 @@ answer | "${STEWARD}" config sync --apply || die "config sync refused or failed 
 
 branch="$(git -C "${CONFIG}" branch --show-current)"
 [[ "${branch}" == main ]] || die "after the sync the config is on ${branch}, not main"
-[[ -z "$(git -C "${CONFIG}" status --porcelain)" ]] || die "after the sync the config has uncommitted changes: git -C ${CONFIG/#${HOME}/~} status"
+# Edits the plan said it would carry over (a `stays` or `keeps` line) are still local after a good sync; anything else is not
+if [[ -n "$(git -C "${CONFIG}" status --porcelain)" ]]; then
+  grep -qE '^ +(stays|keeps) ' <<<"${PLAN}" || die "after the sync the config has uncommitted changes: git -C ${CONFIG/#${HOME}/~} status"
+  log "your local edits were carried over and stay local; sending them opens a PR, which is yours: steward config sync --apply"
+fi
 [[ ! -f "${CONFIG}/mise/mise.lock" ]] || node "${ENGINE}/supply-chain/bin/lock-check.js" "${CONFIG}/mise/mise.lock"
 log "config in step: $(git -C "${CONFIG}" log --oneline -1)"

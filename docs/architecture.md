@@ -1,6 +1,6 @@
 # Architecture
 
-![Revision 36](https://img.shields.io/badge/Revision-36-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
+![Revision 37](https://img.shields.io/badge/Revision-37-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
 
 How workstation-steward is divided, how the parts meet, and the decisions behind it. Each decision has a number
 (D1, D2 …) that code comments and docs cite; the table at the end says what was decided and why.

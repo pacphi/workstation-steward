@@ -121,6 +121,27 @@ test('repin: needs the owner\'s words, and a release that verifies, before it ba
   assert.doesNotMatch(unverified.stdout, /backup and receipt/);
 });
 
+test('config-sync: after finishing a send that carried an edit, the edit stays local and the flow passes; an edit it did not plan stops it', () => {
+  const cfg = fs.mkdtempSync(path.join(ROOT, 'cfg-'));
+  const git = (...a) => spawnSync('git', ['-C', cfg, ...a], { encoding: 'utf8' });
+  git('init', '-q', '-b', 'main');
+  fs.copyFileSync(path.join(REPO, 'examples', 'steward.toml'), path.join(cfg, 'steward.toml'));
+  fs.writeFileSync(path.join(cfg, 'tools.txt'), 'a 1\n');
+  git('add', '.');
+  git('-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-qm', 'first');
+  fs.writeFileSync(path.join(cfg, 'tools.txt'), 'a 2\n');
+  const env = { STEWARD_INSTANCE: cfg };
+  const carried = standins({ 'steward-config': '~/cfg  (o/cfg, steward/sync-1, PR #1 merged)\n  finish  PR #1 is merged: switch to main, fast-forward 1 commit(s), delete steward/sync-1\n  stays   1 local edit(s), carried over to main\n' });
+  const r = spawnSync(path.join(BIN, 'config-sync.sh'), [], { encoding: 'utf8', env: { ...ENV, ...env, PATH: `${carried.dir}:${process.env.PATH}` } });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout + r.stderr, /carried over and stay local/);
+  assert.match(carried.calls(), /config sync --apply/);
+  const unplanned = standins({ 'steward-config': '~/cfg  (o/cfg, main → origin/main)\n  pull    1 commit(s):\n' });
+  const r2 = spawnSync(path.join(BIN, 'config-sync.sh'), [], { encoding: 'utf8', env: { ...ENV, ...env, PATH: `${unplanned.dir}:${process.env.PATH}` } });
+  assert.equal(r2.status, 1);
+  assert.match(r2.stderr, /uncommitted changes/);
+});
+
 test('config-sync: takes nothing when in step, and stops for the owner when the plan would send local edits', () => {
   const idle = standins({ 'steward-config': '~/cfg  (o/cfg, main → origin/main)\n  up to date with origin/main; nothing to send\n' });
   const r = run(idle, 'config-sync.sh');
