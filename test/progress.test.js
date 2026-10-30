@@ -26,8 +26,10 @@ function sandbox(name) {
     + 'allow_scripts = ["fake-cli", "better-sqlite3"]\nstate_backup = "ruflo-policy"\n');
   put(path.join(home, 'proj', '.claude-flow', 'policy', 'p.json'), '{}');
   put(path.join(stub, 'npm'), `#!/bin/bash\necho "$*" >>"${box}/npm.log"\nsleep 2\necho "npm warn deprecated old-dep@1.0.0: no longer supported" >&2\necho "added 1 package in 2s"\n`, 0o755);
+  // node and yq from their install folders: with HOME moved, a mise shim would look for its installs there
+  const yq = spawnSync('mise', ['which', 'yq'], { encoding: 'utf8' });
   /** @type {NodeJS.ProcessEnv} */
-  const env = { ...process.env, STEWARD_INSTANCE: inst, HOME: home, NO_COLOR: '1', PATH: [stub, path.dirname(process.execPath), process.env.PATH].join(':') };
+  const env = { ...process.env, STEWARD_INSTANCE: inst, HOME: home, NO_COLOR: '1', PATH: [stub, path.dirname(process.execPath), ...(yq.status === 0 ? [path.dirname(yq.stdout.trim())] : []), process.env.PATH].join(':') };
   for (const k of ['DRY_RUN', 'NO_PROGRESS', 'STEWARD_CONFIG', 'STEWARD_T0']) delete env[k];
   const npmRuns = () => { try { return fs.readFileSync(path.join(box, 'npm.log'), 'utf8').split('\n').filter(Boolean); } catch { return []; } };
   return { box, inst, home, env, npmRuns };
