@@ -52,6 +52,19 @@ The steward aims for *safe, explained and reversible*, not merely *newest*.
 
 ## See it work
 
+### What's next, in one line
+
+`steward brief` reads what is already on disk, with no network, and names the one next step with its exact command, or
+says in one line that nothing needs you. It also notices a step that stopped midway or ran out of order, such as
+hybrids installed before the config sync that brings their new versions, and names the step that finishes it. It
+never fixes anything itself ([`docs/briefing.md`](docs/briefing.md)).
+
+```text
+$ steward brief
+steward config: 1 newer commit(s) on origin/main (as of 2026-10-30 09:12): supply-chain/hybrids.toml
+next: steward config sync, then steward sc install-hybrids
+```
+
 ### The weekly review
 
 `steward review` runs every area's read-only checks and returns one list of what needs you, each item with the command
@@ -119,6 +132,7 @@ steward init
 ```sh
 steward doctor        # what this machine still needs (--install fixes it)
 steward sc plan       # what an upgrade would take, hold or skip, and why
+steward brief         # what needs you now: the one next step, or one quiet line
 ```
 
 **5. Or just ask.** With the Claude Code skills installed (`steward init` offers them, or run `steward skills install`),
@@ -197,6 +211,7 @@ sessions to watch: an advisory check, setting up a new repo, and the AI tooling.
 | Doc | What it covers |
 | --- | --- |
 | [`docs/guide.md`](docs/guide.md) | Why the steward exists, the first run, and a normal week |
+| [`docs/briefing.md`](docs/briefing.md) | `steward brief`: the one next step, what it checks, and how to add a check |
 | [`docs/lifecycle.md`](docs/lifecycle.md) | Install, upgrade, config formats, rollback, the two channels, and the promises behind them |
 | [`docs/architecture.md`](docs/architecture.md) | How it's built, and every design decision with its reason |
 | [`docs/prereqs.md`](docs/prereqs.md) | What the steward needs on the machine (`steward doctor` checks it) |

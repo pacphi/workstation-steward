@@ -20,6 +20,9 @@ min_release_age_days = 3                   # take the newest version at least th
 soak_days = 3                              # after an upgrade, old installs stay this long before `steward sc prune`
 review_days = 7                            # `steward` says a review is due this many days after the last `steward review`
 
+[brief]
+stale_hours = 48                           # `steward brief` shows a cached fact older than this "as of" its time, never as the next step
+
 [profiles]
 ai_tooling = false                         # Ruflo, AgentDB, AQE, Brain and RuVector: drift, repin, guards (steward ai …)
 projects = false                           # discovery, the registry and onboarding of ~/Development (steward projects …)

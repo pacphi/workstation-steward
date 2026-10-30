@@ -1,6 +1,6 @@
 # Docs index
 
-![Revision 6](https://img.shields.io/badge/Revision-6-green) ![Revised 2026-10-27](https://img.shields.io/badge/Revised-2026--10--27-green)
+![Revision 7](https://img.shields.io/badge/Revision-7-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 Every public doc, by kind. Each doc shows its revision and revision date in badges under the title. The number changes only when the
 content does; moving a file or fixing a link doesn't count. The rules are in
@@ -11,6 +11,7 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | Doc | Rev | What it is |
 | --- | --- | --- |
 | [`guide.md`](guide.md) | 4, 2026-10-30 | Why the steward exists, what it looks after, the rules, first run, the weekly routine (with what the release-age gate holds back) and what to do when something happens, words you'll see |
+| [`briefing.md`](briefing.md) | 1, 2026-10-30 | `steward brief`: what needs you now as one next step with its command, read from disk without the network; the checks (detectors), their order, the output, and how to add one |
 | [`config-repo.md`](config-repo.md) | 5, 2026-10-29 | Keeping your config in a private Git repo: setting it up, Renovate, a second Mac, staying in step, and what the steward tells you about it |
 | [`prereqs.md`](prereqs.md) | 3, 2026-10-27 | Everything the steward needs on the machine, the order to install it on a new Mac, and `steward doctor` |
 
