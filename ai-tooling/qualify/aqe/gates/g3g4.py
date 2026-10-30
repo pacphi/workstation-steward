@@ -11,6 +11,7 @@ markers = {'a': {'key': 'q-marker-a', 'value': {'note': 'synthetic marker: the h
 queries = {'a': 'heron counting lighthouse beacons on a fjord', 'b': 'copper kettle whistling by the orchard gate'}
 ev = {}
 def session(n, label, cmd, calls):
+    mark(label)
     proj, env = env_for(n)
     m = MCP(cmd, env, proj, EVIDENCE/f'g3g4-{label}.stderr.log')
     ids = [m.call(c, a) for c, a in calls]; outs = [result_text(m.recv(i, 180)) for i in ids]

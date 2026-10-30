@@ -24,6 +24,7 @@ def value_sha(text):
     except Exception: return None, None
 steps = {}; snapshots = {}; schemas = {}
 def step(name, cmd, calls):
+    mark(name)
     m = MCP(cmd, env, proj, EVIDENCE/f'g5-{name}.stderr.log'); t0 = time.time()
     outs = [result_text(m.recv(m.call(n, a), 180)) for n, a in calls]
     ex = m.close(); steps[name] = {'exit': ex, 'sessionSeconds': round(time.time()-t0, 2), 'responses': []}

@@ -50,7 +50,11 @@ node "${SC_ROOT}/bin/addon-check.js" || fails=$((fails + 1))
 log "npm doctor (ping registry versions environment permissions)"
 # Known false positive with fuzzy node pins: npm compares the PATH symlink (node/26) to the real prefix.
 # "Not ok / Use npm vX" just means a newer npm exists — informational, not a failure.
-npm doctor ping registry versions environment permissions 2>&1 \
+# A live timer while it works (about 30 s, mostly the registry checks); "Not ok" exits non-zero, so the status is
+# ignored here and the lines below say what each check found.
+npm_doctor() { npm doctor ping registry versions environment permissions 2>&1 || true; }
+quiet "npm doctor" npm_doctor
+printf '%s\n' "${QUIET_OUT}" \
   | awk '/^Checking/ {c=$0; next} /^(Ok|Not ok)/ {s=$0; next} /^(Use|current:|Error)/ && c {print "  " c ": " s " (" $0 ")"; c=""; next} c && s {print "  " c ": " s; c=""; s=""}' || true
 
 if ((fails)); then die "${fails} check(s) failed"; fi

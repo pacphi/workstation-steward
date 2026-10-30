@@ -116,3 +116,17 @@ test('verify: without the AI tooling add-on there is no shared runtime, so the w
   assert.match(r.out, /WARN agentic-qe: this shell's PATH resolves .*\/aqe\/current\/bin\/agentic-qe; mise resolves/);
   assert.match(r.out, /WARN steward-test-tool:/);
 });
+
+test('verify: npm doctor runs under a timer (quiet), its "Not ok" exit is no failure, and each check\'s result line still prints', () => {
+  const s = sandbox('doctor');
+  const pre = path.join(s.box, 'doctor-npm');
+  put(path.join(pre, 'npm'), '#!/bin/bash\n[[ "$1" == doctor ]] || exit 0\n'
+    + 'printf "Checking npm ping\\nOk\\n\\nChecking npm version\\nNot ok\\nUse npm v12.1.0\\nChecking node version\\nOk\\ncurrent: v26.1.0\\n"\nexit 1\n', 0o755);
+  const r = s.run(BIN('verify'), [], {}, [pre]);
+  assert.equal(r.status, 0, r.out);
+  assert.match(r.stdout, /^ {2}Checking npm version: Not ok \(Use npm v12\.1\.0\)$/m);
+  assert.match(r.stdout, /^ {2}Checking node version: Ok \(current: v26\.1\.0\)$/m);
+  assert.match(r.stderr, /… npm doctor\n/);
+  assert.match(strip(r.stderr), /✓ npm doctor \(\d+s\)/);
+  assert.match(r.out, /all checks passed/);
+});

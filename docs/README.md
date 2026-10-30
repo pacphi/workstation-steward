@@ -1,6 +1,6 @@
 # Docs index
 
-![Revision 7](https://img.shields.io/badge/Revision-7-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 8](https://img.shields.io/badge/Revision-8-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 Every public doc, by kind. Each doc shows its revision and revision date in badges under the title. The number changes only when the
 content does; moving a file or fixing a link doesn't count. The rules are in
@@ -21,7 +21,7 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | --- | --- | --- |
 | [`lifecycle.md`](lifecycle.md) | 15, 2026-10-29 | Install, set up, use, upgrade, migrate the config, reconcile projects, add tools, roll back, and the two channels (a worktree or npm for the release): the promises across releases, each marked built or planned (D40, D41) |
 | [`release-classes.md`](release-classes.md) | 3, 2026-10-29 | Built (D52): what may skip the release-age gate, as one release class per update source, update sources declared in `host.toml`, and the weekly upstream watch on shipped key pins |
-| [`maintainers.md`](maintainers.md) | 3, 2026-10-29 | Releasing: the release PR, Conventional Commit titles, the one-time npm setup (placeholder and Trusted Publishing), the publish guard, a pre-push leak check (D46); the maintainer skill (D53); what to do when the upstream watch finds a shipped default changed (D52) |
+| [`maintainers.md`](maintainers.md) | 4, 2026-10-30 | Releasing: the release PR, Conventional Commit titles, the one-time npm setup (placeholder and Trusted Publishing), the publish guard, a pre-push leak check (D46); the maintainer skill (D53); what to do when the upstream watch finds a shipped default changed (D52); checking that no command looks hung (`just progress-gaps`) |
 | [`architecture.md`](architecture.md) | 38, 2026-10-30 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D42 |
 
 ## Living docs by area

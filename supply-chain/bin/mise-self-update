@@ -16,7 +16,9 @@ prefix="$(brew --prefix 2>/dev/null || true)"
 [[ -n "${prefix}" && "${bin}" == "${prefix}"/* ]] && die "mise ${bin/#${HOME}/~} is Homebrew's: brew upgrade mise (steward sc upgrade judges it with the formulae)"
 current="$("${bin}" --version 2>/dev/null | awk '{print $1}')"
 
-IFS=$'\t' read -r action _ chosen reason _ < <(node "${SC_ROOT}/bin/mise-self.js" --plan)
+# a few seconds on the network (GitHub releases, two advisory databases): a live timer
+quiet "mise releases (the gate and advisories)" node "${SC_ROOT}/bin/mise-self.js" --plan || true
+IFS=$'\t' read -r action _ chosen reason _ <<<"${QUIET_OUT}" || true
 if [[ -n "${1:-}" ]]; then
   target="${1#v}"
   [[ "${target}" =~ ^[0-9]{4}\.[0-9]+\.[0-9]+$ ]] || die "not a mise release: $1 (e.g. 2026.10.18)"

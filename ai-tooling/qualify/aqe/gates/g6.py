@@ -33,6 +33,7 @@ def kv_has(path, key):
         return hits
     finally: c.close()
 def independent_read(label, key):
+    mark(f'guard {label}: an independent read')
     proj, env = proj_env(label)
     m = MCP([str(STAGE/'bin'/'aqe'), 'mcp'], env, proj, EVIDENCE/f'g6-{label}-independent-read.stderr.log')
     r = result_text(m.recv(m.call('memory_retrieve', {'key': key, 'namespace': 'qualify'}))); m.close()
@@ -42,9 +43,11 @@ out = {}
 for label in ('disabled', 'enabled'):
     proj, env = proj_env(label)
     if not db(label).exists():
+        mark(f'seed the {label} store')
         p = subprocess.run(['node', '--import', str(STAGE/'runtime'/'offline-model.mjs'), str(FIX/'g6'/'seed.mjs')], cwd=proj, env=env, capture_output=True, text=True, timeout=300)
         open(EVIDENCE/f'g6-{label}-seed.log', 'w').write(p.stdout+'\n---\n'+p.stderr); assert p.returncode == 0, p.stderr[-800:]
 # A: guard on, the staged wrapper
+mark('guard on: a dream call and a concurrent store')
 proj, env = proj_env('disabled'); before = counts(db('disabled'))
 m = MCP([str(STAGE/'bin'/'aqe-mcp')], env, proj, EVIDENCE/'g6-disabled.stderr.log')
 t0 = time.time(); d_id = m.call('qe/learning/dream', {'action': 'dream', 'durationMs': 30000, 'minPatterns': 5})
@@ -58,6 +61,7 @@ out['disabled'] = {'dreamResponse': (d or '')[:600], 'dreamResponseSeconds': rou
   'cycles': cycles(db('disabled')), 'kvTables': kv_has(db('disabled'), 'g6-disabled-concurrent'), 'independentCliRead': independent_read('disabled', 'g6-disabled-concurrent'),
   'countDeltas': delta(before, after)}
 # B: guard lifted, a 30 s dream, a store at +8 s, then stdin closes
+mark('guard lifted: a 30 s dream, a store at +8 s')
 proj, env = proj_env('enabled'); before = counts(db('enabled'))
 m = MCP(['node', '--import', str(E/'runtime'/'offline-model.mjs'), str(STAGE/'node_modules'/'agentic-qe'/'dist'/'mcp'/'bundle.js')], env, proj, EVIDENCE/'g6-enabled.stderr.log')
 t0 = time.time(); d_id = m.call('qe/learning/dream', {'action': 'dream', 'durationMs': 30000, 'minPatterns': 5})

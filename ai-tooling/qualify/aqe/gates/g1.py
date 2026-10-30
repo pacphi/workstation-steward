@@ -10,6 +10,7 @@ env = clean_env(W/'home-g1', {'AQE_MEMORY_PATH': str(proj/'.agentic-qe'/'memory.
 res = {}
 for label, args in [('seed', ['node', 'seed-fixture.mjs']), ('regression', ['node', '--test', 'regression.test.mjs']), ('regression-rerun', ['node', '--test', 'regression.test.mjs'])]:
     if label == 'seed' and (proj/'fixture.json').exists(): res['seed'] = 'already seeded'; continue
+    mark(f'{label}: {" ".join(args)}')
     with open(EVIDENCE/f'g1-{label}.log', 'w') as log:
         p = subprocess.run(args, cwd=proj, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=180)
     res[label] = p.returncode
@@ -22,10 +23,12 @@ def summ(t):
     s = json.dumps(d)
     return {'containsActiveId': fx['activePatternId'] in s, 'archivedIdsPresent': [i in s for i in fx['archivedPatternIds']], 'snippet': s[:400]}
 for label, cmd in [('mcp', [str(STAGE/'bin'/'aqe-mcp')]), ('cli-mcp', [str(STAGE/'bin'/'aqe'), 'mcp'])]:
+    mark(f'public patterns through {label}')
     m = MCP(cmd, env, proj, EVIDENCE/f'g1-public-{label}.stderr.log')
     a = m.recv(m.call('qe/learning/optimize', {'action': 'patterns'})); b = m.recv(m.call('qe/learning/optimize', {'action': 'patterns', 'domain': 'code-intelligence'}))
     ex = m.close()
     res[f'public-{label}'] = {'exit': ex, 'unscoped': summ(result_text(a)), 'scoped': summ(result_text(b))}
+mark('regression after the public tools')
 p = subprocess.run(['node', '--test', 'regression.test.mjs'], cwd=proj, env=env, capture_output=True, text=True, timeout=180)
 open(EVIDENCE/'g1-post-public-regression.log', 'w').write(p.stdout+p.stderr)
 res['post-public-regression'] = {'rc': p.returncode, 'counts': re.findall(r'ℹ (?:pass|fail) \d+', p.stdout)}

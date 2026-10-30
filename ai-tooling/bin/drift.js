@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Read-only: compare this machine's AI tooling with ai-tooling/ai-tooling.toml and each project's declared tools.
 // Never writes or installs anything. Usage: drift.js [--offline] [--json]
+// Progress goes to stderr in three stages (machine, upstream, projects; lib/progress.js), so stdout, and --json, stay the
+// report alone. Every check here is synchronous, so a stage's line moves on each detail, not on a timer.
 //   DRIFT  something differs from policy        WARN  likely drift, or policy not yet decided
 //   info   context (ages, upstream state)        ok    matches policy
 const fs = require('fs');
@@ -9,6 +11,7 @@ const { execFileSync } = require('child_process');
 const P = require('../../lib/projects.js');
 const HT = require('../../lib/hooktimeouts.js');
 const C = require('../../lib/config.js');
+const { progress } = require('../../lib/progress.js');
 
 const offline = process.argv.includes('--offline');
 const asJSON = process.argv.includes('--json');
@@ -22,8 +25,12 @@ const say = (level, area, msg) => { results.push({ level, area, msg }); };
 const sh = (cmd, a) => { try { return execFileSync(cmd, a, { encoding: 'utf8', maxBuffer: 256 << 20, stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch { return ''; } };
 const realOr = p => { try { return fs.realpathSync(p); } catch { return null; } };
 const MIN_AGE_DAYS = C.load().values.policy.min_release_age_days;
+const pg = progress(3);
+const found = n => `${n} finding(s)`;
 
 // ---- machine ----------------------------------------------------------------------------------------------
+let st = pg.stage('machine');
+st.detail('the AQE runtime');
 const aqeRoot = P.untilde(policy.aqe.runtime);
 const aqeCur = realOr(path.join(aqeRoot, 'current'));
 const aqeWant = path.join(aqeRoot, 'releases', policy.aqe.current);
@@ -34,6 +41,7 @@ else say('ok', 'aqe runtime', `current → ${policy.aqe.current} (based on ${pol
 const aqeBin = P.untilde(policy.aqe.bin);
 // What a bare name runs in a fresh shell: mise's environment for the home folder (its global config, whose [env]
 // puts the shared runtime first), not this process's PATH, which a long-lived shell can leave stale.
+st.detail('what a fresh shell runs');
 const freshPath = sh('bash', ['-c', 'cd ~ && mise env -s bash | sed -n "s/^export PATH=//p"']).replace(/^['"]|['"]$/g, '');
 const bareShared = new Set(); // the bare names that reach the shared runtime; project servers running one count as on it
 const bareWhere = new Map();  // …and where the others land, for the project messages
@@ -62,10 +70,12 @@ else say('ok', 'ruflo-core', `current → ${policy.ruflo_core.current}`);
 
 // Hybrid receipts: the install on disk must be the reviewed one (lib/lib.sh hybrid_receipt_ok).
 for (const h of policy.owned_hybrids) {
+  st.detail(`hybrid receipt: ${h}`);
   const ok = sh('bash', ['-c', `source "${P.REPO_ROOT}/lib/lib.sh" && hybrid_receipt_ok ${h} && echo yes`]) === 'yes';
   say(ok ? 'ok' : 'DRIFT', 'hybrids', ok ? `${h}: receipt matches supply-chain/hybrids.toml and the active Node` : `${h}: no matching receipt (steward sc install-hybrids)`);
 }
 
+st.detail('guards');
 const envName = policy.guards.auto_update_env;
 for (const f of policy.guards.auto_update_files) {
   const abs = P.untilde(f);
@@ -130,15 +140,21 @@ for (const f of policy.guards.auto_update_files) {
 const kb = P.untilde(policy.brain.kb_source);
 if (P.exists(kb)) say('info', 'brain', `knowledge base last updated ${fs.statSync(kb).mtime.toISOString().slice(0, 10)} (update deferred by owner; owner-run script)`);
 
+st.done(found(results.length));
+
 // Upstream: releases newer than the AQE runtime's base, and watched threads.
+st = pg.stage('upstream');
+const before = results.length;
 if (!offline) {
   try {
+    st.detail(`npm registry: ${policy.aqe.package}`);
     const t = JSON.parse(sh('curl', ['-fsSL', `https://registry.npmjs.org/${policy.aqe.package}`]) || '{}').time || {};
     const base = t[policy.aqe.based_on];
     if (!base) throw new Error('no publish time for the base version');
     const newer = Object.entries(t).filter(([v, d]) => /^\d+\.\d+\.\d+$/.test(v) && base && d > base).sort((a, b) => a[1].localeCompare(b[1]));
     for (const [v, d] of newer) {
       const age = Math.floor((Date.now() - Date.parse(d)) / 864e5);
+      st.detail(`release notes: ${policy.aqe.package} ${v}`);
       const notes = sh('gh', ['api', `repos/${policy.aqe.repo}/releases/tags/v${v}`, '--jq', '.body']);
       const sec = /security/i.test(notes) ? ', release notes mention security' : '';
       say(sec ? 'WARN' : 'info', 'aqe upstream', `${v} published ${d.slice(0, 10)} (${age}d${age >= MIN_AGE_DAYS ? ', past the gate' : `, gate clears in ${MIN_AGE_DAYS - age}d`}${sec}); runtime is based on ${policy.aqe.based_on}`);
@@ -147,6 +163,7 @@ if (!offline) {
   } catch { say('info', 'aqe upstream', 'could not read the npm registry'); }
   for (const w of policy.watch || []) {
     const [repo, n] = w.issue.split('#');
+    st.detail(`watched: ${w.issue}`);
     const s = sh('gh', ['api', `repos/${repo}/issues/${n}`, '--jq', '"\\(.state) \\(.state_reason // "") \\(.closed_at // "" | .[:10])"']);
     say(s.startsWith('closed') ? 'WARN' : 'info', 'watch', `${w.issue}: ${s || 'unreadable'} — ${w.why}`);
     // a closed thread that a [[retire]] entry waits on: say what to do, so the workaround doesn't outlive its cause
@@ -156,20 +173,26 @@ if (!offline) {
   }
 }
 
+st.done(offline ? 'skipped (--offline)' : found(results.length - before));
+
 // What retires a steward workaround: checked by hand at each AQE qualification (the watched threads above help).
 for (const r of policy.retire || []) say('info', 'retire', `${r.what}: retire when all ${r.when.length} hold: ${r.when.map((w, i) => `(${i + 1}) ${w}`).join('; ')}`);
 
 // ---- projects ---------------------------------------------------------------------------------------------
 // Checks apply per tool a project declared (ai) or, until confirmed, the migration seed (ai_seed). A tool a
 // project shows but didn't choose is reported, never removed.
+st = pg.stage('projects');
 const reg = P.loadRegistry();
 const regByPath = new Map(reg.map(r => [r.abs, r]));
+st.detail('finding projects under [projects] roots');
 const all = P.discover();
+let nth = 0;
 const forbid = policy.launchers.forbid;
 const counts = {};
 const codexApprovals = { files: 0, settings: 0 }; // Codex MCP settings off the policy ([[codex_prompt]], [[codex_stable_node]], D37)
 const msTimeouts = { files: 0, hooks: 0, tracked: 0 }; // hook timeouts written in milliseconds (lib/hooktimeouts.js)
 for (const f of all) {
+  st.detail(`${++nth}/${all.length} ${P.tilde(f.path)}`);
   const r = P.effective(f, regByPath);
   if (r && r.decision === 'ignored') continue; // the owner chose not to manage it
   const { ev, servers, settings } = P.evidence(f.path);
@@ -241,6 +264,7 @@ for (const f of all) {
 // pre-patch Node misses its security fixes) and break when it's pruned. Stable alternatives: node/<major>/…,
 // npm-<tool>/<major.minor>/….
 {
+  st.detail('launchers pinned to a version');
   const pins = require('../../lib/pins.js').scan();
   const active = sh('bash', ['-lc', 'node -p process.versions.node']);
   const byInstall = {};
@@ -260,6 +284,7 @@ for (const f of all) {
 // layout change inside a new version, and a missing memory-package.json distPath makes the Ruflo memory hook
 // fall back without saying so. Check after every upgrade, Node patch, hybrid install or repin.
 {
+  st.detail('launcher targets');
   const missing = require('../../lib/pins.js').targets();
   const byTarget = {};
   for (const m of missing) (byTarget[m.target] = byTarget[m.target] || []).push(m.file);
@@ -277,6 +302,8 @@ else say('ok', 'codex approvals', 'every Codex MCP setting the policy names is a
 // Claude Code reads a hook's timeout in seconds; Ruflo writes milliseconds (5000 is 83 minutes).
 if (msTimeouts.files) say('DRIFT', 'hook timeouts', `${msTimeouts.files} project settings file(s) set ${msTimeouts.hooks} hook timeout(s) in milliseconds (the field is seconds; 5000 means 83 minutes): steward ai timeouts`);
 else say('ok', 'hook timeouts', 'every hook timeout is in seconds');
+
+st.done(`${all.length} project(s)`);
 
 // ---- report -----------------------------------------------------------------------------------------------
 // No process.exit after output: a pipe is written asynchronously and would be cut off.

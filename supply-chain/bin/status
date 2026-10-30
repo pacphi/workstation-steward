@@ -6,10 +6,16 @@ source "$(dirname "$0")/../../lib/lib.sh"
 STEWARD_HOST_JSON="$(host_json)" || die "host policy: lib/host.js failed"
 
 log "mise outdated --bump (respects minimum_release_age)"
-mise outdated --bump 2>/dev/null | sed 's/^/  /' || warn "mise outdated failed"
+# Each of these two takes a few seconds on the network: a live timer (on stderr; bin/status's own lines, which the
+# audit reads, stay as they were). mise's warnings on stderr are dropped, as before.
+outdated() { mise outdated --bump 2>/dev/null; }
+if quiet "mise outdated --bump" outdated; then [[ -z "${QUIET_OUT}" ]] || printf '%s\n' "${QUIET_OUT}" | sed 's/^/  /'
+else warn "mise outdated failed"; fi
 
 log "mise itself (D38: GitHub releases, the release-age gate, GitHub Advisory DB and OSV)"
-node "${SC_ROOT}/bin/mise-self.js" || warn "mise check failed"
+quiet "mise itself" node "${SC_ROOT}/bin/mise-self.js" && rc=0 || rc=$?
+[[ -z "${QUIET_OUT}" ]] || printf '%s\n' "${QUIET_OUT}"
+(( rc == 0 )) || warn "mise check failed"
 
 log "Node security status (nodejs.org/dist/index.json)"
 current="$(node -p 'process.versions.node')"

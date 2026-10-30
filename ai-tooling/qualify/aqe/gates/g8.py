@@ -19,5 +19,6 @@ def run(label, workers):
     out[label] = {'workersEnv': workers, 'exit': ex, 'retrieveOk': '"found": true' in (result_text(st) or ''), 'disabledNotice': bool(re.search(r'Background workers disabled', log)),
                   'workerRelatedLines': lines[:40], 'workerRelatedLineCount': len(lines)}
 t1 = threading.Thread(target=run, args=('disabled', 'false')); t2 = threading.Thread(target=run, args=('control-unset', None))
+mark('two MCP servers for 45 s each (workers off, and a control)')
 t1.start(); t2.start(); t1.join(); t2.join()
 save('g8-results.json', out)

@@ -48,6 +48,7 @@ function context(o = {}) {
   const now = o.now || new Date();
   return {
     run, cfg, now, platform: PL.current(), policy: H.load().policy, instance: C.INSTANCE_ROOT, engine: path.join(__dirname, '..', '..'),
+    detail: t => { if (onLabel) onLabel(t); }, // the live step's detail on a terminal; nothing elsewhere
     cache: cfg.paths.cache, home: os.homedir(), today: localDay(now), ...o,
   };
 }
