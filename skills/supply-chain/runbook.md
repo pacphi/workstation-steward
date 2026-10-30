@@ -1,6 +1,6 @@
 # Supply chain runbook
 
-![Revision 7](https://img.shields.io/badge/Revision-7-green) ![Revised 2026-10-27](https://img.shields.io/badge/Revised-2026--10--27-green)
+![Revision 8](https://img.shields.io/badge/Revision-8-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 Procedures for the supply-chain area: mise, the npm -g hybrids, Homebrew, apps, the App Store, macOS, trust
 stores, Docker and IOCs. The rules behind them are in [`../../AGENTS.md`](../../AGENTS.md) (Toolchain, Release
@@ -12,6 +12,7 @@ commands run from any folder. Every changing step asks first, and `DRY_RUN=1` pr
 - [Routine check](#routine-check)
 - [Apply eligible upgrades](#apply-eligible-upgrades)
 - [A Renovate PR arrives](#a-renovate-pr-arrives)
+- [Check the queue](#check-the-queue)
 - [A same-day Node security release](#a-same-day-node-security-release)
 - [A new advisory or incident report](#a-new-advisory-or-incident-report)
 - [A trust exception](#a-trust-exception)
@@ -80,6 +81,29 @@ commands run from any folder. Every changing step asks first, and `DRY_RUN=1` pr
 4. Merge, then run `git pull && mise install && steward sc verify`.
 5. For Node, run `steward sc node-patch <version>` instead, so the hybrids are reinstalled (with the Ruflo policy
    backup and receipts).
+
+## Check the queue
+
+Renovate holds some updates back. Its Dependency Dashboard, an issue in each repo, lists them. `steward review` reads
+those issues for you. It changes nothing.
+
+1. Run `steward review` and read its **Waiting on the release-age gate** section. (Between reviews, `steward` shows a
+   `gate` line when one has cleared since.) Each update shows:
+   - where it waits: held by the gate, waiting for a tick, or waiting for its schedule;
+   - when it clears the gate, in UTC. "Renovate times it" means the steward couldn't look up the date;
+   - the next step.
+2. Never tick an update under **Pending Status Checks** on the dashboard. A tick there opens the PR before the 3-day
+   gate clears. Wait instead.
+3. Then act on each one by its kind:
+
+| Kind | What to do |
+| --- | --- |
+| A Renovate PR (most tools) | Wait until it clears. Renovate then opens the PR. Review it ([A Renovate PR arrives](#a-renovate-pr-arrives)), merge it, then run `steward config sync`. |
+| A 0.x update | Here a minor bump counts as a major. Read its changes before you merge. |
+| An AI-owned tool (AQE, Brain, agent-browser, RuVector …) | It waits under Pending Approval. Qualify it first, with the recipe in the [AI tooling runbook](../ai-tooling/runbook.md). Then tick it. |
+| Ruflo (a hybrid) | Renovate doesn't track it. Open a PR that changes `supply-chain/hybrids.toml`, merge it, then run `steward sc install-hybrids`. |
+| Node | Merge the PR, then run `steward sc node-patch <version>`. It reinstalls the hybrids. |
+| The weekly "mise tools" digest | It's past the gate already. It opens in its Monday slot. A tick only moves it earlier. |
 
 ## A same-day Node security release
 
