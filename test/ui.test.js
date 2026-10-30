@@ -1,4 +1,4 @@
-// lib/ui.js: steps with a spinner and live timer after 3 s, aligned rows and tables, symbols with an ASCII fallback,
+// lib/ui.js: steps with a spinner and live timer after 1 s, aligned rows and tables, symbols with an ASCII fallback,
 // and nothing at all off a terminal. A fake stream and clock; no real terminal or waiting.
 // Run: just test
 const test = require('node:test');
@@ -21,27 +21,27 @@ test('fmt and cut: seconds with a tenth, minutes and seconds; … when too long'
   assert.equal(cut('abc', 4), 'abc');
 });
 
-test('a step under 3 s prints only its finished row: no spinner, no redraw', () => {
+test('a step under 1 s prints only its finished row: no spinner, no redraw', () => {
   const T = term();
   const s = T.u.step('Docker');
-  T.at(2900);
+  T.at(900);
   T.u.tick();
-  assert.equal(T.text(), '', 'nothing drawn before 3 s');
+  assert.equal(T.text(), '', 'nothing drawn before 1 s');
   s.done('ok', '24 containers', ['      ✔ detail line']);
   const lines = T.plain().split('\n');
-  assert.match(lines[0], /^ {2}✔ {2}Docker {6} {2}24 containers +2\.9s$/);
+  assert.match(lines[0], /^ {2}✔ {2}Docker {6} {2}24 containers +0\.9s$/);
   assert.equal(lines[0].length, 80, 'the row fills the terminal width, time flush right');
   assert.equal(lines[1], '      ✔ detail line');
   assert.ok(!/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/.test(T.text()));
 });
 
-test('from 3 s a step shows a spinner, its detail and a live timer; done clears it and prints the row', () => {
+test('from 1 s a step shows a spinner, its detail and a live timer; done clears it and prints the row', () => {
   const T = term();
   const s = T.u.step('Homebrew');
   s.detail('release dates 7/12');
-  T.at(3500);
+  T.at(1500);
   T.u.tick();
-  assert.match(T.plain(), /\r\x1b\[2K {2}⠙ {2}Homebrew {6}release dates 7\/12 +3\.5s$/);
+  assert.match(T.plain(), /\r\x1b\[2K {2}⠙ {2}Homebrew {6}release dates 7\/12 +1\.5s$/);
   T.u.print('a line above');
   assert.match(T.plain(), /\r\x1b\[2Ka line above\n {2}⠙ {2}Homebrew/, 'a printed line goes above the live one, which comes back');
   T.reset();

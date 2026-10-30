@@ -51,7 +51,9 @@ values and where the instance is. Paths below are relative to the instance unles
 - **Decisions** that change behavior get a row in the table in `docs/architecture.md`, with the reason.
 - **Don't edit `ai-tooling/transports/aqe-hook-bundle.cjs` for wording.** `steward ai drift` compares it byte for
   byte with the installed, qualified transport, so even a comment change shows as drift on every machine.
-- **Long commands show progress:** a live timer and timed milestones (`lib/progress.js`, `quiet` in `lib/lib.sh`).
+- **Long commands show progress:** a live timer and timed milestones (`lib/progress.js`, `quiet` and `run_shown` in
+  `lib/lib.sh`, `mark()` in the AQE gates' `gatelib.py`). No silent stretch longer than about 3 s on a terminal; check
+  with `just progress-gaps`. A new slow step joins the list in `test/progress.test.js`.
 
 ## Hard rules
 

@@ -6,6 +6,7 @@ from gatelib import *
 import subprocess
 res = []
 for proj_name, mode in [('a', 'store'), ('a', 'read'), ('b', 'store'), ('b', 'read')]:
+    mark(f'project {proj_name}: {mode} through the offline model')
     proj = project(f'proj-g2-{proj_name}')
     env = clean_env(W/f'home-g2-{proj_name}', {'AQE_MEMORY_PATH': str(proj/'.agentic-qe'/'memory.db')})
     p = subprocess.run(['node', '--import', str(STAGE/'runtime'/'offline-model.mjs'), str(FIX/'g2'/'embedding.mjs'), mode], cwd=proj, env=env, capture_output=True, text=True, timeout=300)

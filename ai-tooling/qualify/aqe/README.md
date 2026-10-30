@@ -15,6 +15,10 @@ Everything happens in a workspace, `[paths] cache/qualify/aqe-<version>-local.1`
 - the web proxy is `127.0.0.1:9`, where nothing listens, so any network attempt fails at once;
 - `HF_HUB_OFFLINE=1`, and workers are off unless a gate says otherwise.
 
+Each step prints its progress on stderr: on a terminal a live line with its time, elsewhere one line per step with the
+time since the gate started (`mark()` in `gates/gatelib.py`; `NO_PROGRESS=1` turns it off). The gate's JSON on stdout
+and the evidence files are unchanged by it.
+
 Nothing is installed, and no real store is opened. The receipt and evidence are copied to
 `[paths] state/qualify/aqe-<version>-local.1/`. Promotion is a separate step that needs the owner's yes: back up
 every store, copy the stage into the runtime's `releases/`, then switch `current`.

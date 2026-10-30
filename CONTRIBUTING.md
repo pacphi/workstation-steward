@@ -38,7 +38,8 @@ it from there, so the list itself is never published.
 - **Tests** go in `test/` (`node:test`, no network; spawn the scripts against throwaway folders and a temp
   instance). Every fix comes with the test that would have caught it.
 - **Decisions** that change behavior get a row in the table in `docs/architecture.md`, with the reason.
-- **Long commands** show progress: a live timer and timed milestones (`lib/progress.js`, `quiet` in `lib/lib.sh`).
+- **Long commands** show progress: a live timer and timed milestones (`lib/progress.js`, `quiet` and `run_shown` in
+  `lib/lib.sh`). No silent stretch longer than about 3 s on a terminal; `just progress-gaps` measures it.
 
 ## Pull requests
 

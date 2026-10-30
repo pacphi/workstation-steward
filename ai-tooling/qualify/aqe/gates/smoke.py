@@ -3,7 +3,9 @@ import sys, os; sys.path.insert(0, os.environ["QGATES"])
 from gatelib import *
 import subprocess
 proj = project('proj-smoke'); env = clean_env(W/'home-smoke', {'AQE_MEMORY_PATH': str(proj/'.agentic-qe'/'memory.db')})
+mark('the staged CLI\'s version')
 v = subprocess.run([str(STAGE/'bin'/'aqe'), '--version'], env=env, cwd=proj, capture_output=True, text=True, timeout=120)
+mark('the MCP server\'s tool list')
 m = MCP([str(STAGE/'bin'/'aqe-mcp')], env, proj, EVIDENCE/'smoke-mcp.stderr.log')
 tl = m.list_tools(); names = [t['name'] for t in (tl or {}).get('result', {}).get('tools', [])]
 schemas = {t['name']: t.get('inputSchema') for t in (tl or {}).get('result', {}).get('tools', []) if t['name'] in ('memory_store', 'memory_retrieve', 'memory_query', 'qe/learning/dream')}

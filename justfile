@@ -38,6 +38,7 @@ lint:
     node --check tools/known-units.js
     node --check tools/publish-guard.js
     node --check tools/upstream-watch.js
+    node --check tools/progress-gaps.js
     node --check lib/platform.js
     node --check lib/providers/brew.js
     node --check lib/providers/mise.js
@@ -99,6 +100,11 @@ claude *args:
 # Rebuild the README's animated terminals (docs/assets/*.svg) from their scripts in docs/assets/terminal/
 terminal-svg:
     node tools/terminal-svg.js
+
+# Silent stretches over about 3 s in the read-only steward commands, run in a pseudo-terminal (docs/maintainers.md).
+# This checkout uses examples/; --real measures against your config. Read-only: writing commands only as DRY_RUN=1
+progress-gaps *args:
+    node tools/progress-gaps.js {{args}}
 
 # Run every test: the merge rules and writers, then onboarding and offboarding end to end on throwaway repos
 test:

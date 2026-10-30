@@ -77,6 +77,9 @@ const securityException = (ctx, kind, name, version) => {
 };
 
 const minAge = ctx => ctx.cfg.policy.min_release_age_days;
+// detail(ctx, text) — what a slow check is on now, for the terminal's live line only (audit.js ctx.detail; plain output
+// and the tests' contexts have none)
+const detail = (ctx, text) => { if (ctx.detail) ctx.detail(text); };
 // what to do about a finding: the headings the terminal view lists findings under
 const FIX = {
   upgrade: 'steward sc plan, then steward sc upgrade',
@@ -100,6 +103,7 @@ const CHECKS = [
     // mise itself (status printed the detail): an eligible release, or an advisory waiting on an exception
     id: 'mise-self', name: 'mise itself', platforms: ALL, title: null,
     async run(ctx, out) {
+      detail(ctx, 'mise releases (GitHub and two advisory databases)');
       const [act, current, target, reason, auto] = (await ctx.run('node', [path.join(ctx.engine, 'supply-chain', 'bin', 'mise-self.js'), '--plan'])).stdout.trim().split('\t');
       if (act === 'take') out.action(`mise: ${current} -> ${target} (${reason}): steward sc upgrade-tool mise`, { fix: 'steward sc upgrade-tool mise', name: 'mise', have: current, want: target, note: reason });
       if (act === 'hold' && String(reason).includes('security_exception')) out.action(`mise: ${current} (${reason})`);
@@ -187,6 +191,7 @@ const CHECKS = [
         if (typeof app === 'string') byApp.set(app, [...(byApp.get(app) || []), c]);
       }
       const always = new Set(ctx.policy.always_current || []);
+      detail(ctx, "Electron's latest release (npm)");
       const latest = (await ctx.run('npm', ['view', 'electron', 'dist-tags.latest'])).stdout.trim() || '0';
       const electronMin = parseInt(latest, 10) - majors + 1;
       const plist = async (f, key) => (await ctx.run('defaults', ['read', f, key])).stdout.trim();
@@ -196,7 +201,8 @@ const CHECKS = [
         try { names = fs.readdirSync(dir).filter(n => n.endsWith('.app')).sort(); } catch { /* none */ }
         for (const n of names) apps.push(path.join(dir, n));
       }
-      for (const app of apps) {
+      for (const [i, app] of apps.entries()) {
+        detail(ctx, `${i + 1}/${apps.length} ${path.basename(app)}`);
         if (!fs.statSync(app).isDirectory() || fs.existsSync(path.join(app, 'Contents', '_MASReceipt'))) continue; // App Store apps: below
         const base = path.basename(app), short = base.replace(/\.app$/, '');
         const have = (await plist(path.join(app, 'Contents', 'Info.plist'), 'CFBundleShortVersionString'));
@@ -266,6 +272,7 @@ const CHECKS = [
   {
     id: 'docker', name: 'Docker', platforms: ALL, title: () => 'Docker',
     async run(ctx, out) {
+      detail(ctx, 'docker info');
       if ((await ctx.run('docker', ['info'])).status !== 0) { out.line('docker not running: skipped'); return; }
       for (const l of (await ctx.run('docker', ['ps', '--format', '{{.Image}}\t{{.Names}}'])).stdout.split('\n').filter(Boolean)) {
         const [image, name] = l.split('\t');
@@ -280,6 +287,7 @@ const CHECKS = [
     async run(ctx, out) {
       const roots = [path.join(ctx.cfg.paths.mise_data_dir, 'installs', 'python'), path.join(ctx.home, '.local', 'share', 'uv'),
         ...((await brew.available(ctx)) ? [path.join((await brew.prefix(ctx)), 'lib')] : []), ...((ctx.cfg.ioc && ctx.cfg.ioc.extra_roots) || [])];
+      detail(ctx, 'docker images');
       const dockerUp = (await ctx.run('docker', ['info'])).status === 0;
       const digests = dockerUp ? (await ctx.run('docker', ['images', '--digests', '--format', '{{.Digest}}'])).stdout : '';
       // every process but this audit's own (its command line could hold a pattern only as an argument)
@@ -290,6 +298,7 @@ const CHECKS = [
         for (const p of i.processes || []) if (p && ps.some(l => l.includes(p))) { out.alert(`${i.name}: process matching '${p}'`); hits++; }
         for (const f of i.site_packages_files || []) {
           if (!f) continue;
+          detail(ctx, `${i.name}: site-packages`);
           // 9: how deep Python nests site-packages under these roots (installs/python/<ver>/lib/python3.x/site-packages/…)
           const found = (await ctx.run('find', [...roots, '-maxdepth', '9', '-path', `*/site-packages/${f}`, '-not', '-path', '*/node_modules/*'])).stdout.split('\n').filter(Boolean).slice(0, 3);
           if (found.length) { out.alert(`${i.name}: ${found.join(', ')}`); hits++; }

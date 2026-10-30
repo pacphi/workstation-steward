@@ -3,7 +3,7 @@
 # Every process gets an env built from scratch: a sandbox HOME, an unreachable proxy (127.0.0.1:9, where nothing
 # listens, so any network attempt fails at once), HF_HUB_OFFLINE=1, workers off unless a gate says otherwise, and
 # no XDG variables. counts() opens only the gates' own synthetic sandbox stores, read-only.
-import json, subprocess, os, time, select, pathlib, sqlite3, hashlib
+import json, subprocess, os, time, select, pathlib, sqlite3, hashlib, sys, threading, atexit
 W = pathlib.Path(os.environ['QW'])
 STAGE = pathlib.Path(os.environ['QSTAGE'])
 CURRENT = pathlib.Path(os.environ['QCURRENT'])
@@ -81,4 +81,36 @@ def sha(s): return hashlib.sha256(s.encode() if isinstance(s,str) else s).hexdig
 def project(name):
     p = W/name; (p/'.agentic-qe').mkdir(parents=True, exist_ok=True); return p
 def save(name, obj):
-    json.dump(obj, open(EVIDENCE/name, 'w'), indent=1); print(json.dumps(obj, indent=1)[:4000])
+    _end(); json.dump(obj, open(EVIDENCE/name, 'w'), indent=1); print(json.dumps(obj, indent=1)[:4000])
+# Progress (AGENTS.md, "Long commands show progress"): a gate can run a minute with nothing to show until its JSON.
+# mark(label) starts a step, on stderr only, so stdout and the evidence files stay as they were. On a terminal the
+# step's line redraws every second with its time, then ends with a check mark and the time it took; elsewhere (a pipe,
+# a log) each step prints one line with the time since the gate started. NO_PROGRESS=1 turns it off.
+_GATE = pathlib.Path(sys.argv[0]).stem
+_T0 = time.time()
+_OFF = os.environ.get('NO_PROGRESS') == '1'
+_TTY = sys.stderr.isatty() and not _OFF
+_now = {'label': None, 'start': 0.0}
+_lock = threading.Lock()
+def _live():
+    return f"\r\x1b[2K   … {_GATE}: {_now['label']} {int(time.time() - _now['start'])}s"
+def _close():
+    if _now['label'] and _TTY:
+        sys.stderr.write(f"\r\x1b[2K   \x1b[1;32m✓\x1b[0m {_GATE}: {_now['label']} ({int(time.time() - _now['start'])}s)\n"); sys.stderr.flush()
+    _now['label'] = None
+def _end():
+    with _lock: _close()
+def _tick():
+    while True:
+        time.sleep(1)
+        with _lock:
+            if _now['label']: sys.stderr.write(_live()); sys.stderr.flush()
+def mark(label):
+    if _OFF: return
+    with _lock:
+        _close()
+        _now['label'], _now['start'] = label, time.time()
+        s = int(time.time() - _T0)
+        sys.stderr.write(_live() if _TTY else f'   … {_GATE}: {label} [{s // 60}:{s % 60:02d}]\n'); sys.stderr.flush()
+if _TTY: threading.Thread(target=_tick, daemon=True).start()
+atexit.register(_end)

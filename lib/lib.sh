@@ -57,6 +57,26 @@ run() {
   [[ "${DRY_RUN}" == "1" ]] || "$@"
 }
 
+# run_shown CMD... — run for a slow command whose output matters (npm install -g): prints the command and skips it when
+# DRY_RUN=1, as run does. On a terminal it shows a live timer while the command works, then prints all of its output
+# (warnings included) and a ✓ or ✗ with its time; elsewhere, or with NO_PROGRESS=1, the output streams as run's does.
+# Returns CMD's status.
+run_shown() {
+  printf '   $ %s\n' "$*"
+  [[ "${DRY_RUN}" == "1" ]] && return 0
+  if [[ ! -t 2 || "${NO_PROGRESS:-0}" == 1 ]]; then "$@"; return; fi
+  local label="$*" logf start=${SECONDS} ticker rc=0
+  (( $# > 3 )) && label="$1 $2 … ${*: -1}"   # one short line, so the timer redraws in place
+  logf="$(mktemp -t steward-run)"
+  ( while :; do printf '\r\033[2K   … %s %ss' "${label}" "$((SECONDS - start))" >&2; sleep 1; done ) & ticker=$!
+  "$@" >"${logf}" 2>&1 </dev/null || rc=$?
+  kill "${ticker}" 2>/dev/null; wait "${ticker}" 2>/dev/null || true; printf '\r\033[2K' >&2
+  cat "${logf}"; rm -f "${logf}"
+  if (( rc == 0 )); then printf '   \033[1;32m✓\033[0m %s (%ss)\n' "${label}" "$((SECONDS - start))" >&2
+  else printf '   \033[1;31m✗\033[0m %s: exit %s after %ss\n' "${label}" "${rc}" "$((SECONDS - start))" >&2; fi
+  return "${rc}"
+}
+
 confirm() {
   [[ "${DRY_RUN}" == "1" ]] && return 0
   local reply
@@ -140,7 +160,8 @@ ruflo_policy_dirs() {
 backup_ruflo_policy() {
   local dest dirs d n=0
   dest="${STATE_DIR}/backups/ruflo-policy-$(date +%Y%m%d-%H%M%S)"
-  dirs="$(ruflo_policy_dirs)"
+  # the search walks $HOME (about 50 s on a full one): a live timer, so it doesn't look hung
+  quiet "finding Ruflo policy folders" ruflo_policy_dirs; dirs="${QUIET_OUT}"
   log "Ruflo policy backup: $(grep -c . <<<"${dirs}") folder(s) → ${dest/#${HOME}/~}"
   [[ "${DRY_RUN}" == "1" ]] && return 0
   mkdir -p "${dest}/home" && chmod 700 "${STATE_DIR}" "${dest}"
@@ -174,9 +195,9 @@ install_hybrids() {
     # Install each hybrid on its own: a shared npm transaction dedupes optional deps across them
     # (seen 2026-10-21 with ruflo + agentdb) and changes which copies resolve.
     if [[ -n "${scripts}" ]]; then
-      run npm install -g --allow-scripts="${scripts}" "${spec}"
+      run_shown npm install -g --allow-scripts="${scripts}" "${spec}"
     else
-      run npm install -g "${spec}"
+      run_shown npm install -g "${spec}"
     fi
     [[ "${DRY_RUN}" == "1" ]] || write_hybrid_receipt "${name}" "${version}" "${scripts}"
   done

@@ -1,9 +1,10 @@
 # Releasing workstation-steward
 
-![Revision 3](https://img.shields.io/badge/Revision-3-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
+![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 How a release happens, and the one-time npm setup behind it (D46 in [`architecture.md`](architecture.md#decisions)),
-plus what to do when the weekly upstream watch finds that a shipped default changed (D52). For maintainers of this
+plus what to do when the weekly upstream watch finds that a shipped default changed (D52), and how to check that no
+command looks hung. For maintainers of this
 repository; users install releases as [`../README.md`](../README.md) describes.
 
 ## Contents
@@ -18,6 +19,7 @@ repository; users install releases as [`../README.md`](../README.md) describes.
 - [The publish guard](#the-publish-guard)
 - [A pre-push leak check for your clone](#a-pre-push-leak-check-for-your-clone)
 - [A shipped default changed upstream](#a-shipped-default-changed-upstream)
+- [Checking that nothing looks hung](#checking-that-nothing-looks-hung)
 
 ## How a release happens
 
@@ -263,3 +265,27 @@ publisher look the same from here. So check before you trust it.
   `[off] updater = ["<name>"]` in their `host.toml`.
 
 Say which you chose, and why, in the issue before you close it.
+
+## Checking that nothing looks hung
+
+A command that prints nothing for half a minute looks stuck, even when it's working. The rule (AGENTS.md, "Long commands
+show progress"): no silent stretch longer than about 3 s on a terminal. `just progress-gaps` checks it. It runs each
+command in a pseudo-terminal, timestamps every piece of output, and lists each stretch with nothing new on the screen,
+with the line printed just before it:
+
+```sh
+just progress-gaps                                   # this checkout, examples/: the read-only defaults
+just progress-gaps --real                            # the same against your config: the measure that counts
+just progress-gaps --real -- steward sc status       # one command
+just progress-gaps --real --file my-commands.txt     # a list, one command per line
+```
+
+It runs read-only. A command that can change things (`writes` in `lib/commands.js`) runs only as `DRY_RUN=1 steward …`,
+and `--apply` is refused. The default list covers `ai drift` (online and offline), `sc verify`, `sc status`,
+`sc audit`, `sc plan` and `DRY_RUN=1 sc install-hybrids`. It flags a stretch over 2 s, because the terminal view
+(`lib/ui.js`, D44) draws a step's live line only once the step has run 1 s, so a fast step never flickers.
+
+When it finds one, wrap the step: `quiet` (Bash, output shown only on failure), `run_shown` (Bash, a timer and then
+the command's full output, as for `npm install -g`), a stage or `detail` from `lib/progress.js` (Node), or `mark()` in
+the AQE gates. Then add the step to the list in `test/progress.test.js`, which fails when a known long step loses its
+wrapper.

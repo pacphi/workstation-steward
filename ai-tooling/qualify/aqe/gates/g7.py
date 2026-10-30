@@ -8,6 +8,7 @@ from gatelib import *
 import subprocess, re, shutil
 G = W/'g7'; repo, wt, rt = G/'repo', G/'wt', G/'runtime'
 if not wt.exists():
+    mark('a repo, a linked worktree and the hook runtime')
     (repo/'.claude'/'hooks').mkdir(parents=True); (repo/'src').mkdir()
     shutil.copy(STAGE/'node_modules'/'agentic-qe'/'.claude'/'hooks'/'aqe-hook.cjs', repo/'.claude'/'hooks'/'aqe-hook.cjs')
     (repo/'src'/'math.ts').write_text('export const add = (a, b) => a + b;\n')
@@ -33,6 +34,7 @@ cases = [('guard-abs', ['guard', '--file', f_abs, '--json']), ('pre-edit-abs', [
          ('shim-post-edit', None)]
 res = {}
 for label, args in cases:
+    mark(label)
     if args is None:
         e = {k: v for k, v in env.items() if k != 'AQE_HOOK_BUNDLE'}
         cmd = [str(wt/'node_modules'/'.bin'/'agentic-qe'), 'hooks', 'post-edit', '--file', f_abs, '--success', '--json']
