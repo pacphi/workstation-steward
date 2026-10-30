@@ -282,8 +282,8 @@ just progress-gaps --real --file my-commands.txt     # a list, one command per l
 
 It runs read-only. A command that can change things (`writes` in `lib/commands.js`) runs only as `DRY_RUN=1 steward …`,
 and `--apply` is refused. The default list covers `ai drift` (online and offline), `sc verify`, `sc status`,
-`sc audit`, `sc plan` and `DRY_RUN=1 sc install-hybrids`. It flags a stretch over 3.5 s, because the terminal view
-(`lib/ui.js`, D44) draws a step's live line only once the step has run 3 s, so a fast step never flickers.
+`sc audit`, `sc plan` and `DRY_RUN=1 sc install-hybrids`. It flags a stretch over 2 s, because the terminal view
+(`lib/ui.js`, D44) draws a step's live line only once the step has run 1 s, so a fast step never flickers.
 
 When it finds one, wrap the step: `quiet` (Bash, output shown only on failure), `run_shown` (Bash, a timer and then
 the command's full output, as for `npm install -g`), a stage or `detail` from `lib/progress.js` (Node), or `mark()` in

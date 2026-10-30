@@ -2,8 +2,8 @@
 // The maintainer's progress check (`just progress-gaps`, run by hand): run steward commands in a pseudo-terminal, so
 // their progress shows as it does on a real terminal, timestamp every chunk of output, and report each silent stretch
 // longer than --gap seconds, with the last line printed before it. The rule it checks is AGENTS.md's "Long commands
-// show progress": no silent stretch over about 3 s on a terminal. The default, 3.5 s, allows for lib/ui.js (D44), which
-// draws a step's live line only once the step has run 3 s, so a fast step never flickers.
+// show progress": no silent stretch over about 3 s on a terminal. The default, 2 s, allows for lib/ui.js (D44), which
+// draws a step's live line only once the step has run 1 s, so a fast step never flickers.
 // The pseudo-terminal is script(1) in its macOS form (`script -q /dev/null cmd…`): a maintainer tool for the Mac.
 // Read-only by default: a command that can change something (`writes` in lib/commands.js) runs only under DRY_RUN=1,
 // --apply is refused, and only `steward …` commands run. --allow-writes lifts all three; never use it on a machine
@@ -32,7 +32,7 @@ const DEFAULTS = [
 
 // args(argv) — the options and the commands
 function args(argv) {
-  const o = { gap: 3.5, out: null, file: null, real: false, installed: false, writes: false, cmds: [] };
+  const o = { gap: 2, out: null, file: null, real: false, installed: false, writes: false, cmds: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--gap') o.gap = Number(argv[++i]);
