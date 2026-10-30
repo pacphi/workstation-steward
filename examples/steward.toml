@@ -22,6 +22,9 @@ review_days = 7                            # `steward` says a review is due this
 
 [brief]
 stale_hours = 48                           # `steward brief` shows a cached fact older than this "as of" its time, never as the next step
+refresh_hours = 6                          # when its cache is older, `steward brief` refreshes it in the background, read-only;
+                                           # 0 = never, so nothing touches the network unprompted (D57)
+fetch = true                               # that refresh runs `git fetch` in your config repo (changes only what Git knows of GitHub)
 
 [profiles]
 ai_tooling = false                         # Ruflo, AgentDB, AQE, Brain and RuVector: drift, repin, guards (steward ai …)
