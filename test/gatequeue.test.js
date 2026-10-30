@@ -172,6 +172,8 @@ test('review: "Waiting on the release-age gate" lists each update with its next 
   assert.match(s.note, /^2 repo\(s\) read, 1 with no Dependency Dashboard\. 2 past the gate\. Read-only: never tick "Pending Status Checks"/);
   const { md } = render([s], NOW, false);
   assert.ok(md.includes('## Waiting on the release-age gate · 8'));
+  // the headline counts only what needs a decision now (the 2 past the gate), not every row that waits
+  assert.ok(md.includes('\n2 item(s) to decide.'));
   assert.ok(md.includes('- acme/tools-config: update jdx/mise-action action to v5.2.4 (held by the gate, cleared 2026-10-30 10:06Z)  \n  → Renovate opens the PR\n'));
   assert.ok(md.includes('- acme/tools-config: update node.js to v26.13.0 (held by the gate, clears 2026-10-31 16:57Z)  \n  → wait until 2026-10-31 16:57Z; after the merge: steward sc node-patch 26.13.0\n'));
   assert.ok(md.includes('- acme/tools-config: update mise tools to latest (`coder`, `pnpm`, `uv`) (waits for its schedule)  \n  → waits for its schedule; past the gate already'));
@@ -201,4 +203,23 @@ test('banner: says when queued updates cleared the gate since the last review, f
   // nothing cleared yet: no line
   fs.writeFileSync(path.join(dir, 'gate-queue.json'), JSON.stringify({ at, rows: [{ clearsAt: new Date(Date.now() + 864e5).toISOString() }] }));
   assert.equal(banner().stdout, '');
+});
+
+test('queue: at most 6 lookups at a time, however many repos and updates there are', async () => {
+  const lines = Array.from({ length: 20 }, (_, i) => `- [ ] <!-- approvePr-branch=renovate/p${i} -->chore(deps): update dependency npm:pkg-${i} to v1.0.${i}`).join('\n');
+  const body = `## Pending Status Checks\n\nThe following updates await pending status checks.\n\n${lines}\n`;
+  let live = 0, most = 0;
+  const run = async (cmd, args) => {
+    live++; most = Math.max(most, live);
+    await new Promise(r => setTimeout(r, 5));
+    live--;
+    if (cmd === 'gh' && args[0] === 'issue') return JSON.stringify([{ number: 1, body }]);
+    if (cmd === 'npm') return '{}';
+    return null;
+  };
+  const repos = Array.from({ length: 10 }, (_, i) => `acme/repo-${i}`);
+  const q = await GQ.queue({ repos, now: NOW, run, days: 3, aiOwned: OWNED, cache: false });
+  assert.equal(q.rows.length, 200);
+  assert.ok(most <= 6, `${most} lookups ran at once`);
+  assert.ok(most > 1, 'the lookups still overlap');
 });
