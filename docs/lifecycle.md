@@ -1,6 +1,6 @@
 # Lifecycle
 
-![Revision 15](https://img.shields.io/badge/Revision-15-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
+![Revision 16](https://img.shields.io/badge/Revision-16-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 How someone installs workstation-steward, sets it up, uses it, and keeps it, their config and their projects safe
 over release after release. It is the contract the code is built to: each part is marked **built** or **planned**.
@@ -50,7 +50,10 @@ The engine never holds your data, and your config never holds code. A release ch
 ## Promises
 
 1. **Nothing changes without asking.** Every command that writes shows a plan, waits for a yes, backs up first,
-   writes a receipt, and can be undone. No background jobs, no automatic updates. *Built.*
+   writes a receipt, and can be undone. No automatic updates and no scheduled jobs (launchd or cron). Only looking
+   is automatic: when its notes are older than `[brief] refresh_hours` (6 by default; 0 turns it off),
+   `steward brief` starts a short read-only refresh in the background, which writes nothing but those notes
+   ([`briefing.md`](briefing.md#the-background-refresh), D57). *Built.*
 2. **The steward is held to its own rules.** A new release waits out the same release-age gate as any other tool,
    installs through mise, and the previous version stays on disk through the soak. *Planned (R3, R6).*
 3. **Your config is versioned, and never rewritten behind your back.** *The version and `steward check` are built
@@ -90,7 +93,7 @@ The engine never holds your data, and your config never holds code. A release ch
 ## Upgrade the steward
 
 1. A newer release appears. Renovate opens a PR in your config repo once it is 3 days old, or `steward sc plan`
-   lists it.
+   lists it, and `steward brief` names the upgrade once it is past the gate (its background refresh asks npm).
 2. You apply it like any tool (`steward sc upgrade-tool npm:workstation-steward`): backup, install, verify,
    receipt, soak. The previous version stays installed until the soak ends.
 3. `steward check` says whether the new release wants anything from your config or your projects (below).

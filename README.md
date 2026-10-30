@@ -56,8 +56,10 @@ The steward aims for *safe, explained and reversible*, not merely *newest*.
 
 `steward brief` reads what is already on disk, with no network, and names the one next step with its exact command, or
 says in one line that nothing needs you. It also notices a step that stopped midway or ran out of order, such as
-hybrids installed before the config sync that brings their new versions, and names the step that finishes it. It
-never fixes anything itself ([`docs/briefing.md`](docs/briefing.md)).
+hybrids installed before the config sync that brings their new versions, and names the step that finishes it. Every
+few hours it also looks, in the background and read-only, at GitHub, npm and your projects, so it can say when your
+config is behind or a newer steward is past the gate. It never fixes anything itself
+([`docs/briefing.md`](docs/briefing.md)).
 
 ```text
 $ steward brief

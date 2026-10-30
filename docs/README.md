@@ -1,6 +1,6 @@
 # Docs index
 
-![Revision 7](https://img.shields.io/badge/Revision-7-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 8](https://img.shields.io/badge/Revision-8-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 Every public doc, by kind. Each doc shows its revision and revision date in badges under the title. The number changes only when the
 content does; moving a file or fixing a link doesn't count. The rules are in
@@ -10,8 +10,8 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 
 | Doc | Rev | What it is |
 | --- | --- | --- |
-| [`guide.md`](guide.md) | 4, 2026-10-30 | Why the steward exists, what it looks after, the rules, first run, the weekly routine (with what the release-age gate holds back) and what to do when something happens, words you'll see |
-| [`briefing.md`](briefing.md) | 1, 2026-10-30 | `steward brief`: what needs you now as one next step with its command, read from disk without the network; the checks (detectors), their order, the output, and how to add one |
+| [`guide.md`](guide.md) | 5, 2026-10-30 | Why the steward exists, what it looks after, the rules, first run, the weekly routine (with what the release-age gate holds back) and what to do when something happens, words you'll see |
+| [`briefing.md`](briefing.md) | 2, 2026-10-30 | `steward brief`: what needs you now as one next step with its command, read from disk without the network; the background refresh that looks at GitHub, npm and your projects (D57); the checks (detectors), their order, the output, and how to add one |
 | [`config-repo.md`](config-repo.md) | 5, 2026-10-29 | Keeping your config in a private Git repo: setting it up, Renovate, a second Mac, staying in step, and what the steward tells you about it |
 | [`prereqs.md`](prereqs.md) | 3, 2026-10-27 | Everything the steward needs on the machine, the order to install it on a new Mac, and `steward doctor` |
 
@@ -19,10 +19,10 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 
 | Doc | Rev | What it is |
 | --- | --- | --- |
-| [`lifecycle.md`](lifecycle.md) | 15, 2026-10-29 | Install, set up, use, upgrade, migrate the config, reconcile projects, add tools, roll back, and the two channels (a worktree or npm for the release): the promises across releases, each marked built or planned (D40, D41) |
+| [`lifecycle.md`](lifecycle.md) | 16, 2026-10-30 | Install, set up, use, upgrade, migrate the config, reconcile projects, add tools, roll back, and the two channels (a worktree or npm for the release): the promises across releases, each marked built or planned (D40, D41) |
 | [`release-classes.md`](release-classes.md) | 3, 2026-10-29 | Built (D52): what may skip the release-age gate, as one release class per update source, update sources declared in `host.toml`, and the weekly upstream watch on shipped key pins |
 | [`maintainers.md`](maintainers.md) | 3, 2026-10-29 | Releasing: the release PR, Conventional Commit titles, the one-time npm setup (placeholder and Trusted Publishing), the publish guard, a pre-push leak check (D46); the maintainer skill (D53); what to do when the upstream watch finds a shipped default changed (D52) |
-| [`architecture.md`](architecture.md) | 38, 2026-10-30 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D42 |
+| [`architecture.md`](architecture.md) | 39, 2026-10-30 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D42 |
 
 ## Living docs by area
 
