@@ -23,8 +23,8 @@ owned_hybrids = ["ruflo", "agentdb"]
 package = "agentic-qe"
 repo = "proffesor-for-testing/agentic-qe"   # GitHub repo whose release notes drift reads
 runtime = "{{AI_TOOLING_ROOT}}/aqe"
-current = "3.15.12-local.1"   # qualified and promoted 2026-10-26 (ai-tooling/qualify/aqe, all 8 gates PASS)
-based_on = "3.15.12"
+current = "3.15.16-local.1"   # qualified and promoted 2026-10-30 (ai-tooling/qualify/aqe, all 8 gates PASS)
+based_on = "3.15.16"
 patches = ["bootstrap-provenance-guard", "dream-opt-out"]
 # What `aqe`, `aqe-mcp` and `agentic-qe` should resolve to, and what project launchers should run.
 bin = "{{AI_TOOLING_ROOT}}/aqe/current/bin"

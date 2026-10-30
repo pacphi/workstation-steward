@@ -6,7 +6,7 @@ adopted on 2026-10-26 from the 2026-10-21 lane that qualified 3.15.10 (`continua
 read line by line, and their paths now come from `steward.toml` and `ai-tooling.toml`.
 
 ```sh
-ai-tooling/qualify/aqe/run.sh 3.15.12 build     # then smoke, g1, g2, g3g4, g5, g6, g7, g8, receipt
+ai-tooling/qualify/aqe/run.sh 3.15.16 build     # then smoke, g1, g2, g3g4, g5, g6, g7, g8, receipt
 ```
 
 Everything happens in a workspace, `[paths] cache/qualify/aqe-<version>-local.1`:

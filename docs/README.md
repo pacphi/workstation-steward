@@ -29,8 +29,8 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | --- | --- | --- | --- |
 | Supply chain | [`../supply-chain/README.md`](../supply-chain/README.md) | — | Policy files, rules and commands |
 | AI tooling | [`../ai-tooling/README.md`](../ai-tooling/README.md) | — | Policy file, what `steward ai drift` checks |
-| AI tooling | [`../skills/ai-tooling/qualification.md`](../skills/ai-tooling/qualification.md) | 2, 2026-10-27 | What has to be true before a new AQE or Ruflo version reaches a project, and the standing guards |
-| AI tooling | [`ai-tooling/upstream-and-reconcile.md`](ai-tooling/upstream-and-reconcile.md) | 5, 2026-10-27 | The three layers (upstream, your machine, each project), from an upstream ask to a retired patch, what `projects reconcile` adds, challenges and mitigations (D42) |
+| AI tooling | [`../skills/ai-tooling/qualification.md`](../skills/ai-tooling/qualification.md) | 3, 2026-10-30 | What has to be true before a new AQE or Ruflo version reaches a project, and the standing guards |
+| AI tooling | [`ai-tooling/upstream-and-reconcile.md`](ai-tooling/upstream-and-reconcile.md) | 6, 2026-10-30 | The three layers (upstream, your machine, each project), from an upstream ask to a retired patch, what `projects reconcile` adds, challenges and mitigations (D42) |
 | Projects | [`../projects/README.md`](../projects/README.md) | — | What counts as a project, the registry fields, `scan` and `list` |
 | Projects | [`../projects/profiles/README.md`](../projects/profiles/README.md) | — | The per-tool onboarding profiles and how they're filled in |
 | Fleet | [`../fleet/README.md`](../fleet/README.md) | — | `fleet sync` and `prune-merged` after merges; Renovate and PR consolidation, with links to the runbook and the skill's rules |

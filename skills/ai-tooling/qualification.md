@@ -1,6 +1,6 @@
 # AI tooling qualification
 
-![Revision 2](https://img.shields.io/badge/Revision-2-green) ![Revised 2026-10-27](https://img.shields.io/badge/Revised-2026--10--27-green)
+![Revision 3](https://img.shields.io/badge/Revision-3-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 What has to be true before a new AQE or Ruflo version reaches any project, and the guards that stay in place
 between versions. The AI tooling add-on's policy (`ai-tooling/ai-tooling.toml` in your instance) records the result;
@@ -31,6 +31,12 @@ between versions. The AI tooling add-on's policy (`ai-tooling/ai-tooling.toml` i
    resolving to the new version.
 7. **Rebuild the release index:** `just known-units`, then commit `projects/profiles/known-units.json`, so
    `steward projects reconcile` recognizes the new release's files in projects set up without the steward.
+8. **Update the engine's defaults,** so other users get what you qualified:
+   - add the new release's vendor-file hashes to `projects/profiles/known-vendor-files.toml` (`brain-checkpoint.cjs`
+     and `aqe-hook.cjs`, from the official tarball and the runtime). Without them, onboarding after the next upgrade
+     treats unedited copies as edited and keeps them;
+   - set `examples/ai-tooling/ai-tooling.toml` `[aqe] current` and `based_on`, and the qualify README's example;
+   - check the onboarding profile (`projects/profiles/aqe.toml`) against the release's `dist/init/phases/07-hooks.js`.
 
 ## Ruflo
 
@@ -45,6 +51,8 @@ between versions. The AI tooling add-on's policy (`ai-tooling/ai-tooling.toml` i
 5. **Verify** the policy ledger check and the Codex path through the shared launcher. Rolling back means
    reinstalling the old version *and* restoring the policy and trust folders together.
 6. **Rebuild the release index:** `just known-units`, then commit `projects/profiles/known-units.json`.
+7. **Update the engine's defaults:** check the onboarding profile (`projects/profiles/ruflo.toml`) against the
+   release's settings generator, and correct any doc that names the old version as current.
 
 ## Standing guards
 

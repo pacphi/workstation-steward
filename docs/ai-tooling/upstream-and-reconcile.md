@@ -1,6 +1,6 @@
 # Upstream fixes and reconciliation
 
-![Revision 5](https://img.shields.io/badge/Revision-5-green) ![Revised 2026-10-27](https://img.shields.io/badge/Revised-2026--10--27-green)
+![Revision 6](https://img.shields.io/badge/Revision-6-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 How the AI tooling add-on keeps three things in step as Ruflo, AQE (agentic-qe) and RuvNet Brain release: the
 upstream packages, the versions qualified on your machine, and the copies inside each onboarded project. It covers
@@ -197,3 +197,7 @@ A snapshot, to make the above concrete. Current values live in `ai-tooling.toml`
   had closed; once a version with the fix qualifies, it can leave the hybrid list. Upstream was at 3.63.5, with a
   qualification of 3.63.x due.
 - **Brain:** pinned at 4.7.17; upstream was at 4.7.21.
+
+**Since then (2026-10-30):** AQE moved to `3.15.16-local.1` (both patches still apply; agentic-qe#1188 is still open),
+Ruflo to 3.63.5 and Brain to 4.7.21. Ruflo stays an npm -g hybrid on purpose: ruvnet/ruflo#4371 is fixed, but
+`steward sc install-hybrids` backs up every Ruflo policy folder before a version change, and a mise install doesn't.
