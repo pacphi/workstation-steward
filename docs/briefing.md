@@ -1,6 +1,6 @@
 # The briefing: `steward brief`
 
-![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 5](https://img.shields.io/badge/Revision-5-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 **One question, answered in under a second: what needs me, and what do I run next?** `steward brief` reads what is
 already on your disk and names **one** next step, with its exact command. When nothing needs you, it says so in one
@@ -170,17 +170,19 @@ fetch = true        # the default; false skips the git fetch of your config repo
 | `steward brief` | At most three lines: what happened, `next: <command>`, and `+N more` when there is more. One quiet line when nothing needs you |
 | `steward brief --all` | Every finding, each with its command and why |
 | `steward brief --json` | The same as data: `{v, at, next, more, findings}` |
+| `steward brief --plan` | The work list: every step that isn't a wait, numbered, in the order to take them, each with [who does it](#who-does-each-step) |
+| `steward brief --plan --json` | The work list as data: `{v, at, items}` |
 | `steward brief --refresh` | The background refresh run now, with progress, then the briefing |
 
 `more` counts the findings besides `next`; when `next` is null, they are all waits. Each finding has an `id`, a
 `severity`, a stable `key` (it changes only when what it points at changes), the `text`, the
 `cmd`, `writes` (true when the command can change your machine, projects or config; it still asks first), the `skill`
-that covers it, `why`, and a `rollback` when there is one. Text taken from receipts and paths is cleaned before it is
+that covers it, `why`, a `rollback` when there is one, and [`actor` and `class`](#who-does-each-step). Text taken from receipts and paths is cleaned before it is
 shown: no control characters or escape codes, your home folder as `~`, and at most 200 characters.
 
-For Claude Code, the engine also wraps the data in a `<steward-brief v="1">…</steward-brief>` block, with three
-short rules: offer the finding's skill, show its command exactly, and never run a command with `writes: true` without
-your yes. [The session-start hook](#in-claude-code-the-session-start-hook) hands that block to Claude.
+For Claude Code, the engine also wraps the data in a `<steward-brief v="1">…</steward-brief>` block, with four
+short rules: offer the finding's skill, show its command exactly, never run a command with `writes: true` without
+your yes, and hand a step whose `actor` is `human` to you without running it. [The session-start hook](#in-claude-code-the-session-start-hook) hands that block to Claude.
 
 ## In Claude Code: the session-start hook
 
@@ -230,6 +232,65 @@ The hook also checks it each time, so it stays quiet in the meantime.
 > The notice is the hook's `systemMessage`, which Claude Code's docs describe as a warning message shown to the user.
 > That's why only a broken or half-finished state uses it; a routine step reaches you through Claude instead, so the
 > notice never cries wolf. The stamp keeps either one from repeating.
+
+## Who does each step
+
+**The engine says who does each step, not Claude.** Every finding, every item of the work list (`steward brief
+--plan`) and every item of `steward review --json` carries two labels, worked out from its command
+(`lib/autonomy.js`, D58):
+
+- **`class`**: what kind of change the step makes, such as `pull` (a config sync that fast-forwards), `reconcile`,
+  `prune` or `install-hybrids`. A read-only step has none. `steward config` and `node lib/autonomy.js` list them all.
+- **`actor`**: who takes the step.
+
+| Actor | Means | For example |
+| --- | --- | --- |
+| `agent` | Read-only, or a class your `[autonomy]` level allows. It may run without asking you | `steward review`; under `safe`, `steward config sync` |
+| `agent-with-yes` | A steward command that writes, with a plan, a backup and a receipt. It runs only after your yes | `steward sc install-hybrids` |
+| `human` | Yours to do. It is handed to you, never run for you | a merge, `sudo`, a trust store, a dashboard tick, a fix "by hand", any shell command the steward didn't write as a `steward` command (`rm -rf`, `mv`) |
+
+A step made of several commands ("`x`, then `y`") gets the label its most demanding part needs. In the work list,
+a step that waits on another (its `after`) comes right after it, each with its own command.
+
+### Your `[autonomy]` level
+
+You choose how much may run unattended, in your `steward.toml`:
+
+```toml
+[autonomy]
+level = "safe"     # ask | safe | maintainer
+allow = []         # classes to add, for example ["install-hybrids"]
+deny = []          # classes to take away
+subagents = 4      # independent items the fix skill may hand to sub-agents at once
+```
+
+| Level | Runs unattended |
+| --- | --- |
+| `ask` | read-only steps only |
+| `safe` (the default) | read-only steps, plus `pull` (a config sync that fast-forwards), `reconcile`, `prune` (after the soak), `qualify` (a sandbox qualification) and `pr-prep` (a pull request prepared in a scratch clone, not pushed) |
+| `maintainer` | `safe`, plus `after-merge` (fleet sync and prune-merged), `release-verify` and `repin`. A class says only that no yes is needed; it doesn't make the step due. A maintainer repins when they ask for it |
+
+Installs, upgrades, Node patches, pushes and pull requests always ask, unless you name their class in `allow`.
+
+> [!IMPORTANT]
+> Some things no setting can change. Human-only steps have no class, so nothing can allow them. Every write still
+> shows its plan, backs up and writes a receipt. A failure stops the run. The release-age gate still holds.
+
+### `--unattended`
+
+A command that writes takes `--unattended` when the runner (the fix skill) runs it. Then it answers its own questions,
+but only where your level allows each one, question by question:
+
+- `steward config sync --apply --unattended` under `safe` fast-forwards your config repo. If the pull changed `mise/`,
+  it stops at "run mise install?", because that is an `install`, and an install asks. A send to GitHub is a `push`,
+  so it stops there too.
+- A question it may not answer, or a command or class your level doesn't allow, stops with exit code **4** and says
+  what to add to `allow`. Nothing more is changed. Exit 4 means "waiting on you", not "failed".
+- The receipt records `"unattended": true`.
+
+For now these commands take it: `config sync`, `projects reconcile`, `sc prune`, `fleet sync` and
+`fleet prune-merged`. Any other command refuses it with "it doesn't run unattended yet", even when `allow` names its
+class. A read-only command ignores the flag.
 
 ## Adding a detector
 

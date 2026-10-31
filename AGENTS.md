@@ -36,8 +36,10 @@ values and where the instance is. Paths below are relative to the instance unles
 - **Commands that write** share one shape: a read-only plan by default; `--apply` (or a `[y/N]`) to act; a backup
   before the first write; a receipt under the state folder, recording the engine version; a way back (`--rollback`,
   `--undo` or `steward sc rollback`). `DRY_RUN=1` previews any of them. Every user command is listed in
-  `lib/commands.js`. A new command that writes adds a `lib/brief.js` detector for its half-finished states, with a
-  test, so `steward brief` can name the step that finishes it (`docs/briefing.md`).
+  `lib/commands.js`, with its `class` (`lib/autonomy.js`). A new command that writes adds a `lib/brief.js` detector
+  for its half-finished states, with a test, so `steward brief` can name the step that finishes it
+  (`docs/briefing.md`). `--unattended` (D58) takes a yes only where `[autonomy]` allows the class, checked again at
+  each question (`A.answer(class, q)`, or `confirm "q" <class>` in bash); a refusal exits 4.
 - **No machine data in engine code.** Paths and roots come from `steward.toml` (`lib/config.js`); policy comes from
   the instance's files (`C.policy()`, `C.instance()`, `INSTANCE_ROOT`/`SC_INSTANCE` in `lib/lib.sh`). Never
   hard-code a home folder, a project or a repo. `just leak-check` must pass before pushing.

@@ -14,6 +14,7 @@ const os = require('os');
 const path = require('path');
 const { execFileSync, spawnSync } = require('child_process');
 const C = require('../../lib/config.js');
+const A = require('../../lib/autonomy.js');
 const { progress } = require('../../lib/progress.js');
 
 const args = process.argv.slice(2);
@@ -100,13 +101,16 @@ if (blocked.length) { console.log(`\nnot syncing: ${blocked.length} path(s) diff
 if (!flag('--apply')) { console.log('\nplan only. Add --apply to do it (asks first, backs up what it drops).'); process.exit(0); }
 
 // 4. apply
-fs.writeSync(2, '\nDrop the edits above and fast-forward? [y/N] ');
-const buf = Buffer.alloc(64); let n = 0; try { n = fs.readSync(0, buf, 0, 64, null); } catch { /* no stdin */ }
-if (!/^\s*y/i.test(buf.slice(0, n).toString())) die('aborted');
+// under --unattended, [autonomy] answers by the class (lib/autonomy.js); else a person, on the terminal
+if (!A.answer('after-merge', 'Drop the edits above and fast-forward?')) {
+  fs.writeSync(2, '\nDrop the edits above and fast-forward? [y/N] ');
+  const buf = Buffer.alloc(64); let n = 0; try { n = fs.readSync(0, buf, 0, 64, null); } catch { /* no stdin */ }
+  if (!/^\s*y/i.test(buf.slice(0, n).toString())) die('aborted');
+}
 s = pg.stage('applying');
 const bdir = C.newBackupDir(`sync-${path.basename(dir)}`);
 const before = git('rev-parse', 'HEAD').trim();
-const receipt = { kind: 'sync', at: new Date().toISOString(), engine: C.ENGINE_VERSION, repo: dir, branch, upstream, before, after: null, dropped: [], complete: false };
+const receipt = { kind: 'sync', at: new Date().toISOString(), engine: C.ENGINE_VERSION, ...(A.unattended() ? { unattended: true } : {}), repo: dir, branch, upstream, before, after: null, dropped: [], complete: false };
 const save = () => fs.writeFileSync(path.join(bdir, 'receipt.json'), JSON.stringify(receipt, null, 1) + '\n');
 save();
 for (const x of plan) {

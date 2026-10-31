@@ -15,7 +15,7 @@ if [[ $# -eq 0 ]]; then
   if [[ -n "${copies}" ]]; then
     log "declared updaters' copies older than the soak"
     while IFS= read -r line; do printf '  %s\n' "${line}"; done <<<"${copies}"
-    if confirm "Delete these copies?"; then run node "${REPO_ROOT}/lib/updaters.js" --prune >/dev/null; else log "kept"; fi
+    if confirm "Delete these copies?" prune; then run node "${REPO_ROOT}/lib/updaters.js" --prune >/dev/null; else log "kept"; fi
   fi
 fi
 
@@ -66,7 +66,7 @@ if (( ${#dirs[@]} )); then
   fi
 fi
 run mise prune -n "$@"
-confirm "Delete the versions above?" || { log "aborted"; exit 1; }
+confirm "Delete the versions above?" prune || { log "aborted"; exit 1; }
 run mise prune -y "$@"
 # A full prune ends the "soak over: prune when ready" banner (lib/soak.js); pruning named tools leaves it up.
 if [[ "${DRY_RUN}" != "1" && $# -eq 0 ]]; then
