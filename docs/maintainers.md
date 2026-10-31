@@ -1,6 +1,6 @@
 # Releasing workstation-steward
 
-![Revision 6](https://img.shields.io/badge/Revision-6-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 7](https://img.shields.io/badge/Revision-7-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 How a release happens, and the one-time npm setup behind it (D46 in [`architecture.md`](architecture.md#decisions)),
 plus what to do when the weekly upstream watch finds that a shipped default changed (D52), and how to check that no
@@ -151,6 +151,7 @@ sentence naming what happened:
 /steward-maintain release 0.4.1         watch and verify only
 /steward-maintain repin 0.4.1           verify, then repin
 /steward-maintain config                take the config repo's merged changes
+/steward-maintain fix                   work the list: steward fix, with the maintainer's flows run as below
 ```
 
 Each flow is a script that prints its plan, refuses anything outside its scope, and stops on any failed check:
@@ -162,6 +163,7 @@ Each flow is a script that prints its plan, refuses anything outside its scope, 
 | A release | `release.sh <X.Y.Z>` | nothing: it waits for the run and npm, then verifies npm's latest, the provenance commit (the tag's) and the GitHub release |
 | A repin | `repin.sh <X.Y.Z> --why "<your words>"` | the release channel, after a backup of both launchers and a receipt |
 | Config sync | `config-sync.sh` | your config checkout: a fast-forward, or finishing a merged send; stops if the plan would send |
+| Work the list | `steward fix` (`steward-dev fix --real` until the release has it) | what each step's own command changes, under your `[autonomy]` level; a `/steward-maintain` step runs as its flow above, and a repin only when you ask |
 
 The scripts never reset, rebase, merge, force-push or delete unmerged work, and touch only this checkout and the
 config instance `steward config` names. The skill pre-approves exactly these five scripts (`allowed-tools`), so an

@@ -110,7 +110,7 @@ if (!A.answer('fleet-sync', 'Drop the edits above and fast-forward?')) {
 s = pg.stage('applying');
 const bdir = C.newBackupDir(`sync-${path.basename(dir)}`);
 const before = git('rev-parse', 'HEAD').trim();
-const receipt = { kind: 'sync', at: new Date().toISOString(), engine: C.ENGINE_VERSION, ...(A.unattended() ? { unattended: true } : {}), repo: dir, branch, upstream, before, after: null, dropped: [], complete: false };
+const receipt = { kind: 'sync', at: new Date().toISOString(), engine: C.ENGINE_VERSION, ...A.mark(), repo: dir, branch, upstream, before, after: null, dropped: [], complete: false };
 const save = () => fs.writeFileSync(path.join(bdir, 'receipt.json'), JSON.stringify(receipt, null, 1) + '\n');
 save();
 for (const x of plan) {

@@ -186,11 +186,12 @@ async function walkSetup(target) {
   return set;
 }
 
-// unattendedEnv(cmd, args) — the environment for a run with --unattended (D58), or a stop. A read-only command needs
-// nothing. A writing command must take the flag (commands.js unattended) and its class, or rollback's, must be one
-// [autonomy] allows; then the command answers its own questions, each checked again by its own class
-// (lib/autonomy.js answer). A refusal exits 4, so the runner can tell "waiting on you" from "failed"
-function unattendedEnv(cmd, args) {
+// unattendedEnv(cmd, args, yesTo) — the environment for a run with --unattended (D58), or a stop. A read-only command
+// needs nothing. A writing command must take the flag (commands.js unattended) and its class, or rollback's, must be
+// one [autonomy] allows or one the user said yes to for this run (--yes-to <class>, D59); then the command answers its
+// own questions, each checked again by its own class (lib/autonomy.js answer). A refusal exits 4, so the runner can
+// tell "waiting on you" from "failed"
+function unattendedEnv(cmd, args, yesTo = []) {
   const A = require('../lib/autonomy.js');
   const name = `steward ${cmd.area ? `${cmd.area} ` : ''}${cmd.name}`;
   const refuse = why => { console.error(`steward: not running "${name}" unattended: ${why}. Nothing changed; run it yourself to answer its questions.`); process.exit(A.REFUSED); };
@@ -199,14 +200,24 @@ function unattendedEnv(cmd, args) {
   if (!cmd.writes) refuse("it doesn't run unattended yet");
   if (!cmd.class) refuse('a person runs this one');
   if (!cmd.unattended) refuse("it doesn't run unattended yet");
-  const r = A.check(args.includes('--rollback') ? 'rollback' : cmd.class, load().values.autonomy);
+  const r = A.check(args.includes('--rollback') ? 'rollback' : cmd.class, load().values.autonomy, yesTo);
   if (!r.ok) refuse(r.why);
-  return { STEWARD_UNATTENDED: '1' };
+  return { STEWARD_UNATTENDED: '1', ...(yesTo.length ? { STEWARD_YES_TO: yesTo.join(',') } : {}) };
 }
 
 function run(cmd, args) {
   const unattended = args.includes('--unattended');
   args = args.filter(a => a !== '--unattended');
+  // --yes-to <class>, any number of times: the user's yes for this run, only with --unattended (D59). A runner
+  // (steward fix) reads its own: it passes each to the one step it was given for
+  const yesTo = [];
+  for (let i = cmd.runner ? -1 : args.indexOf('--yes-to'); i >= 0; i = args.indexOf('--yes-to')) {
+    const c = args[i + 1];
+    if (!c || !(c in require('../lib/autonomy.js').CLASSES)) die(`--yes-to takes a class (steward config lists them), got ${c === undefined ? 'nothing' : `"${c}"`}`);
+    yesTo.push(c);
+    args.splice(i, 2);
+  }
+  if (yesTo.length && !unattended) die('--yes-to goes with --unattended');
   const words = args.filter(a => !a.startsWith('-'));
   if (words.length < (cmd.min || 0)) die(`usage: steward ${cmd.area ? `${cmd.area} ` : ''}${cmd.name} ${cmd.usage}`);
   // A config in a format this engine doesn't read is refused, not half-read: an older engine on a newer config could
@@ -223,7 +234,8 @@ function run(cmd, args) {
   // never inherited: only this check sets it, for this run
   const env = { ...process.env };
   delete env.STEWARD_UNATTENDED;
-  const extra = unattended ? unattendedEnv(cmd, args) : {};
+  delete env.STEWARD_YES_TO;
+  const extra = unattended ? unattendedEnv(cmd, args, yesTo) : {};
   if (CHANNEL === 'dev' && !SANDBOX && cmd.writes) devBanner(`${cmd.area ? `${cmd.area} ` : ''}${cmd.name}`);
   const cwd = path.join(ENGINE, cmd.cwd);
   const [exe, ...rest] = cmd.run;

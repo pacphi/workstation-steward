@@ -73,6 +73,8 @@ or with a read-only report, `/steward:supply-chain audit`.
 | Projects (add-on) | "What new projects are there?" | `steward projects scan`, with each new project's evidence and your options |
 | | "I just cloned a repo. Set it up." | Records your decision, then the onboard plan for the tools you chose, then your yes |
 | | "Which tools does this project use?" | Its registry entry and what's really in the project |
+| Fix | "Fix it" or "do what's next" | The work list: what your `[autonomy]` level lets run, runs; each other change, one yes at a time; your steps handed to you; one summary |
+| | "Handle what the review found" | The same for a `steward review`'s items; a fleet repo or a qualification can go to a sub-agent |
 | PR consolidation | "Consolidate the Dependabot PRs in owner/repo" | One verified PR in place of the bot PRs, with CI audits green; you merge it |
 | | "Clear the security audit and the bot PRs" | The same, with every ignored advisory justified in the PR |
 
@@ -131,6 +133,7 @@ merges.
 | Skill | Turned on by | Read-only reports | Its files |
 | --- | --- | --- | --- |
 | `/steward:supply-chain` | Always | `audit`, `plan`, `status`, `verify` | [README](supply-chain/README.md), [runbook](supply-chain/runbook.md) |
+| `/steward:fix` | Always | the plan (`steward fix`) | [README](fix/README.md) |
 | `/steward:ai-tooling` | `[profiles] ai_tooling` | `drift` | [README](ai-tooling/README.md), [runbook](ai-tooling/runbook.md), [qualification](ai-tooling/qualification.md) |
 | `/steward:projects` | `[profiles] projects` | `scan`, `list` | [README](projects/README.md), [runbook](projects/runbook.md) |
 | `/steward:pr-consolidation` | `[skills] pr_consolidation` | (none) | [README](pr-consolidation/README.md), [rules](pr-consolidation/rules.md) |

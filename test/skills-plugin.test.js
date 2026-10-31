@@ -50,13 +50,13 @@ test('skills path: one line, only the skills the config turns on, the same folde
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.stdout.split('\n').filter(Boolean).length, 1);
   const out = r.stdout.trim();
-  assert.deepEqual(fs.readdirSync(path.join(out, 'skills')), ['supply-chain']);
+  assert.deepEqual(fs.readdirSync(path.join(out, 'skills')).sort(), ['fix', 'supply-chain']);
   assert.equal(JSON.parse(fs.readFileSync(path.join(out, '.claude-plugin', 'plugin.json'), 'utf8')).name, 'steward');
   assert.equal(off.run(['path']).stdout.trim(), out, 'same content, same folder');
 
   const on = setup('path-on', '[profiles]\nai_tooling = true\nprojects = true\n[skills]\npr_consolidation = true\n');
   const all = on.run(['path']).stdout.trim();
-  assert.deepEqual(fs.readdirSync(path.join(all, 'skills')).sort(), ['ai-tooling', 'pr-consolidation', 'projects', 'supply-chain']);
+  assert.deepEqual(fs.readdirSync(path.join(all, 'skills')).sort(), ['ai-tooling', 'fix', 'pr-consolidation', 'projects', 'supply-chain']);
   assert.ok(fs.statSync(path.join(all, 'skills', 'pr-consolidation', 'scripts', 'lock-age.sh')).mode & 0o100, 'scripts stay executable');
 });
 
@@ -157,7 +157,7 @@ test('init setup: each answer changes one line of the new steward.toml, and the 
   assert.ok(changed.every(l => l.includes('# ')), 'comments stay');
   const cfg = JSON.parse(execFileSync(process.execPath, [path.join(REPO, 'lib', 'config.js'), '--json'], { encoding: 'utf8', env: { ...process.env, STEWARD_INSTANCE: path.join(s.dir, 'inst') } }));
   assert.deepEqual([cfg.profiles.ai_tooling, cfg.profiles.projects, cfg.skills.pr_consolidation], [true, true, true]);
-  assert.deepEqual(fs.readdirSync(path.join(s.run(['path']).stdout.trim(), 'skills')).sort(), ['ai-tooling', 'pr-consolidation', 'projects', 'supply-chain']);
+  assert.deepEqual(fs.readdirSync(path.join(s.run(['path']).stdout.trim(), 'skills')).sort(), ['ai-tooling', 'fix', 'pr-consolidation', 'projects', 'supply-chain']);
 });
 
 test('init setup: no to the add-ons, Enter for the roots, one project, and not now each leave the file as it was', async () => {
@@ -220,7 +220,7 @@ test('skills path: [brief] session = false leaves the hook out, and the folder (
   assert.equal(m.hooks, undefined);
   assert.equal(m.name, 'steward');
   assert.equal(m.license, 'MIT');
-  assert.deepEqual(fs.readdirSync(path.join(off, 'skills')), ['supply-chain'], 'the skills are the same');
+  assert.deepEqual(fs.readdirSync(path.join(off, 'skills')).sort(), ['fix', 'supply-chain'], 'the skills are the same');
 });
 
 test('skills path: a dev clone\'s build calls steward-dev (with --real, unless its examples are the instance)', () => {

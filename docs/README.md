@@ -11,7 +11,7 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | Doc | Rev | What it is |
 | --- | --- | --- |
 | [`guide.md`](guide.md) | 7, 2026-10-31 | Why the steward exists, what it looks after, the rules, first run, the weekly routine (with what the release-age gate holds back) and what to do when something happens, words you'll see |
-| [`briefing.md`](briefing.md) | 5, 2026-10-31 | `steward brief`: what needs you now as one next step with its command, read from disk without the network; the background refresh that looks at GitHub, npm and your projects (D57); the Claude Code session-start hook, once and then quiet (D48); the checks (detectors), their order, the output, and how to add one; the work list, who does each step and your `[autonomy]` level, `--unattended` (D58) |
+| [`briefing.md`](briefing.md) | 6, 2026-10-31 | `steward brief`: what needs you now as one next step with its command, read from disk without the network; the background refresh that looks at GitHub, npm and your projects (D57); the Claude Code session-start hook, once and then quiet (D48); the checks (detectors), their order, the output, and how to add one; the work list, who does each step and your `[autonomy]` level, `--unattended` (D58); the fix runner, `steward fix` (D59) |
 | [`config-repo.md`](config-repo.md) | 7, 2026-10-31 | Keeping your config in a private Git repo: setting it up, Renovate, a second Mac, staying in step, and what the steward tells you about it |
 | [`prereqs.md`](prereqs.md) | 4, 2026-10-30 | Everything the steward needs on the machine, the order to install it on a new Mac, the services on GitHub (Renovate), and `steward doctor` |
 
@@ -21,8 +21,8 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | --- | --- | --- |
 | [`lifecycle.md`](lifecycle.md) | 16, 2026-10-30 | Install, set up, use, upgrade, migrate the config, reconcile projects, add tools, roll back, and the two channels (a worktree or npm for the release): the promises across releases, each marked built or planned (D40, D41) |
 | [`release-classes.md`](release-classes.md) | 3, 2026-10-29 | Built (D52): what may skip the release-age gate, as one release class per update source, update sources declared in `host.toml`, and the weekly upstream watch on shipped key pins |
-| [`maintainers.md`](maintainers.md) | 6, 2026-10-30 | Releasing: the release PR, Conventional Commit titles, the one-time npm setup (placeholder and Trusted Publishing), the publish guard, a pre-push leak check (D46); the maintainer skill (D53); what to do when the upstream watch finds a shipped default changed (D52); checking that no command looks hung (`just progress-gaps`); trying the session hook before a release (`just try-hook`); Renovate on the engine repo |
-| [`architecture.md`](architecture.md) | 42, 2026-10-31 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D42 |
+| [`maintainers.md`](maintainers.md) | 7, 2026-10-31 | Releasing: the release PR, Conventional Commit titles, the one-time npm setup (placeholder and Trusted Publishing), the publish guard, a pre-push leak check (D46); the maintainer skill (D53); what to do when the upstream watch finds a shipped default changed (D52); checking that no command looks hung (`just progress-gaps`); trying the session hook before a release (`just try-hook`); Renovate on the engine repo |
+| [`architecture.md`](architecture.md) | 43, 2026-10-31 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D42 |
 
 ## Living docs by area
 

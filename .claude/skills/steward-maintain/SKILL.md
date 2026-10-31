@@ -7,7 +7,7 @@ description: >
   a receipt, and take the config repo's merged changes with steward config sync. Each flow is a script that prints its
   plan, refuses anything outside its scope, and stops on any failed check. Use when the owner says "I merged #N",
   "pull and clean up", "watch the release", "repin", "sync the config", or runs /steward-maintain.
-argument-hint: "[merged <pr>… [repin]] [release <X.Y.Z>] [repin <X.Y.Z>] [config]"
+argument-hint: "[merged <pr>… [repin]] [release <X.Y.Z>] [repin <X.Y.Z>] [config] [fix]"
 allowed-tools: Bash(steward brief --json) Bash(steward-dev brief --real --json) Bash(.claude/skills/steward-maintain/bin/status.sh) Bash(.claude/skills/steward-maintain/bin/after-merge.sh) Bash(.claude/skills/steward-maintain/bin/after-merge.sh *) Bash(.claude/skills/steward-maintain/bin/release.sh *) Bash(.claude/skills/steward-maintain/bin/repin.sh *) Bash(.claude/skills/steward-maintain/bin/config-sync.sh)
 metadata:
   author: pacphi
@@ -30,6 +30,7 @@ The arguments are a short sentence: `$ARGUMENTS`. Run the flows it names, in thi
 | `release <X.Y.Z>` | `bin/release.sh X.Y.Z` (it waits up to 40 minutes: run it in the background and wait to be told it finished) |
 | `repin`, with a version or after a `release:` line | `bin/repin.sh X.Y.Z --why "<the owner's whole message>"`, only after `release.sh` verified X.Y.Z |
 | `config` | `bin/config-sync.sh` |
+| `fix` | Work the list: `steward fix --json` (a release before 0.10.0 has none: `steward-dev fix --real --json`), then the fix skill's steps (`/steward:fix`) with `--apply`. A step it hands back as `/steward-maintain merged`, `release` or `config` runs as that flow here; `repin` only when this message asks for it. Every other step is the owner's usual ask |
 
 So `/steward-maintain merged 41 39 repin` is: after-merge for #41 and #39; #39 printed `release: 0.4.1`, so release.sh
 0.4.1; it verified, and the owner said `repin`, so repin.sh 0.4.1. Without `repin`, stop after the release verifies and
