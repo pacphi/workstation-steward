@@ -48,6 +48,7 @@ steward skills uninstall                    # the way back (add --project <path>
 - **A session starts knowing what needs you.** The plugin carries one read-only hook. When a session starts, after
   `/clear` and after a compaction, it runs `steward brief --hook`. When something needs you, you see the briefing's
   lines once (until what needs you changes, or 12 hours pass), and Claude gets the one next step with its command.
+  A step Claude was to mention comes back if you left that session before Claude replied.
   When nothing does, it says nothing. `[brief] session = false` in `steward.toml` leaves the hook out
   ([the briefing](../docs/briefing.md#in-claude-code-the-session-start-hook)).
 - **Claude Code 2.1.292 or newer.** The install checks the version.

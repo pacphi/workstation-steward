@@ -244,7 +244,7 @@ The hook also checks it each time, so it stays quiet in the meantime.
 > [!NOTE]
 > The notice is the hook's `systemMessage`, which Claude Code's docs describe as a warning message shown to the user.
 > That's why only a broken or half-finished state uses it; a routine step reaches you through Claude instead, so the
-> notice never cries wolf. The stamp keeps either one from repeating.
+> notice never cries wolf. The stamp keeps either one from repeating, except a mention you never saw (below).
 
 ## Who does each step
 
