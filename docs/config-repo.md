@@ -1,6 +1,6 @@
 # Keep your config in a private Git repo
 
-![Revision 6](https://img.shields.io/badge/Revision-6-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 7](https://img.shields.io/badge/Revision-7-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 Your config (the *instance*: `steward.toml`, your policy files, the registry of your projects and your mise toolchain)
 is the one part of the steward that's yours alone. Putting it in a private Git repo gives you four things:
@@ -134,9 +134,9 @@ closes the pull request (unless it was merged) and puts this Mac back exactly as
 
 Once your config is a Git repo, the steward keeps an eye on it for you (D50), read-only:
 
-- **The banner.** `steward` on its own adds a `config` line when files changed here, commits aren't pushed, or GitHub
-  has newer commits, pointing to `steward config sync`. It never touches the network:
-  "newer on GitHub" is as of the last fetch, and says when that was.
+- **The briefing.** `steward` on its own (and `steward brief`) names `steward config sync` as the next step when
+  files changed here, commits aren't pushed, or GitHub has newer commits. It never touches the network itself:
+  "newer on GitHub" is as of the last fetch (yours, `steward review`'s or the background refresh's), and says when.
 - **`steward config`** ends with a `repo` section: the GitHub repository and branch, then each thing that needs you,
   with the command that acts on it.
 - **`steward review`** fetches first, then lists the same items, your config repo's open pull requests (Renovate's

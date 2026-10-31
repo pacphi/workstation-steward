@@ -1,6 +1,6 @@
 # The briefing: `steward brief`
 
-![Revision 3](https://img.shields.io/badge/Revision-3-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 **One question, answered in under a second: what needs me, and what do I run next?** `steward brief` reads what is
 already on your disk and names **one** next step, with its exact command. When nothing needs you, it says so in one
@@ -166,6 +166,7 @@ fetch = true        # the default; false skips the git fetch of your config repo
 
 | Command | What you get |
 | --- | --- |
+| `steward` (on its own) | The same lines as `steward brief`, then the help. Before 0.10.0, five separate banners did this job (one walked every project root each time) |
 | `steward brief` | At most three lines: what happened, `next: <command>`, and `+N more` when there is more. One quiet line when nothing needs you |
 | `steward brief --all` | Every finding, each with its command and why |
 | `steward brief --json` | The same as data: `{v, at, next, more, findings}` |
