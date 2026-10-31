@@ -186,7 +186,27 @@ async function walkSetup(target) {
   return set;
 }
 
+// unattendedEnv(cmd, args) — the environment for a run with --unattended (D58), or a stop. A read-only command needs
+// nothing. A writing command must take the flag (commands.js unattended) and its class, or rollback's, must be one
+// [autonomy] allows; then the command answers its own questions, each checked again by its own class
+// (lib/autonomy.js answer). A refusal exits 4, so the runner can tell "waiting on you" from "failed"
+function unattendedEnv(cmd, args) {
+  const A = require('../lib/autonomy.js');
+  const name = `steward ${cmd.area ? `${cmd.area} ` : ''}${cmd.name}`;
+  const refuse = why => { console.error(`steward: not running "${name}" unattended: ${why}. Nothing changed; run it yourself to answer its questions.`); process.exit(A.REFUSED); };
+  // doctor reads, and installs only with --install (an install: it asks at every level)
+  if (!cmd.writes && !(cmd.area === '' && cmd.name === 'doctor' && args.includes('--install'))) return {};
+  if (!cmd.writes) refuse("it doesn't run unattended yet");
+  if (!cmd.class) refuse('a person runs this one');
+  if (!cmd.unattended) refuse("it doesn't run unattended yet");
+  const r = A.check(args.includes('--rollback') ? 'rollback' : cmd.class, load().values.autonomy);
+  if (!r.ok) refuse(r.why);
+  return { STEWARD_UNATTENDED: '1' };
+}
+
 function run(cmd, args) {
+  const unattended = args.includes('--unattended');
+  args = args.filter(a => a !== '--unattended');
   const words = args.filter(a => !a.startsWith('-'));
   if (words.length < (cmd.min || 0)) die(`usage: steward ${cmd.area ? `${cmd.area} ` : ''}${cmd.name} ${cmd.usage}`);
   // A config in a format this engine doesn't read is refused, not half-read: an older engine on a newer config could
@@ -200,11 +220,15 @@ function run(cmd, args) {
     console.error(`The ${cmd.profile.replace('_', ' ')} add-on is off (${C.tilde(load().file)} [profiles] ${cmd.profile} = false). Turn it on there to use these commands.`);
     process.exit(3);
   }
+  // never inherited: only this check sets it, for this run
+  const env = { ...process.env };
+  delete env.STEWARD_UNATTENDED;
+  const extra = unattended ? unattendedEnv(cmd, args) : {};
   if (CHANNEL === 'dev' && !SANDBOX && cmd.writes) devBanner(`${cmd.area ? `${cmd.area} ` : ''}${cmd.name}`);
   const cwd = path.join(ENGINE, cmd.cwd);
   const [exe, ...rest] = cmd.run;
   const bin = exe === 'node' ? process.execPath : path.join(cwd, exe);
-  const r = spawnSync(bin, [...rest, ...args], { cwd, stdio: 'inherit', env: { ...process.env, ...(cmd.env || {}), STEWARD_CWD: process.cwd() } });
+  const r = spawnSync(bin, [...rest, ...args], { cwd, stdio: 'inherit', env: { ...env, ...(cmd.env || {}), ...extra, STEWARD_CWD: process.cwd() } });
   if (r.error) die(`${cmd.run.join(' ')}: ${r.error.message}`);
   process.exit(r.status === null ? 1 : r.status);
 }

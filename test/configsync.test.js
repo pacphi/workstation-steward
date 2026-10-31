@@ -464,3 +464,45 @@ test('send: finishing puts everything back when a carried edit does not go back 
   assert.deepEqual(snapshot(f), was, 'still on the send branch, main where it was, the edit byte for byte');
   assert.equal(f.branch(), branch);
 });
+
+// --unattended (D58), through bin/steward.js: [autonomy] answers each question by its class. STEWARD_CONFIG holds the
+// level, so the instance has no local edit of its own
+const unattended = (inst, level, args = []) => {
+  const cfg = path.join(ROOT, `autonomy-${level}-${++k}.toml`);
+  fs.writeFileSync(cfg, `schema = 1\n[autonomy]\nlevel = "${level}"\n`);
+  const r = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'config', 'sync', '--apply', '--unattended', ...args], { encoding: 'utf8', input: '', env: { ...ENV, STEWARD_INSTANCE: inst, STEWARD_CONFIG: cfg } });
+  return { ...r, stdout: plain(r.stdout), stderr: plain(r.stderr) };
+};
+
+test('--unattended: safe pulls with no one there, then stops at mise install (an install asks); ask pulls nothing', () => {
+  const f = fixture();
+  f.upstream('mise/mise.lock', 'lock 2\n', 'chore(deps): update a tool (#2)');
+  const before = f.head();
+  const none = unattended(f.inst, 'ask');
+  assert.equal(none.status, 4, none.stderr + none.stdout);
+  assert.match(none.stderr, /not running "steward config sync" unattended: \[autonomy\] level = "ask" doesn't allow pull/);
+  assert.equal(f.head(), before);
+  const calls = miseCalls();
+  const r = unattended(f.inst, 'safe');
+  assert.equal(r.status, 4, r.stderr + r.stdout);
+  assert.match(r.stderr, /unattended: yes to "Fast-forward main to origin\/main\?" \(\[autonomy\] allows pull\)/);
+  assert.match(r.stderr, /not answering "mise\/ changed: run mise install for its pins\?": \[autonomy\] level = "safe" doesn't allow install/);
+  assert.equal(f.head(), f.origin(), 'the pull is done');
+  assert.equal(miseCalls(), calls, 'mise install did not run');
+  const rc = JSON.parse(fs.readFileSync(receiptOf(r.stdout), 'utf8'));
+  assert.equal(rc.unattended, true); assert.equal(rc.complete, true);
+});
+
+test('--unattended: a send (a push and a PR) is never taken under safe or maintainer; nothing is pushed', () => {
+  const f = fixture();
+  fs.writeFileSync(path.join(f.inst, 'notes.md'), 'edited here\n');
+  const before = prs().length;
+  for (const level of ['safe', 'maintainer']) {
+    const r = unattended(f.inst, level);
+    assert.equal(r.status, 4, r.stderr + r.stdout);
+    assert.match(r.stderr, /not answering "Send 1 file\(s\) as a PR to o\/cfg\d+\?": \[autonomy\] level = "\w+" doesn't allow push/);
+    assert.equal(prs().length, before);
+    assert.equal(f.branch(), 'main');
+    assert.equal(git(f.inst, 'ls-remote', '--heads', 'origin', 'steward/*'), '');
+  }
+});

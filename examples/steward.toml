@@ -28,6 +28,14 @@ fetch = true                               # that refresh runs `git fetch` in yo
 session = true                             # the steward plugin hands each new Claude Code session the briefing (a read-only hook)
 quiet_hours = 12                           # the same briefing shows again in a new session only after this many hours; 0 = every time
 
+[autonomy]
+level = "safe"                             # what may run unattended (D58): ask (read-only only), safe (plus config sync pull,
+                                           # reconcile, prune after the soak, qualifications, PR prep, fleet sync), maintainer
+                                           # (plus prune-merged, release verify, repin). Installs, upgrades and pushes always ask
+allow = []                                 # classes to add, e.g. ["install-hybrids"]; `steward config` lists what runs unattended
+deny = []                                  # classes to take away
+subagents = 4                              # independent items the fix skill may hand to sub-agents at once
+
 [profiles]
 ai_tooling = false                         # Ruflo, AgentDB, AQE, Brain and RuVector: drift, repin, guards (steward ai …)
 projects = false                           # discovery, the registry and onboarding of ~/Development (steward projects …)

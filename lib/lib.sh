@@ -77,8 +77,14 @@ run_shown() {
   return "${rc}"
 }
 
+# confirm <question> [class] — [y/N] on the terminal. Under --unattended (STEWARD_UNATTENDED=1, set by bin/steward.js),
+# [autonomy] answers by the class instead (lib/autonomy.js): yes when it allows it, else it says why and exits 4
 confirm() {
   [[ "${DRY_RUN}" == "1" ]] && return 0
+  if [[ "${STEWARD_UNATTENDED:-}" == "1" ]]; then
+    node "${REPO_ROOT}/lib/autonomy.js" --answer "${2:-}" "$1" || exit 4
+    return 0
+  fi
   local reply
   read -r -p "$1 [y/N] " reply
   [[ "${reply}" =~ ^[Yy]$ ]]

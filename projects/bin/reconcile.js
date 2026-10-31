@@ -12,6 +12,7 @@ const fs = require('fs');
 const readline = require('readline');
 const P = require('../../lib/projects.js');
 const R = require('../../lib/reconcile.js');
+const A = require('../../lib/autonomy.js');
 const { progress } = require('../../lib/progress.js');
 
 const args = process.argv.slice(2);
@@ -31,8 +32,10 @@ const ABOUT = [
 ];
 const STATE = { behind: 'unchanged since the steward wrote it', edited: 'you edited it; the source has a new version', yours: 'no baseline (from before the steward onboarded it)', missing: 'missing', dropped: 'the qualified installs no longer ship it' };
 
-async function ask(q) {
+// ask(q, cls) — [y/N] on the terminal; under --unattended, [autonomy] answers by the question's class (lib/autonomy.js)
+async function ask(q, cls) {
   if (process.env.DRY_RUN === '1') return false;
+  if (A.answer(cls, q)) return true;
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const a = await new Promise(res => rl.question(`${q} [y/N] `, res));
   rl.close();
@@ -83,7 +86,7 @@ function show(p) {
     const changed = R.changedSince(rc);
     if (changed.length) { console.error(`refusing: changed since the reconcile: ${changed.slice(0, 5).join(', ')}${changed.length > 5 ? ` … ${changed.length - 5} more` : ''}`); process.exitCode = 1; return; }
     for (const e of rc.entries) console.log(`  restore ${e.path}`);
-    if (!(await ask(`Undo the reconcile of ${rc.project} (${rc.at})?`))) { console.log('nothing changed'); return; }
+    if (!(await ask(`Undo the reconcile of ${rc.project} (${rc.at})?`, 'rollback'))) { console.log('nothing changed'); return; }
     R.undo(rc);
     R.markRolledBack(file);
     console.log(`undone; the backups stay in ${rc.backup}`);
@@ -107,7 +110,7 @@ function show(p) {
     if (!go.length) { console.log('nothing to update'); return; }
     for (const l of ABOUT) console.log(`  ${l}`);
     if (!args.includes('--apply')) { console.log(`  plan only; ${n} unit(s) in ${go.length} project(s) would update. \`steward projects reconcile <path>\` shows one project; --all --apply applies (asks first)`); return; }
-    if (!(await ask(`Update ${n} unit(s) in ${go.length} project(s), each with its own backup and receipt?`))) { console.log('nothing changed'); return; }
+    if (!(await ask(`Update ${n} unit(s) in ${go.length} project(s), each with its own backup and receipt?`, 'reconcile'))) { console.log('nothing changed'); return; }
     let failed = 0;
     for (const p of go) {
       try { console.log(`  ${p.project}: receipt ${P.tilde(R.apply(p))}`); }
@@ -135,7 +138,7 @@ function show(p) {
   const n = R.todo(p).length;
   if (!args.includes('--apply')) { if (n) console.log(`  plan only; \`steward projects reconcile ${p.project} --apply\` applies it (asks first)`); return; }
   if (!n) { console.log('nothing to apply'); return; }
-  if (!(await ask(`Update ${n} unit(s) in ${p.project}?`))) { console.log('nothing changed'); return; }
+  if (!(await ask(`Update ${n} unit(s) in ${p.project}?`, 'reconcile'))) { console.log('nothing changed'); return; }
   const rp = R.apply(p);
   console.log(H(`applied; receipt ${P.tilde(rp)}`));
   console.log(`  rollback: steward projects reconcile --rollback ${P.tilde(rp)}`);

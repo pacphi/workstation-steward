@@ -13,6 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const C = require('../../lib/config.js');
+const A = require('../../lib/autonomy.js');
 const { progress } = require('../../lib/progress.js');
 
 const args = process.argv.slice(2);
@@ -72,12 +73,15 @@ const del = rows.filter(r => r.act === 'delete');
 if (!del.length) { console.log('\nnothing to delete.'); process.exit(0); }
 if (!flag('--apply')) { console.log('\nplan only. Add --apply to delete (asks first, records each tip).'); process.exit(0); }
 
-fs.writeSync(2, `\nDelete ${del.length} local branch(es)? [y/N] `);
-const buf = Buffer.alloc(64); let n = 0; try { n = fs.readSync(0, buf, 0, 64, null); } catch { /* no stdin */ }
-if (!/^\s*y/i.test(buf.slice(0, n).toString())) die('aborted');
+// under --unattended, [autonomy] answers by the class (lib/autonomy.js); else a person, on the terminal
+if (!A.answer('prune-merged', `Delete ${del.length} local branch(es)?`)) {
+  fs.writeSync(2, `\nDelete ${del.length} local branch(es)? [y/N] `);
+  const buf = Buffer.alloc(64); let n = 0; try { n = fs.readSync(0, buf, 0, 64, null); } catch { /* no stdin */ }
+  if (!/^\s*y/i.test(buf.slice(0, n).toString())) die('aborted');
+}
 s = pg.stage('deleting');
 const bdir = C.newBackupDir(`prune-merged-${path.basename(dir)}`);
-const receipt = { kind: 'prune-merged', at: new Date().toISOString(), engine: C.ENGINE_VERSION, repo: dir, remote: repo, branches: del.map(r => ({ name: r.b, tip: r.tip, pr: r.pr })), deleted: [], complete: false };
+const receipt = { kind: 'prune-merged', at: new Date().toISOString(), engine: C.ENGINE_VERSION, ...(A.unattended() ? { unattended: true } : {}), repo: dir, remote: repo, branches: del.map(r => ({ name: r.b, tip: r.tip, pr: r.pr })), deleted: [], complete: false };
 const save = () => fs.writeFileSync(path.join(bdir, 'receipt.json'), JSON.stringify(receipt, null, 1) + '\n');
 save();
 for (const r of del) { git('branch', '-D', r.b); receipt.deleted.push(r.b); save(); }
