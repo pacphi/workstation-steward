@@ -494,7 +494,9 @@ test('hook: a routine next step goes to Claude only, to mention once at the end 
   assert.match(ctx, /^<steward-brief v="1">/);
   assert.match(ctx, /At the end of your first reply, whatever they asked, add one short line that starts "Steward:"/);
   assert.doesNotMatch(ctx, /has just seen the first lines/);
-  assert.deepEqual(r.stamp, { at: NOW.toISOString(), fp: B.fingerprint(b), session_id: 'sess-1' });
+  assert.deepEqual(r.stamp, { at: NOW.toISOString(), fp: B.fingerprint(b), session_id: 'sess-1', kind: 'mention', transcript: null });
+  const withPath = B.hook({ ...START, transcript_path: '/t/sess-1.jsonl' }, { b, values: HV(), prev: null, now: NOW });
+  assert.equal(withPath.stamp.transcript, '/t/sess-1.jsonl', 'kept as given, so it can be read back');
 });
 
 test('hook: a broken or half-finished state shows the briefing as a notice (≤3 lines to the user, the block to Claude) and stamps it', () => {
@@ -509,7 +511,7 @@ test('hook: a broken or half-finished state shows the briefing as a notice (≤3
   assert.equal(json.next.cmd, 'steward config sync');
   assert.match(ctx, /Never run a command whose writes is true without the user's yes/);
   assert.match(ctx, /has just seen the first lines/);
-  assert.deepEqual(r.stamp, { at: NOW.toISOString(), fp: B.fingerprint(b), session_id: 'sess-1' });
+  assert.deepEqual(r.stamp, { at: NOW.toISOString(), fp: B.fingerprint(b), session_id: 'sess-1', kind: 'notice', transcript: null });
   assert.equal(B.hook({ ...START, source: 'clear' }, { b, values: HV(), prev: null, now: NOW }).out.systemMessage, r.out.systemMessage, 'after /clear too');
 });
 
@@ -521,7 +523,12 @@ test('hook: the same briefing within quiet_hours is one line to Claude only; a c
   assert.deepEqual(Object.keys(q.out), ['hookSpecificOutput']);
   const line = q.out.hookSpecificOutput.additionalContext;
   assert.equal(line.split('\n').length, 1);
-  assert.match(line, /^steward-brief: shown to the user at .*don't bring it up unless asked\. If asked what's next: .*next: steward config sync/);
+  assert.match(line, /^steward-brief: raised in a session at .*don't bring it up unless asked\. If asked what's next: .*next: steward config sync/);
+  assert.doesNotMatch(line, /shown to the user/, 'a stamp from before 0.10.1 has no kind: it never claims the user saw it');
+  const said = k => B.hook(START, { b, values: HV(), prev: { ...prev, kind: k }, now: NOW }).out.hookSpecificOutput.additionalContext;
+  assert.match(said('notice'), /^steward-brief: shown to the user as a session notice at /);
+  assert.match(said('mention'), /^steward-brief: Claude was asked to mention it at the end of its first reply in a session at /);
+  assert.doesNotMatch(said('mention'), /shown to the user/);
   // something new needs the user: a different fingerprint
   const more = briefOf(facts({ review: { due: true, age: 8, days: 7 }, config: { ahead: 1, changed: ['x.toml'] }, soak: { running: false, awaitingPrune: true, until: null, newest: null } }));
   assert.notEqual(B.fingerprint(more), prev.fp);
@@ -539,6 +546,46 @@ test('hook: the same briefing within quiet_hours is one line to Claude only; a c
   assert.match(B.quietLine(b, ago(60)), /; skill \/steward:supply-chain[;.]/);
   // the fingerprint follows what needs the user, not the order or the text around it
   assert.equal(B.fingerprint({ findings: [...b.findings].reverse() }), B.fingerprint(b));
+});
+
+// transcript(name, lines) — a Claude Code session transcript (JSONL, one JSON.stringify'd object per line, as Claude Code
+// writes them), shaped like a real one: the hook's attachments first, then whatever happened
+const transcript = (name, lines) => {
+  const f = path.join(ROOT, 'transcripts', `${name}.jsonl`);
+  write(f, lines.map(l => JSON.stringify(l)).join('\n') + '\n');
+  return f;
+};
+const HOOKED = [{ type: 'attachment', attachment: { type: 'hook_success' } }, { type: 'attachment', attachment: { type: 'hook_additional_context' } }];
+const EXIT = [{ type: 'user', message: { role: 'user', content: '<command-name>/exit</command-name>' } }];
+
+test('hook: a mention whose session never got a reply from Claude comes back; one that did, or can\'t be read, stays quiet', () => {
+  const b = briefOf(busyFacts());
+  const mention = (file, o = {}) => ({ at: ago(60).toISOString(), fp: B.fingerprint(b), session_id: 'sess-0', kind: 'mention', transcript: file, ...o });
+  const again = r => r.stamp !== null && /add one short line that starts "Steward:"/.test(r.out.hookSpecificOutput.additionalContext);
+  const quiet = r => r.stamp === null && /^steward-brief: /.test(r.out.hookSpecificOutput.additionalContext);
+  // opened, the hook ran, then /exit five times: no reply, so the user never saw the "Steward:" line
+  const lost = transcript('lost', [...HOOKED, ...EXIT, ...EXIT, ...EXIT, ...EXIT, ...EXIT]);
+  const r = B.hook({ ...START, transcript_path: '/t/sess-1.jsonl' }, { b, values: HV(), prev: mention(lost), now: NOW });
+  assert.ok(again(r), 'mentioned again');
+  assert.deepEqual(r.stamp, { at: NOW.toISOString(), fp: B.fingerprint(b), session_id: 'sess-1', kind: 'mention', transcript: '/t/sess-1.jsonl' });
+  // Claude replied (it was asked to add the line to that reply): quiet
+  const answered = transcript('answered', [...HOOKED, { type: 'user', message: { role: 'user', content: 'hi' } }, { type: 'assistant', message: { role: 'assistant', content: [] } }]);
+  assert.ok(quiet(B.hook(START, { b, values: HV(), prev: mention(answered), now: NOW })));
+  // can't tell: no path, a missing file, a folder, an unreadable file: quiet, as before 0.10.1
+  const unreadable = transcript('unreadable', [...HOOKED, ...EXIT]);
+  fs.chmodSync(unreadable, 0o000);
+  for (const t of [null, path.join(ROOT, 'transcripts', 'gone.jsonl'), path.join(ROOT, 'transcripts'), unreadable]) {
+    assert.ok(quiet(B.hook(START, { b, values: HV(), prev: mention(t), now: NOW })), `quiet for ${t}`);
+  }
+  fs.chmodSync(unreadable, 0o600);
+  // a notice was shown whatever happened after it; an old stamp has no kind: neither comes back
+  assert.ok(quiet(B.hook(START, { b, values: HV(), prev: mention(lost, { kind: 'notice' }), now: NOW })));
+  assert.ok(quiet(B.hook(START, { b, values: HV(), prev: mention(lost, { kind: undefined }), now: NOW })));
+  // the same session (a /clear keeps the transcript), or a second session seconds after the first: quiet
+  assert.ok(quiet(B.hook({ ...START, session_id: 'sess-0' }, { b, values: HV(), prev: mention(lost), now: NOW })));
+  assert.ok(quiet(B.hook(START, { b, values: HV(), prev: mention(lost, { at: new Date(NOW.getTime() - 5000).toISOString() }), now: NOW })));
+  // past the size cap it is treated as answered: a session that long had replies
+  assert.ok(B.unanswered(lost) && !B.unanswered(answered));
 });
 
 test('hook: nothing to do prints nothing (a wait alone isn\'t something to do); [brief] session = false prints nothing, ever', () => {

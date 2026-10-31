@@ -61,4 +61,4 @@ export STEWARD_CHANNEL STEWARD_RELEASE
 exec node "${REPO_ROOT}/bin/steward.js" "\$@"
 EOF
 chmod 755 "${bin_dir}/steward" "${bin_dir}/steward-dev"
-log "done. Check: steward version; steward-dev version; steward sc status"
+log "done. Check: steward version; steward-dev version; steward sc plan"
