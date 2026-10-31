@@ -147,9 +147,7 @@ test('install-hybrids: under --unattended it stops (exit 4) unless [autonomy] al
 
 test('end to end: steward ai fix, one yes on stdin: each part runs --apply --unattended --yes-to ai-fix; the record; the briefing', () => {
   const env = copy('e2e', 'ask');
-  // a Claude Code settings file to guard (ai guard stops on a missing one, as it did before D61)
-  fs.mkdirSync(path.join(env.HOME, '.claude'));
-  fs.writeFileSync(path.join(env.HOME, '.claude', 'settings.json'), '{}\n');
+  // no Claude Code settings file: ai guard creates one (test/guard.test.js)
   const r = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'ai', 'fix'], { encoding: 'utf8', input: 'y\n', env: { ...BASE, ...env } });
   assert.equal(r.status, 0, r.stdout + r.stderr);
   const backups = path.join(env.XDG_STATE_HOME, 'workstation-steward', 'backups');

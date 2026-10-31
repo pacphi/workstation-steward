@@ -46,20 +46,22 @@ function gitIgnoreFile() {
 }
 
 // Each guard: {name, what, file, text (null when absent), rules, add: [missing rules], next (the new text)}
+// A Mac with no Claude Code settings file yet (a fresh one) gets one holding only the rules, as the git ignore guard
+// creates its file: the receipt records it didn't exist, so --rollback removes it
 function npxAsk() {
   const file = C.untilde(G.npx_ask_file), rules = G.npx_ask || [];
-  const text = fs.readFileSync(file, 'utf8');
-  const j = JSON.parse(text);
+  const text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
+  const j = text === null ? {} : JSON.parse(text);
   const add = rules.filter(r => !(((j.permissions || {}).ask) || []).includes(r));
   let next = text;
   if (add.length) {
     j.permissions = j.permissions || {};
     j.permissions.ask = [...(j.permissions.ask || []), ...add];
-    const indent = (text.split('\n')[1] || '').match(/^\s*/)[0] || '  ';
-    next = JSON.stringify(j, null, indent) + (text.endsWith('\n') ? '\n' : '');
+    const indent = (text === null ? '' : (text.split('\n')[1] || '').match(/^\s*/)[0]) || '  ';
+    next = JSON.stringify(j, null, indent) + (text === null || text.endsWith('\n') ? '\n' : '');
     if (rules.some(r => !JSON.parse(next).permissions.ask.includes(r))) throw new Error('parse check failed: npx ask rules not present after the change');
   }
-  return { name: 'npx ask guard', what: `${C.tilde(file)} permissions.ask (ai-tooling.toml [guards] npx_ask)`, file, text, rules, add, next };
+  return { name: 'npx ask guard', what: `${C.tilde(file)}${text === null ? ' (a new file)' : ''} permissions.ask (ai-tooling.toml [guards] npx_ask)`, file, text, rules, add, next };
 }
 
 function gitIgnore() {
