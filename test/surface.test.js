@@ -44,6 +44,19 @@ test('help: the default shows the everyday commands only, then one "N more" line
   for (const l of r.stdout.split('\n')) assert.ok(l.length <= 110, `fits a terminal: ${l}`);
 });
 
+test('help: an everyday command whose add-on is off says so in its line; turned on, it says when to use it', () => {
+  const when = K.find(['projects']).cmd.when;
+  const offLine = steward(['help']).stdout.split('\n').find(l => /^ {2}steward projects /.test(l));
+  assert.match(offLine, /off: set \[profiles\] projects = true in steward\.toml/, 'the examples have projects = false');
+  assert.ok(!offLine.includes(when), offLine);
+  const on = path.join(ROOT, 'on');
+  fs.mkdirSync(on);
+  fs.writeFileSync(path.join(on, 'steward.toml'), '[profiles]\nprojects = true\n');
+  const onLine = steward(['help'], { STEWARD_INSTANCE: on }).stdout.split('\n').find(l => /^ {2}steward projects /.test(l));
+  assert.ok(onLine.includes(when), onLine);
+  assert.doesNotMatch(onLine, /off:/);
+});
+
 test('help --all: grouped as lib/commands.js says, read-only or writes on each line, aliases at the end, internal hidden', () => {
   const out = steward(['help', '--all']).stdout;
   const heads = Object.values(K.GROUPS).map(g => out.indexOf(`\n${g}`));

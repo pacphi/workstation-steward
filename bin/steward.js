@@ -68,7 +68,9 @@ function help(words = [], o = {}) {
     console.log(`Usage: steward <command> [args]   ${dim('(writes: shows its plan and asks first)')}\n`);
     const ev = K.everyday();
     const w = Math.max(...ev.map(c => name(c).length));
-    for (const c of ev) console.log(`  ${name(c).padEnd(w)}  ${c.when}`);
+    // a command whose add-on is off says so in place of when to use it
+    const gated = c => c.profile && cfg && !cfg.values.profiles[c.profile];
+    for (const c of ev) console.log(`  ${name(c).padEnd(w)}  ${gated(c) ? dim(`off: set [profiles] ${c.profile} = true in steward.toml to use it`) : c.when}`);
     console.log(`\n${K.listed(o).filter(c => c.tier !== 'everyday').length} more for specific jobs: steward help --all   ${dim('(steward help <command> for one)')}`);
     return;
   }
