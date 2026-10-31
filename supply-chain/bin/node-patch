@@ -10,6 +10,7 @@ source "$(dirname "$0")/../../lib/lib.sh"
 ver="${1:?usage: node-patch <x.y.z>}"
 [[ "${ver}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "need an exact version like 26.12.2"
 cur="$(node -p 'process.versions.node')"
+# no class on purpose: a change of major never takes a yes unattended (it exits 4 there)
 [[ "${ver%%.*}" == "${cur%%.*}" ]] || confirm "Major change ${cur} → ${ver}. Continue?" || exit 1
 
 arch="$(uname -m)"; [[ "${arch}" == x86_64 ]] && arch=x64

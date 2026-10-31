@@ -113,8 +113,10 @@ function show(rows) {
   return ok;
 }
 
-async function ask(q) {
+// ask(q, cls) — [y/N] on the terminal; under --unattended, [autonomy] answers by the question's class (lib/autonomy.js)
+async function ask(q, cls) {
   if (process.env.DRY_RUN === '1') return false;
+  if (require('../../lib/autonomy.js').answer(cls, q)) return true;
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const a = await new Promise(res => rl.question(`${q} [y/N] `, res));
   rl.close();
@@ -125,6 +127,7 @@ function apply(rows) {
   const dir = C.newBackupDir('repin');
   fs.mkdirSync(path.join(dir, 'home'), { mode: 0o700 });
   const receipt = { kind: 'repin', at: new Date().toISOString(), engine: C.ENGINE_VERSION, rules: policy.repin, backup: dir, files: [] };
+  Object.assign(receipt, require('../../lib/autonomy.js').mark());   // --unattended (D58), and --yes-to (D59)
   for (const r of rows) {
     // under home/ when the file is in the home folder, else under abs/: a backup path must never leave the backup folder
     const bak = r.file.startsWith(C.HOME + path.sep) ? path.join(dir, 'home', path.relative(C.HOME, r.file)) : path.join(dir, 'abs', r.file);
@@ -159,7 +162,7 @@ function rollback(receiptPath) {
     if (!receipt || receipt.startsWith('--')) { console.error('usage: --rollback <receipt.json>'); process.exit(2); }
     const rc = rollback(receipt);
     for (const f of rc.files) console.log(`  restore ${f.path}`);
-    if (!(await ask(`Restore ${rc.files.length} file(s) from ${C.tilde(rc.backup)}?`))) { console.log('nothing changed'); return; }
+    if (!(await ask(`Restore ${rc.files.length} file(s) from ${C.tilde(rc.backup)}?`, 'rollback'))) { console.log('nothing changed'); return; }
     for (const f of rc.files) fs.copyFileSync(C.untilde(f.backup), C.untilde(f.path));
     console.log(`restored ${rc.files.length} file(s)`);
     return;
@@ -167,6 +170,6 @@ function rollback(receiptPath) {
   if (!rules.length) { console.log('no [[repin]] rules in ai-tooling.toml'); return; }
   const ok = show(plan());
   if (!args.includes('--apply') || !ok.length) { if (!args.includes('--apply')) console.log('  plan only; run `steward ai repin --apply` to apply (asks first)'); return; }
-  if (!(await ask(`Change ${ok.length} file(s) as above?`))) { console.log('nothing changed'); return; }
+  if (!(await ask(`Change ${ok.length} file(s) as above?`, 'ai-fix'))) { console.log('nothing changed'); return; }
   apply(ok);
 })().catch(e => { console.error(`ERROR ${e.message}`); process.exit(1); });

@@ -55,6 +55,9 @@ function help(words = [], o = {}) {
   ${c.desc}`);
     console.log(`  ${c.writes ? `writes: shows its plan and asks first${c.class ? ` (class ${c.class})` : ' (a person runs it)'}` : 'read-only: changes nothing'}${off(c.profile)}`);
     if (back) console.log(`  way back: ${back}`);
+    if (c.parent) console.log(`  part of: steward ${c.parent} (runs it with the others, one yes for all)`);
+    const kids = COMMANDS.filter(x => x.parent === K.key(c)).map(name);
+    if (kids.length) console.log(`  runs: ${kids.join(', ')}`);
     const olds = COMMANDS.filter(x => x.aliasOf && find(x.aliasOf.split(' ')).cmd === c);
     for (const x of olds) console.log(`  old name: ${name(x)} (still works)`);
     return;

@@ -67,6 +67,6 @@ function show(rows) {
   if (!rows.length) { console.log('no hook timeouts in milliseconds.'); return; }
   const ok = show(rows);
   if (!args.includes('--apply') || !ok.length) { if (!args.includes('--apply')) console.log('  plan only; run `steward ai timeouts --apply` to apply (asks first)'); return; }
-  if (!(await ask(`Change ${ok.length} file(s) as above?`))) { console.log('nothing changed'); return; }
+  if (!(await ask(`Change ${ok.length} file(s) as above?`, 'ai-fix'))) { console.log('nothing changed'); return; }
   apply('timeouts', ok, { recipe: 'timeouts', note: 'Running Claude Code sessions keep their hooks until restarted; new sessions use the new timeouts.' });
 })().catch(e => { console.error(`ERROR ${e.message}`); process.exit(1); });

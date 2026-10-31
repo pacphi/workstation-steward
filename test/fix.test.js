@@ -45,10 +45,12 @@ test('disposition: run, ask, terminal, yours, skill or wait, from the command an
   assert.equal(how(item('a', 'DRY_RUN=1 steward sc prune, then steward sc prune')), 'run');
   assert.equal(how(item('a', 'steward fleet prune-merged ~/r')), 'ask');
   // a writing command that doesn't take --unattended asks its own questions, in a terminal
-  assert.equal(how(item('a', 'steward sc install-hybrids')), 'terminal');
-  assert.equal(how(item('a', 'steward config sync, then steward sc install-hybrids')), 'terminal');
+  assert.equal(how(item('a', 'steward sc link')), 'terminal');
+  // install-hybrids answers under --unattended (D61): it needs a yes, which the fix skill asks for
+  assert.equal(how(item('a', 'steward sc install-hybrids')), 'ask');
+  assert.equal(how(item('a', 'steward config sync, then steward sc link')), 'terminal');
   // a list that calls a step agent doesn't make it one: the class is checked against the policy here
-  assert.equal(how(item('a', 'steward sc install-hybrids', { actor: 'agent' }), { level: 'maintainer', allow: [], deny: [] }), 'terminal');
+  assert.equal(how(item('a', 'steward sc link', { actor: 'agent' }), { level: 'maintainer', allow: [], deny: [] }), 'terminal');
   // the user's, whatever the list says, and anything that isn't a steward command
   assert.equal(how(item('a', 'steward config sync', { actor: 'human' })), 'yours');
   // a steward command only a person runs stays theirs, even called agent, even with a yes for this run
@@ -117,12 +119,12 @@ test('work: the first failure stops the run, with the rollback from the step or 
 });
 
 test('work: from Claude a step that needs a yes waits, naming the one command for it; at a terminal it asks', async () => {
-  const items = [item('prune-merged', 'steward fleet prune-merged ~/r'), item('hybrids', 'steward sc install-hybrids', { actor: 'agent-with-yes' })];
+  const items = [item('prune-merged', 'steward fleet prune-merged ~/r'), item('hybrids', 'steward sc link', { actor: 'agent-with-yes' })];
   const quiet = fake();
   const r = await F.work(items, { policy: SAFE, exec: quiet.exec });
   assert.deepEqual(r.results.map(x => x.outcome), ['waiting', 'waiting']);
   assert.match(r.results[0].why, /steward fix --apply --only prune-merged --yes-to prune-merged$/);
-  assert.match(r.results[1].why, /run it in your terminal: steward sc install-hybrids$/);
+  assert.match(r.results[1].why, /run it in your terminal: steward sc link$/);
   assert.equal(quiet.calls.length, 0);
   // at a terminal: a yes, then a no
   const t = fake();
@@ -133,7 +135,7 @@ test('work: from Claude a step that needs a yes waits, naming the one command fo
   // a terminal step runs with its own questions (attended)
   const t2 = fake();
   await F.work([items[1]], { policy: SAFE, exec: t2.exec, tty: true, ask: async () => true });
-  assert.deepEqual(t2.calls.map(c => [c.argv.join(' '), c.attended]), [['sc install-hybrids', true]]);
+  assert.deepEqual(t2.calls.map(c => [c.argv.join(' '), c.attended]), [['sc link', true]]);
   // --only with the user's yes
   const o = fake();
   const r3 = await F.work(items, { policy: SAFE, exec: o.exec, only: 'prune-merged', yesTo: ['prune-merged'] });
@@ -178,7 +180,7 @@ test('steward fix end to end: the plan changes nothing; --apply runs the allowed
   const safe = settings('[autonomy]\nlevel = "safe"');
   const plan = steward(['fix', '--from', list, '--json'], { STEWARD_CONFIG: safe });
   assert.equal(plan.status, 0, plan.stderr);
-  assert.deepEqual(JSON.parse(plan.stdout).items.map(x => x.plan.how), ['run', 'yours', 'terminal']);
+  assert.deepEqual(JSON.parse(plan.stdout).items.map(x => x.plan.how), ['run', 'yours', 'ask']);
   assert.equal(JSON.parse(plan.stdout).subagents, 4);
   assert.notEqual(git(f.work, 'rev-parse', 'HEAD'), f.tip, 'the plan ran nothing');
   const r = steward(['fix', '--apply', '--from', list, '--json'], { STEWARD_CONFIG: safe });

@@ -21,8 +21,10 @@ const target = args.find((a, i) => !a.startsWith('--') && !(ai >= 0 && i > ai &&
 const H = s => `\x1b[1;34m==>\x1b[0m ${s}`;
 const strip = p => p.split(P.HOME).join('~');
 
-async function ask(q) {
+// ask(q, cls) — [y/N] on the terminal; under --unattended, [autonomy] answers by the question's class (lib/autonomy.js)
+async function ask(q, cls) {
   if (process.env.DRY_RUN === '1') return false;
+  if (require('../../lib/autonomy.js').answer(cls, q)) return true;
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const a = await new Promise(res => rl.question(`${q} [y/N] `, res));
   rl.close();
@@ -63,7 +65,7 @@ function show(p) {
     const changed = B.changedSince(rc);
     if (changed.length) { console.error(`refusing: changed since the apply: ${changed.slice(0, 5).join(', ')}${changed.length > 5 ? ` … ${changed.length - 5} more` : ''}`); process.exitCode = 1; return; }
     for (const e of rc.entries) console.log(`  ${e.action === 'move' ? 'move back' : e.action === 'edit' ? 'restore' : 'recreate'} ${e.path}`);
-    if (!(await ask(`Undo the offboard of ${rc.project} (${rc.at})?`))) { console.log('nothing changed'); return; }
+    if (!(await ask(`Undo the offboard of ${rc.project} (${rc.at})?`, 'rollback'))) { console.log('nothing changed'); return; }
     B.undo(rc);
     R.markRolledBack(P.untilde(receipt)); // the onboard receipts before it count as reconcile baselines again
     console.log(`undone; the receipt and any edit backups stay in ${rc.backup}`);
@@ -79,7 +81,7 @@ function show(p) {
   if (why.length) { for (const w of why) console.error(`refusing: ${w}`); process.exitCode = 1; return; }
   if (!n) { console.log('nothing to apply'); return; }
   if (p.plugins.length) console.log(`  note: Claude Code still records ${p.plugins.length} project-scope plugin install(s) here; the uninstall commands above come first`);
-  if (!(await ask(`Offboard ${p.project}: ${n} change(s), moved paths kept in the backup?`))) { console.log('nothing changed'); return; }
+  if (!(await ask(`Offboard ${p.project}: ${n} change(s), moved paths kept in the backup?`, 'offboard'))) { console.log('nothing changed'); return; }
   const rp = B.apply(p);
   console.log(H(`applied; receipt ${P.tilde(rp)}`));
   console.log(`  rollback: steward projects offboard --rollback ${P.tilde(rp)}`);

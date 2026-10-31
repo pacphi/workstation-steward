@@ -27,7 +27,7 @@ plan (`DRY_RUN=1`) before any write. A step that stopped midway is in the runboo
 
 ## Where things are
 
-All commands are `steward projects …`; `steward projects` lists them. The registry is `projects/registry.toml` in
+All commands are `steward projects …`; `steward help projects` lists them. The registry is `projects/registry.toml` in
 the user's config folder, and the roots it scans are `[projects] roots` in that folder's `steward.toml`;
 `steward config` names both.
 

@@ -43,6 +43,7 @@ Procedures: [`../skills/ai-tooling/runbook.md`](../skills/ai-tooling/runbook.md)
 steward ai drift              # read-only: machine and per-project AI tooling vs policy; changes nothing
 steward ai drift --offline    # skip the npm registry and GitHub reads
 steward ai drift --json       # machine-readable results
+steward ai fix                # repin, guard, timeouts, approvals and transport: every plan, then one yes (D61)
 steward ai repin              # plan: launcher configs to move from version-specific to stable paths
 steward ai repin --apply      # the same plan, then asks; backs up each file, checks the parse, writes a receipt
 steward ai repin --apply --tracked-local <file>...   # also tracked files whose pins come only from local edits (D13)
