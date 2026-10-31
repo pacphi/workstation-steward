@@ -11,7 +11,7 @@
 # An entry for some platforms only says so: `platforms = ["macos"]` on a table, or a list item written as a table,
 # { name = "…", platforms = ["macos"] } (path = for a path). Without the key an entry holds on every platform.
 
-# Apps that bundle their own Node runtime (steward sc status reports their versions; a path that isn't on a machine is
+# Apps that bundle their own Node runtime (steward sc plan reports their versions; a path that isn't on a machine is
 # skipped). Patch them by updating the app.
 vendored_node = [
   { path = "/Applications/Cursor.app/Contents/Resources/app/resources/helpers/node", platforms = ["macos"] },

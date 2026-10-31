@@ -24,7 +24,6 @@ const DEFAULTS = [
   'steward ai drift --offline',
   'steward ai drift',
   'steward sc verify',
-  'steward sc status',
   'steward sc audit',
   'steward sc plan',
   'DRY_RUN=1 steward sc install-hybrids',

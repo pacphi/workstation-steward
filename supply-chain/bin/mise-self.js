@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // mise itself (D38): which release the steward would move the mise binary to, and why. mise pins every other tool,
 // but nothing pinned mise: the standalone build sat on 2026.8.2 for 12 weeks (2026-10-27) while ~50 releases shipped.
-// Read-only. Usage: mise-self.js           a report for steward sc status
+// Read-only. Usage: mise-self.js           a report for bin/status (steward sc audit)
 //                   mise-self.js --plan    one line for audit and upgrade: action<TAB>current<TAB>target<TAB>reason<TAB>auto
 // auto: true when mise's own automatic update (self_update.auto, or auto_update before 2026.10) is turned on.
 // action: take (an eligible newer release), hold (newer ones exist, all under the gate), ok, brew (Homebrew's

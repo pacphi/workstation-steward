@@ -25,7 +25,8 @@ if (SANDBOX) {
   process.env.XDG_STATE_HOME = path.join(process.env.XDG_STATE_HOME || path.join(os.homedir(), '.local', 'state'), 'workstation-steward-dev');
 }
 const C = require('../lib/config.js');
-const { AREAS, COMMANDS, find } = require('../lib/commands.js');
+const K = require('../lib/commands.js');
+const { AREAS, COMMANDS, find } = K;
 const tty = process.stdout.isTTY && !process.env.NO_COLOR;
 const bold = s => (tty ? `\x1b[1m${s}\x1b[0m` : s);
 const dim = s => (tty ? `\x1b[2m${s}\x1b[0m` : s);
@@ -35,28 +36,59 @@ const load = () => { try { return C.load(); } catch (e) { return die(e.message);
 // report() — the same for the commands that report on the config: no steward.toml yet is something to say, not a stop
 const report = () => { try { return C.load({ allowMissing: true }); } catch (e) { return die(e.message); } };
 
-function help(area) {
+// help(words, o) — the everyday commands, then "N more"; o.all: every command under its group's heading (everyday
+// first, then advanced, dimmed), each marked read-only or writes, and the old names at the end (o.internal adds the
+// internal ones); an area (`steward help sc`, `steward sc`): that group the same way; a command: the one entry
+function help(words = [], o = {}) {
   const cfg = (() => { try { return C.load(); } catch { return null; } })();
-  const on = p => !p || !cfg || cfg.values.profiles[p];
-  console.log(`${bold('steward')} ${C.ENGINE_VERSION}: keeps this machine's software supply chain current within policy.`);
-  console.log(`Usage: steward <area> <command> [args]   ${dim('(* can change things; each shows its plan and asks first)')}\n`);
-  if (!area) {
-    console.log(bold(AREAS['']));
-    for (const [n, u, d] of [['version', '', 'The engine version, where your config is, and its format'],
-      ['init', '[folder] [--yes]', 'Create your config from the examples (plans, asks, never overwrites)'],
-      ['check', '', 'Is your config in a format this release reads? What a release wants from you'],
-      ['help', '[area]', 'This list, or one area\'s'],
-      ['… --real', '', 'steward-dev only: use your real config instead of the examples (D41)']]) console.log(`  steward ${n}${u ? ` ${u}` : ''}\n      ${dim(d)}`);
+  const off = p => (p && cfg && !cfg.values.profiles[p] ? dim(`  (off: steward.toml [profiles] ${p} = false)`) : '');
+  const name = c => `steward${c.area ? ` ${c.area}` : ''}${c.name ? ` ${c.name}` : ''}`;
+  const mark = c => (c.writes ? 'writes' : 'read-only');
+  const line = c => `  ${name(c)}${c.usage ? ` ${c.usage}` : ''}  ${mark(c)}`;
+  const head = () => console.log(`${bold('steward')} ${C.ENGINE_VERSION}: keeps this machine's software supply chain current within policy.`);
+  if (words.length && !(words.length === 1 && words[0] in AREAS)) {
+    const hit = find(words);
+    if (!hit || hit.args.length) die(`no command "${words.join(' ')}"; steward help --all lists them`);
+    const c = hit.cmd;
+    const back = c.undo || (c.usage && c.usage.includes('--rollback') ? `${name(c)} --rollback <receipt> (the receipt its run printed)` : '');
+    console.log(`${bold(name(c))}${c.usage ? ` ${c.usage}` : ''}
+  ${c.desc}`);
+    console.log(`  ${c.writes ? `writes: shows its plan and asks first${c.class ? ` (class ${c.class})` : ' (a person runs it)'}` : 'read-only: changes nothing'}${off(c.profile)}`);
+    if (back) console.log(`  way back: ${back}`);
+    const olds = COMMANDS.filter(x => x.aliasOf && find(x.aliasOf.split(' ')).cmd === c);
+    for (const x of olds) console.log(`  old name: ${name(x)} (still works)`);
+    return;
   }
-  for (const [a, title] of Object.entries(AREAS)) {
-    if (area ? a !== area : false) continue;
-    const cmds = COMMANDS.filter(c => c.area === a);
-    const gate = cmds[0] && cmds[0].profile;
-    if (a) console.log(`\n${bold(title)}${on(gate) ? '' : dim(`  (off: steward.toml [profiles] ${gate} = false)`)}`);
-    for (const c of cmds) {
-      console.log(`  steward ${c.area ? `${c.area} ` : ''}${c.name}${c.usage ? ` ${c.usage}` : ''}${c.writes ? ' *' : ''}\n      ${dim(c.desc)}`);
+  head();
+  const area = words[0];
+  if (!area && !o.all) {
+    console.log(`Usage: steward <command> [args]   ${dim('(writes: shows its plan and asks first)')}\n`);
+    const ev = K.everyday();
+    const w = Math.max(...ev.map(c => name(c).length));
+    for (const c of ev) console.log(`  ${name(c).padEnd(w)}  ${c.when}`);
+    console.log(`\n${K.listed(o).filter(c => c.tier !== 'everyday').length} more for specific jobs: steward help --all   ${dim('(steward help <command> for one)')}`);
+    return;
+  }
+  console.log(`Usage: steward <area> <command> [args]   ${dim('(writes: shows its plan and asks first)')}`);
+  const group = area && (K.AREA_GROUP[area] || area);
+  for (const [g, title] of Object.entries(K.GROUPS)) {
+    if (group && g !== group) continue;
+    const cs = K.listed(o).filter(c => c.group === g);
+    const gate = (cs.find(c => c.area && c.profile) || {}).profile;
+    console.log(`\n${bold(title)}${off(gate)}`);
+    for (const c of [...cs.filter(x => x.tier === 'everyday'), ...cs.filter(x => x.tier !== 'everyday')]) {
+      const adv = c.tier !== 'everyday';
+      console.log(adv ? dim(line(c)) : line(c));
+      console.log(`      ${dim(c.desc)}`);
     }
   }
+  const olds = COMMANDS.filter(c => c.aliasOf && (!group || c.group === group));
+  if (olds.length) {
+    console.log(`\n${bold('Old names that still work')} ${dim('(each prints its new name)')}`);
+    for (const c of olds) console.log(`  ${name(c)} → steward ${c.aliasOf}`);
+  }
+  if (!o.internal && K.listed({ internal: true }).length > K.listed(o).length) console.log(dim('\nInternal commands, for Claude Code and the engine: steward help --all --internal'));
+  if (!area && CHANNEL === 'dev') console.log(dim('steward-dev only: add --real to use your real config instead of the examples (D41)'));
 }
 
 // build() — what is running, in words: "release 0.1.0 (npm)" or "dev main@1ffa0ee (+2 uncommitted)"
@@ -88,22 +120,29 @@ function version() {
   console.log(`format:   ${fmt}; this release writes ${C.SCHEMA.CURRENT} and reads ${C.SCHEMA.READS.join(', ')}`);
 }
 
-// check() — exit 0 when nothing is wanted from you, 1 when something is (each with its command), 2 on an error
-function check() {
-  const cfg = report();
+// basics(cfg) — {ok, wants}: the lines check and doctor share, about the config's format and the add-ons
+function basics(cfg) {
+  const ok = [];
   const wants = [];
-  console.log(`engine ${C.ENGINE_VERSION}; instance ${C.tilde(C.INSTANCE_ROOT)} [${C.INSTANCE.source}]`);
   if (!fs.existsSync(cfg.file)) wants.push(`no steward.toml at ${C.tilde(C.INSTANCE_ROOT)}: steward init`);
   for (const e of cfg.errors) wants.push(`steward.toml: ${e} (steward config --check)`);
   if (cfg.schema > C.SCHEMA.CURRENT) wants.push(`your config is format ${cfg.schema}, written by a newer steward; this one reads ${C.SCHEMA.READS.join(', ')}: upgrade the engine`);
   else if (!C.SCHEMA.READS.includes(cfg.schema)) wants.push(`your config is format ${cfg.schema}; this release reads ${C.SCHEMA.READS.join(', ')}: steward migrate`);
-  else console.log(`ok     config format ${cfg.schema}: current${cfg.schemaGiven ? '' : ' (add `schema = 1` at the top of steward.toml to say so)'}`);
+  else ok.push(`config format ${cfg.schema}: current${cfg.schemaGiven ? '' : ' (add `schema = 1` at the top of steward.toml to say so)'}`);
   // A dev build answers to the pinned release: your config must stay in a format it reads (D41)
   const rel = !SANDBOX && releaseReads();
   if (rel && !rel.reads.includes(cfg.schema)) wants.push(`the pinned release (${rel.version}, ${C.tilde(rel.where)}) reads formats ${rel.reads.join(', ')}, and your config is ${cfg.schema}: move the release forward before using this config with it`);
-  else if (rel) console.log(`ok     the pinned release (${rel.version}) reads format ${cfg.schema}`);
-  const on = Object.entries(cfg.values.profiles).map(([k, v]) => `${k} ${v ? 'on' : 'off'}`).join(', ');
-  console.log(`ok     add-ons: ${on}`);
+  else if (rel) ok.push(`the pinned release (${rel.version}) reads format ${cfg.schema}`);
+  ok.push(`add-ons: ${Object.entries(cfg.values.profiles).map(([k, v]) => `${k} ${v ? 'on' : 'off'}`).join(', ')}`);
+  return { ok, wants };
+}
+
+// check() — exit 0 when nothing is wanted from you, 1 when something is (each with its command), 2 on an error
+function check() {
+  const cfg = report();
+  console.log(`engine ${C.ENGINE_VERSION}; instance ${C.tilde(C.INSTANCE_ROOT)} [${C.INSTANCE.source}]`);
+  const { ok, wants } = basics(cfg);
+  for (const l of ok) console.log(`ok     ${l}`);
   // projects a promotion of Ruflo or AQE left behind (D42): needs both add-ons
   if (!wants.length && cfg.values.profiles.projects && cfg.values.profiles.ai_tooling) {
     try {
@@ -236,13 +275,28 @@ function run(cmd, args) {
   delete env.STEWARD_UNATTENDED;
   delete env.STEWARD_YES_TO;
   const extra = unattended ? unattendedEnv(cmd, args, yesTo) : {};
+  // doctor: the engine and your config first (what version and check say), then the prerequisites; not for --json.
+  // It runs on a bare machine to say what is missing, so a config it can't read (no yq yet) is a line, not a stop
+  let wanted = 0;
+  if (cmd.area === '' && cmd.name === 'doctor' && !args.some(a => a === '--json' || a === '--markdown')) {
+    console.log(`workstation-steward ${build()} on node ${process.versions.node}`);
+    console.log(`instance: ${C.tilde(C.INSTANCE_ROOT)}   [${C.INSTANCE.source}]`);
+    let cfg = null;
+    let why = '';
+    try { cfg = C.load({ allowMissing: true }); } catch (e) { why = e.message; }
+    const { ok, wants } = cfg ? basics(cfg) : { ok: [], wants: [`couldn't read your config (${why}); the prerequisites below may be why`] };
+    for (const l of ok) console.log(`ok     ${l}`);
+    for (const l of wants) console.log(`WANTS  ${l}`);
+    wanted = wants.length;
+    console.log('');
+  }
   if (CHANNEL === 'dev' && !SANDBOX && cmd.writes) devBanner(`${cmd.area ? `${cmd.area} ` : ''}${cmd.name}`);
   const cwd = path.join(ENGINE, cmd.cwd);
   const [exe, ...rest] = cmd.run;
   const bin = exe === 'node' ? process.execPath : path.join(cwd, exe);
   const r = spawnSync(bin, [...rest, ...args], { cwd, stdio: 'inherit', env: { ...env, ...(cmd.env || {}), ...extra, STEWARD_CWD: process.cwd() } });
   if (r.error) die(`${cmd.run.join(' ')}: ${r.error.message}`);
-  process.exit(r.status === null ? 1 : r.status);
+  process.exit(r.status === null ? 1 : r.status || (wanted ? 1 : 0));
 }
 
 // devBanner(what) — before a dev build runs a command that can change things against a real config
@@ -261,12 +315,16 @@ function banners() {
 (async () => {
   const [first, ...rest] = argv;
   if (!first) { banners(); return help(); }
-  if (first === 'help' || first === '--help' || first === '-h') return help(rest[0] && rest[0] in AREAS ? rest[0] : undefined);
+  if (first === 'help' || first === '--help' || first === '-h') {
+    return help(rest.filter(a => !a.startsWith('-')), { all: rest.includes('--all'), internal: rest.includes('--internal') });
+  }
   if (first === 'version' || first === '--version' || first === '-v') return version();
   if (first === 'check') return check();
   if (first === 'init') return init(rest);
   const hit = find(argv);
+  // an old name: one line on stderr (stdout may be --json), then its new form
+  if (hit && hit.alias) console.error(`steward: "steward ${K.key(hit.alias)}" is now "steward ${hit.alias.aliasOf}"; the old name keeps working.`);
   if (hit) return run(hit.cmd, hit.args);
-  if (first in AREAS) { if (rest[0]) console.error(`steward: no command "${first} ${rest[0]}"\n`); help(first); process.exit(rest[0] ? 2 : 0); }
+  if (first in AREAS) { if (rest[0]) console.error(`steward: no command "${first} ${rest[0]}"\n`); help([first]); process.exit(rest[0] ? 2 : 0); }
   die(`no command "${argv.join(' ')}"; steward help lists them`);
 })();

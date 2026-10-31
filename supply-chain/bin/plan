@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Read-only: everything `steward sc upgrade` would take (bin/upgrade.js, as a plan), then what it doesn't cover: newer
+# Node security releases on the active line, the npm -g hybrids, and Node runtimes vendored inside apps (bin/status
+# --rest). `steward sc status`, which showed the second half, is now an old name for this.
+# Usage: plan [upgrade.js args]
+set -uo pipefail
+here="$(cd "$(dirname "$0")" && pwd)"
+DRY_RUN=1 node "${here}/upgrade.js" "$@"
+rc=$?
+"${here}/status" --rest || rc=$?
+exit "${rc}"
