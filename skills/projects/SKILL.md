@@ -64,8 +64,9 @@ For each project `steward projects scan` reports, ask with the question tool, on
 | Step | Approval |
 | --- | --- |
 | `steward projects scan`, `steward projects list`, `steward projects facets`, `steward projects profile-check`, `steward projects onboard <path>` and `steward projects reconcile <path>` or `--all` without `--apply` (and its `--diff`) | Not needed. Read-only. |
-| Recording decisions in `projects/registry.toml` | The user's answer to the prompt, recorded with `steward projects decide … --yes` (the answer is the approval). If the config folder is a Git repo, commit there through a branch and a PR; ask before pushing. |
+| Recording decisions in `projects/registry.toml` | The user's answer to the prompt, recorded with `steward projects decide … --yes` (the answer is the approval). It backs up the registry and writes a receipt; `steward projects decide --rollback <receipt>` puts it back. If the config folder is a Git repo, commit there through a branch and a PR; ask before pushing. |
 | Writing into a project: `steward projects onboard <path> --apply`, `steward projects reconcile <path> --apply` (or `--all --apply`, one yes for the listed projects), either's `--rollback <receipt>` | The plan, then the user's yes for that project (or that list), then its `[y/N]`. Reconcile replaces only copies the steward wrote and nobody edited, unless the user names one with `--take`. Untracked or ignored files only, with a backup and a receipt; tracked files go through a PR. Repos mid-merge or mid-rebase are refused. |
+| `steward projects apply`: onboard, offboard, then reconcile every project to its registry decision, with one yes | Show `DRY_RUN=1 steward projects apply` (every part's plan) and ask once. After the user's yes: `steward projects apply --unattended --yes-to onboard`, adding `--yes-to offboard` and `--yes-to reconcile` only when the plan shows those parts. |
 | `steward ai transport --apply` (needed once before onboarding a project with AQE) | The user's yes: it writes into the shared AQE runtime. |
 
 ## Never

@@ -1,6 +1,6 @@
 # AI tooling runbook
 
-![Revision 20](https://img.shields.io/badge/Revision-20-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 21](https://img.shields.io/badge/Revision-21-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 Procedures for the AI-tooling area: Ruflo and AgentDB, AQE, RuvNet Brain, RuVector, the shared launchers and
 the guards. The policy is `ai-tooling/ai-tooling.toml` in your instance ([an example](../../examples/ai-tooling/ai-tooling.toml)). Why it looks
@@ -45,6 +45,10 @@ Per-project checks follow each project's chosen tools in `projects/registry.toml
 confirmed, they follow its seed (`ai_seed`) instead. A tool a project shows but didn't choose is reported,
 never removed.
 
+**Fixing what drift finds, in one go:** `steward ai fix` runs the five fixers below (`ai repin`, `guard`, `timeouts`,
+`approvals` and `transport`). It prints every one's plan, asks once, then runs each with its own backup and receipt;
+`DRY_RUN=1` stops after the plans (D61). Run one alone when only one is behind, as the sections below do.
+
 ## A new AQE release
 
 `drift` lists every release newer than the runtime's base, with its age against the 3-day gate and whether its
@@ -82,8 +86,9 @@ notes mention security.
    read back.
 2. Change `version` for ruflo in `supply-chain/hybrids.toml`. Keep `allow_scripts` at the qualified list unless
    a new qualification widens it.
-3. `DRY_RUN=1 steward sc install-hybrids`, then `steward sc install-hybrids`. The version change triggers the backup
-   of every Ruflo policy folder and `~/.config/ruflo` before the install, and a receipt after it.
+3. `DRY_RUN=1 steward sc install-hybrids`, then `steward sc install-hybrids`. It prints its plan (each hybrid, its
+   allowed install scripts, the policy backup) and asks `[y/N]` (D62). The version change triggers the backup of every
+   Ruflo policy folder and `~/.config/ruflo` before the install, and a receipt after it.
 4. Pilot one project read-only. Then `steward sc verify` and `steward ai drift` (the hybrid receipt should be
    `ok`).
 5. Keep `CLAUDE_FLOW_AUTO_UPDATE=false` in place throughout.
@@ -251,7 +256,8 @@ with no vetting; the vetted Ruflo approvals are all read-only.
   project with AQE refuses until it matches.
 - **npx ask rules missing** from `~/.claude/settings.json` `permissions.ask` (D27): `steward ai guard` shows which,
   `steward ai guard --apply` adds them (asks first, backs up, writes a receipt; `steward ai guard --rollback <receipt>`
-  undoes it). Without them, agents run the unpinned `npx` that Ruflo's and AQE's skills name, unprompted wherever a
+  undoes it). On a fresh Mac with no `~/.claude/settings.json` yet, it creates the file; the receipt records that it
+  didn't exist, and `--rollback` removes it (D62). Without them, agents run the unpinned `npx` that Ruflo's and AQE's skills name, unprompted wherever a
   project allows `Bash(npx @claude-flow*)`.
 - **ruflo-console updater not off** (D29): `updates` in `~/.claude/plugins/store/ruflo-console_ruflo-*.json` isn't
   `"off"`, so the plugin offers (or auto-installs) versions from the tip of upstream's main. `steward ai guard --apply`

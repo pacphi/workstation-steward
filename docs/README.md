@@ -1,6 +1,6 @@
 # Docs index
 
-![Revision 12](https://img.shields.io/badge/Revision-12-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 13](https://img.shields.io/badge/Revision-13-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 Every public doc, by kind. Each doc shows its revision and revision date in badges under the title. The number changes only when the
 content does; moving a file or fixing a link doesn't count. The rules are in
@@ -10,19 +10,19 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 
 | Doc | Rev | What it is |
 | --- | --- | --- |
-| [`guide.md`](guide.md) | 8, 2026-10-31 | Why the steward exists, what it looks after, the rules, first run, the weekly routine (with what the release-age gate holds back) and what to do when something happens, words you'll see |
-| [`briefing.md`](briefing.md) | 6, 2026-10-31 | `steward brief`: what needs you now as one next step with its command, read from disk without the network; the background refresh that looks at GitHub, npm and your projects (D57); the Claude Code session-start hook, once and then quiet (D48); the checks (detectors), their order, the output, and how to add one; the work list, who does each step and your `[autonomy]` level, `--unattended` (D58); the fix runner, `steward fix` (D59) |
+| [`guide.md`](guide.md) | 9, 2026-10-31 | Why the steward exists, what it looks after, the rules, first run, the weekly routine (with what the release-age gate holds back) and what to do when something happens, words you'll see; the eight everyday commands and the bundled ones that take one yes (D60, D61) |
+| [`briefing.md`](briefing.md) | 7, 2026-10-31 | `steward brief`: what needs you now as one next step with its command, read from disk without the network; the background refresh that looks at GitHub, npm and your projects (D57); the Claude Code session-start hook, once and then quiet (D48); the checks (detectors), their order, the output, and how to add one; the work list, who does each step and your `[autonomy]` level, `--unattended` (D58); the fix runner, `steward fix` (D59); a bundled command left unfinished (D61); an animated example |
 | [`config-repo.md`](config-repo.md) | 7, 2026-10-31 | Keeping your config in a private Git repo: setting it up, Renovate, a second Mac, staying in step, and what the steward tells you about it |
-| [`prereqs.md`](prereqs.md) | 4, 2026-10-30 | Everything the steward needs on the machine, the order to install it on a new Mac, the services on GitHub (Renovate), and `steward doctor` |
+| [`prereqs.md`](prereqs.md) | 5, 2026-10-31 | Everything the steward needs on the machine, the order to install it on a new Mac, the services on GitHub (Renovate), and `steward doctor` (which shows your config and add-ons first) |
 
 ## Design
 
 | Doc | Rev | What it is |
 | --- | --- | --- |
-| [`lifecycle.md`](lifecycle.md) | 17, 2026-10-31 | Install, set up, use, upgrade, migrate the config, keep old command names, reconcile projects, add tools, roll back, and the two channels (a worktree or npm for the release): the promises across releases, each marked built or planned (D40, D41) |
+| [`lifecycle.md`](lifecycle.md) | 18, 2026-10-31 | Install, set up, use, upgrade, migrate the config, keep old command names, reconcile projects, add tools, roll back, and the two channels (a worktree or npm for the release): the promises across releases, day to day (the briefing, the review and the gate, who takes each step, `steward fix`, the bundled commands), each marked built or planned (D40, D41) |
 | [`release-classes.md`](release-classes.md) | 3, 2026-10-29 | Built (D52): what may skip the release-age gate, as one release class per update source, update sources declared in `host.toml`, and the weekly upstream watch on shipped key pins |
 | [`maintainers.md`](maintainers.md) | 7, 2026-10-31 | Releasing: the release PR, Conventional Commit titles, the one-time npm setup (placeholder and Trusted Publishing), the publish guard, a pre-push leak check (D46); the maintainer skill (D53); what to do when the upstream watch finds a shipped default changed (D52); checking that no command looks hung (`just progress-gaps`); trying the session hook before a release (`just try-hook`); Renovate on the engine repo |
-| [`architecture.md`](architecture.md) | 46, 2026-10-31 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D42 |
+| [`architecture.md`](architecture.md) | 47, 2026-10-31 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D62 |
 
 ## Living docs by area
 
@@ -40,10 +40,10 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 
 | Area | Doc | Rev | Covers |
 | --- | --- | --- | --- |
-| Supply chain | [`../skills/supply-chain/runbook.md`](../skills/supply-chain/runbook.md) | 8, 2026-10-30 | Routine check, upgrades, mise itself, Renovate PRs, checking the queue the release-age gate holds, Node security releases, advisories, trust exceptions, prune, changing the release-age gate, rollback |
-| AI tooling | [`../skills/ai-tooling/runbook.md`](../skills/ai-tooling/runbook.md) | 20, 2026-10-30 | Drift, new AQE releases, Ruflo version changes, bringing projects in step after a promotion, retiring a patch when an upstream fix lands, Brain, launcher drift, guards, rollback |
-| Projects | [`../skills/projects/runbook.md`](../skills/projects/runbook.md) | 16, 2026-10-27 | New projects, decisions, vanished projects, onboarding and offboarding, what may be written |
-| Fleet | [`fleet/runbook.md`](fleet/runbook.md) | 3, 2026-10-28 | Bringing a repo under Renovate, bot-PR consolidation, merging, syncing checkouts and pruning merged branches, long-lived lines |
+| Supply chain | [`../skills/supply-chain/runbook.md`](../skills/supply-chain/runbook.md) | 9, 2026-10-31 | Routine check, upgrades (one yes with `steward upgrade`), mise itself, Renovate PRs, checking the queue the release-age gate holds, Node security releases, advisories, trust exceptions, prune, changing the release-age gate, rollback |
+| AI tooling | [`../skills/ai-tooling/runbook.md`](../skills/ai-tooling/runbook.md) | 21, 2026-10-31 | Drift and `steward ai fix`, new AQE releases, Ruflo version changes, bringing projects in step after a promotion, retiring a patch when an upstream fix lands, Brain, launcher drift, guards, rollback |
+| Projects | [`../skills/projects/runbook.md`](../skills/projects/runbook.md) | 17, 2026-10-31 | New projects, decisions (and their rollback), `steward projects apply`, vanished projects, onboarding and offboarding, what may be written |
+| Fleet | [`fleet/runbook.md`](fleet/runbook.md) | 4, 2026-10-31 | Bringing a repo under Renovate, bot-PR consolidation, merging, syncing checkouts and pruning merged branches (`steward fleet tidy`), long-lived lines |
 
 ## Skills
 
@@ -59,6 +59,7 @@ follow the installed steward.
 | `/steward:supply-chain` | Supply chain | `audit`, `plan`, `verify` | [`../skills/supply-chain/`](../skills/supply-chain/README.md) |
 | `/steward:ai-tooling` | AI tooling | `drift` | [`../skills/ai-tooling/`](../skills/ai-tooling/README.md) |
 | `/steward:projects` | Projects | `scan`, `list` | [`../skills/projects/`](../skills/projects/README.md) |
+| `/steward:fix` | Everywhere | the plan (`steward fix`, `steward brief --plan`) | [`../skills/fix/`](../skills/fix/README.md) |
 | `/steward:pr-consolidation` | Fleet | (none) | [`../skills/pr-consolidation/`](../skills/pr-consolidation/README.md) |
 
 Claude also starts a skill on its own when a request matches its description. [`../skills/README.md`](../skills/README.md)

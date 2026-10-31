@@ -1,6 +1,6 @@
 # Lifecycle
 
-![Revision 17](https://img.shields.io/badge/Revision-17-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 18](https://img.shields.io/badge/Revision-18-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 How someone installs workstation-steward, sets it up, uses it, and keeps it, their config and their projects safe
 over release after release. It is the contract the code is built to: each part is marked **built** or **planned**.
@@ -12,6 +12,7 @@ The decisions behind it are D39 and D40 in [`architecture.md`](architecture.md#d
 - [The cycle](#the-cycle)
 - [Promises](#promises)
 - [Install and set up](#install-and-set-up)
+- [Day to day](#day-to-day)
 - [Upgrade the steward](#upgrade-the-steward)
 - [Your config across releases](#your-config-across-releases)
 - [Command names across releases](#command-names-across-releases)
@@ -38,8 +39,8 @@ The engine never holds your data, and your config never holds code. A release ch
 
 ```text
  1 INSTALL         2 SET UP           3 USE              4 UPGRADE            5 CATCH UP
- mise use -g  ──►  steward init  ──►  steward sc audit ──► a newer release ──► steward check
- npm:workstation-  copies the         plans, asks,        past the 3-day gate  ├─ config: steward migrate
+ mise use -g  ──►  steward init  ──►  steward review ──►   a newer release ──► steward check
+ npm:workstation-  copies the         fix: plans, asks,   past the 3-day gate  ├─ config: steward migrate
  steward@<ver>     examples, asks,    backs up, writes    (Renovate PR or      └─ projects: steward
  (3-day gate)      backs up, doctor   receipts            sc plan); soak           projects reconcile
                                                                 ▲                        │
@@ -56,7 +57,9 @@ The engine never holds your data, and your config never holds code. A release ch
    `steward brief` starts a short read-only refresh in the background, which writes nothing but those notes
    ([`briefing.md`](briefing.md#the-background-refresh), D57). *Built.*
 2. **The steward is held to its own rules.** A new release waits out the same release-age gate as any other tool,
-   installs through mise, and the previous version stays on disk through the soak. *Planned (R3, R6).*
+   installs through mise, and the previous version stays on disk through the soak. *Built (R6; the soak is D20): every release
+   is on npm, `steward sc upgrade-tool npm:workstation-steward` takes it under the gate, and `steward sc prune`
+   waits out the soak.*
 3. **Your config is versioned, and never rewritten behind your back.** *The version and `steward check` are built
    (R3a); `steward migrate` arrives with the first format change.*
 4. **Shared safety data stays current without overwriting your choices.** *Built (R3b).*
@@ -90,6 +93,27 @@ The engine never holds your data, and your config never holds code. A release ch
   else `~/.config/workstation-steward`. *Built (R1).* `steward config` shows which, and why.
 - **Keep the config in Git.** A private repo gives every policy change a review and a history, and lets Renovate
   propose toolchain updates for it. It names your projects, so don't make it public. How: [`config-repo.md`](config-repo.md).
+
+## Day to day
+
+- **One next step.** `steward` on its own (or `steward brief`) names the one step that needs you, with its command,
+  or says nothing does. It reads only what is on disk, and it names the step that finishes a command that stopped
+  midway or ran out of order ([`briefing.md`](briefing.md)). Its background look at GitHub, npm and your projects is
+  in promise 1. *Built (D57).*
+- **The weekly review** (`steward review`) lists everything waiting on a decision, each item under its command,
+  including what the release-age gate holds back in Renovate's Dependency Dashboards and when each clears. It only
+  reads. *Built (D56).*
+- **Who takes each step.** Every step is labelled with what kind of change it makes (its class) and who may take it:
+  an agent, an agent after your yes, or only you. Your `[autonomy]` level in `steward.toml` (`ask`, `safe` or
+  `maintainer`) decides what may run `--unattended`. The default, `safe`, lets a config pull, a reconcile, a prune
+  after the soak and a checkout fast-forward run; installs, upgrades and pushes always ask. *Built (D58).*
+- **Working the list.** `steward fix` shows the list as a plan; `--apply` runs what your level allows, asks for the
+  rest and hands you what only you can do, stopping at the first failure. *Built (D59).*
+- **One yes for a job of several steps.** `steward upgrade`, `steward ai fix`, `steward projects apply` and
+  `steward fleet tidy <repo>` show every part's plan, ask once, and keep each part's backup, receipt and way back.
+  *Built (D61).* The single-step commands they run stay, for one part at a time.
+- **Every writer has the same shape:** a plan, your yes, a backup, a receipt and a way back. *Built (D62 closed the
+  last three gaps: `ai guard`, `sc install-hybrids` and `projects decide`).*
 
 ## Upgrade the steward
 
