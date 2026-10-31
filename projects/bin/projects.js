@@ -28,6 +28,9 @@ const SHORT = { tracked: 'T', ignored: 'i', untracked: 'u', absent: '-', 'absent
 // state() — the registry, what is on disk, what's new and what's gone (lib/projects.js newAndGone)
 const state = opts => P.newAndGone(opts);
 
+/** @type {{rl: import('readline').Interface, lines: string[], waiting: ((l: string) => void) | null, ended: boolean} | null} */
+let reader = null;   // the one stdin reader prompt() opens (steward projects --apply, decide)
+
 function fmtTools(list) { return list && list.length ? list.join(',') : '-'; }
 
 if (cmd === 'banner') {
@@ -59,6 +62,10 @@ if (cmd === 'banner') {
     console.log(`\nregistered but no longer on disk (${gone.length}):`);
     for (const g of gone) console.log(`  ${g.path}`);
   }
+  // --apply (steward projects --apply): ask each new project's decision here, then record them as decide does
+  if (args.includes('--apply') && fresh.length) {
+    askDecisions(fresh).then(decide).finally(() => reader && reader.rl.close()).catch(e => { console.error(`ERROR ${e.message}`); process.exit(1); });
+  } else if (fresh.length) console.log('\nsteward projects --apply asks each one\'s decision and records them (shows the change, asks)');
 } else if (cmd === 'list') {
   const reg = P.loadRegistry();
   const rows = reg.map(r => {
@@ -142,17 +149,51 @@ function facetsCmd() {
   console.log(`\n${rows.length} project(s). With AI tools: ${onb.length}; Node there: ${Object.entries(onb.reduce((a, x) => (a[x.f.node] = (a[x.f.node] || 0) + 1, a), {})).map(([k, v]) => `${k}×${v}`).join(' ')}`);
 }
 
+// askDecisions(fresh) — [{path, decision, ai, until}] for the new projects, asked one at a time on this terminal (or
+// piped stdin); a project left blank is skipped. Recording them is decide's: it shows the change and asks again
+// prompt(q) — one answer from the terminal or piped stdin, through one reader for the whole run (a second reader would
+// lose the lines the first one buffered); '' once input ends. reader is declared at the top, before the commands run
+function prompt(q) {
+  if (!reader) {
+    const rl = require('readline').createInterface({ input: process.stdin });
+    reader = { rl, lines: [], waiting: null, ended: false };
+    rl.on('line', l => { if (reader.waiting) { const w = reader.waiting; reader.waiting = null; w(l); } else reader.lines.push(l); });
+    rl.on('close', () => { reader.ended = true; if (reader.waiting) { const w = reader.waiting; reader.waiting = null; w(''); } });
+  }
+  process.stdout.write(q);
+  if (reader.lines.length) return Promise.resolve(reader.lines.shift());
+  return reader.ended ? Promise.resolve('') : new Promise(res => { reader.waiting = res; });
+}
+
+async function askDecisions(fresh) {
+  const ask = prompt;
+  const out = [];
+  console.log('\nFor each new project: o onboarded, i ignored, d deferred, or Enter to skip it for now.');
+  for (const f of fresh) {
+    const shows = TOOLS.filter(t => P.evidence(f.path).ev[t].length);
+    const a = (await ask(`  ${P.tilde(f.path)}${shows.length ? ` (shows ${shows.join(',')})` : ''}: [o/i/d/skip] `)).trim().toLowerCase();
+    if (a === 'o' || a === 'onboarded') {
+      const t = (await ask(`    AI tools, comma-separated (${TOOLS.join(', ')}; Enter = ${shows.length ? shows.join(',') : 'none'}): `)).trim();
+      out.push({ path: f.path, decision: 'onboarded', ai: (t || shows.join(',')).split(',').map(x => x.trim()).filter(Boolean) });
+    } else if (a === 'i' || a === 'ignored') out.push({ path: f.path, decision: 'ignored' });
+    else if (a === 'd' || a === 'deferred') out.push({ path: f.path, decision: 'deferred', until: (await ask('    until (YYYY-MM-DD): ')).trim() });
+  }
+  return out;
+}
+
 // ---- decide ------------------------------------------------------------------------------------------------
 function flag(name) { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; }
 
-async function decide() {
+// decide(given) — record decisions: given (from askDecisions), --batch <file>, or one <path> --decision …
+async function decide(given) {
   const R = require('../../lib/registry.js');
   const list = R.entries();
   const byAbs = new Map(list.map(e => [P.untilde(e.path), e]));
   const found = new Map(P.discover().map(f => [f.path, f]));
   const d = new Date(), today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; // local date
   let wanted;
-  if (args.includes('--batch')) wanted = JSON.parse(fs.readFileSync(P.userPath(flag('--batch')), 'utf8'));
+  if (given) { if (!given.length) { console.log('nothing to record'); return; } wanted = given; }
+  else if (args.includes('--batch')) wanted = JSON.parse(fs.readFileSync(P.userPath(flag('--batch')), 'utf8'));
   else {
     const target = args.find(a => !a.startsWith('--') && args[args.indexOf(a) - 1] !== '--decision' && !['--ai', '--until', '--note', '--batch'].includes(args[args.indexOf(a) - 1]));
     if (!target) throw new Error('usage: decide <path> --decision … (or --batch <file>)');
@@ -192,8 +233,8 @@ async function decide() {
   }
   if (process.env.DRY_RUN === '1') { console.log('dry run: registry unchanged'); return; }
   if (!args.includes('--yes')) {
-    const rl = require('readline').createInterface({ input: process.stdin, output: process.stdout });
-    const a = await new Promise(res => rl.question('Record these in projects/registry.toml? [y/N] ', res)); rl.close();
+    const a = await prompt('Record these in projects/registry.toml? [y/N] ');
+    if (reader) reader.rl.close();
     if (!/^y$/i.test(a.trim())) { console.log('nothing changed'); return; }
   }
   const updated = list.map(e => { const c = changes.find(x => x.before && P.untilde(x.before.path) === P.untilde(e.path)); return c ? c.next : e; });

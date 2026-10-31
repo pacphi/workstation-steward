@@ -27,8 +27,10 @@ const sha = s => crypto.createHash('sha256').update(s).digest('hex');
 const BEGIN = '# BEGIN workstation-steward (ai-tooling.toml [guards] git_ignore; `steward ai guard` keeps this block)';
 const END = '# END workstation-steward';
 
-async function ask(q) {
+// ask(q, cls) — [y/N] on the terminal; under --unattended, [autonomy] answers by the question's class (lib/autonomy.js)
+async function ask(q, cls) {
   if (process.env.DRY_RUN === '1') return false;
+  if (require('../../lib/autonomy.js').answer(cls, q)) return true;
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const a = await new Promise(res => rl.question(`${q} [y/N] `, res));
   rl.close();
@@ -117,6 +119,7 @@ function pluginStore() {
 function apply(guards) {
   const dir = C.newBackupDir('guard');
   const receipt = { kind: 'guard', at: new Date().toISOString(), engine: C.ENGINE_VERSION, backup: C.tilde(dir), files: [] };
+  Object.assign(receipt, require('../../lib/autonomy.js').mark());   // --unattended (D58), and --yes-to (D59)
   const rp = path.join(dir, 'receipt.json');
   for (const g of guards) {
     const e = { guard: g.name, file: C.tilde(g.file), added: g.add, sha_before: g.text === null ? null : sha(g.text) };
@@ -152,7 +155,7 @@ const receiptFiles = rc => rc.files || [{ file: rc.file, sha_after: rc.sha_after
     const changed = files.filter(f => !fs.existsSync(C.untilde(f.file)) || sha(fs.readFileSync(C.untilde(f.file), 'utf8')) !== f.sha_after);
     if (changed.length) { console.error(`refusing: changed since the guard was added: ${changed.map(f => f.file).join(', ')}`); process.exit(1); }
     for (const f of files) console.log(`  ${f.backup ? `restore ${f.file} from ${f.backup}` : `remove ${f.file} (it didn't exist before)`}`);
-    if (!(await ask(`Undo ${files.length} file(s)?`))) { console.log('nothing changed'); return; }
+    if (!(await ask(`Undo ${files.length} file(s)?`, 'rollback'))) { console.log('nothing changed'); return; }
     for (const f of files) { if (f.backup) fs.copyFileSync(C.untilde(f.backup), C.untilde(f.file)); else fs.unlinkSync(C.untilde(f.file)); }
     console.log(`restored ${files.length} file(s)`);
     return;
@@ -165,6 +168,6 @@ const receiptFiles = rc => rc.files || [{ file: rc.file, sha_after: rc.sha_after
   const todo = guards.filter(g => g.add.length);
   if (!todo.length) { console.log('  nothing to add'); return; }
   if (!args.includes('--apply')) { console.log('  plan only; run `steward ai guard --apply` to apply (asks first)'); return; }
-  if (!(await ask(`Add ${todo.reduce((s, g) => s + g.add.length, 0)} rule(s) to ${todo.map(g => C.tilde(g.file)).join(' and ')}?`))) { console.log('nothing changed'); return; }
+  if (!(await ask(`Add ${todo.reduce((s, g) => s + g.add.length, 0)} rule(s) to ${todo.map(g => C.tilde(g.file)).join(' and ')}?`, 'ai-fix'))) { console.log('nothing changed'); return; }
   apply(todo);
 })().catch(e => { console.error(`ERROR ${e.message}`); process.exit(1); });

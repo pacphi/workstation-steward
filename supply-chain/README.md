@@ -50,6 +50,8 @@ steward sc audit --verbose                    # the same, with the lines each ch
 steward sc verify                             # read-only: every CLI, native addons, npm doctor
 steward sc plan                               # read-only: what `upgrade` would take, what's held and why, then Node
                                               # security releases, hybrids, vendored Node (it took over sc status)
+steward upgrade                               # a Node security release or hybrids out of step first, then sc upgrade:
+                                              # every plan, then one yes (D61)
 steward sc upgrade                            # apply the plan (asks first); verify once at the end; exit 1 if a step failed
 steward sc upgrade-tool npm:typescript        # one tool: newest version older than 3 days; verify; lock
 steward sc upgrade-tool npm 12.3.0            # one tool, exact pin (e.g. a security fix)

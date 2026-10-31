@@ -14,6 +14,6 @@ first; `--apply` asks, backs up or records what it drops, and writes a receipt.
 | Path | What it is |
 | --- | --- |
 | [`../docs/fleet/runbook.md`](../docs/fleet/runbook.md) | Procedures: bringing a repo under Renovate, consolidating bot PRs, merging, long-lived version lines |
-| [`bin/`](../docs/fleet/runbook.md#after-merging) | `steward fleet sync <repo>` and `steward fleet prune-merged <repo>` (`<repo>` is the checkout's path): a plan, your yes, a backup or record, and a receipt (D34) |
+| [`bin/`](../docs/fleet/runbook.md#after-merging) | `steward fleet sync <repo>` and `steward fleet prune-merged <repo>` (`<repo>` is the checkout's path): a plan, your yes, a backup or record, and a receipt (D34). `steward fleet tidy <repo>` runs both: both plans, then one yes (D61) |
 | [`../skills/pr-consolidation/`](../skills/pr-consolidation/README.md) | The `pr-consolidation` skill (v2): one PR per repo that supersedes its open Dependabot and/or Renovate PRs, in any ecosystem, with every CI audit gate green. Off until `[skills] pr_consolidation = true` in `steward.toml` (`steward init` asks), with the skills installed (`steward skills install`) |
 | [`../skills/pr-consolidation/rules.md`](../skills/pr-consolidation/rules.md) | The rules for dependency PRs: release age, majors, changing a repo, merging, and how Renovate behaves |

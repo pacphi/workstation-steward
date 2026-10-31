@@ -37,7 +37,8 @@ values and where the instance is. Paths below are relative to the instance unles
   before the first write; a receipt under the state folder, recording the engine version; a way back (`--rollback`,
   `--undo` or `steward sc rollback`). `DRY_RUN=1` previews any of them. Every user command is listed in
   `lib/commands.js`, with its `class` (`lib/autonomy.js`), `tier` and `group` (`steward help`, D60); a renamed
-  command keeps its old name as an `aliasOf` entry. A new command that writes adds a `lib/brief.js` detector
+  command keeps its old name as an `aliasOf` entry. A bundled command (`lib/coarse.js`, D61) runs others as its
+  `parent`: every plan, one yes, then each part under `--unattended --yes-to` its own class. A new command that writes adds a `lib/brief.js` detector
   for its half-finished states, with a test, so `steward brief` can name the step that finishes it
   (`docs/briefing.md`). `--unattended` (D58) takes a yes only where `[autonomy]` allows the class, checked again at
   each question (`A.answer(class, q)`, or `confirm "q" <class>` in bash); a refusal exits 4.

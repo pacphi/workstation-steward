@@ -45,6 +45,8 @@ Procedures: [`../skills/projects/runbook.md`](../skills/projects/runbook.md). Cl
 ## Commands
 
 ```sh
+steward projects          # new projects and gone ones; --apply asks each new one's decision, then records them
+steward projects apply    # each project to its registry decision (onboard, offboard, reconcile): every plan, one yes
 steward projects scan     # read-only: new projects, and registered ones no longer on disk
 steward projects list     # read-only: decision, chosen tools, seed, what each project shows today, and its stack
 steward projects facets   # read-only: stack, workspace, Node and each AI file's Git state (or: steward projects facets <path>)

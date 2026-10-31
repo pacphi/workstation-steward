@@ -107,6 +107,6 @@ function show(rows) {
   if (!rows.length) { console.log('every project already matches the policy.'); return; }
   const ok = show(rows);
   if (!args.includes('--apply') || !ok.length) { if (!args.includes('--apply')) console.log('  plan only; run `steward ai approvals --apply` to apply (asks first)'); return; }
-  if (!(await ask(`Change ${ok.length} file(s) as above?`))) { console.log('nothing changed'); return; }
+  if (!(await ask(`Change ${ok.length} file(s) as above?`, 'ai-fix'))) { console.log('nothing changed'); return; }
   apply('approvals', ok, { recipe: 'approvals', note: 'Running Codex sessions keep their MCP servers until restarted; new sessions use the new settings.' });
 })().catch(e => { console.error(`ERROR ${e.message}`); process.exit(1); });

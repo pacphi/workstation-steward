@@ -116,8 +116,10 @@ async function plan(ctx, out) {
   return p;
 }
 
+// ask(q) — [y/N] on the terminal; under --unattended, [autonomy] answers for the class upgrade (lib/autonomy.js)
 async function ask(q) {
   if (DRY) return true;
+  if (require('../../lib/autonomy.js').answer('upgrade', q)) return true;
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const a = await new Promise(res => rl.question(`${q} [y/N] `, res));
   rl.close();

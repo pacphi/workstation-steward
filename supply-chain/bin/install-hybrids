@@ -5,5 +5,10 @@
 # shellcheck source=lib/lib.sh
 source "$(dirname "$0")/../../lib/lib.sh"
 
+# It asks nothing at a terminal (it never has); under --unattended (steward upgrade, steward fix) [autonomy] must allow
+# install-hybrids, or it stops here with exit 4 before anything is installed
+if [[ "${STEWARD_UNATTENDED:-}" == "1" && "${DRY_RUN:-}" != "1" ]]; then
+  node "${REPO_ROOT}/lib/autonomy.js" --answer install-hybrids "Install the hybrids from hybrids.toml into the active Node?" || exit 4
+fi
 install_hybrids
 run mise reshim

@@ -24,8 +24,10 @@ const H = s => `\x1b[1;34m==>\x1b[0m ${s}`;
 const LABEL = { edit: 'edit  ', pr: 'PR    ', create: 'create', manual: 'MANUAL', none: 'ok    ' };
 const strip = p => p.split(P.HOME).join('~');
 
-async function ask(q) {
+// ask(q, cls) — [y/N] on the terminal; under --unattended, [autonomy] answers by the question's class (lib/autonomy.js)
+async function ask(q, cls) {
   if (process.env.DRY_RUN === '1') return false;
+  if (require('../../lib/autonomy.js').answer(cls, q)) return true;
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const a = await new Promise(res => rl.question(`${q} [y/N] `, res));
   rl.close();
@@ -69,7 +71,7 @@ function show(p) {
     if (changed.length) { console.error(`refusing: changed since the apply: ${changed.slice(0, 5).join(', ')}${changed.length > 5 ? ` … ${changed.length - 5} more` : ''}`); process.exitCode = 1; return; }
     for (const e of rc.entries) console.log(`  ${e.names ? `remove ${e.names.length} name(s) from` : e.backup ? 'restore' : 'remove'} ${e.path}`);
     if (rc.exclude) console.log(`  remove the onboard block from ${rc.exclude.file}`);
-    if (!(await ask(`Undo the onboard of ${rc.project} (${rc.at})?`))) { console.log('nothing changed'); return; }
+    if (!(await ask(`Undo the onboard of ${rc.project} (${rc.at})?`, 'rollback'))) { console.log('nothing changed'); return; }
     O.undo(rc);
     R.markRolledBack(P.untilde(receipt)); // its hashes stop counting as reconcile baselines
     console.log(`undone; the backups stay in ${rc.backup}`);
@@ -100,7 +102,7 @@ function show(p) {
   if (why.length) { for (const w of why) console.error(`refusing: ${w}`); process.exitCode = 1; return; }
   const n = p.files.filter(f => f.action === 'edit' || f.action === 'create').length;
   if (!n) { console.log('nothing to apply'); return; }
-  if (!(await ask(`Apply ${n} change(s) to ${p.project}?`))) { console.log('nothing changed'); return; }
+  if (!(await ask(`Apply ${n} change(s) to ${p.project}?`, 'onboard'))) { console.log('nothing changed'); return; }
   const rp = O.apply(p);
   console.log(H(`applied; receipt ${P.tilde(rp)}`));
   console.log(`  rollback: steward projects onboard --rollback ${P.tilde(rp)}`);

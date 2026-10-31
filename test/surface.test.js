@@ -93,8 +93,11 @@ test('alias: sc status runs sc plan with a one-line notice on stderr, never on s
   assert.equal(a.stderr.split('\n').slice(1).join('\n'), b.stderr, 'then the same run as the new name');
 });
 
-test('top level: projects, upgrade and rollback run their area commands; a wrong word is still a wrong word', () => {
-  for (const [top, area] of [[['projects'], ['projects', 'scan']], [['upgrade'], ['sc', 'upgrade']], [['rollback'], ['sc', 'rollback']]]) {
+test('top level: projects and rollback run their area commands; a wrong word is still a wrong word', () => {
+  // upgrade is a bundled command now (D61, test/coarse.test.js)
+  // projects --apply asks each new project's decision (writes the registry), which scan alone never does
+  assert.deepEqual([K.find(['projects']).cmd.writes, K.find(['projects']).cmd.class], [true, 'registry']);
+  for (const [top, area] of [[['rollback'], ['sc', 'rollback']]]) {
     const t = K.find(top).cmd;
     const a = K.find(area).cmd;
     assert.deepEqual([t.cwd, t.run, t.writes, t.class, t.profile], [a.cwd, a.run, a.writes, a.class, a.profile], top.join(' '));
