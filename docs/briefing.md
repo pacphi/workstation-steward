@@ -1,6 +1,6 @@
 # The briefing: `steward brief`
 
-![Revision 8](https://img.shields.io/badge/Revision-8-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 9](https://img.shields.io/badge/Revision-9-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 **One question, answered in under a second: what needs me, and what do I run next?** `steward brief` reads what is
 already on your disk and names **one** next step, with its exact command. When nothing needs you, it says so in one
@@ -201,15 +201,23 @@ you, the hook prints nothing.
 | How the session started | What the hook does |
 | --- | --- |
 | A new session, or `/clear`, and nothing needs you | Nothing. Waits alone don't count |
-| A new session, or `/clear`, and something needs you | Gives Claude the block **if** what needs you changed since it last showed, or `quiet_hours` have passed. A broken or half-finished state (next is `fix`) also shows you the briefing as a notice (at most three lines); for a routine step, Claude adds one line starting "Steward:" at the end of its first reply. Otherwise you see nothing, and Claude gets one line: what's next, and that you've heard |
+| A new session, or `/clear`, and something needs you | Gives Claude the block **if** what needs you changed since it last showed, or `quiet_hours` have passed. A broken or half-finished state (next is `fix`) also shows you the briefing as a notice (at most three lines); for a routine step, Claude adds one line starting "Steward:" at the end of its first reply. Otherwise you see nothing, and Claude gets one line: what's next, and how an earlier session raised it (a notice you saw, or a mention Claude was asked to make) |
 | After a compaction (`/compact`, or automatic) | Gives Claude the block again, since the compaction dropped it. You see nothing |
 | Resumed (`--resume`, `--continue`) or forked | Nothing: the hook isn't run. The session already has its context |
 
 **When it shows again.** The hook keeps a stamp, `<state>/brief/shown.json`: when it last showed, and a fingerprint
 of what needed you (each finding's `id` and `key`, which change only when what they point at changes). A new
 finding, or one gone, changes the fingerprint, so the next session shows the briefing at once. The same work still
-waiting shows again only after `quiet_hours`. The stamp is the one file the hook writes, by a temporary file and a
-rename, readable only by you (mode 0600).
+waiting shows again only after `quiet_hours`. The stamp also records how it was raised (`notice` or `mention`) and
+where that session's transcript is. The stamp is the one file the hook writes, by a temporary file and a rename,
+readable only by you (mode 0600).
+
+**A mention you never saw comes back.** A routine step reaches you only in Claude's first reply. If you open a session
+and leave without asking anything, Claude never replies, so you never see the "Steward:" line. At the next new
+session, the hook reads that earlier session's transcript (Claude Code's own file; the hook only reads it). If it holds
+no reply from Claude, the hook asks Claude to mention the step again, even within `quiet_hours`. It doesn't when that
+was the same session or under two minutes ago, when the transcript is missing, unreadable or over 8 MB, or when the
+step was a notice, which you saw when the session opened.
 
 **What it never does.** It uses no network itself and fixes nothing. Like `steward brief`, it may start the
 [background refresh](#the-background-refresh) after a new session or `/clear`, and doesn't wait for it. It always
