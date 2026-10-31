@@ -1,0 +1,50 @@
+name: pages
+
+# Publishes docs/explainer.html as the repo's GitHub Pages site (https://pacphi.github.io/workstation-steward/).
+# On demand only: a maintainer runs it after the page changes (Actions → pages → Run workflow, or
+# `gh workflow run pages.yml`), so a merged edit never goes public by itself. The file on main is the one source;
+# this stages it as index.html at deploy time, so nothing is committed twice and there is no gh-pages branch.
+# Pages' source must be "GitHub Actions" (Settings → Pages), set once by an admin. docs/maintainers.md has the steps.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time; let an in-flight deploy finish rather than cancel it
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Refuse a page that still waits for its release time
+        run: |
+          if grep -q '__RELEASE_PUBLISHED__' docs/explainer.html; then
+            echo "docs/explainer.html still has __RELEASE_PUBLISHED__: fill in the release's npm publish time first" >&2
+            exit 1
+          fi
+      - name: Stage the site (docs/explainer.html -> index.html)
+        run: |
+          mkdir -p _site
+          cp docs/explainer.html _site/index.html
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

@@ -1,6 +1,6 @@
 # Releasing workstation-steward
 
-![Revision 7](https://img.shields.io/badge/Revision-7-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 8](https://img.shields.io/badge/Revision-8-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 How a release happens, and the one-time npm setup behind it (D46 in [`architecture.md`](architecture.md#decisions)),
 plus what to do when the weekly upstream watch finds that a shipped default changed (D52), and how to check that no
@@ -14,6 +14,7 @@ repository; users install releases as [`../README.md`](../README.md) describes.
 - [One-time npm setup](#one-time-npm-setup)
 - [Publishing an existing release](#publishing-an-existing-release)
 - [After each release](#after-each-release)
+- [The explainer site](#the-explainer-site)
 - [Renovate on the engine repo](#renovate-on-the-engine-repo)
 - [The maintainer skill](#the-maintainer-skill)
 - [Trying the session hook before a release](#trying-the-session-hook-before-a-release)
@@ -118,6 +119,21 @@ gh workflow run release.yml --repo pacphi/workstation-steward -f tag=v0.1.0
   ```
 
 - A config repo that pins the steward through mise gets a Renovate PR once the release is 3 days old.
+
+## The explainer site
+
+[`docs/explainer.html`](explainer.html) is the film: one self-contained page, published as the repo's GitHub Pages site,
+<https://pacphi.github.io/workstation-steward/>. It isn't in the npm package (`docs/` is outside `files`), so changing
+it never changes what users install.
+
+- **Publishing is on demand.** `.github/workflows/pages.yml` runs only when a maintainer starts it: Actions → pages →
+  Run workflow, or `gh workflow run pages.yml`. It copies the page to `index.html` and deploys it; there is no
+  `gh-pages` branch. A merged edit stays off the site until someone runs it.
+- **Once per repo:** Settings → Pages → Source: **GitHub Actions**. Nothing else on that screen: no branch, no folder.
+- **The page names a release.** Its version and publish time describe what is on npm. After a release, update both
+  (the publish time replaces `__RELEASE_PUBLISHED__`; the workflow refuses to deploy while it is still there), check the
+  commands it names still exist (`test/explainer.test.js`), then run the workflow.
+- **Check it before publishing:** open it locally at desktop and phone widths, and click through Act IV's session.
 
 ## Renovate on the engine repo
 

@@ -3,6 +3,7 @@
 [![npm](https://img.shields.io/npm/v/workstation-steward?label=npm&color=3fb950)](https://www.npmjs.com/package/workstation-steward)
 [![Tests](https://github.com/pacphi/workstation-steward/actions/workflows/test.yml/badge.svg)](https://github.com/pacphi/workstation-steward/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![The film](https://img.shields.io/badge/the_film-a_harbor_in_nine_acts-F3B33D)](https://pacphi.github.io/workstation-steward/)
 
 **Your Mac's software supply chain, kept current on your terms.** One command, `steward`, looks after your mise
 toolchain, Homebrew, apps, the App Store, macOS, trust stores and Docker, and, if you want, your AI tools and every
@@ -215,6 +216,7 @@ sessions to watch: an advisory check, setting up a new repo, and the AI tooling.
 
 | Doc | What it covers |
 | --- | --- |
+| [The film](https://pacphi.github.io/workstation-steward/) | The whole story in nine interactive acts: the gate, the pilot that comes aboard in Claude Code, the berths, and how to start ([`docs/explainer.html`](docs/explainer.html)) |
 | [`docs/guide.md`](docs/guide.md) | Why the steward exists, the first run, and a normal week |
 | [`docs/briefing.md`](docs/briefing.md) | `steward brief`: the one next step, what it checks, and how to add a check |
 | [`docs/lifecycle.md`](docs/lifecycle.md) | Install, upgrade, config formats, rollback, the two channels, and the promises behind them |
