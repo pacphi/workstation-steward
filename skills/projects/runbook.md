@@ -1,6 +1,6 @@
 # Projects runbook
 
-![Revision 16](https://img.shields.io/badge/Revision-16-green) ![Revised 2026-10-27](https://img.shields.io/badge/Revised-2026--10--27-green)
+![Revision 17](https://img.shields.io/badge/Revision-17-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 Procedures for the projects under the roots in `steward.toml` (`[projects] roots`). The registry is
 `projects/registry.toml` in your instance ([an example](../../examples/projects/registry.toml)), and its fields are described in
@@ -23,8 +23,8 @@ Procedures for the projects under the roots in `steward.toml` (`[projects] roots
 
 ## New projects appear
 
-1. `steward` prints `!! N new project(s) under <root>` when the scan finds any.
-2. Run `steward projects scan` (read-only). For each new project it shows:
+1. `steward` names them (`N new project(s): …`, next `steward projects scan`) when its background look finds any.
+2. Run `steward projects scan` (read-only), or `steward projects`, the same scan. For each new project it shows:
    - its kind (`git`, `worktree`, `submodule`, `nested-git` or `dir`);
    - its parent, for worktrees and submodules;
    - its stack (see below);
@@ -210,11 +210,16 @@ Each project gets one decision:
    - `--inherit` for worktrees and submodules;
    - `--batch <file.json>` for several at once.
 
-   It validates the entry, shows the change and asks before writing. Then commit the registry through a PR,
-   since the registry is the record of the user's decisions.
+   It validates the entry, shows the change and asks before writing. It backs up `registry.toml` to
+   `backups/registry-<time>/` and writes a receipt naming each change; `steward projects decide --rollback <receipt>`
+   puts the registry back, and refuses if it changed since (D62). Then commit the registry through a PR, since the
+   registry is the record of the user's decisions. `steward projects --apply` does this for every new project at
+   once: it asks each one's decision in turn, then records them all the same way.
 3. Onboarding itself means writing the chosen tools' files and settings into the project:
    `steward projects onboard <path>` shows the exact plan, and `--apply` asks `[y/N]` and keeps a backup, a receipt and
-   a rollback ([Apply and roll back](#apply-and-roll-back)).
+   a rollback ([Apply and roll back](#apply-and-roll-back)). `steward projects apply` brings every project to its
+   decision at once: each onboard and offboard the registry calls for, then `projects reconcile --all` when copies
+   are behind. It prints every plan and asks once (D61).
 
 ## Confirm a seeded project
 

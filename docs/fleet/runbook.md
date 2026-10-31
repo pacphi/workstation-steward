@@ -1,6 +1,6 @@
 # Fleet runbook
 
-![Revision 3](https://img.shields.io/badge/Revision-3-green) ![Revised 2026-10-28](https://img.shields.io/badge/Revised-2026--10--28-green)
+![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 Procedures for the GitHub side of the repos under your `[projects] roots`. The rules are in the PR-consolidation
 skill's [`rules.md`](../../skills/pr-consolidation/rules.md) (release age, majors, changing a repo, merging, Renovate)
@@ -57,6 +57,7 @@ itself, D49).
 
 ```sh
 cd <checkout>
+steward fleet tidy .                            # both below: their plans, then one yes (D61)
 steward fleet sync .                            # plan: what upstream moved, which local edits it already has
 steward fleet sync . --apply                    # asks, backs up what it drops, fast-forwards
 steward fleet sync . --apply --replace .nvmrc   # also drop an edit you name that differs from upstream

@@ -189,7 +189,26 @@ test('end to end: steward ai fix, one yes on stdin: each part runs --apply --una
   fs.mkdirSync(stopped);
   fs.writeFileSync(path.join(stopped, 'receipt.json'), JSON.stringify({ ...rec, at: '2026-10-30T08:00:00.000Z', pid: 999999, complete: false, outcome: 'started', steps: rec.steps.slice(0, 2) }));
   const b = steward(['brief', '--all'], env);
-  assert.match(b.stdout, /steward ai fix stopped midway: 2 of 5 part\(s\) done/);
+  assert.match(b.stdout, /ai fix stopped midway: 2 of 5 part\(s\) done/);
+  // the briefing's line starts with "steward" itself: the text mustn't say it again
+  const one = steward(['brief'], env).stdout;
+  assert.match(one, /^steward ai fix stopped midway: 2 of 5 part\(s\) done$/m);
+  assert.doesNotMatch(one, /steward steward/);
+});
+
+test('the skills\' form: steward ai fix --unattended --yes-to ai-fix, no terminal, runs every part with that yes', () => {
+  // what skills/ai-tooling/SKILL.md tells an agent to run after the user's yes to the plan (level "ask": only the yes counts)
+  const env = copy('skill', 'ask');
+  const r = steward(['ai', 'fix', '--unattended', '--yes-to', 'ai-fix'], env);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  const backups = path.join(env.XDG_STATE_HOME, 'workstation-steward', 'backups');
+  const dir = fs.readdirSync(backups).find(d => d.startsWith('coarse-ai-fix-'));
+  const rec = JSON.parse(fs.readFileSync(path.join(backups, dir, 'receipt.json'), 'utf8'));
+  assert.deepEqual([rec.complete, rec.outcome, rec.parts, rec.yes_to, rec.unattended], [true, 'done', 5, ['ai-fix'], true]);
+  assert.deepEqual(rec.steps.map(x => x.outcome), ['done', 'done', 'done', 'done', 'done']);
+  // without the yes, the same level refuses before any part runs
+  const no = steward(['ai', 'fix', '--unattended'], copy('skill-no', 'ask'));
+  assert.equal(no.status, 4, no.stderr);
 });
 
 test('briefing: a bundled run left unfinished names its command and what it finished; a live one is left alone', () => {
@@ -199,7 +218,7 @@ test('briefing: a bundled run left unfinished names its command and what it fini
   const rc = (pid, extra = {}) => ({ kind: 'coarse', command: 'ai fix', name: 'ai fix', at: at.toISOString(), pid, complete: false, steps: [{ outcome: 'done' }, { outcome: 'failed' }], parts: 5, ...extra });
   const f = r => ({ now: new Date(at.getTime() + 3600e3), backups: [{ name: 'coarse-ai-fix-20261030T100000', kind: 'coarse', at, receipt: r, rp: '/s/r.json', hasReceipt: true }] });
   const [x] = det.check(f(rc(999999)));
-  assert.match(x.text, /steward ai fix stopped midway: 1 of 5 part\(s\) done/);
+  assert.equal(x.text, 'ai fix stopped midway: 1 of 5 part(s) done');
   assert.equal(x.cmd, 'steward ai fix');
   assert.deepEqual(det.check(f(rc(process.pid))), [], 'still running');
   const [y] = det.check(f(rc(999999, { command: 'fleet tidy', name: 'fleet tidy', repo: '/r/app', args: ['~/app'] })));

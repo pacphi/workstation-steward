@@ -1,7 +1,7 @@
 {
  "name": "steward-review",
  "title": "workstation-steward: the weekly review",
- "desc": "An illustrative steward review, looping. Seven read-only stages run (soak, supply-chain audit, AI tooling, projects, GitHub, fleet), then one report lists four items to decide, each under the command that acts on it: prune now that the soak has ended, two Homebrew updates past the release-age gate under the one command they share, and a new project to decide on. Nothing is changed.",
+ "desc": "An illustrative steward review, looping. Eight read-only stages run (soak, supply-chain audit, AI tooling, projects, your config repo, the release-age gate, the fleet), then one report lists four items to decide, each under the command that acts on it: prune now that the soak has ended, and two Homebrew updates past the release-age gate under the one command they share. Then what the gate holds back in Renovate's Dependency Dashboard: a TypeScript update that has cleared, so Renovate opens its PR, and a Node release that clears later that day, with the steward sc node-patch to run after its merge. Nothing is changed.",
  "window": "steward — zsh",
  "still": 1,
  "scenes": [
@@ -17,7 +17,7 @@
       true
      ],
      [
-      "[1/7] soak and prune: prune due ",
+      "[1/8] soak and prune: prune due ",
       "fg"
      ],
      [
@@ -34,11 +34,11 @@
       true
      ],
      [
-      "[2/7] supply-chain audit: 2 action(s) or alert(s) ",
+      "[2/8] supply-chain audit: 2 action(s) or alert(s) ",
       "fg"
      ],
      [
-      "(14s)",
+      "(41s)",
       "dim"
      ]
     ]
@@ -51,7 +51,7 @@
       true
      ],
      [
-      "[3/7] AI tooling drift: off ",
+      "[3/8] AI tooling drift: off ",
       "fg"
      ],
      [
@@ -68,7 +68,7 @@
       true
      ],
      [
-      "[4/7] projects scan: 1 new or gone ",
+      "[4/8] projects scan: 0 new or gone ",
       "fg"
      ],
      [
@@ -85,7 +85,7 @@
       true
      ],
      [
-      "[5/7] projects behind the AI tools: off ",
+      "[5/8] projects behind the AI tools: off ",
       "fg"
      ],
      [
@@ -102,11 +102,11 @@
       true
      ],
      [
-      "[6/7] this repo on GitHub: 0 PR(s), 0 decision(s) ",
+      "[6/8] your config repo: 0 to do here, 0 PR(s), 0 decision(s) ",
       "fg"
      ],
      [
-      "(1s)",
+      "(2s)",
       "dim"
      ]
     ]
@@ -119,7 +119,24 @@
       true
      ],
      [
-      "[7/7] fleet on GitHub: 0 of 9 repos with something open ",
+      "[7/8] the release-age gate: 2 update(s) waiting ",
+      "fg"
+     ],
+     [
+      "(4s)",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "✓ ",
+      "ok",
+      true
+     ],
+     [
+      "[8/8] fleet on GitHub: 0 of 9 repos with something open ",
       "fg"
      ],
      [
@@ -129,13 +146,13 @@
     ]
    },
    {
-    "out": "(total 22s)",
+    "out": "(total 54s)",
     "color": "dim"
    }
   ],
   [
    {
-    "out": "# Steward review, 2026-10-28",
+    "out": "# Steward review, 2026-10-31",
     "color": "blue",
     "bold": true
    },
@@ -187,24 +204,46 @@
     "out": "- brew: cloudflared 2026.10.3 -> 2026.10.5 (3d old)"
    },
    {
-    "out": "## Projects · 1",
+    "out": "## Waiting on the release-age gate · 2",
     "color": "blue",
     "bold": true
    },
    {
-    "out": "- new project: ~/Development/active/web/new-app"
+    "out": "10 repo(s) read. 1 past the gate. Read-only: never tick \"Pending Status Checks\" (that opens the PR before the…",
+    "color": "dim",
+    "quick": true
    },
    {
     "segs": [
      [
-      "  → ",
-      "dim"
+      "### → ",
+      "blue",
+      true
      ],
      [
-      "steward projects scan, then steward projects decide <path>",
+      "Renovate opens the PR",
       "ans"
      ]
     ]
+   },
+   {
+    "out": "- you/steward-config: update dependency npm:typescript to v6.0.4 (held by the gate, cleared 2026-10-30 13:36Z)"
+   },
+   {
+    "segs": [
+     [
+      "### → ",
+      "blue",
+      true
+     ],
+     [
+      "wait until 2026-10-31 16:57Z; after the merge: steward sc node-patch 26.13.0",
+      "ans"
+     ]
+    ]
+   },
+   {
+    "out": "- you/steward-config: update node.js to v26.13.0 (held by the gate, clears 2026-10-31 16:57Z)"
    }
   ]
  ]

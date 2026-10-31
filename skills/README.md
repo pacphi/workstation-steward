@@ -132,7 +132,7 @@ merges.
 
 | Skill | Turned on by | Read-only reports | Its files |
 | --- | --- | --- | --- |
-| `/steward:supply-chain` | Always | `audit`, `plan`, `status`, `verify` | [README](supply-chain/README.md), [runbook](supply-chain/runbook.md) |
+| `/steward:supply-chain` | Always | `audit`, `plan` (or its old name, `status`), `verify` | [README](supply-chain/README.md), [runbook](supply-chain/runbook.md) |
 | `/steward:fix` | Always | the plan (`steward fix`) | [README](fix/README.md) |
 | `/steward:ai-tooling` | `[profiles] ai_tooling` | `drift` | [README](ai-tooling/README.md), [runbook](ai-tooling/runbook.md), [qualification](ai-tooling/qualification.md) |
 | `/steward:projects` | `[profiles] projects` | `scan`, `list` | [README](projects/README.md), [runbook](projects/runbook.md) |

@@ -1,6 +1,6 @@
 # The briefing: `steward brief`
 
-![Revision 6](https://img.shields.io/badge/Revision-6-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 7](https://img.shields.io/badge/Revision-7-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 **One question, answered in under a second: what needs me, and what do I run next?** `steward brief` reads what is
 already on your disk and names **one** next step, with its exact command. When nothing needs you, it says so in one
@@ -12,6 +12,11 @@ steward config: 1 newer commit(s) on origin/main (as of 2026-10-30 09:12): suppl
 next: steward config sync, then steward sc install-hybrids
 +1 more: steward brief --all
 ```
+
+A step that stopped midway comes first, in red, and its next step finishes it (real commands and output, example
+names):
+
+![steward brief: a steward upgrade stopped after one of its two parts, so the one next step is steward upgrade again; brief --all adds the why and a review that is due; once both are done, nothing needs you](assets/steward-brief.svg)
 
 > [!IMPORTANT]
 > The briefing never fixes anything. It reads, and it tells you. Every command it names still shows its plan, asks for
@@ -77,7 +82,7 @@ Each check is a **detector**. A detector looks at what was read and either finds
 
 | Detector | Severity | What it catches | What it names |
 | --- | --- | --- | --- |
-| `receipt-unfinished` | fix | A receipt still marked unfinished, at least 15 minutes old | The recovery for its kind. A config sync gets `steward config sync` and where your set-aside edits are, never `--rollback` (that refuses an unfinished sync) |
+| `receipt-unfinished` | fix | A receipt still marked unfinished, at least 15 minutes old (a `steward fix` run's or a bundled command's record, D61, only once its process is gone) | The recovery for its kind. A bundled command gets itself again (`steward upgrade`), whose plan shows only the parts left. A config sync gets `steward config sync` and where your set-aside edits are, never `--rollback` (that refuses an unfinished sync) |
 | `backup-no-receipt` | fix | A backup folder a steward command made, with no receipt. Hand-made backups and Ruflo policy backups are left alone | For a promote that stopped after the store backup: promote again |
 | `aqe-partial` | fix | `releases/<r>.partial` in the AQE runtime | Remove it, then promote again |
 | `repin-unfinished` | fix | Maintainers only: the release channel isn't at the commit the last repin receipt names | Finish the repin, or its rollback |

@@ -1,0 +1,110 @@
+{
+ "name": "steward-brief",
+ "title": "workstation-steward: what needs you, in one line",
+ "desc": "An illustrative steward brief, looping. A steward upgrade stopped after one of its two parts, so the briefing names it in red as something to fix, with the one next step: run steward upgrade again, whose plan shows only the part left. steward brief --all lists every finding with its command and why: the unfinished upgrade, then a review that is due. Once the upgrade has finished and a review has run, steward brief says nothing needs you. It only reads; nothing is changed.",
+ "window": "steward — zsh",
+ "still": 1,
+ "scenes": [
+  [
+   {
+    "cmd": "steward brief"
+   },
+   {
+    "segs": [
+     [
+      "steward ",
+      "bad",
+      true
+     ],
+     [
+      "upgrade stopped midway: 1 of 2 part(s) done",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "next: ",
+      "dim"
+     ],
+     [
+      "steward upgrade",
+      "ans"
+     ]
+    ]
+   },
+   {
+    "out": "+1 more: steward brief --all",
+    "color": "dim"
+   }
+  ],
+  [
+   {
+    "cmd": "steward brief --all"
+   },
+   {
+    "out": "[fix] upgrade stopped midway: 1 of 2 part(s) done"
+   },
+   {
+    "segs": [
+     [
+      "  → ",
+      "dim"
+     ],
+     [
+      "steward upgrade",
+      "ans"
+     ],
+     [
+      "   (changes things: it asks first)",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "out": "    each part it ran wrote its own receipt (~/.local/state/workstation-steward/backups/coarse-upgrade-2026103…",
+    "color": "dim",
+    "quick": true
+   },
+   {
+    "out": "[do] a review is due (never run)"
+   },
+   {
+    "segs": [
+     [
+      "  → ",
+      "dim"
+     ],
+     [
+      "steward review",
+      "ans"
+     ]
+    ]
+   },
+   {
+    "out": "    one read-only pass over every area: what needs a decision, each with its command",
+    "color": "dim",
+    "quick": true
+   }
+  ],
+  [
+   {
+    "cmd": "steward brief"
+   },
+   {
+    "segs": [
+     [
+      "steward ",
+      "ok",
+      true
+     ],
+     [
+      "nothing needs you",
+      "fg"
+     ]
+    ]
+   }
+  ]
+ ]
+}

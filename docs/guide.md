@@ -1,6 +1,6 @@
 # Start here
 
-![Revision 8](https://img.shields.io/badge/Revision-8-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 9](https://img.shields.io/badge/Revision-9-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 This guide is for you, after time away or new to the steward. It says why the repo exists, what it
 looks after, how to start, and what a normal week looks like. For how each part works, follow the links to the area
@@ -23,10 +23,15 @@ every change reversible. Without it, the decisions are scattered across tools' o
 
 | Area | In plain words | Commands |
 | --- | --- | --- |
-| Supply chain | The command-line tools (mise), the global npm tools, Homebrew, apps, macOS, trust stores, Docker images, and known signs of compromise | `steward sc …` |
-| AI tooling | Ruflo, AQE, Brain and RuVector: which versions are qualified, how projects launch them, and the guards that keep them from updating or spending tokens on their own | `steward ai …` |
-| Projects | Every project under `~/Development`: found automatically, each with your decision (which AI tools, if any), and its tool files kept to that decision | `steward projects …` |
-| Fleet | The GitHub side: Renovate for dependency updates, and one consolidated PR per repo when bot PRs pile up | the `pr-consolidation` skill |
+| Supply chain | The command-line tools (mise), the global npm tools, Homebrew, apps, macOS, trust stores, Docker images, and known signs of compromise | `steward upgrade`, `steward sc …` |
+| AI tooling | Ruflo, AQE, Brain and RuVector: which versions are qualified, how projects launch them, and the guards that keep them from updating or spending tokens on their own | `steward ai fix`, `steward ai …` |
+| Projects | Every project under `~/Development`: found automatically, each with your decision (which AI tools, if any), and its tool files kept to that decision | `steward projects`, `steward projects apply`, `steward projects …` |
+| Fleet | The GitHub side: Renovate for dependency updates, and one consolidated PR per repo when bot PRs pile up, and your checkouts after merges | the `pr-consolidation` skill, `steward fleet tidy <repo>` |
+
+`steward help` lists the eight commands you need day to day; `steward help --all` lists every one, by area. A job
+that takes several commands has one that shows every plan and asks once: `steward upgrade`, `steward ai fix`,
+`steward projects apply` and `steward fleet tidy <repo>` (D60 and D61 in
+[`architecture.md`](architecture.md#decisions)). The single-step commands they run stay for when you want one part.
 
 ## The rules it lives by
 
@@ -48,15 +53,17 @@ every change reversible. Without it, the decisions are scattered across tools' o
 
 On a new machine, or the first time on this one:
 
-1. `node lib/doctor.js` (or `steward doctor`): check the prerequisites. The order to install them on a new Mac is in
+1. `steward doctor` (or `node lib/doctor.js`, before the steward is on your `PATH`): the engine version, your config's
+   format and add-ons, then the prerequisites and what is missing (`--install` installs them, asking first). The order to install them on a new Mac is in
    [`prereqs.md`](prereqs.md).
 2. `steward config`: check the paths `steward.toml` resolves to (project roots, state, mise, the AI tooling root).
 3. `steward sc link`: point `~/.config/mise/` at this repo's `mise/config.toml` and `mise.lock`.
 4. `steward sc audit`: see what's out of date or at risk. It only reads.
 5. `steward ai drift`: check the AI tooling against its policy. It only reads.
-6. `steward projects scan`, then `steward projects decide <path>` for each new project.
+6. `steward projects --apply`: it lists each new project and asks your decision for it (or one at a time:
+   `steward projects decide <path>`). Then `steward projects apply` brings each project to its decision.
 7. `steward review`: the combined list. From now on this is the weekly habit.
-8. `steward brief`: the answer to "what's next". It names one next step with its exact command, or says nothing
+8. `steward` (or `steward brief`): the answer to "what's next". It names one next step with its exact command, or says nothing
    needs you ([`briefing.md`](briefing.md)).
 9. Recommended: keep your config in a private GitHub repo with Renovate (a GitHub app) watching it
    ([`config-repo.md`](config-repo.md)). Renovate proposes toolchain updates as pull requests after the gate, and its
@@ -64,8 +71,8 @@ On a new machine, or the first time on this one:
 
 ## The routine
 
-**Any time:** `steward` on its own, or `steward brief`, names the one next step, or says nothing needs you. It reads what is on your disk, and
-about every 6 hours it looks again in the background: your config repo on GitHub, the newest steward, new projects,
+**Any time:** `steward` on its own, or `steward brief`, names the one next step, or says nothing needs you. It reads
+what is on your disk, and about every 6 hours it looks again in the background: your config repo on GitHub, the newest steward, new projects,
 AI tooling drift and the active Node. That look only reads.
 
 **Weekly, about 15 minutes.** `steward` says "review due" after 7 days (`[policy] review_days`). Each Monday a GitHub
@@ -81,6 +88,9 @@ PRs and security alerts across the repos.
    `gate` line when one of them has cleared: run `steward review` again. What to do for each kind is in the
    [supply-chain runbook: Check the queue](../skills/supply-chain/runbook.md#check-the-queue).
 3. Decide each one: act now, defer it with a reason, or make it an `owner-decision` issue so it isn't lost.
+   `steward fix` shows the list as a plan, who takes each step and why; `steward fix --apply` runs the steps your
+   `[autonomy]` level allows, asks you for the rest, and hands over what only you can do
+   ([`briefing.md`](briefing.md), D59).
 4. Handle the week's Renovate PRs in this repo ([supply-chain runbook: A Renovate PR arrives](../skills/supply-chain/runbook.md#a-renovate-pr-arrives)).
 
 **When something happens:**
@@ -90,13 +100,16 @@ PRs and security alerts across the repos.
 | A security advisory or incident report | [Supply-chain runbook](../skills/supply-chain/runbook.md): verify against primary sources, sweep, patch within policy |
 | A Node security release | `steward sc node-patch <x.y.z>`, never `mise upgrade node` |
 | A new AQE or Ruflo release past the gate | [AI tooling runbook](../skills/ai-tooling/runbook.md): qualify (`ai-tooling/qualify/aqe/run.sh`), then promote |
-| A new project appears (`steward` says so) | `steward projects scan`, then `decide`, then `onboard` or `offboard` |
+| AI tooling drift (`steward ai drift`) | `steward ai fix`: the repin, guard, timeout, approval and transport fixes, one yes for all |
+| A new project appears (`steward` says so) | `steward projects --apply` to record your decision, then `steward projects apply` to onboard or offboard it |
+| A PR merged in a repo you have checked out | `steward fleet tidy <repo>`: fast-forward the checkout, then delete the branches whose PRs merged |
 | A soak ends | `DRY_RUN=1 steward sc prune`, then `steward sc prune` |
 | Bot PRs pile up in a repo | the `pr-consolidation` skill ([fleet runbook](fleet/runbook.md)) |
 | A command stopped midway, or steps ran out of order | `steward brief`: it names the step that finishes the job, or the receipt's way back |
 
-**Monthly:** `steward sc plan`, then `steward upgrade` for everything past the gate. Then `steward ai drift` for AI tool
-releases waiting to be qualified, and `steward projects list` to recheck project decisions.
+**Monthly:** `steward sc plan`, then `steward upgrade` for everything past the gate (it also takes a Node security
+release or hybrids out of step first). Then `steward ai drift` for AI tool releases waiting to be qualified, and
+`steward projects list` to recheck project decisions.
 
 ## Words you'll see
 

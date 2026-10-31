@@ -13,7 +13,7 @@ const DIR = path.join(__dirname, '..', 'docs', 'assets');
 const SCRIPTS = path.join(DIR, 'terminal');
 const W = 940, LH = 20, X0 = 24, Y0 = 66, FONT = 13;
 const COLORS = { fg: '#c9d1d9', dim: '#8b949e', ok: '#3fb950', prompt: '#3fb950', cmd: '#f0f6fc', blue: '#58a6ff',
-  hold: '#d29922', skip: '#db6d28', ans: '#79c0ff', claude: '#d97757' };
+  hold: '#d29922', skip: '#db6d28', ans: '#79c0ff', claude: '#d97757', bad: '#f85149' };
 const HOLD = 3.4, GAP = 0.4;   // seconds a finished scene stays, and between scenes
 
 /** @typedef {{ cmd?: string, prompt?: string, ask?: string, answer?: string, out?: string, color?: string, bold?: boolean, segs?: [string, string, boolean?][], quick?: boolean }} Line */

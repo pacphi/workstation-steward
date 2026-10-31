@@ -25,8 +25,9 @@ what changes if I say yes?*
 The steward aims for *safe, explained and reversible*, not merely *newest*.
 
 - **Nothing changes without asking.** Every command that writes shows its plan, waits for your yes, backs up first,
-  writes a receipt, and has a way back (`--rollback`, `--undo` or `steward sc rollback`). There are no background jobs
-  and no auto-updates; `DRY_RUN=1` previews anything.
+  writes a receipt, and has a way back (`--rollback`, `--undo` or `steward rollback`). Nothing changes on its own:
+  the only thing that runs unasked is a short read-only look at GitHub, npm and your projects, and there are no
+  launchd or cron jobs and no auto-updates. `DRY_RUN=1` previews anything.
 - **New releases wait.** A version comes in once it is 3 days old (you choose the number, once, in `steward.toml`),
   so a hijacked or broken release has time to be caught. The exception is the first patched release for an advisory
   in the GitHub Advisory Database, RustSec or OSV. Majors are always your call. Even the steward itself waits.
@@ -54,31 +55,29 @@ The steward aims for *safe, explained and reversible*, not merely *newest*.
 
 ### What's next, in one line
 
-`steward brief` reads what is already on disk, with no network, and names the one next step with its exact command, or
-says in one line that nothing needs you. It also notices a step that stopped midway or ran out of order, such as
+`steward` on its own (or `steward brief`) reads what is already on disk, with no network, and names the one next step
+with its exact command, or says in one line that nothing needs you. It also notices a step that stopped midway or ran out of order, such as
 hybrids installed before the config sync that brings their new versions, and names the step that finishes it. Every
 few hours it also looks, in the background and read-only, at GitHub, npm and your projects, so it can say when your
 config is behind or a newer steward is past the gate. It never fixes anything itself
 ([`docs/briefing.md`](docs/briefing.md)).
 
-```text
-$ steward brief
-steward config: 1 newer commit(s) on origin/main (as of 2026-10-30 09:12): supply-chain/hybrids.toml
-next: steward config sync, then steward sc install-hybrids
-```
+![steward brief: a steward upgrade stopped after one of its two parts, so the one next step is steward upgrade again; brief --all adds the why and a review that is due; once both are done, nothing needs you](docs/assets/steward-brief.svg)
 
 ### The weekly review
 
 `steward review` runs every area's read-only checks and returns one list of what needs you, each item with the command
 that acts on it. The `steward` banner says when a review is due.
 
-![steward review: seven read-only stages, then four items to decide, each with its command](docs/assets/steward-review.svg)
+![steward review: eight read-only stages, then the items to decide, each under its command, and what the release-age gate holds back](docs/assets/steward-review.svg)
 
 ### A safe upgrade, and its undo
 
-`steward sc upgrade` takes only what passed the gate, asks before acting, backs up your mise config, upgrades without
-pruning, and verifies every tool once at the end. If a step fails, the rest still run, and the end lists what failed
-with its way back. `steward sc rollback` puts the config back.
+`steward upgrade` takes only what passed the gate. It shows every plan first and asks once: a Node security release
+(`steward sc node-patch`) or global CLIs out of step with policy (`steward sc install-hybrids`) when there is one, then
+`steward sc upgrade`, shown below. That backs up your mise config, upgrades without pruning, and verifies every tool
+once at the end. If a step fails, the rest still run, and the end lists what failed with its way back.
+`steward rollback` puts the config back.
 
 ![steward sc upgrade: the plan, a yes, a backup, the upgrade and a verify; then steward sc rollback](docs/assets/steward-upgrade.svg)
 
@@ -129,13 +128,14 @@ that config in a private Git repo, so it has a history, Renovate, and a second M
 steward init
 ```
 
-**4. Take a first look.** Both are read-only:
+**4. Take a first look.** None of these changes anything:
 
 ```sh
 steward doctor        # what this machine still needs (--install fixes it)
 steward sc plan       # what an upgrade would take, hold or skip, and why
-steward brief         # what needs you now: the one next step, or one quiet line
+steward               # what needs you now: the one next step, or one quiet line
 steward fix           # the plan to work through it (--apply does it, asking where it should)
+steward help          # the eight everyday commands (help --all lists every one)
 ```
 
 **5. Or just ask.** With the Claude Code skills installed (`steward init` offers them, or run `steward skills install`),
@@ -145,7 +145,9 @@ commands, explains what they found, and asks before it changes anything
 
 > [!TIP]
 > `steward` on its own says what needs you (the one next step, or that nothing does), then the eight everyday
-> commands. `steward help --all` lists the rest by area, each marked read-only or writes.
+> commands. `steward help --all` lists the rest by area, each marked read-only or writes. A job that takes several
+> commands has one that runs them all with one yes, after showing every plan: `steward upgrade`, `steward ai fix`,
+> `steward projects apply` and `steward fleet tidy <repo>`. Old names, such as `steward sc status`, still work.
 
 ### Ways to install, and to upgrade
 
@@ -162,7 +164,7 @@ Upgrade the same way you installed:
 
 | Way | How it upgrades | Release-age gate |
 | --- | --- | --- |
-| mise | `steward sc upgrade` takes it with your other tools once it's old enough (or just it: `steward sc upgrade-tool npm:workstation-steward`); Renovate proposes it too, if your config is in a Git repo | Yes |
+| mise | `steward upgrade` takes it with your other tools once it's old enough (or just it: `steward sc upgrade-tool npm:workstation-steward`); Renovate proposes it too, if your config is in a Git repo | Yes |
 | npm | `npm install -g workstation-steward@<newer version>`; `npm outdated -g` shows when there is one | No: check a release's age yourself |
 | npx | Name the newer version | No |
 | A clone | `git pull` | No |
@@ -175,10 +177,10 @@ against. Working on the steward itself? Run it as `steward-dev` alongside a pinn
 
 | Area | Covers | Commands |
 | --- | --- | --- |
-| [Supply chain](supply-chain/README.md) | mise tools and mise itself, npm -g CLIs, Homebrew, apps and their bundled runtimes, the App Store, macOS, trust stores, Docker, indicators of compromise | `steward sc …` |
-| [AI tooling](ai-tooling/README.md) (add-on) | Ruflo and AgentDB, AQE, RuvNet Brain, RuVector: qualification before a version reaches a project, launchers, guards, drift | `steward ai …` |
-| [Projects](projects/README.md) (add-on) | Every project under your roots, a registry of your decisions, onboarding each project's chosen tools | `steward projects …` |
-| [Fleet](fleet/README.md) | The GitHub side: Renovate patterns, consolidating dependency PRs, bringing checkouts level after merges | `steward fleet …` |
+| [Supply chain](supply-chain/README.md) | mise tools and mise itself, npm -g CLIs, Homebrew, apps and their bundled runtimes, the App Store, macOS, trust stores, Docker, indicators of compromise | `steward upgrade`, `steward sc …` |
+| [AI tooling](ai-tooling/README.md) (add-on) | Ruflo and AgentDB, AQE, RuvNet Brain, RuVector: qualification before a version reaches a project, launchers, guards, drift | `steward ai fix`, `steward ai …` |
+| [Projects](projects/README.md) (add-on) | Every project under your roots, a registry of your decisions, onboarding each project's chosen tools | `steward projects`, `steward projects apply`, `steward projects …` |
+| [Fleet](fleet/README.md) | The GitHub side: Renovate patterns, consolidating dependency PRs, bringing checkouts level after merges | `steward fleet tidy <repo>`, `steward fleet …` |
 
 The add-ons are off until you turn them on, in `steward init` or in `steward.toml`.
 

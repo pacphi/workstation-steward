@@ -61,6 +61,7 @@ These hold even when a command is described as read-only, and even when asked to
 | --- | --- |
 | `steward ai drift` (and `--offline`, `--json`) | Not needed. Read-only. |
 | A Ruflo version change (`supply-chain/hybrids.toml`, then `steward sc install-hybrids`) | Show the dry run, including the policy backup, and ask. After the user's yes: `steward sc install-hybrids --unattended --yes-to install-hybrids` (its own [y/N] gets no answer from your shell). |
+| The drift fixes: `steward ai fix` (repin, guard, timeouts, approvals and transport together), or one of them (`steward ai repin` …) | Show the plan (`DRY_RUN=1 steward ai fix`, or the one command without `--apply`) and ask. After the user's yes to that plan: `steward ai fix --unattended --yes-to ai-fix` (or the one command with `--apply --unattended --yes-to ai-fix`). Every part keeps its own backup and receipt. |
 | Qualifying or promoting an AQE release; switching `aqe/current` | Ask at each step: build, gates, store backups, switch. Keep receipts. |
 | Editing a project file (launcher, shim, settings) | Show the plan, ask `[y/N]`, back up, write a receipt. Untracked or ignored files only; tracked files go through a PR. |
 | `ai-tooling.toml` policy changes, commits, PRs, merges | Ask first. |

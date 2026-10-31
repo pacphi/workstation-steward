@@ -1,6 +1,6 @@
 # Prerequisites
 
-![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 5](https://img.shields.io/badge/Revision-5-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 Everything this repo needs on the machine, and where each piece comes from. The list lives in
 [`lib/prereqs.json`](../lib/prereqs.json); the table below is printed from it, and a test keeps the two equal.
@@ -8,7 +8,8 @@ Everything this repo needs on the machine, and where each piece comes from. The 
 ## Check it
 
 ```sh
-steward doctor                      # read-only: what is there, what is missing, exit 1 if a required tool is missing
+steward doctor                      # read-only: the engine, your config's format and add-ons, then what is there and
+                                    # what is missing; exit 1 if a required tool is missing
 steward doctor --area core,fleet    # only those areas
 steward doctor --install            # plan the missing mise and Homebrew tools, ask [y/N], install, write a receipt
 ```

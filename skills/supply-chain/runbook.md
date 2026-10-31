@@ -1,6 +1,6 @@
 # Supply chain runbook
 
-![Revision 8](https://img.shields.io/badge/Revision-8-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 9](https://img.shields.io/badge/Revision-9-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 Procedures for the supply-chain area: mise, the npm -g hybrids, Homebrew, apps, the App Store, macOS, trust
 stores, Docker and IOCs. The rules behind them are in [`../../AGENTS.md`](../../AGENTS.md) (Toolchain, Release
@@ -38,7 +38,11 @@ commands run from any folder. Every changing step asks first, and `DRY_RUN=1` pr
 
 ## Apply eligible upgrades
 
-1. `steward sc plan`, read-only. It lists:
+`steward upgrade` does steps 1 and 2 with one yes: it first adds `steward sc node-patch` for a newer Node security
+release on your Node line, or `steward sc install-hybrids` when the hybrids are out of step, then `steward sc upgrade`.
+It prints every part's plan and asks once; each part keeps its own backup and receipt (D61). The steps one at a time:
+
+1. `steward sc plan`, read-only (its old name, `steward sc status`, still works). It lists:
    - **take:** past the 3-day gate;
    - **hold:** too young;
    - **skip:** a major, or a 0.x minor;
