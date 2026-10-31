@@ -1,6 +1,6 @@
 # Releasing workstation-steward
 
-![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 5](https://img.shields.io/badge/Revision-5-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 How a release happens, and the one-time npm setup behind it (D46 in [`architecture.md`](architecture.md#decisions)),
 plus what to do when the weekly upstream watch finds that a shipped default changed (D52), and how to check that no
@@ -14,6 +14,7 @@ repository; users install releases as [`../README.md`](../README.md) describes.
 - [One-time npm setup](#one-time-npm-setup)
 - [Publishing an existing release](#publishing-an-existing-release)
 - [After each release](#after-each-release)
+- [Renovate on the engine repo](#renovate-on-the-engine-repo)
 - [The maintainer skill](#the-maintainer-skill)
 - [Checking a release on a clean Mac](#checking-a-release-on-a-clean-mac)
 - [The publish guard](#the-publish-guard)
@@ -116,6 +117,25 @@ gh workflow run release.yml --repo pacphi/workstation-steward -f tag=v0.1.0
   ```
 
 - A config repo that pins the steward through mise gets a Renovate PR once the release is 3 days old.
+
+## Renovate on the engine repo
+
+The engine repo (and any fork of it) keeps its own dependencies current with Renovate, as a config repo does.
+
+1. Install the [Renovate app](https://github.com/apps/renovate) (by Mend) and give it access to the engine repo
+   (GitHub → Settings → Applications → Renovate → Configure → *Repository access*).
+2. Its config is [`.github/renovate.json`](../.github/renovate.json). It extends the preset users get,
+   [`renovate/steward.json`](../renovate/steward.json) (the 3-day gate; majors and 0.x minors on their own;
+   AI-owned tools only when ticked), and adds: GitHub Actions pinned by commit SHA with a version comment, the example
+   toolchain (`examples/mise/config.toml`), and the dev-only type definitions in `tools/types`.
+3. Renovate opens one issue, the **Dependency Dashboard**. "Pending Status Checks" are releases inside the gate: never
+   tick them (that opens the pull request before the gate clears, and the `stability-days` check isn't a required one,
+   so nothing would stop an early merge). "Pending Approval" is for updates a rule holds for a human yes.
+4. Review a Renovate pull request like any other: the release age, the publisher, the diff (for an Action, that the
+   pinned SHA is the tag's), and for a major or a 0.x minor, its changes. Merge it, then `/steward-maintain merged <n>`.
+
+`steward review` reads this dashboard too when the engine repo is in your registry ("Waiting on the release-age gate").
+Release PRs come from release-please, not Renovate ([How a release happens](#how-a-release-happens)).
 
 ## The maintainer skill
 

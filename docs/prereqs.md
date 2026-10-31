@@ -1,6 +1,6 @@
 # Prerequisites
 
-![Revision 3](https://img.shields.io/badge/Revision-3-green) ![Revised 2026-10-27](https://img.shields.io/badge/Revised-2026--10--27-green)
+![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 Everything this repo needs on the machine, and where each piece comes from. The list lives in
 [`lib/prereqs.json`](../lib/prereqs.json); the table below is printed from it, and a test keeps the two equal.
@@ -30,6 +30,21 @@ Each step needs the one before it.
    `npm` and the rest.
 5. `brew install jq mas`. The fleet scripts need `jq`, and `mas` is optional. Docker Desktop is optional.
 6. `gh auth login`, then `steward doctor`.
+
+## Services, outside this Mac
+
+Two services on GitHub, set up once in a browser. `steward doctor` can't check them, so they're listed here.
+
+- **A GitHub account, and `gh` logged in to it** (step 6). Your config repo lives there, and `steward review` reads
+  open pull requests and alerts through it.
+- **Renovate, a GitHub app by Mend.** Recommended. It proposes each toolchain update as a pull request, after the same
+  3-day gate, and keeps one issue per repo, the **Dependency Dashboard**, listing what it holds back and why.
+  `steward review` ("Waiting on the release-age gate") and `steward brief` read that dashboard, so without Renovate
+  those parts stay empty. Install it on your config repo: [`config-repo.md`](config-repo.md#2-let-renovate-keep-it-current).
+  Maintainers also install it on the engine repo ([`maintainers.md`](maintainers.md#renovate-on-the-engine-repo)).
+
+The `renovate` command in the list below is a different thing: an optional tool for checking a `renovate.json` on
+this Mac. The app does the real work on GitHub.
 
 ## The list
 
