@@ -184,6 +184,27 @@ backup_ruflo_policy() {
 # Install every hybrid with npm -g into the currently active Node, using its reviewed script allow-list,
 # and record a receipt. A hybrid with state_backup = "ruflo-policy" gets the policy backup first whenever
 # the version differs from its last receipt (or no receipt exists).
+# hybrids_plan — what install_hybrids will do, one line per hybrid: its spec, its allowed install scripts, and for Ruflo
+# whether its policy folders are backed up first (its version differs from its last receipt)
+hybrids_plan() {
+  local n i name version scripts backup prev
+  n="$(hybrids_json | yq '. | length')"
+  log "the hybrids from hybrids.toml, each on its own, into Node $(node -p 'process.versions.node')"
+  for ((i = 0; i < n; i++)); do
+    name="$(hybrids_json | yq -r ".[$i].name")"
+    version="$(hybrids_json | yq -r ".[$i].version")"
+    scripts="$(hybrids_json | yq -r ".[$i].allow_scripts | join(\",\")")"
+    backup="$(hybrids_json | yq -r ".[$i].state_backup // \"\"")"
+    prev=""
+    if [[ "${backup}" == "ruflo-policy" ]]; then
+      prev="$(hybrid_receipt "${name}" | yq -p json -r '.version // ""')"
+      if [[ "${prev}" == "${version}" ]]; then backup=""
+      else backup="Ruflo policy backup first (${prev:-no receipt} → ${version}; its first run migrates the policy state)"; fi
+    fi
+    printf '  %-28s scripts: %-28s %s\n' "${name}@${version}" "${scripts:-none}" "${backup}"
+  done
+}
+
 install_hybrids() {
   local n i name version source scripts spec backup prev
   n="$(hybrids_json | yq '. | length')"

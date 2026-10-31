@@ -36,6 +36,9 @@ function copy(name, level) {
 const STUBS = path.join(ROOT, 'stubs');
 fs.mkdirSync(STUBS);
 for (const n of ['npm', 'mise', 'ruflo']) fs.writeFileSync(path.join(STUBS, n), `#!/bin/sh\necho "$0 $*" >> "${path.join(ROOT, 'stub-calls')}"\nexit 1\n`, { mode: 0o755 });
+// oneHybrid(env) — a hybrids.toml with one hybrid (the examples have none), so install-hybrids has something to plan
+const oneHybrid = env => fs.writeFileSync(path.join(env.STEWARD_INSTANCE, 'supply-chain', 'hybrids.toml'),
+  '[[hybrid]]\nname = "ruflo"\nversion = "3.63.9"\nsource = "registry"\nallow_scripts = ["ruflo", "better-sqlite3"]\nstate_backup = "ruflo-policy"\n');
 const INDEX = [{ version: 'v26.14.0', security: false }, { version: 'v26.13.1', security: true }, { version: 'v26.12.1', security: false }, { version: 'v24.9.0', security: true }];
 
 test('commands: each bundled command writes, has the class of its most demanding part, takes --unattended, and its parts name it', () => {
@@ -129,6 +132,7 @@ test('the command: plan only without a terminal; --unattended under level "ask" 
 
 test('install-hybrids: under --unattended it stops (exit 4) unless [autonomy] allows install-hybrids, before installing', () => {
   const env = copy('hyb', 'maintainer');
+  oneHybrid(env);
   const r = spawnSync(path.join(REPO, 'supply-chain', 'bin', 'install-hybrids'), [], { encoding: 'utf8',
     env: { ...BASE, ...env, PATH: `${STUBS}:${process.env.PATH}`, STEWARD_UNATTENDED: '1' } });
   assert.equal(r.status, 4, r.stdout + r.stderr);
@@ -136,12 +140,27 @@ test('install-hybrids: under --unattended it stops (exit 4) unless [autonomy] al
   assert.equal(fs.existsSync(path.join(ROOT, 'stub-calls')), false, 'npm, mise and ruflo never ran');
   // allowed, it goes on to install: here only as far as the stand-ins
   const ok = copy('hyb-ok', 'maintainer');
+  oneHybrid(ok);
   const toml = path.join(ok.STEWARD_INSTANCE, 'steward.toml');
   fs.writeFileSync(toml, fs.readFileSync(toml, 'utf8').replace(/^allow = \[\]/m, 'allow = ["install-hybrids"]'));
   const r2 = spawnSync(path.join(REPO, 'supply-chain', 'bin', 'install-hybrids'), [], { encoding: 'utf8',
     env: { ...BASE, ...ok, PATH: `${STUBS}:${process.env.PATH}`, STEWARD_UNATTENDED: '1' } });
   assert.match(r2.stderr, /unattended: yes to "Install the hybrids/);
   assert.ok(fs.existsSync(path.join(ROOT, 'stub-calls')), 'past the guard, the install steps ran (the stand-ins)');
+  fs.rmSync(path.join(ROOT, 'stub-calls'));
+});
+
+test('install-hybrids at a terminal: the plan (each hybrid, its scripts, the Ruflo backup), then [y/N]; no installs nothing', () => {
+  const env = copy('hyb-ask', 'safe');
+  oneHybrid(env);
+  const run = input => spawnSync(path.join(REPO, 'supply-chain', 'bin', 'install-hybrids'), [], { encoding: 'utf8', input, env: { ...BASE, ...env, PATH: `${STUBS}:${process.env.PATH}` } });
+  const no = run('n\n');
+  assert.equal(no.status, 0, no.stdout + no.stderr);
+  assert.match(no.stdout, /ruflo@3\.63\.9 +scripts: ruflo,better-sqlite3 +Ruflo policy backup first \(no receipt → 3\.63\.9; its first run migrates the policy state\)/);
+  assert.match(no.stdout, /nothing changed/);
+  assert.equal(fs.existsSync(path.join(ROOT, 'stub-calls')), false, 'a no installs nothing');
+  run('y\n');
+  assert.match(fs.readFileSync(path.join(ROOT, 'stub-calls'), 'utf8'), /npm install -g --allow-scripts=ruflo,better-sqlite3 ruflo@3\.63\.9/, 'a yes installs (the stand-in)');
   fs.rmSync(path.join(ROOT, 'stub-calls'));
 });
 

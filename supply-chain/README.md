@@ -58,7 +58,7 @@ steward sc upgrade-tool npm 12.3.0            # one tool, exact pin (e.g. a secu
 steward sc upgrade-tool mise                  # mise itself: the release past the gate; backup, verify, receipt (D38)
 steward sc rollback mise                      # put the previous mise binary back
 steward sc node-patch 26.12.2                 # checksum-verified Node patch + hybrid reinstall + verify + lock
-steward sc install-hybrids                    # reinstall the npm -g hybrids into the active Node
+steward sc install-hybrids                    # reinstall the npm -g hybrids into the active Node (plans, asks)
 steward sc retire-hybrid ruflo npm:ruflo@3.60.0   # move a hybrid to mise once upstream fixes the blocker
 steward sc release-age                        # show the release-age gate in steward.toml, mise and Renovate
 steward sc release-age 5                      # set it in all three (plan, asks, backs up)
