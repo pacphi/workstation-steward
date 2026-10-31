@@ -184,8 +184,36 @@ async function askDecisions(fresh) {
 // ---- decide ------------------------------------------------------------------------------------------------
 function flag(name) { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; }
 
-// decide(given) — record decisions: given (from askDecisions), --batch <file>, or one <path> --decision …
+// (function declarations: the commands above run before this part of the file is reached)
+function sha(t) { return require('crypto').createHash('sha256').update(t).digest('hex'); }
+function readText(f) { return fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : null; }
+
+// undoDecide(receipt) — put registry.toml back as it was before a decide (the receipt's backup, or no file when there
+// was none), only if nothing changed it since; asks first (class rollback)
+async function undoDecide(file) {
+  const C = require('../../lib/config.js');
+  const rp = P.userPath(file);
+  const rc = JSON.parse(fs.readFileSync(rp, 'utf8'));
+  if (rc.kind !== 'registry') throw new Error(`${P.tilde(rp)} is not a projects decide receipt`);
+  if (rc.rolled_back) { console.log('already rolled back'); return; }
+  const now = readText(P.REGISTRY);
+  // a decide that stopped before its write finished has no sha_after: put back what it backed up
+  if (rc.sha_after && (now === null || sha(now) !== rc.sha_after)) { console.error(`refusing: ${P.tilde(P.REGISTRY)} changed since this decide; put it back by hand from ${rc.backup || '(no file before)'}`); process.exitCode = 1; return; }
+  console.log(`\x1b[1;34m==>\x1b[0m undo ${rc.changes.length} registry change(s) from ${rc.at}`);
+  for (const c of rc.changes) console.log(`  ${c.path}: ${c.after.decision} → ${c.before ? c.before.decision : '(not in the registry)'}`);
+  const yes = require('../../lib/autonomy.js').answer('rollback', 'Restore registry.toml?') || /^y$/i.test((await prompt(`${rc.backup ? `Restore ${P.tilde(P.REGISTRY)} from ${rc.backup}` : `Remove ${P.tilde(P.REGISTRY)} (it didn't exist before)`}? [y/N] `)).trim());
+  if (reader) reader.rl.close();
+  if (!yes) { console.log('nothing changed'); return; }
+  if (rc.backup) fs.copyFileSync(C.untilde(rc.backup), P.REGISTRY); else fs.unlinkSync(P.REGISTRY);
+  rc.rolled_back = true;
+  fs.writeFileSync(rp, `${JSON.stringify(rc, null, 1)}\n`, { mode: 0o600 });
+  console.log(`restored ${P.tilde(P.REGISTRY)}`);
+}
+
+// decide(given) — record decisions: given (from askDecisions), --batch <file>, or one <path> --decision …. Before it
+// writes registry.toml it backs it up and writes a receipt naming each change; --rollback <receipt> undoes it
 async function decide(given) {
+  if (!given && args.includes('--rollback')) return undoDecide(flag('--rollback'));
   const R = require('../../lib/registry.js');
   const list = R.entries();
   const byAbs = new Map(list.map(e => [P.untilde(e.path), e]));
@@ -240,7 +268,24 @@ async function decide(given) {
   const updated = list.map(e => { const c = changes.find(x => x.before && P.untilde(x.before.path) === P.untilde(e.path)); return c ? c.next : e; });
   for (const c of changes) if (!c.before) updated.push(c.next);
   updated.sort((a, b) => P.untilde(a.path).localeCompare(P.untilde(b.path)));
-  fs.writeFileSync(P.REGISTRY, R.render(updated));
+  // a backup and a receipt before the write, as every writer does
+  const C = require('../../lib/config.js');
+  const dir = C.newBackupDir('registry');
+  const old = readText(P.REGISTRY);
+  const bak = path.join(dir, 'registry.toml');
+  if (old !== null) fs.copyFileSync(P.REGISTRY, bak);
+  const rp = path.join(dir, 'receipt.json');
+  const pick = e => (e ? { decision: e.decision, ai: e.ai || [], ...(e.until ? { until: e.until } : {}) } : null);
+  const receipt = { kind: 'registry', at: new Date().toISOString(), engine: C.ENGINE_VERSION, file: P.tilde(P.REGISTRY), backup: old === null ? null : P.tilde(bak),
+    sha_before: old === null ? null : sha(old), changes: changes.map(c => ({ path: c.next.path, before: pick(c.before), after: pick(c.next) })), complete: false,
+    rollback: `steward projects decide --rollback ${P.tilde(rp)}` };
+  const save = () => fs.writeFileSync(rp, `${JSON.stringify(receipt, null, 1)}\n`, { mode: 0o600 });
+  save();
+  const text = R.render(updated);
+  fs.writeFileSync(P.REGISTRY, text);
+  Object.assign(receipt, { sha_after: sha(text), complete: true });
+  save();
   const check = R.entries().length;
   console.log(`recorded ${changes.length}; registry has ${check} project(s). Commit projects/registry.toml through a PR.`);
+  console.log(`  receipt ${P.tilde(rp)}; rollback: steward projects decide --rollback ${P.tilde(rp)}`);
 }

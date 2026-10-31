@@ -36,6 +36,9 @@ function copy(name, level) {
 const STUBS = path.join(ROOT, 'stubs');
 fs.mkdirSync(STUBS);
 for (const n of ['npm', 'mise', 'ruflo']) fs.writeFileSync(path.join(STUBS, n), `#!/bin/sh\necho "$0 $*" >> "${path.join(ROOT, 'stub-calls')}"\nexit 1\n`, { mode: 0o755 });
+// oneHybrid(env) — a hybrids.toml with one hybrid (the examples have none), so install-hybrids has something to plan
+const oneHybrid = env => fs.writeFileSync(path.join(env.STEWARD_INSTANCE, 'supply-chain', 'hybrids.toml'),
+  '[[hybrid]]\nname = "ruflo"\nversion = "3.63.9"\nsource = "registry"\nallow_scripts = ["ruflo", "better-sqlite3"]\nstate_backup = "ruflo-policy"\n');
 const INDEX = [{ version: 'v26.14.0', security: false }, { version: 'v26.13.1', security: true }, { version: 'v26.12.1', security: false }, { version: 'v24.9.0', security: true }];
 
 test('commands: each bundled command writes, has the class of its most demanding part, takes --unattended, and its parts name it', () => {
@@ -129,6 +132,7 @@ test('the command: plan only without a terminal; --unattended under level "ask" 
 
 test('install-hybrids: under --unattended it stops (exit 4) unless [autonomy] allows install-hybrids, before installing', () => {
   const env = copy('hyb', 'maintainer');
+  oneHybrid(env);
   const r = spawnSync(path.join(REPO, 'supply-chain', 'bin', 'install-hybrids'), [], { encoding: 'utf8',
     env: { ...BASE, ...env, PATH: `${STUBS}:${process.env.PATH}`, STEWARD_UNATTENDED: '1' } });
   assert.equal(r.status, 4, r.stdout + r.stderr);
@@ -136,6 +140,7 @@ test('install-hybrids: under --unattended it stops (exit 4) unless [autonomy] al
   assert.equal(fs.existsSync(path.join(ROOT, 'stub-calls')), false, 'npm, mise and ruflo never ran');
   // allowed, it goes on to install: here only as far as the stand-ins
   const ok = copy('hyb-ok', 'maintainer');
+  oneHybrid(ok);
   const toml = path.join(ok.STEWARD_INSTANCE, 'steward.toml');
   fs.writeFileSync(toml, fs.readFileSync(toml, 'utf8').replace(/^allow = \[\]/m, 'allow = ["install-hybrids"]'));
   const r2 = spawnSync(path.join(REPO, 'supply-chain', 'bin', 'install-hybrids'), [], { encoding: 'utf8',
@@ -145,11 +150,23 @@ test('install-hybrids: under --unattended it stops (exit 4) unless [autonomy] al
   fs.rmSync(path.join(ROOT, 'stub-calls'));
 });
 
+test('install-hybrids at a terminal: the plan (each hybrid, its scripts, the Ruflo backup), then [y/N]; no installs nothing', () => {
+  const env = copy('hyb-ask', 'safe');
+  oneHybrid(env);
+  const run = input => spawnSync(path.join(REPO, 'supply-chain', 'bin', 'install-hybrids'), [], { encoding: 'utf8', input, env: { ...BASE, ...env, PATH: `${STUBS}:${process.env.PATH}` } });
+  const no = run('n\n');
+  assert.equal(no.status, 0, no.stdout + no.stderr);
+  assert.match(no.stdout, /ruflo@3\.63\.9 +scripts: ruflo,better-sqlite3 +Ruflo policy backup first \(no receipt → 3\.63\.9; its first run migrates the policy state\)/);
+  assert.match(no.stdout, /nothing changed/);
+  assert.equal(fs.existsSync(path.join(ROOT, 'stub-calls')), false, 'a no installs nothing');
+  run('y\n');
+  assert.match(fs.readFileSync(path.join(ROOT, 'stub-calls'), 'utf8'), /npm install -g --allow-scripts=ruflo,better-sqlite3 ruflo@3\.63\.9/, 'a yes installs (the stand-in)');
+  fs.rmSync(path.join(ROOT, 'stub-calls'));
+});
+
 test('end to end: steward ai fix, one yes on stdin: each part runs --apply --unattended --yes-to ai-fix; the record; the briefing', () => {
   const env = copy('e2e', 'ask');
-  // a Claude Code settings file to guard (ai guard stops on a missing one, as it did before D61)
-  fs.mkdirSync(path.join(env.HOME, '.claude'));
-  fs.writeFileSync(path.join(env.HOME, '.claude', 'settings.json'), '{}\n');
+  // no Claude Code settings file: ai guard creates one (test/guard.test.js)
   const r = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'ai', 'fix'], { encoding: 'utf8', input: 'y\n', env: { ...BASE, ...env } });
   assert.equal(r.status, 0, r.stdout + r.stderr);
   const backups = path.join(env.XDG_STATE_HOME, 'workstation-steward', 'backups');
@@ -218,4 +235,27 @@ test('steward projects --apply: asks each new project its decision, shows the ch
   const after = fs.readFileSync(reg, 'utf8');
   assert.match(after, /app"[\s\S]*decision = "onboarded"[\s\S]*ai = \["ruflo"\]/);
   assert.match(after, /tool"[\s\S]*decision = "deferred"[\s\S]*until = "2026-12-01"/);
+  // a backup and a receipt first, and a way back
+  const rp = yes.stdout.match(/rollback: steward projects decide --rollback (\S+)/)[1].replace(/^~/, env.HOME);
+  const rc = JSON.parse(fs.readFileSync(rp, 'utf8'));
+  assert.deepEqual([rc.kind, rc.complete, rc.changes.length], ['registry', true, 2]);
+  assert.deepEqual(rc.changes.map(c => [c.before, c.after.decision]), [[null, 'onboarded'], [null, 'deferred']]);
+  const back = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'projects', 'decide', '--rollback', rp], { encoding: 'utf8', input: 'y\n', env: { ...BASE, ...env } });
+  assert.equal(back.status, 0, back.stderr);
+  assert.equal(fs.existsSync(reg) ? fs.readFileSync(reg, 'utf8') : '', before, 'the registry as it was');
+  assert.equal(JSON.parse(fs.readFileSync(rp, 'utf8')).rolled_back, true);
+  // a registry changed since: the rollback refuses
+  const again = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'projects', '--apply'], { encoding: 'utf8', input: 'i\ni\ny\n', env: { ...BASE, ...env } });
+  const rp2 = again.stdout.match(/rollback: steward projects decide --rollback (\S+)/)[1].replace(/^~/, env.HOME);
+  fs.appendFileSync(reg, '# an edit by hand\n');
+  const refused = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'projects', 'decide', '--rollback', rp2], { encoding: 'utf8', input: 'y\n', env: { ...BASE, ...env } });
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /refusing: .*registry\.toml changed since/);
+  // a decide that stopped before its write finished (no sha_after): its rollback still puts the backup back
+  const stopped = { ...JSON.parse(fs.readFileSync(rp2, 'utf8')), complete: false };
+  delete stopped.sha_after;
+  fs.writeFileSync(rp2, JSON.stringify(stopped));
+  const undo = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'projects', 'decide', '--rollback', rp2], { encoding: 'utf8', input: 'y\n', env: { ...BASE, ...env } });
+  assert.equal(undo.status, 0, undo.stderr);
+  assert.equal(fs.readFileSync(reg, 'utf8'), fs.readFileSync(stopped.backup.replace(/^~/, env.HOME), 'utf8'));
 });
