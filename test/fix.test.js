@@ -209,7 +209,7 @@ test('brief: a fix run that stopped midway is a finding, but not while its proce
   const det = B.DETECTORS.filter(d => d.id === 'receipt-unfinished');
   assert.deepEqual(B.run(facts(process.pid), det), [], 'still running');
   const [x] = B.run(facts(99999999), det);
-  assert.equal(x.text, 'a steward fix run stopped midway (2 step(s) done)');
+  assert.equal(x.text, 'fix stopped midway (2 step(s) done)', 'the briefing adds "steward " before it');
   assert.equal(x.cmd, 'steward brief --all');
   assert.equal(x.skill, 'fix');
 });

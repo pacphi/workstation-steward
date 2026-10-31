@@ -189,7 +189,11 @@ test('end to end: steward ai fix, one yes on stdin: each part runs --apply --una
   fs.mkdirSync(stopped);
   fs.writeFileSync(path.join(stopped, 'receipt.json'), JSON.stringify({ ...rec, at: '2026-10-30T08:00:00.000Z', pid: 999999, complete: false, outcome: 'started', steps: rec.steps.slice(0, 2) }));
   const b = steward(['brief', '--all'], env);
-  assert.match(b.stdout, /steward ai fix stopped midway: 2 of 5 part\(s\) done/);
+  assert.match(b.stdout, /ai fix stopped midway: 2 of 5 part\(s\) done/);
+  // the briefing's line starts with "steward" itself: the text mustn't say it again
+  const one = steward(['brief'], env).stdout;
+  assert.match(one, /^steward ai fix stopped midway: 2 of 5 part\(s\) done$/m);
+  assert.doesNotMatch(one, /steward steward/);
 });
 
 test('briefing: a bundled run left unfinished names its command and what it finished; a live one is left alone', () => {
@@ -199,7 +203,7 @@ test('briefing: a bundled run left unfinished names its command and what it fini
   const rc = (pid, extra = {}) => ({ kind: 'coarse', command: 'ai fix', name: 'ai fix', at: at.toISOString(), pid, complete: false, steps: [{ outcome: 'done' }, { outcome: 'failed' }], parts: 5, ...extra });
   const f = r => ({ now: new Date(at.getTime() + 3600e3), backups: [{ name: 'coarse-ai-fix-20261030T100000', kind: 'coarse', at, receipt: r, rp: '/s/r.json', hasReceipt: true }] });
   const [x] = det.check(f(rc(999999)));
-  assert.match(x.text, /steward ai fix stopped midway: 1 of 5 part\(s\) done/);
+  assert.equal(x.text, 'ai fix stopped midway: 1 of 5 part(s) done');
   assert.equal(x.cmd, 'steward ai fix');
   assert.deepEqual(det.check(f(rc(process.pid))), [], 'still running');
   const [y] = det.check(f(rc(999999, { command: 'fleet tidy', name: 'fleet tidy', repo: '/r/app', args: ['~/app'] })));
