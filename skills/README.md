@@ -45,6 +45,11 @@ steward skills uninstall                    # the way back (add --project <path>
   your installed steward. The skills match your version and your add-ons, and nothing is fetched from the network.
 - **They follow your add-ons.** `/steward:ai-tooling` and `/steward:projects` appear when those add-ons are on, and
   `/steward:pr-consolidation` when `[skills] pr_consolidation = true` in `steward.toml`.
+- **A session starts knowing what needs you.** The plugin carries one read-only hook. When a session starts, after
+  `/clear` and after a compaction, it runs `steward brief --hook`. When something needs you, you see the briefing's
+  lines once (until what needs you changes, or 12 hours pass), and Claude gets the one next step with its command.
+  When nothing does, it says nothing. `[brief] session = false` in `steward.toml` leaves the hook out
+  ([the briefing](../docs/briefing.md#in-claude-code-the-session-start-hook)).
 - **Claude Code 2.1.292 or newer.** The install checks the version.
 - **Working on the steward itself?** `just claude` starts a session with your clone's skills, ahead of any installed
   release. After editing a skill, run `/reload-plugins`.

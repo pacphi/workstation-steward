@@ -236,7 +236,7 @@ test('[brief] refresh_hours and fetch in steward.toml: 6 and true by default, yo
     const r = spawnSync(process.execPath, [path.join(REPO, 'lib', 'config.js'), '--json'], { encoding: 'utf8', env: { ...process.env, STEWARD_INSTANCE: d } });
     return { status: r.status, values: JSON.parse(r.stdout) };
   };
-  assert.deepEqual(cfg('').values.brief, { stale_hours: 48, refresh_hours: 6, fetch: true });
+  assert.deepEqual(cfg('').values.brief, { stale_hours: 48, refresh_hours: 6, fetch: true, session: true, quiet_hours: 12 });
   const set = cfg('[brief]\nrefresh_hours = 0\nfetch = false\n');
   assert.equal(set.status, 0);
   assert.equal(set.values.brief.refresh_hours, 0);
@@ -474,4 +474,190 @@ test('a run touches no network and takes under a second: a stub gh, npm, curl an
   assert.ok(!fs.existsSync(path.join(STATE, 'brief')));
   const j = spawnSync(process.execPath, [path.join(REPO, 'lib', 'brief.js'), '--json'], { encoding: 'utf8', env });
   assert.equal(JSON.parse(j.stdout).next.id, 'config-behind');
+});
+
+// --- the session-start hook (--hook): Claude Code's JSON in, the hook's JSON out, or nothing; always exit 0
+const HV = (o = {}) => ({ brief: { session: true, quiet_hours: 12, ...o } });
+const busyFacts = () => facts({ review: { due: true, age: 8, days: 7 }, config: { ahead: 1, changed: ['x.toml'] } });
+const briefOf = f => ({ v: 1, at: NOW.toISOString(), ...B.pick(B.run(f)) });
+const START = { session_id: 'sess-1', cwd: '/somewhere', hook_event_name: 'SessionStart', source: 'startup' };
+
+// fixOf(b) — the same briefing with next as a broken or half-finished state (severity fix): the one kind shown as a notice
+const fixOf = b => ({ ...b, next: { ...b.next, severity: 'fix' } });
+
+test('hook: a routine next step goes to Claude only, to mention once at the end of its first reply; it stamps it', () => {
+  const b = briefOf(busyFacts());
+  assert.notEqual(b.next.severity, 'fix');
+  const r = B.hook(START, { b, values: HV(), prev: null, now: NOW });
+  assert.deepEqual(Object.keys(r.out), ['hookSpecificOutput'], 'no notice for a routine step');
+  const ctx = r.out.hookSpecificOutput.additionalContext;
+  assert.match(ctx, /^<steward-brief v="1">/);
+  assert.match(ctx, /At the end of your first reply, whatever they asked, add one short line that starts "Steward:"/);
+  assert.doesNotMatch(ctx, /has just seen the first lines/);
+  assert.deepEqual(r.stamp, { at: NOW.toISOString(), fp: B.fingerprint(b), session_id: 'sess-1' });
+});
+
+test('hook: a broken or half-finished state shows the briefing as a notice (≤3 lines to the user, the block to Claude) and stamps it', () => {
+  const b = fixOf(briefOf(busyFacts()));
+  const r = B.hook(START, { b, values: HV(), prev: null, now: NOW });
+  assert.deepEqual(Object.keys(r.out).sort(), ['hookSpecificOutput', 'systemMessage']);
+  assert.equal(r.out.hookSpecificOutput.hookEventName, 'SessionStart');
+  assert.deepEqual(r.out.systemMessage.split('\n'), B.human(b));
+  assert.ok(r.out.systemMessage.split('\n').length <= 3);
+  const ctx = r.out.hookSpecificOutput.additionalContext;
+  const json = JSON.parse(ctx.match(/^<steward-brief v="1">(.*)<\/steward-brief>$/m)[1]);
+  assert.equal(json.next.cmd, 'steward config sync');
+  assert.match(ctx, /Never run a command whose writes is true without the user's yes/);
+  assert.match(ctx, /has just seen the first lines/);
+  assert.deepEqual(r.stamp, { at: NOW.toISOString(), fp: B.fingerprint(b), session_id: 'sess-1' });
+  assert.equal(B.hook({ ...START, source: 'clear' }, { b, values: HV(), prev: null, now: NOW }).out.systemMessage, r.out.systemMessage, 'after /clear too');
+});
+
+test('hook: the same briefing within quiet_hours is one line to Claude only; a change, or quiet_hours passed, shows it again', () => {
+  const b = briefOf(busyFacts());
+  const prev = { at: ago(60).toISOString(), fp: B.fingerprint(b), session_id: 'sess-0' };
+  const q = B.hook(START, { b, values: HV(), prev, now: NOW });
+  assert.equal(q.stamp, null, 'the stamp stays');
+  assert.deepEqual(Object.keys(q.out), ['hookSpecificOutput']);
+  const line = q.out.hookSpecificOutput.additionalContext;
+  assert.equal(line.split('\n').length, 1);
+  assert.match(line, /^steward-brief: shown to the user at .*don't bring it up unless asked\. If asked what's next: .*next: steward config sync/);
+  // something new needs the user: a different fingerprint
+  const more = briefOf(facts({ review: { due: true, age: 8, days: 7 }, config: { ahead: 1, changed: ['x.toml'] }, soak: { running: false, awaitingPrune: true, until: null, newest: null } }));
+  assert.notEqual(B.fingerprint(more), prev.fp);
+  const shown = r => r.stamp !== null; // shown again: a new stamp (a notice or a mention, by severity)
+  assert.ok(shown(B.hook(START, { b: more, values: HV(), prev, now: NOW })));
+  // the same, but 12 hours on
+  assert.ok(shown(B.hook(START, { b, values: HV(), prev: { ...prev, at: ago(12 * 60).toISOString() }, now: NOW })));
+  assert.ok(!shown(B.hook(START, { b, values: HV(), prev: { ...prev, at: ago(11 * 60).toISOString() }, now: NOW })));
+  // quiet_hours = 0: every time; an unreadable stamp: shown
+  assert.ok(shown(B.hook(START, { b, values: HV({ quiet_hours: 0 }), prev, now: NOW })));
+  assert.ok(shown(B.hook(START, { b, values: HV(), prev: { fp: prev.fp, at: 'garbage' }, now: NOW })));
+  // the maintainer's own skill is /steward-maintain, not a plugin skill
+  const repin = { ...b, next: { ...b.next, skill: 'steward-maintain' } };
+  assert.match(B.quietLine(repin, ago(60)), /; skill \/steward-maintain[;.]/);
+  assert.match(B.quietLine(b, ago(60)), /; skill \/steward:supply-chain[;.]/);
+  // the fingerprint follows what needs the user, not the order or the text around it
+  assert.equal(B.fingerprint({ findings: [...b.findings].reverse() }), B.fingerprint(b));
+});
+
+test('hook: nothing to do prints nothing (a wait alone isn\'t something to do); [brief] session = false prints nothing, ever', () => {
+  const waiting = briefOf(facts({ soak: { running: true, until: new Date('2026-11-02T10:00:00Z') } }));
+  assert.equal(waiting.next, null);
+  for (const source of ['startup', 'clear', 'compact']) assert.deepEqual(B.hook({ ...START, source }, { b: waiting, values: HV(), now: NOW }), { out: null, stamp: null });
+  const b = briefOf(busyFacts());
+  for (const source of ['startup', 'clear', 'compact']) assert.deepEqual(B.hook({ ...START, source }, { b, values: HV({ session: false }), now: NOW }), { out: null, stamp: null });
+});
+
+test('hook: compact gives Claude the block again, with no message to the user and no stamp; resume, fork and junk get nothing', () => {
+  const b = briefOf(busyFacts());
+  const prev = { at: ago(5).toISOString(), fp: B.fingerprint(b) };
+  const c = B.hook({ ...START, source: 'compact' }, { b, values: HV(), prev, now: NOW });
+  assert.deepEqual(Object.keys(c.out), ['hookSpecificOutput']);
+  assert.equal(c.out.hookSpecificOutput.additionalContext, B.machine(b));
+  assert.equal(c.stamp, null);
+  for (const input of [{ ...START, source: 'resume' }, { ...START, source: 'fork' }, {}, null]) assert.deepEqual(B.hook(input, { b, values: HV(), now: NOW }), { out: null, stamp: null });
+});
+
+test('hook: the block stays under Claude Code\'s 10,000-character cap: fewer findings and how many were left out, next kept', () => {
+  const many = Array.from({ length: 40 }, (_, i) => bk(`onboard-p${i}`, { kind: 'onboard', at: ago(60).toISOString(), project: `~/work/${'x'.repeat(150)}${i}`, entries: [], complete: false }));
+  const b = briefOf(facts({ backups: many }));
+  assert.ok(B.machine(b).length > 10000, 'the case needs a long block');
+  const m = B.fitted(b);
+  assert.ok(m.length <= B.CONTEXT_MAX, `${m.length}`);
+  const json = JSON.parse(m.match(/^<steward-brief v="1">(.*)<\/steward-brief>$/m)[1]);
+  assert.equal(json.next.key, b.next.key);
+  assert.equal(json.findings.length + json.truncated, b.findings.length);
+  assert.equal(B.fitted(briefOf(busyFacts())), B.machine(briefOf(busyFacts())), 'a short one is untouched');
+});
+
+// a spawned --hook against the throwaway instance: STATE/brief is removed after, so the other tests see no stamp
+test('hook, as Claude Code runs it: JSON out, the stamp written once (0600), quiet next time, compact and resume; no network, under a second', () => {
+  const stubs = path.join(ROOT, 'hook-stubs'), marker = path.join(ROOT, 'hook-marker');
+  fs.mkdirSync(stubs, { recursive: true });
+  for (const t of ['gh', 'npm', 'curl', 'mise']) { fs.writeFileSync(path.join(stubs, t), `#!/bin/sh\necho ${t} "$@" >> '${marker}'\nexit 1\n`); fs.chmodSync(path.join(stubs, t), 0o755); }
+  const env = { ...process.env, PATH: `${stubs}:${process.env.PATH}`, STEWARD_INSTANCE: INST };
+  const stampF = B.stampFile(STATE);
+  const hookRun = (source, extra = {}) => {
+    const t0 = process.hrtime.bigint();
+    const r = spawnSync(process.execPath, [path.join(REPO, 'lib', 'brief.js'), '--hook'], { encoding: 'utf8', env: { ...env, ...extra }, input: JSON.stringify({ ...START, source }) });
+    return { ...r, ms: Number(process.hrtime.bigint() - t0) / 1e6 };
+  };
+  try {
+    fs.rmSync(path.join(STATE, 'brief'), { recursive: true, force: true });
+    const dry = hookRun('startup', { DRY_RUN: '1' });
+    assert.equal(dry.status, 0);
+    assert.match(JSON.parse(dry.stdout).hookSpecificOutput.additionalContext, /^<steward-brief v="1">/);
+    assert.ok(!fs.existsSync(stampF), 'DRY_RUN=1 writes no stamp');
+
+    const first = hookRun('startup');
+    console.log(`# steward brief --hook (startup) took ${first.ms.toFixed(0)} ms`);
+    assert.equal(first.status, 0, first.stderr);
+    assert.equal(first.stdout.trim().split('\n').length, 1, 'one JSON object');
+    const out = JSON.parse(first.stdout);
+    assert.equal(out.hookSpecificOutput.hookEventName, 'SessionStart');
+    assert.equal(out.systemMessage, undefined, 'a routine step (config behind) is no notice');
+    assert.match(out.hookSpecificOutput.additionalContext, /"cmd":"steward config sync/);
+    assert.match(out.hookSpecificOutput.additionalContext, /add one short line that starts "Steward:"/);
+    assert.match(out.hookSpecificOutput.additionalContext, /^<steward-brief v="1">/);
+    assert.ok(first.ms < 1000, `${first.ms} ms`);
+    const stamp = JSON.parse(fs.readFileSync(stampF, 'utf8'));
+    assert.equal(stamp.session_id, 'sess-1');
+    assert.equal(fs.statSync(stampF).mode & 0o777, 0o600);
+    assert.deepEqual(fs.readdirSync(path.dirname(stampF)), ['shown.json'], 'no temp file left, nothing else written');
+
+    const before = fs.readFileSync(stampF, 'utf8');
+    const second = hookRun('startup');
+    assert.equal(second.status, 0);
+    assert.deepEqual(Object.keys(JSON.parse(second.stdout)), ['hookSpecificOutput']);
+    const compact = hookRun('compact');
+    assert.equal(compact.status, 0);
+    const c = JSON.parse(compact.stdout);
+    assert.equal(c.systemMessage, undefined);
+    assert.match(c.hookSpecificOutput.additionalContext, /^<steward-brief v="1">/);
+    const resume = hookRun('resume');
+    assert.equal(resume.status, 0);
+    assert.equal(resume.stdout, '');
+    assert.equal(fs.readFileSync(stampF, 'utf8'), before, 'quiet, compact and resume leave the stamp');
+    assert.ok(!fs.existsSync(marker), `called: ${fs.existsSync(marker) && fs.readFileSync(marker, 'utf8')}`);
+  } finally {
+    fs.rmSync(path.join(STATE, 'brief'), { recursive: true, force: true });
+  }
+});
+
+test('hook: always exit 0 with nothing printed: a slow run past the 1.5 s watchdog, a broken config, input that isn\'t JSON', () => {
+  const slow = path.join(ROOT, 'slow-stubs');
+  fs.mkdirSync(slow, { recursive: true });
+  fs.writeFileSync(path.join(slow, 'yq'), '#!/bin/sh\nsleep 4\n', { mode: 0o755 });
+  const run = (env, input) => {
+    const t0 = process.hrtime.bigint();
+    const r = spawnSync(process.execPath, [path.join(REPO, 'lib', 'brief.js'), '--hook'], { encoding: 'utf8', env: { ...process.env, ...env }, input });
+    return { ...r, ms: Number(process.hrtime.bigint() - t0) / 1e6 };
+  };
+  const late = run({ PATH: `${slow}:${process.env.PATH}` }, JSON.stringify(START));
+  console.log(`# a hook past its watchdog returned after ${late.ms.toFixed(0)} ms`);
+  assert.deepEqual([late.status, late.stdout], [0, '']);
+  assert.ok(late.ms >= B.WATCHDOG && late.ms < 3000, `${late.ms} ms`);
+  const broken = run({ STEWARD_INSTANCE: path.join(ROOT, 'no-such-instance') }, JSON.stringify(START));
+  assert.deepEqual([broken.status, broken.stdout], [0, '']);
+  const junk = run({}, 'not json {');
+  assert.deepEqual([junk.status, junk.stdout], [0, '']);
+  const empty = run({}, '');
+  assert.deepEqual([empty.status, empty.stdout], [0, '']);
+  assert.ok(!fs.existsSync(path.join(STATE, 'brief')));
+});
+
+test('hook: [brief] session = false in steward.toml prints nothing and writes no stamp; the same instance with it on shows', () => {
+  const mk = on => {
+    const d = fs.mkdtempSync(path.join(ROOT, 'sess-'));
+    write(path.join(d, 'steward.toml'), `[paths]\nstate = "${path.join(d, 'state')}"\ncache = "${path.join(d, 'cache')}"\n[brief]\nsession = ${on}\n`);
+    const r = spawnSync(process.execPath, [path.join(REPO, 'lib', 'brief.js'), '--hook'], { encoding: 'utf8', env: { ...process.env, STEWARD_INSTANCE: d }, input: JSON.stringify(START) });
+    return { r, stamp: fs.existsSync(B.stampFile(path.join(d, 'state'))) };
+  };
+  const off = mk(false);
+  assert.deepEqual([off.r.status, off.r.stdout, off.stamp], [0, '', false]);
+  const on = mk(true);
+  assert.equal(on.r.status, 0);
+  assert.match(JSON.parse(on.r.stdout).hookSpecificOutput.additionalContext, /a review is due \(never run\)/);
+  assert.equal(on.stamp, true);
 });

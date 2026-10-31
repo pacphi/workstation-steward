@@ -1,8 +1,25 @@
 {
   "name": "steward",
   "description": "workstation-steward's Claude Code skills: keep a machine's software supply chain, AI tooling and projects within policy, and consolidate dependency PRs",
-  "author": { "name": "pacphi", "url": "https://github.com/pacphi" },
+  "author": {
+    "name": "pacphi",
+    "url": "https://github.com/pacphi"
+  },
   "homepage": "https://github.com/pacphi/workstation-steward",
   "repository": "https://github.com/pacphi/workstation-steward",
-  "license": "MIT"
+  "license": "MIT",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v steward >/dev/null 2>&1 && steward brief --hook || true",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
 }

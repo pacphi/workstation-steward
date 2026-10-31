@@ -191,3 +191,51 @@ test('skills: the marketplace lists the steward plugin by command; config and co
   assert.ok(!COMMANDS.find(c => c.area === 'skills' && c.name === 'path').writes, 'path is read-only');
   assert.match(fs.readFileSync(path.join(REPO, 'examples', 'steward.toml'), 'utf8'), /^\[skills\]\npr_consolidation = false/m);
 });
+
+// the plugin's manifest is generated (D48): the session-start hook, unless [brief] session = false leaves it out
+const manifestOf = out => JSON.parse(fs.readFileSync(path.join(out, '.claude-plugin', 'plugin.json'), 'utf8'));
+const hooksOf = out => (manifestOf(out).hooks || {}).SessionStart || [];
+
+test('skills path: the folder holds only the manifest and the skills; the hook is in it by default, read-only and short', () => {
+  const s = setup('hook-default');
+  const out = s.run(['path'], { STEWARD_CHANNEL: 'release' }).stdout.trim();
+  assert.deepEqual(fs.readdirSync(out).sort(), ['.claude-plugin', 'skills']);
+  assert.deepEqual(fs.readdirSync(path.join(out, '.claude-plugin')), ['plugin.json']);
+  const [h, ...rest] = hooksOf(out);
+  assert.deepEqual(rest, [], 'one SessionStart entry');
+  assert.equal(h.matcher, 'startup|clear|compact');
+  assert.ok(!/resume|fork/.test(h.matcher), 'a resumed session already has its context');
+  assert.deepEqual(h.hooks, [{ type: 'command', command: 'command -v steward >/dev/null 2>&1 && steward brief --hook || true', timeout: 5 }]);
+  assert.ok(h.hooks[0].timeout <= 10, 'seconds');
+  assert.deepEqual(Object.keys(manifestOf(out).hooks), ['SessionStart'], 'no other hook');
+  // what a release builds is the manifest the repo ships (so `claude --plugin-dir .` and an install agree)
+  assert.equal(fs.readFileSync(path.join(out, '.claude-plugin', 'plugin.json'), 'utf8'), fs.readFileSync(path.join(REPO, '.claude-plugin', 'plugin.json'), 'utf8'));
+});
+
+test('skills path: [brief] session = false leaves the hook out, and the folder (its hash) changes with it', () => {
+  const on = setup('hook-on').run(['path'], { STEWARD_CHANNEL: 'release' }).stdout.trim();
+  const off = setup('hook-off', '[brief]\nsession = false\n').run(['path'], { STEWARD_CHANNEL: 'release' }).stdout.trim();
+  assert.notEqual(path.basename(off), path.basename(on));
+  const m = manifestOf(off);
+  assert.equal(m.hooks, undefined);
+  assert.equal(m.name, 'steward');
+  assert.equal(m.license, 'MIT');
+  assert.deepEqual(fs.readdirSync(path.join(off, 'skills')), ['supply-chain'], 'the skills are the same');
+});
+
+test('skills path: a dev clone\'s build calls steward-dev (with --real, unless its examples are the instance)', () => {
+  const s = setup('hook-dev');
+  const dev = hooksOf(s.run(['path'], { STEWARD_CHANNEL: 'dev' }).stdout.trim())[0].hooks[0].command;
+  assert.equal(dev, 'command -v steward-dev >/dev/null 2>&1 && steward-dev brief --hook --real || true');
+  const ex = setup('hook-dev-examples').run(['path'], { STEWARD_CHANNEL: 'dev', STEWARD_INSTANCE: path.join(REPO, 'examples') });
+  assert.equal(ex.status, 0, ex.stderr);
+  assert.equal(hooksOf(ex.stdout.trim())[0].hooks[0].command, 'command -v steward-dev >/dev/null 2>&1 && steward-dev brief --hook || true');
+});
+
+test('skills install: the plan says the plugin carries a read-only session-start briefing, and how to turn it off', () => {
+  const on = setup('hook-plan').run(['install'], { DRY_RUN: '1' });
+  assert.match(on.stdout, /hook: {5}a read-only session-start briefing \(`steward brief --hook`\)/);
+  assert.match(on.stdout, /`\[brief\] session = false` in steward\.toml turns it off/);
+  const off = setup('hook-plan-off', '[brief]\nsession = false\n').run(['install'], { DRY_RUN: '1' });
+  assert.match(off.stdout, /hook: {5}none \(`\[brief\] session = false` in steward\.toml\)/);
+});

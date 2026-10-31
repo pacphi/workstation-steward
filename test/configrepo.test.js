@@ -100,3 +100,14 @@ test('without a GitHub remote, steward config says config sync is off and how to
   git(loose, 'init', '-q'); git(loose, 'add', '.'); git(loose, 'commit', '-qm', 'init');
   assert.match(cr(loose).stdout, /repo: +no GitHub remote \(main, no upstream\)\n +config sync is off until it has one\n +→ gh repo create <you>\/steward-config --private --source .* --remote origin --push/);
 });
+
+test('configrepo: reading the state never rewrites the repo\'s index (no optional locks), so looking changes nothing', () => {
+  const f = fixture();
+  const index = path.join(f.inst, '.git', 'index');
+  const future = new Date(Date.now() + 60e3);
+  fs.utimesSync(path.join(f.inst, 'steward.toml'), future, future); // stat changed, content not: git status would refresh the index
+  const before = fs.statSync(index, { bigint: true }).mtimeNs;
+  assert.equal(cr(f.inst, '--banner').status, 0);
+  assert.match(cr(f.inst).stdout, /in step/);
+  assert.equal(fs.statSync(index, { bigint: true }).mtimeNs, before, '.git/index was rewritten');
+});
