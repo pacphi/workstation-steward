@@ -3,6 +3,18 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.10.1](https://github.com/pacphi/workstation-steward/compare/v0.10.0...v0.10.1) (2026-10-31)
+
+
+### Bug Fixes
+
+* the session hook says how it raised a step, and a mention nobody saw comes back ([#80](https://github.com/pacphi/workstation-steward/issues/80)) ([d9ece23](https://github.com/pacphi/workstation-steward/commit/d9ece23b4bc2914fe2c7e4e250c3c28363f2df5d))
+
+
+### Documentation
+
+* the film as the GitHub Pages site, with the pilot that comes aboard ([#77](https://github.com/pacphi/workstation-steward/issues/77)) ([df2f0aa](https://github.com/pacphi/workstation-steward/commit/df2f0aaa465ac8654ff7a38b1e5bfb700c6c320d))
+
 ## [0.10.0](https://github.com/pacphi/workstation-steward/compare/v0.9.0...v0.10.0) (2026-10-31)
 
 
