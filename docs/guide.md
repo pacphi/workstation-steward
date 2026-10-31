@@ -1,6 +1,6 @@
 # Start here
 
-![Revision 5](https://img.shields.io/badge/Revision-5-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 6](https://img.shields.io/badge/Revision-6-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 This guide is for you, after time away or new to the steward. It says why the repo exists, what it
 looks after, how to start, and what a normal week looks like. For how each part works, follow the links to the area
@@ -58,6 +58,9 @@ On a new machine, or the first time on this one:
 7. `steward review`: the combined list. From now on this is the weekly habit.
 8. `steward brief`: the answer to "what's next". It names one next step with its exact command, or says nothing
    needs you ([`briefing.md`](briefing.md)).
+9. Recommended: keep your config in a private GitHub repo with Renovate (a GitHub app) watching it
+   ([`config-repo.md`](config-repo.md)). Renovate proposes toolchain updates as pull requests after the gate, and its
+   Dependency Dashboard is where the review's "Waiting on the release-age gate" comes from.
 
 ## The routine
 

@@ -1,6 +1,6 @@
 # Keep your config in a private Git repo
 
-![Revision 5](https://img.shields.io/badge/Revision-5-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
+![Revision 6](https://img.shields.io/badge/Revision-6-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 Your config (the *instance*: `steward.toml`, your policy files, the registry of your projects and your mise toolchain)
 is the one part of the steward that's yours alone. Putting it in a private Git repo gives you four things:
@@ -54,6 +54,15 @@ Renovate then proposes each update as a pull request. Merge it on GitHub, then b
 > [!NOTE]
 > If you change the gate with `steward sc release-age <days>`, it updates `steward.toml`, mise's copy and this
 > `renovate.json` together; commit all three.
+
+Renovate also keeps one issue open in the repo, the **Dependency Dashboard**. It lists what Renovate holds back:
+"Pending Status Checks" are releases still inside the 3-day gate, and "Pending Approval" are AI tools that open a pull
+request only after they're qualified and you tick them. `steward review` reads it to show what's waiting and when each
+clears ("Waiting on the release-age gate"), and `steward brief` says when something has cleared.
+
+> [!WARNING]
+> Never tick a box under "Pending Status Checks". It opens the pull request at once, before the gate clears, and
+> nothing stops it from being merged early. Let the gate run; Renovate opens it on time.
 
 ## 3. Use it on another Mac
 
