@@ -106,7 +106,7 @@ The engine never holds your data, and your config never holds code. A release ch
 - **Who takes each step.** Every step is labelled with what kind of change it makes (its class) and who may take it:
   an agent, an agent after your yes, or only you. Your `[autonomy]` level in `steward.toml` (`ask`, `safe` or
   `maintainer`) decides what may run `--unattended`. The default, `safe`, lets a config pull, a reconcile, a prune
-  after the soak and a checkout fast-forward run; installs, upgrades and pushes always ask. *Built (D58).*
+  after the soak, a qualification, PR prep and a checkout fast-forward run; installs, upgrades and pushes always ask. *Built (D58).*
 - **Working the list.** `steward fix` shows the list as a plan; `--apply` runs what your level allows, asks for the
   rest and hands you what only you can do, stopping at the first failure. *Built (D59).*
 - **One yes for a job of several steps.** `steward upgrade`, `steward ai fix`, `steward projects apply` and

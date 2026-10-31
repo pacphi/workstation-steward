@@ -196,6 +196,21 @@ test('end to end: steward ai fix, one yes on stdin: each part runs --apply --una
   assert.doesNotMatch(one, /steward steward/);
 });
 
+test('the skills\' form: steward ai fix --unattended --yes-to ai-fix, no terminal, runs every part with that yes', () => {
+  // what skills/ai-tooling/SKILL.md tells an agent to run after the user's yes to the plan (level "ask": only the yes counts)
+  const env = copy('skill', 'ask');
+  const r = steward(['ai', 'fix', '--unattended', '--yes-to', 'ai-fix'], env);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  const backups = path.join(env.XDG_STATE_HOME, 'workstation-steward', 'backups');
+  const dir = fs.readdirSync(backups).find(d => d.startsWith('coarse-ai-fix-'));
+  const rec = JSON.parse(fs.readFileSync(path.join(backups, dir, 'receipt.json'), 'utf8'));
+  assert.deepEqual([rec.complete, rec.outcome, rec.parts, rec.yes_to, rec.unattended], [true, 'done', 5, ['ai-fix'], true]);
+  assert.deepEqual(rec.steps.map(x => x.outcome), ['done', 'done', 'done', 'done', 'done']);
+  // without the yes, the same level refuses before any part runs
+  const no = steward(['ai', 'fix', '--unattended'], copy('skill-no', 'ask'));
+  assert.equal(no.status, 4, no.stderr);
+});
+
 test('briefing: a bundled run left unfinished names its command and what it finished; a live one is left alone', () => {
   const B = require('../lib/brief.js');
   const det = B.DETECTORS.find(d => d.id === 'receipt-unfinished');
