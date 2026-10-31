@@ -34,8 +34,8 @@ jobs:
           persist-credentials: false
       - name: Refuse a page that still waits for its release time
         run: |
-          if grep -q '__RELEASE_PUBLISHED__' docs/explainer.html; then
-            echo "docs/explainer.html still has __RELEASE_PUBLISHED__: fill in the release's npm publish time first" >&2
+          if grep -q '__RELEASE_PUBLISHED_' docs/explainer.html; then
+            echo "docs/explainer.html still has a __RELEASE_PUBLISHED_*__ placeholder: fill in the release's npm publish time first" >&2
             exit 1
           fi
       - name: Stage the site (docs/explainer.html -> index.html)

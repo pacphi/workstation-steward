@@ -131,7 +131,8 @@ it never changes what users install.
   `gh-pages` branch. A merged edit stays off the site until someone runs it.
 - **Once per repo:** Settings → Pages → Source: **GitHub Actions**. Nothing else on that screen: no branch, no folder.
 - **The page names a release.** Its version and publish time describe what is on npm. After a release, update both
-  (the publish time replaces `__RELEASE_PUBLISHED__`; the workflow refuses to deploy while it is still there), check the
+  (npm's publish time replaces `__RELEASE_PUBLISHED_ISO__` as a timestamp and `__RELEASE_PUBLISHED_DATE__` as a date; the
+  workflow refuses to deploy while either is still there), check the
   commands it names still exist (`test/explainer.test.js`), then run the workflow.
 - **Check it before publishing:** open it locally at desktop and phone widths, and click through Act IV's session.
 

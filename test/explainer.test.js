@@ -40,7 +40,7 @@ test('explainer: the release it names is not newer than this engine, and its pub
   const named = [...PAGE.matchAll(/release (\d+\.\d+\.\d+)/g)].map(m => m[1]);
   assert.ok(named.length, 'the page names its release');
   for (const v of named) assert.ok(cmp(v, engine) <= 0, `the page names ${v}, newer than the engine (${engine})`);
-  assert.doesNotMatch(PAGE, /__RELEASE_PUBLISHED__/, 'fill in the release\'s npm publish time (docs/maintainers.md, The explainer site)');
+  assert.doesNotMatch(PAGE, /__RELEASE_PUBLISHED_(ISO|DATE)__/, 'fill in the release\'s npm publish time (docs/maintainers.md, The explainer site)');
 });
 
 test('pages workflow: on demand only, and every action pinned by commit', () => {

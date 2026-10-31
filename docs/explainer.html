@@ -348,6 +348,13 @@ pre.toml i{color:var(--mist);font-style:normal}
 .receipt .rstamp.ok{bottom:14px;right:18px}
 .receipt.rolled .rstamp.ok{opacity:0}
 
+/* Act III: five rule cards in one row on a wide screen; a stamp is as wide as its word, never stretched */
+@media (min-width:1100px){.rules{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.ship .stamp{justify-self:end;width:max-content}
+/* the gate's "your call" items carry class ask, which Act IX's .ask grid also styles: keep them out of it */
+.ship .stamp.ask{display:block;margin-top:0;grid-template-columns:none}
+.ship .ship-svg.ask{display:block;margin-top:0}
+
 /* ---- Act IX: the eight ---- */
 .eight{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
 .eight li{display:grid;grid-template-columns:minmax(150px,auto) minmax(0,1fr);gap:12px;font-size:14.5px;color:var(--fog);align-items:baseline;border-top:1px dashed var(--line);padding-top:6px}
@@ -591,7 +598,7 @@ pre.block{margin:10px 0 0;background:#04131A;border:1px solid var(--line);border
       <p class="eyebrow">A film in nine acts · release 0.10.0</p>
       <h1>Workstation Steward</h1>
       <p class="dek">A harbormaster for everything that lands on your machine, and a pilot when you need one.</p>
-      <p class="sub">Your Mac runs hundreds of tools from many sources, and each one updates on its own schedule. The steward is the one place that decides what is allowed in, and when. Open Claude Code and it tells you, once, what needs you; answer in plain words. Nothing changes without your word, and every change can be undone.</p>
+      <p class="sub">Your Mac runs hundreds of tools from many sources, and each one updates on its own schedule. The steward is the one place that decides what is allowed in, and when. With its skills installed, open Claude Code and it tells you, once, what needs you; answer in plain words. Nothing changes without your word, and every change can be undone.</p>
       <div class="hero-actions">
         <a class="btn primary" href="#act-1">Start the film</a>
         <a class="btn" href="#act-9">Skip to the install</a>
@@ -765,7 +772,7 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
           <div class="cc-body" id="cc-body" tabindex="0" aria-live="polite" aria-label="A Claude Code session. Your answers are the buttons below it."></div>
           <div class="cc-choices" id="cc-choices" role="group" aria-label="Your answer"></div>
         </div>
-        <p class="caption">Retold from recorded sessions (<code>docs/assets/steward-skills-updates.svg</code> and <code>steward-upgrade.svg</code>), with the line a command has printed since 0.10.0 when it answers with your yes. Paths are shortened with <code>~</code>, the way the steward prints them.</p>
+        <p class="caption">Retold from recorded sessions (<code>docs/assets/steward-skills-updates.svg</code> and <code>steward-upgrade.svg</code>), with the line a command has printed since 0.10.0 when it answers with your yes. <q>Do you want to proceed?</q> is Claude Code's own prompt: the skill runs only read-only commands without asking. Paths are shortened with <code>~</code>, the way the steward prints them.</p>
       </div>
       <div class="side">
         <div class="panel loop" id="loop">
@@ -832,7 +839,7 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
 <span class="dim">next:</span> <span class="ans">steward upgrade</span>
 <span class="dim">+1 more: steward brief --all</span>
 
-<span class="dim"># … steward upgrade shows the part left, asks once, runs it</span>
+<span class="dim"># (here you run steward upgrade: it shows the part left, asks once, runs it)</span>
 
 <span class="c">steward</span>
 <span class="grn">steward</span> nothing needs you</pre>
@@ -1170,7 +1177,7 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
     <li><a href="https://github.com/pacphi/workstation-steward/blob/main/docs/briefing.md" rel="noopener">docs/briefing.md</a>: the one next step, the session-start hook, who takes each step, standing orders (<code>[autonomy]</code>), <code>steward fix</code>.</li>
     <li><a href="https://github.com/pacphi/workstation-steward/blob/main/skills/README.md" rel="noopener">skills/README.md</a>: the Claude Code skills, what to ask, and the recorded sessions the pilot retells.</li>
     <li><a href="https://github.com/pacphi/workstation-steward/tree/main/docs/assets" rel="noopener">docs/assets</a>: the recorded sessions the terminals retell (the skills session, upgrade and rollback, projects, review, the briefing).</li>
-    <li><a href="https://registry.npmjs.org/workstation-steward" rel="noopener">npm registry</a>: 0.10.0 is the release this page describes, published __RELEASE_PUBLISHED__ UTC.</li>
+    <li><a href="https://registry.npmjs.org/workstation-steward" rel="noopener">npm registry</a>: 0.10.0 is the release this page describes, published __RELEASE_PUBLISHED_DATE__ UTC.</li>
     <li>LiteLLM, 21 October 2026: <a href="https://smartscope.blog/en/blog/litellm-1-107-0-malware-incident-verification-commands-2026/" rel="noopener">SmartScope</a>, <a href="https://ai-tldr.dev/releases/litellm-1-107-0-pypi-compromise/" rel="noopener">ai-tldr</a>, <a href="https://techjacksolutions.com/scc-vendor-rollup/litellm-berriai-vulnerability-rollup-2026-10-22/" rel="noopener">TechJack</a>. Third-party write-ups; check the vendor's advisory before acting on timings.</li>
     <li><a href="https://www.etymonline.com/word/quarantine" rel="noopener">Etymonline</a>: quarantine, from the Venetian <em>quaranta giorni</em>.</li>
     <li><a href="https://en.wikipedia.org/wiki/International_Code_of_Signals" rel="noopener">International Code of Signals</a>: the Q flag requests free pratique, permission to enter port. Channel 16 is the marine VHF calling and distress channel, 156.800 MHz. <a href="https://en.wikipedia.org/wiki/Maritime_pilot" rel="noopener">Maritime pilot</a>: a local mariner who boards to guide a ship through dangerous or congested waters; the master keeps command.</li>
@@ -1314,7 +1321,7 @@ hero.addEventListener('pointermove',e=>{
 /* ---------- Act III: the gate ---------- */
 (function gate(){
   const root=$('#gate'); if(!root) return;
-  const selfAge=Math.max(0,Math.floor((Date.now()-Date.parse('__RELEASE_PUBLISHED__'))/864e5));
+  const selfAge=Math.max(0,Math.floor((Date.now()-Date.parse('__RELEASE_PUBLISHED_ISO__'))/864e5));
   const R=[
     {id:'gh',name:'gh',ver:'2.103.1 → 2.103.2',age:3,kind:'tool',via:'mise'},
     {id:'cf',name:'cloudflared',ver:'2026.10.3 → 2026.10.5',age:3,kind:'tool',via:'brew'},
@@ -1472,10 +1479,10 @@ function makeTerm(body, buttons){
     await typed(g,'yes, upgrade gh','you');
     stage('yes');
     await say(g,'Bash(steward sc upgrade --unattended --yes-to upgrade)','dot',380);
-    await say(g,'Claude Code asks you first, since the skill may run only read-only commands on its own:','res',300);
-    offer([['Yes, run it',async()=>{
+    await say(g,'Do you want to proceed?','q',300);
+    offer([['1. Yes',async()=>{
       const g2=gen;
-      await say(g2,'❯ Yes','q',80);
+      await say(g2,'❯ 1. Yes','q',80);
       await say(g2,'unattended: yes to "Apply this plan?" (your yes to upgrade for this run (--yes-to))','res',380);
       stage('backup');
       await say(g2,'==> config backup: ~/.config/mise/backups/config.toml.20261028-112629','res',420);
