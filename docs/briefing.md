@@ -1,6 +1,6 @@
 # The briefing: `steward brief`
 
-![Revision 2](https://img.shields.io/badge/Revision-2-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 3](https://img.shields.io/badge/Revision-3-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
 
 **One question, answered in under a second: what needs me, and what do I run next?** `steward brief` reads what is
 already on your disk and names **one** next step, with its exact command. When nothing needs you, it says so in one
@@ -177,9 +177,58 @@ fetch = true        # the default; false skips the git fetch of your config repo
 that covers it, `why`, and a `rollback` when there is one. Text taken from receipts and paths is cleaned before it is
 shown: no control characters or escape codes, your home folder as `~`, and at most 200 characters.
 
-For Claude Code, the engine can also wrap the data in a `<steward-brief v="1">…</steward-brief>` block, with three
+For Claude Code, the engine also wraps the data in a `<steward-brief v="1">…</steward-brief>` block, with three
 short rules: offer the finding's skill, show its command exactly, and never run a command with `writes: true` without
-your yes. Nothing hands that block to Claude yet.
+your yes. [The session-start hook](#in-claude-code-the-session-start-hook) hands that block to Claude.
+
+## In Claude Code: the session-start hook
+
+**A new Claude Code session starts knowing what needs you.** The `steward` plugin
+([skills](../skills/README.md#install)) carries one hook. When a session starts, Claude Code runs
+`steward brief --hook`. When something needs you, Claude gets the `<steward-brief>` block, so "what's next?" has an
+answer at once, and you hear about it once: a broken or half-finished state shows as a notice when the session opens,
+and a routine step (a sync, a review due) comes as one line at the end of Claude's first reply. When nothing needs
+you, the hook prints nothing.
+
+| How the session started | What the hook does |
+| --- | --- |
+| A new session, or `/clear`, and nothing needs you | Nothing. Waits alone don't count |
+| A new session, or `/clear`, and something needs you | Gives Claude the block **if** what needs you changed since it last showed, or `quiet_hours` have passed. A broken or half-finished state (next is `fix`) also shows you the briefing as a notice (at most three lines); for a routine step, Claude adds one line starting "Steward:" at the end of its first reply. Otherwise you see nothing, and Claude gets one line: what's next, and that you've heard |
+| After a compaction (`/compact`, or automatic) | Gives Claude the block again, since the compaction dropped it. You see nothing |
+| Resumed (`--resume`, `--continue`) or forked | Nothing: the hook isn't run. The session already has its context |
+
+**When it shows again.** The hook keeps a stamp, `<state>/brief/shown.json`: when it last showed, and a fingerprint
+of what needed you (each finding's `id` and `key`, which change only when what they point at changes). A new
+finding, or one gone, changes the fingerprint, so the next session shows the briefing at once. The same work still
+waiting shows again only after `quiet_hours`. The stamp is the one file the hook writes, by a temporary file and a
+rename, readable only by you (mode 0600).
+
+**What it never does.** It uses no network itself and fixes nothing. Like `steward brief`, it may start the
+[background refresh](#the-background-refresh) after a new session or `/clear`, and doesn't wait for it. It always
+exits 0. If it hasn't answered in 1.5 seconds, it prints nothing and the session goes on (Claude Code's own limit
+for it is 5 seconds). If no `steward` is on your `PATH`, it does nothing.
+
+**What Claude is told.** The block is data, not instructions, and the rules with it say: offer the finding's skill,
+show its command exactly as written, and never run a command with `writes: true` without your yes. Each skill
+starts from the block's `next` when `next.skill` names it, and shows the plan (`DRY_RUN=1`) before any change. The
+block stays under Claude Code's limit of 10,000 characters: with many findings, it keeps `next` and the first few,
+and says how many it left out (`truncated`).
+
+**Settings**, in your `steward.toml`:
+
+```toml
+[brief]
+session = true      # the default; false leaves the hook out of the plugin
+quiet_hours = 12    # the default; 0 shows the briefing in every new session
+```
+
+`session = false` takes effect the next time Claude Code builds the plugin (each session runs `steward skills path`).
+The hook also checks it each time, so it stays quiet in the meantime.
+
+> [!NOTE]
+> The notice is the hook's `systemMessage`, which Claude Code's docs describe as a warning message shown to the user.
+> That's why only a broken or half-finished state uses it; a routine step reaches you through Claude instead, so the
+> notice never cries wolf. The stamp keeps either one from repeating.
 
 ## Adding a detector
 

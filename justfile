@@ -39,6 +39,7 @@ lint:
     node --check tools/publish-guard.js
     node --check tools/upstream-watch.js
     node --check tools/progress-gaps.js
+    node --check tools/try-hook.js
     node --check lib/platform.js
     node --check lib/providers/brew.js
     node --check lib/providers/mise.js
@@ -96,6 +97,12 @@ leak-check *folder:
 # in place, ahead of any installed release. After editing a skill, /reload-plugins in the session picks it up
 claude *args:
     claude --plugin-dir . {{args}}
+
+# What the steward plugin's session-start hook would hand Claude Code, from this checkout: startup, clear, compact and
+# resume, each with its JSON, what the user sees, what Claude is told and how long it took (docs/maintainers.md).
+# Read-only: no stamp, no background refresh. Uses examples/ unless given --real (your config and state, read only)
+try-hook *args:
+    node tools/try-hook.js {{args}}
 
 # Rebuild the README's animated terminals (docs/assets/*.svg) from their scripts in docs/assets/terminal/
 terminal-svg:

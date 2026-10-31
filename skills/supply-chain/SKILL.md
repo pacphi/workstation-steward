@@ -22,6 +22,10 @@ Run the supply-chain area of workstation-steward. The procedures are in the runb
 `${CLAUDE_SKILL_DIR}/runbook.md` ([`runbook.md`](runbook.md)). This skill says how to behave while following it; it
 doesn't restate it.
 
+If the session's context holds a `<steward-brief>` whose `next.skill` is this skill, start from its `next`; show the
+plan (`DRY_RUN=1`) before any write. A step that stopped midway is in the runbook's Finishing a half-done step
+(`runbook.md#finishing-a-half-done-step`).
+
 ## Where things are
 
 All commands are `steward sc …`; `steward sc` lists them. The user's policy lives in their config folder, which

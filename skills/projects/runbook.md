@@ -19,6 +19,7 @@ Procedures for the projects under the roots in `steward.toml` (`[projects] roots
 - [Confirm a seeded project](#confirm-a-seeded-project)
 - [A project disappears](#a-project-disappears)
 - [What may be written into a project](#what-may-be-written-into-a-project)
+- [Finishing a half-done step](#finishing-a-half-done-step)
 
 ## New projects appear
 
@@ -243,3 +244,16 @@ D6 in [`docs/architecture.md`](../../docs/architecture.md#projects-detection-and
 - **Tracked files** (`AGENTS.md`, `CLAUDE.md`, `renovate.json`, `.nvmrc`): changed through a pull request from a
   scratch clone, per the [fleet runbook](../../docs/fleet/runbook.md).
 - **No remote:** list the change as a manual step for the user.
+
+## Finishing a half-done step
+
+When the session's `<steward-brief>`, or `steward brief --all`, names one of these detectors, start here. Each row
+is a step that stopped midway or ran out of order, and the step that finishes it. Show the plan first (`DRY_RUN=1`, or
+the command's own plan), and ask before anything that writes. The briefing's checks are in
+[`docs/briefing.md`](../../docs/briefing.md#what-it-checks).
+
+| Detector | What happened | What finishes it |
+| --- | --- | --- |
+| `receipt-unfinished`, an onboard, reconcile or offboard | It stopped midway. The receipt lists each change it made | `steward projects <onboard, reconcile or offboard> --rollback <receipt>`: it undoes exactly those changes, and refuses if a file changed since. Then plan it again |
+| `projects-behind` | Onboarded projects are behind the qualified AI tools | `steward projects reconcile --all` ([Reconcile after a promotion](#reconcile-after-a-promotion)) |
+| `projects-new` | New projects under your roots, or registered ones gone (from the background refresh) | `steward projects scan`, then decide each ([New projects appear](#new-projects-appear)) |
