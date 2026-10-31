@@ -24,8 +24,8 @@ test('commands: the script behind every command exists', () => {
   }
 });
 
-test('help and version: lists every command; reports the engine, the instance and its format', () => {
-  const h = steward(['help']).stdout;
+test('help and version: help --all --internal lists every command; reports the engine, the instance and its format', () => {
+  const h = steward(['help', '--all', '--internal']).stdout;
   for (const c of COMMANDS) assert.ok(h.includes(`steward ${c.area ? `${c.area} ` : ''}${c.name}`), c.name);
   assert.match(h, /AI tooling.*\(off: steward\.toml \[profiles\] ai_tooling = false\)/);
   const v = steward(['version']).stdout;

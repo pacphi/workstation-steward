@@ -1,6 +1,6 @@
 # Lifecycle
 
-![Revision 16](https://img.shields.io/badge/Revision-16-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 17](https://img.shields.io/badge/Revision-17-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 How someone installs workstation-steward, sets it up, uses it, and keeps it, their config and their projects safe
 over release after release. It is the contract the code is built to: each part is marked **built** or **planned**.
@@ -14,6 +14,7 @@ The decisions behind it are D39 and D40 in [`architecture.md`](architecture.md#d
 - [Install and set up](#install-and-set-up)
 - [Upgrade the steward](#upgrade-the-steward)
 - [Your config across releases](#your-config-across-releases)
+- [Command names across releases](#command-names-across-releases)
 - [Shared safety data](#shared-safety-data)
 - [Onboarded projects across releases](#onboarded-projects-across-releases)
 - [Adding tools](#adding-tools)
@@ -115,6 +116,17 @@ The engine never holds your data, and your config never holds code. A release ch
   shared defaults, reading a `host.toml` trimmed to rely on them, would check no IOCs at all and still report none
   found. From R3b on, the engine refuses an area command on a format it doesn't read. (R3b itself didn't bump: no
   engine before it was ever released.)
+
+## Command names across releases
+
+- **Old names keep working.** When a command is renamed or folded into another, its old name stays in
+  `lib/commands.js` as an alias. It runs the new form and prints one line on stderr with the new name, so `--json`
+  output stays clean: `steward sc status` now runs `steward sc plan`. *Built (D60).*
+- **Removing an old name is a breaking change.** It could only happen in a major release, named in its notes. None is
+  planned.
+- **A receipt's way back keeps working.** A command a receipt names for undoing its change keeps running as written.
+- **`steward help` shows the everyday commands first:** eight of them, each with when to use it, then one line
+  pointing to `steward help --all`, which lists the rest by area. *Built (D60).*
 
 ## Shared safety data
 

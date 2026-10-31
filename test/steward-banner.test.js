@@ -39,5 +39,5 @@ test('bare steward: a briefing that can\'t be read still shows the help', () => 
   const r = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js')], {
     encoding: 'utf8', env: { ...process.env, STEWARD_INSTANCE: inst, STEWARD_NO_REFRESH: '1', NO_COLOR: '1' } });
   assert.equal(r.status, 0);
-  assert.match(r.stdout, /Usage: steward <area> <command>/);
+  assert.match(r.stdout, /Usage: steward <command>/);
 });

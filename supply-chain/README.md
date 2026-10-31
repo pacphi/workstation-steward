@@ -47,9 +47,9 @@ Procedures: [`../skills/supply-chain/runbook.md`](../skills/supply-chain/runbook
 ```sh
 steward sc audit                              # read-only: Homebrew, apps, App Store, macOS, trust stores, Docker, IOCs
 steward sc audit --verbose                    # the same, with the lines each check folds away on a terminal
-steward sc status                             # read-only: outdated tools, Node security status, hybrids, vendored Node
 steward sc verify                             # read-only: every CLI, native addons, npm doctor
-steward sc plan                               # read-only: what `upgrade` would take, and what's held and why
+steward sc plan                               # read-only: what `upgrade` would take, what's held and why, then Node
+                                              # security releases, hybrids, vendored Node (it took over sc status)
 steward sc upgrade                            # apply the plan (asks first); verify once at the end; exit 1 if a step failed
 steward sc upgrade-tool npm:typescript        # one tool: newest version older than 3 days; verify; lock
 steward sc upgrade-tool npm 12.3.0            # one tool, exact pin (e.g. a security fix)

@@ -327,12 +327,12 @@ with the line printed just before it:
 ```sh
 just progress-gaps                                   # this checkout, examples/: the read-only defaults
 just progress-gaps --real                            # the same against your config: the measure that counts
-just progress-gaps --real -- steward sc status       # one command
+just progress-gaps --real -- steward sc plan         # one command
 just progress-gaps --real --file my-commands.txt     # a list, one command per line
 ```
 
 It runs read-only. A command that can change things (`writes` in `lib/commands.js`) runs only as `DRY_RUN=1 steward …`,
-and `--apply` is refused. The default list covers `ai drift` (online and offline), `sc verify`, `sc status`,
+and `--apply` is refused. The default list covers `ai drift` (online and offline), `sc verify`,
 `sc audit`, `sc plan` and `DRY_RUN=1 sc install-hybrids`. It flags a stretch over 2 s, because the terminal view
 (`lib/ui.js`, D44) draws a step's live line only once the step has run 1 s, so a fast step never flickers.
 

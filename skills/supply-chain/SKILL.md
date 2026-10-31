@@ -9,7 +9,7 @@ description: >
   "audit the machine", "what would an upgrade take", "apply the upgrades", "a Node security release is out",
   "handle this Renovate PR", "is this advisory a problem here", or "roll back the last upgrade".
 argument-hint: "[audit | plan | status | verify] [flags]"
-allowed-tools: Bash(steward sc audit) Bash(steward sc audit *) Bash(steward sc plan) Bash(steward sc plan *) Bash(steward sc status) Bash(steward sc verify) Bash(steward config) Bash(steward config *)
+allowed-tools: Bash(steward sc audit) Bash(steward sc audit *) Bash(steward sc plan) Bash(steward sc plan *) Bash(steward sc verify) Bash(steward config) Bash(steward config *)
 metadata:
   author: pacphi
   version: "2.0"

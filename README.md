@@ -144,8 +144,8 @@ commands, explains what they found, and asks before it changes anything
 ([what you can ask](skills/README.md#things-you-can-ask)).
 
 > [!TIP]
-> `steward` on its own lists every command and tells you when something needs you: new projects, a soak ending, a
-> review due.
+> `steward` on its own says what needs you (the one next step, or that nothing does), then the eight everyday
+> commands. `steward help --all` lists the rest by area, each marked read-only or writes.
 
 ### Ways to install, and to upgrade
 

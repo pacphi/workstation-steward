@@ -1,6 +1,6 @@
 # Start here
 
-![Revision 7](https://img.shields.io/badge/Revision-7-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 8](https://img.shields.io/badge/Revision-8-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 This guide is for you, after time away or new to the steward. It says why the repo exists, what it
 looks after, how to start, and what a normal week looks like. For how each part works, follow the links to the area
@@ -95,7 +95,7 @@ PRs and security alerts across the repos.
 | Bot PRs pile up in a repo | the `pr-consolidation` skill ([fleet runbook](fleet/runbook.md)) |
 | A command stopped midway, or steps ran out of order | `steward brief`: it names the step that finishes the job, or the receipt's way back |
 
-**Monthly:** `steward sc plan`, then `steward sc upgrade` for everything past the gate. Then `steward ai drift` for AI tool
+**Monthly:** `steward sc plan`, then `steward upgrade` for everything past the gate. Then `steward ai drift` for AI tool
 releases waiting to be qualified, and `steward projects list` to recheck project decisions.
 
 ## Words you'll see
