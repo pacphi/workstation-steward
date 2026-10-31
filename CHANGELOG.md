@@ -3,6 +3,28 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.10.0](https://github.com/pacphi/workstation-steward/compare/v0.9.0...v0.10.0) (2026-10-31)
+
+
+### Features
+
+* a smaller command surface: tiers, groups, old names, and an eight-command help (D60) ([#72](https://github.com/pacphi/workstation-steward/issues/72)) ([7cbb381](https://github.com/pacphi/workstation-steward/commit/7cbb38122e44d991d6a7e35dcf022c2de8e371a4))
+* bare steward shows the briefing: one process, the one next step, about 8x faster ([#69](https://github.com/pacphi/workstation-steward/issues/69)) ([eb5f50f](https://github.com/pacphi/workstation-steward/commit/eb5f50fc9d14a39fc099cae04c443a201b2356c8))
+* bundled commands: ai fix, fleet tidy, projects apply and upgrade, one yes for all (D61) ([#73](https://github.com/pacphi/workstation-steward/issues/73)) ([74b2a9f](https://github.com/pacphi/workstation-steward/commit/74b2a9f10189c03cad1f0ef9bcbc03f220bd3cdb))
+* steward brief names the one next step, read from disk without the network ([#62](https://github.com/pacphi/workstation-steward/issues/62)) ([ac8862c](https://github.com/pacphi/workstation-steward/commit/ac8862c3a6c20fad33d5c0fc01dd0495bde86c8a))
+* steward brief refreshes its view in the background, read-only; nothing changes on its own (D57) ([#65](https://github.com/pacphi/workstation-steward/issues/65)) ([1ed2378](https://github.com/pacphi/workstation-steward/commit/1ed2378ac274eb51ce13737c6fc8760b1258a3cd))
+* steward fix works the list, and the fix skill drives it (D59) ([#71](https://github.com/pacphi/workstation-steward/issues/71)) ([62f2c20](https://github.com/pacphi/workstation-steward/commit/62f2c20dc9669f7c6ec9ce4fb0ad48061987a37e))
+* the engine labels who takes each step; [autonomy] and --unattended (D58) ([#70](https://github.com/pacphi/workstation-steward/issues/70)) ([d538fb0](https://github.com/pacphi/workstation-steward/commit/d538fb0ebad27c97733b2a5e9533fb6c1ed3b619))
+* the steward plugin's session-start hook hands Claude the briefing, once, then quiet (D48) ([#67](https://github.com/pacphi/workstation-steward/issues/67)) ([52869fc](https://github.com/pacphi/workstation-steward/commit/52869fcbe5812330c2048bc5fe470ac8f44b761c))
+
+
+### Bug Fixes
+
+* docs match the shipped command surface; help and briefing wording ([#75](https://github.com/pacphi/workstation-steward/issues/75)) ([a0796c9](https://github.com/pacphi/workstation-steward/commit/a0796c95c6f44f72b79f75323de745b02ae5561d))
+* progress everywhere, so no command looks hung ([#66](https://github.com/pacphi/workstation-steward/issues/66)) ([56f4619](https://github.com/pacphi/workstation-steward/commit/56f461981c62737b400b7b1561fd5f60f567052f))
+* promote.sh refuses what a stopped run left behind, and runs with no AQE stores ([#63](https://github.com/pacphi/workstation-steward/issues/63)) ([d40c229](https://github.com/pacphi/workstation-steward/commit/d40c229abaa6381dc51df80d16d14bfa84902356))
+* three writers get the plan, yes, backup, receipt and way back every writer has (D62) ([#74](https://github.com/pacphi/workstation-steward/issues/74)) ([d717968](https://github.com/pacphi/workstation-steward/commit/d717968baeb4ea27965b4027138e13e843a6a104))
+
 ## [0.9.0](https://github.com/pacphi/workstation-steward/compare/v0.8.1...v0.9.0) (2026-10-30)
 
 
