@@ -64,9 +64,11 @@ dfn{font-style:normal;color:var(--chalk);border-bottom:2px solid var(--lamp-deep
 .progress{position:fixed;top:0;left:0;right:0;padding-top:env(safe-area-inset-top,0px);z-index:60;pointer-events:none}
 .progress span{display:block;height:3px;background:linear-gradient(90deg,var(--lamp-deep),var(--lamp));transform-origin:left;transform:scaleX(0);box-shadow:0 0 12px var(--lamp-glow)}
 .rail{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);z-index:50}
-.rail ol{list-style:none;margin:0;padding:0 10px 0 0;display:flex;flex-direction:column;gap:13px;border-right:2px solid var(--line)}
+.rail ol{list-style:none;margin:0;padding:0 12px 0 0;display:flex;flex-direction:column;gap:12px;border-right:2px solid var(--line)}
 .rail a{display:flex;align-items:center;justify-content:flex-end;gap:9px;text-decoration:none;color:var(--mist);font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
-.rail a span{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line-2);background:var(--sea);font-weight:600}
+/* each chapter numeral sits in a pill wide enough for VIII (all ten the same width), centered both ways; letter-spacing adds a gap after the
+   last letter, so the left padding gets the same to keep the numeral centered */
+.rail a span{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:52px;height:24px;padding:0 8px 0 calc(8px + .1em);border-radius:999px;border:1.5px solid var(--line-2);background:var(--sea);font-weight:600;line-height:1}
 .rail a em{font-style:normal;opacity:0;transform:translateX(6px);transition:opacity .25s,transform .25s;white-space:nowrap}
 .rail a:hover em,.rail a:focus-visible em{opacity:1;transform:none}
 .rail a.on{color:var(--lamp)}
@@ -595,7 +597,7 @@ pre.block{margin:10px 0 0;background:#04131A;border:1px solid var(--line);border
   <div id="lantern" aria-hidden="true"></div>
   <div class="wrap">
     <div class="hero-copy">
-      <p class="eyebrow">A film in nine acts · release 0.10.0</p>
+      <p class="eyebrow">A film in nine acts · release 0.10.1</p>
       <h1>Workstation Steward</h1>
       <p class="dek">A harbormaster for everything that lands on your machine, and a pilot when you need one.</p>
       <p class="sub">Your Mac runs hundreds of tools from many sources, and each one updates on its own schedule. The steward is the one place that decides what is allowed in, and when. With its skills installed, open Claude Code and it tells you, once, what needs you; answer in plain words. Nothing changes without your word, and every change can be undone.</p>
@@ -743,7 +745,7 @@ pre.block{margin:10px 0 0;background:#04131A;border:1px solid var(--line);border
           <pre class="toml" aria-label="The policy line this control edits"><i># steward.toml</i>
 [policy]
 min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</i></pre>
-          <p class="note">The ages are real ones from recorded sessions. The steward's own release 0.10.0 shows its true age as you read this, because installed through mise it waits out the same gate as every other tool.</p>
+          <p class="note">The ages are real ones from recorded sessions. The steward's own release 0.10.1 shows its true age as you read this, because installed through mise it waits out the same gate as every other tool.</p>
         </div>
       </div>
     <ul class="rules">
@@ -772,7 +774,7 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
           <div class="cc-body" id="cc-body" tabindex="0" aria-live="polite" aria-label="A Claude Code session. Your answers are the buttons below it."></div>
           <div class="cc-choices" id="cc-choices" role="group" aria-label="Your answer"></div>
         </div>
-        <p class="caption">Retold from recorded sessions (<code>docs/assets/steward-skills-updates.svg</code> and <code>steward-upgrade.svg</code>), with the line a command has printed since 0.10.0 when it answers with your yes. <q>Do you want to proceed?</q> is Claude Code's own prompt: the skill runs only read-only commands without asking. Paths are shortened with <code>~</code>, the way the steward prints them.</p>
+        <p class="caption">Retold from recorded sessions (<code>docs/assets/steward-skills-updates.svg</code> and <code>steward-upgrade.svg</code>), with the line a command has printed since 0.10.1 when it answers with your yes. <q>Do you want to proceed?</q> is Claude Code's own prompt: the skill runs only read-only commands without asking. Paths are shortened with <code>~</code>, the way the steward prints them.</p>
       </div>
       <div class="side">
         <div class="panel loop" id="loop">
@@ -829,7 +831,7 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
     <div class="firstword">
       <div class="prose rv">
         <h3>No Claude open? Type <code>steward</code></h3>
-        <p>On its own, <code>steward</code> reads what is already on your disk and names <strong>the one next step</strong>, with its exact command, or says nothing needs you. A step that stopped midway comes first, in red, with the step that finishes it. In Claude Code the same answer arrives as the pilot's first word: one <q>Steward:</q> line at the end of its first reply, once, then quiet. A broken or half-finished state shows as a notice instead.</p>
+        <p>On its own, <code>steward</code> reads what is already on your disk and names <strong>the one next step</strong>, with its exact command, or says nothing needs you. A step that stopped midway comes first, in red, with the step that finishes it. In Claude Code the same answer arrives as the pilot's first word: one <q>Steward:</q> line at the end of its first reply, then quiet; if you left that session before Claude replied, the next one brings it back. A broken or half-finished state shows as a notice instead.</p>
         <p><code>steward fix</code> works the whole list the way the pilot does: it runs what your standing orders allow, asks you for the rest, and hands you what is yours.</p>
       </div>
       <div class="mini rv" data-d="1" role="img" aria-label="A terminal: steward names an upgrade that stopped after one of its two parts, and the one next step, steward upgrade. Once it has finished, steward says nothing needs you.">
@@ -1019,7 +1021,7 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
           <text x="0" y="206">macOS</text>
           <text class="sm" x="0" y="226">Homebrew · mise · App Store</text>
           <text class="sm" x="0" y="244">apps · trust stores · Docker</text>
-          <text class="sm" x="0" y="266" style="fill:#3FD48E">shipping now · 0.10.0</text>
+          <text class="sm" x="0" y="266" style="fill:#3FD48E">shipping now · 0.10.1</text>
         </g>
         <g class="lh planned" transform="translate(560 0)">
           <polygon class="tower" points="-10,168 10,168 7,124 -7,124"/><rect class="tower" x="-10" y="114" width="20" height="10" rx="2"/>
@@ -1087,10 +1089,10 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
         <ol class="steps">
           <li class="rv"><div>
             <h3>Install through mise</h3>
-            <div class="cmd"><code>mise use -g npm:workstation-steward@0.10.0</code><button class="copy" data-copy="mise use -g npm:workstation-steward@0.10.0">Copy</button></div>
-            <p>mise then keeps the steward current under the same release-age gate as your other tools. Needs Node 26 or later. 0.10.0 was the current release when this page was made. Plain <code>npm install -g</code> works too, and <code>npx workstation-steward@0.10.0 version</code> lets you look without installing.</p>
+            <div class="cmd"><code>mise use -g npm:workstation-steward@0.10.1</code><button class="copy" data-copy="mise use -g npm:workstation-steward@0.10.1">Copy</button></div>
+            <p>mise then keeps the steward current under the same release-age gate as your other tools. Needs Node 26 or later. 0.10.1 was the current release when this page was made. Plain <code>npm install -g</code> works too, and <code>npx workstation-steward@0.10.1 version</code> lets you look without installing.</p>
             <p class="note">Until 27 November 2026, mise asks for an approval because the package is less than 30 days old. Use this form instead:</p>
-            <div class="cmd"><code>mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.10.0'</code><button class="copy" data-copy="mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.10.0'">Copy</button></div>
+            <div class="cmd"><code>mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.10.1'</code><button class="copy" data-copy="mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.10.1'">Copy</button></div>
           </div></li>
           <li class="rv"><div>
             <h3>Check it</h3>
@@ -1147,7 +1149,7 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
           <summary>Check that a release is genuine</summary>
           <div class="in">
             <p>Every release carries a provenance record. It should name this repository and its release workflow. On npmjs.com a version that has one shows a green check; from a terminal, with <code>jq</code>:</p>
-<pre class="block">curl -s https://registry.npmjs.org/-/npm/v1/attestations/workstation-steward@0.10.0 |
+<pre class="block">curl -s https://registry.npmjs.org/-/npm/v1/attestations/workstation-steward@0.10.1 |
   jq -r '.attestations[] | select(.predicateType | test("slsa"))
          | .bundle.dsseEnvelope.payload | @base64d | fromjson
          | .predicate.buildDefinition.externalParameters.workflow | "\(.repository) \(.path)"'
@@ -1168,7 +1170,7 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
 
 <footer class="credits"><div class="wrap">
   <h2>Credits</h2>
-  <p>Made from the steward's own docs and recorded sessions, October 2026, for release 0.10.0. Where a number appears, it came from one of these.</p>
+  <p>Made from the steward's own docs and recorded sessions, October 2026, for release 0.10.1. Where a number appears, it came from one of these.</p>
   <ol>
     <li><a href="https://github.com/pacphi/workstation-steward#readme" rel="noopener">workstation-steward README</a>: why it is different, install, the skills, provenance.</li>
     <li><a href="https://github.com/pacphi/workstation-steward/blob/main/docs/guide.md" rel="noopener">docs/guide.md</a>: why it exists, the four October 2026 events, the rules it lives by.</li>
@@ -1177,7 +1179,7 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
     <li><a href="https://github.com/pacphi/workstation-steward/blob/main/docs/briefing.md" rel="noopener">docs/briefing.md</a>: the one next step, the session-start hook, who takes each step, standing orders (<code>[autonomy]</code>), <code>steward fix</code>.</li>
     <li><a href="https://github.com/pacphi/workstation-steward/blob/main/skills/README.md" rel="noopener">skills/README.md</a>: the Claude Code skills, what to ask, and the recorded sessions the pilot retells.</li>
     <li><a href="https://github.com/pacphi/workstation-steward/tree/main/docs/assets" rel="noopener">docs/assets</a>: the recorded sessions the terminals retell (the skills session, upgrade and rollback, projects, review, the briefing).</li>
-    <li><a href="https://registry.npmjs.org/workstation-steward" rel="noopener">npm registry</a>: 0.10.0 is the release this page describes, published 2026-10-31 UTC.</li>
+    <li><a href="https://registry.npmjs.org/workstation-steward" rel="noopener">npm registry</a>: 0.10.1 is the release this page describes, published 2026-10-31 UTC.</li>
     <li>LiteLLM, 21 October 2026: <a href="https://smartscope.blog/en/blog/litellm-1-107-0-malware-incident-verification-commands-2026/" rel="noopener">SmartScope</a>, <a href="https://ai-tldr.dev/releases/litellm-1-107-0-pypi-compromise/" rel="noopener">ai-tldr</a>, <a href="https://techjacksolutions.com/scc-vendor-rollup/litellm-berriai-vulnerability-rollup-2026-10-22/" rel="noopener">TechJack</a>. Third-party write-ups; check the vendor's advisory before acting on timings.</li>
     <li><a href="https://www.etymonline.com/word/quarantine" rel="noopener">Etymonline</a>: quarantine, from the Venetian <em>quaranta giorni</em>.</li>
     <li><a href="https://en.wikipedia.org/wiki/International_Code_of_Signals" rel="noopener">International Code of Signals</a>: the Q flag requests free pratique, permission to enter port. Channel 16 is the marine VHF calling and distress channel, 156.800 MHz. <a href="https://en.wikipedia.org/wiki/Maritime_pilot" rel="noopener">Maritime pilot</a>: a local mariner who boards to guide a ship through dangerous or congested waters; the master keeps command.</li>
@@ -1321,7 +1323,7 @@ hero.addEventListener('pointermove',e=>{
 /* ---------- Act III: the gate ---------- */
 (function gate(){
   const root=$('#gate'); if(!root) return;
-  const selfAge=Math.max(0,Math.floor((Date.now()-Date.parse('2026-10-31T19:42:45Z'))/864e5));
+  const selfAge=Math.max(0,Math.floor((Date.now()-Date.parse('2026-10-31T23:00:17Z'))/864e5));
   const R=[
     {id:'gh',name:'gh',ver:'2.103.1 → 2.103.2',age:3,kind:'tool',via:'mise'},
     {id:'cf',name:'cloudflared',ver:'2026.10.3 → 2026.10.5',age:3,kind:'tool',via:'brew'},
@@ -1329,7 +1331,7 @@ hero.addEventListener('pointermove',e=>{
     {id:'node',name:'node',ver:'security fix · advisory',age:0,kind:'advisory',via:'mise'},
     {id:'ff',name:'firefox',ver:'new release · browser',age:0,kind:'browser',via:'cask'},
     {id:'pg',name:'postgres',ver:'16.15 → 18 · major',age:12,kind:'major',via:'mise'},
-    {id:'ws',name:'workstation-steward',ver:'0.10.0 · itself',age:selfAge,kind:'tool',via:'mise'}
+    {id:'ws',name:'workstation-steward',ver:'0.10.1 · itself',age:selfAge,kind:'tool',via:'mise'}
   ];
   const S={gate:3,adv:true,browser:true,day:0};
   const zones={hold:$('#z-hold'),take:$('#z-take'),ask:$('#z-ask')};
