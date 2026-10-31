@@ -482,8 +482,23 @@ const busyFacts = () => facts({ review: { due: true, age: 8, days: 7 }, config: 
 const briefOf = f => ({ v: 1, at: NOW.toISOString(), ...B.pick(B.run(f)) });
 const START = { session_id: 'sess-1', cwd: '/somewhere', hook_event_name: 'SessionStart', source: 'startup' };
 
-test('hook: startup with something to do shows the briefing (≤3 lines to the user, the block to Claude) and stamps it', () => {
+// fixOf(b) — the same briefing with next as a broken or half-finished state (severity fix): the one kind shown as a notice
+const fixOf = b => ({ ...b, next: { ...b.next, severity: 'fix' } });
+
+test('hook: a routine next step goes to Claude only, to mention once at the end of its first reply; it stamps it', () => {
   const b = briefOf(busyFacts());
+  assert.notEqual(b.next.severity, 'fix');
+  const r = B.hook(START, { b, values: HV(), prev: null, now: NOW });
+  assert.deepEqual(Object.keys(r.out), ['hookSpecificOutput'], 'no notice for a routine step');
+  const ctx = r.out.hookSpecificOutput.additionalContext;
+  assert.match(ctx, /^<steward-brief v="1">/);
+  assert.match(ctx, /At the end of your first reply, whatever they asked, add one short line that starts "Steward:"/);
+  assert.doesNotMatch(ctx, /has just seen the first lines/);
+  assert.deepEqual(r.stamp, { at: NOW.toISOString(), fp: B.fingerprint(b), session_id: 'sess-1' });
+});
+
+test('hook: a broken or half-finished state shows the briefing as a notice (≤3 lines to the user, the block to Claude) and stamps it', () => {
+  const b = fixOf(briefOf(busyFacts()));
   const r = B.hook(START, { b, values: HV(), prev: null, now: NOW });
   assert.deepEqual(Object.keys(r.out).sort(), ['hookSpecificOutput', 'systemMessage']);
   assert.equal(r.out.hookSpecificOutput.hookEventName, 'SessionStart');
@@ -510,13 +525,14 @@ test('hook: the same briefing within quiet_hours is one line to Claude only; a c
   // something new needs the user: a different fingerprint
   const more = briefOf(facts({ review: { due: true, age: 8, days: 7 }, config: { ahead: 1, changed: ['x.toml'] }, soak: { running: false, awaitingPrune: true, until: null, newest: null } }));
   assert.notEqual(B.fingerprint(more), prev.fp);
-  assert.ok(B.hook(START, { b: more, values: HV(), prev, now: NOW }).out.systemMessage);
+  const shown = r => r.stamp !== null; // shown again: a new stamp (a notice or a mention, by severity)
+  assert.ok(shown(B.hook(START, { b: more, values: HV(), prev, now: NOW })));
   // the same, but 12 hours on
-  assert.ok(B.hook(START, { b, values: HV(), prev: { ...prev, at: ago(12 * 60).toISOString() }, now: NOW }).out.systemMessage);
-  assert.equal(B.hook(START, { b, values: HV(), prev: { ...prev, at: ago(11 * 60).toISOString() }, now: NOW }).out.systemMessage, undefined);
+  assert.ok(shown(B.hook(START, { b, values: HV(), prev: { ...prev, at: ago(12 * 60).toISOString() }, now: NOW })));
+  assert.ok(!shown(B.hook(START, { b, values: HV(), prev: { ...prev, at: ago(11 * 60).toISOString() }, now: NOW })));
   // quiet_hours = 0: every time; an unreadable stamp: shown
-  assert.ok(B.hook(START, { b, values: HV({ quiet_hours: 0 }), prev, now: NOW }).out.systemMessage);
-  assert.ok(B.hook(START, { b, values: HV(), prev: { fp: prev.fp, at: 'garbage' }, now: NOW }).out.systemMessage);
+  assert.ok(shown(B.hook(START, { b, values: HV({ quiet_hours: 0 }), prev, now: NOW })));
+  assert.ok(shown(B.hook(START, { b, values: HV(), prev: { fp: prev.fp, at: 'garbage' }, now: NOW })));
   // the maintainer's own skill is /steward-maintain, not a plugin skill
   const repin = { ...b, next: { ...b.next, skill: 'steward-maintain' } };
   assert.match(B.quietLine(repin, ago(60)), /; skill \/steward-maintain[;.]/);
@@ -571,7 +587,7 @@ test('hook, as Claude Code runs it: JSON out, the stamp written once (0600), qui
     fs.rmSync(path.join(STATE, 'brief'), { recursive: true, force: true });
     const dry = hookRun('startup', { DRY_RUN: '1' });
     assert.equal(dry.status, 0);
-    assert.ok(JSON.parse(dry.stdout).systemMessage);
+    assert.match(JSON.parse(dry.stdout).hookSpecificOutput.additionalContext, /^<steward-brief v="1">/);
     assert.ok(!fs.existsSync(stampF), 'DRY_RUN=1 writes no stamp');
 
     const first = hookRun('startup');
@@ -580,7 +596,9 @@ test('hook, as Claude Code runs it: JSON out, the stamp written once (0600), qui
     assert.equal(first.stdout.trim().split('\n').length, 1, 'one JSON object');
     const out = JSON.parse(first.stdout);
     assert.equal(out.hookSpecificOutput.hookEventName, 'SessionStart');
-    assert.match(out.systemMessage, /\nnext: steward config sync/);
+    assert.equal(out.systemMessage, undefined, 'a routine step (config behind) is no notice');
+    assert.match(out.hookSpecificOutput.additionalContext, /"cmd":"steward config sync/);
+    assert.match(out.hookSpecificOutput.additionalContext, /add one short line that starts "Steward:"/);
     assert.match(out.hookSpecificOutput.additionalContext, /^<steward-brief v="1">/);
     assert.ok(first.ms < 1000, `${first.ms} ms`);
     const stamp = JSON.parse(fs.readFileSync(stampF, 'utf8'));
@@ -640,6 +658,6 @@ test('hook: [brief] session = false in steward.toml prints nothing and writes no
   assert.deepEqual([off.r.status, off.r.stdout, off.stamp], [0, '', false]);
   const on = mk(true);
   assert.equal(on.r.status, 0);
-  assert.match(JSON.parse(on.r.stdout).systemMessage, /a review is due \(never run\)/);
+  assert.match(JSON.parse(on.r.stdout).hookSpecificOutput.additionalContext, /a review is due \(never run\)/);
   assert.equal(on.stamp, true);
 });

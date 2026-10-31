@@ -185,13 +185,15 @@ your yes. [The session-start hook](#in-claude-code-the-session-start-hook) hands
 
 **A new Claude Code session starts knowing what needs you.** The `steward` plugin
 ([skills](../skills/README.md#install)) carries one hook. When a session starts, Claude Code runs
-`steward brief --hook`. When something needs you, you see the briefing's lines once, and Claude gets the
-`<steward-brief>` block, so "what's next?" has an answer at once. When nothing needs you, the hook prints nothing.
+`steward brief --hook`. When something needs you, Claude gets the `<steward-brief>` block, so "what's next?" has an
+answer at once, and you hear about it once: a broken or half-finished state shows as a notice when the session opens,
+and a routine step (a sync, a review due) comes as one line at the end of Claude's first reply. When nothing needs
+you, the hook prints nothing.
 
 | How the session started | What the hook does |
 | --- | --- |
 | A new session, or `/clear`, and nothing needs you | Nothing. Waits alone don't count |
-| A new session, or `/clear`, and something needs you | Shows you the briefing (at most three lines) and gives Claude the block, **if** what needs you changed since it last showed, or `quiet_hours` have passed. Otherwise you see nothing, and Claude gets one line: what's next, and that you've seen it |
+| A new session, or `/clear`, and something needs you | Gives Claude the block **if** what needs you changed since it last showed, or `quiet_hours` have passed. A broken or half-finished state (next is `fix`) also shows you the briefing as a notice (at most three lines); for a routine step, Claude adds one line starting "Steward:" at the end of its first reply. Otherwise you see nothing, and Claude gets one line: what's next, and that you've heard |
 | After a compaction (`/compact`, or automatic) | Gives Claude the block again, since the compaction dropped it. You see nothing |
 | Resumed (`--resume`, `--continue`) or forked | Nothing: the hook isn't run. The session already has its context |
 
@@ -224,8 +226,9 @@ quiet_hours = 12    # the default; 0 shows the briefing in every new session
 The hook also checks it each time, so it stays quiet in the meantime.
 
 > [!NOTE]
-> You see the briefing's lines as the hook's `systemMessage`, which Claude Code's docs describe as a warning message
-> shown to the user. The lines are short, and the stamp keeps them from repeating.
+> The notice is the hook's `systemMessage`, which Claude Code's docs describe as a warning message shown to the user.
+> That's why only a broken or half-finished state uses it; a routine step reaches you through Claude instead, so the
+> notice never cries wolf. The stamp keeps either one from repeating.
 
 ## Adding a detector
 
