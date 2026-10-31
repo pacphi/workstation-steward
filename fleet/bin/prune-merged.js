@@ -74,7 +74,7 @@ if (!del.length) { console.log('\nnothing to delete.'); process.exit(0); }
 if (!flag('--apply')) { console.log('\nplan only. Add --apply to delete (asks first, records each tip).'); process.exit(0); }
 
 // under --unattended, [autonomy] answers by the class (lib/autonomy.js); else a person, on the terminal
-if (!A.answer('after-merge', `Delete ${del.length} local branch(es)?`)) {
+if (!A.answer('prune-merged', `Delete ${del.length} local branch(es)?`)) {
   fs.writeSync(2, `\nDelete ${del.length} local branch(es)? [y/N] `);
   const buf = Buffer.alloc(64); let n = 0; try { n = fs.readSync(0, buf, 0, 64, null); } catch { /* no stdin */ }
   if (!/^\s*y/i.test(buf.slice(0, n).toString())) die('aborted');

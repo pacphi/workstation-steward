@@ -30,8 +30,8 @@ quiet_hours = 12                           # the same briefing shows again in a 
 
 [autonomy]
 level = "safe"                             # what may run unattended (D58): ask (read-only only), safe (plus config sync pull,
-                                           # reconcile, prune after the soak, qualifications, PR prep), maintainer (plus
-                                           # after-merge, release verify, repin). Installs, upgrades and pushes always ask
+                                           # reconcile, prune after the soak, qualifications, PR prep, fleet sync), maintainer
+                                           # (plus prune-merged, release verify, repin). Installs, upgrades and pushes always ask
 allow = []                                 # classes to add, e.g. ["install-hybrids"]; `steward config` lists what runs unattended
 deny = []                                  # classes to take away
 subagents = 4                              # independent items the fix skill may hand to sub-agents at once

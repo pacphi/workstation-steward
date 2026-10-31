@@ -60,6 +60,11 @@ test('classify: the engine labels each step: read-only, a class the level allows
   assert.equal(who('/steward-maintain release 0.10.0 repin 0.10.0', MAINT), 'agent:release-verify');
   assert.equal(who('/steward-maintain repin 0.10.0', { ...MAINT, deny: ['repin'] }), 'agent-with-yes:repin');
   assert.equal(who('just release-worktree v0.10.0', MAINT), 'agent:repin');
+  // after merges: the fast-forward is safe, deleting branches the maintainer's (the owner's choice, 2026-10-31)
+  assert.equal(who('steward fleet sync ~/r', SAFE), 'agent:fleet-sync');
+  assert.equal(who('steward fleet prune-merged ~/r', SAFE), 'agent-with-yes:prune-merged');
+  assert.equal(who('steward fleet prune-merged ~/r', MAINT), 'agent:prune-merged');
+  assert.equal(who('/steward-maintain merged 70', SAFE), 'agent-with-yes:prune-merged');
   // a rollback, an install and an engine script are classes of their own
   assert.equal(who('steward projects reconcile --rollback ~/r.json', MAINT), 'agent-with-yes:rollback');
   assert.equal(who('steward doctor --install', MAINT), 'agent-with-yes:install');
@@ -91,8 +96,8 @@ test('the classes: every writing command has one (or is a person\'s), every leve
   }
   for (const c of COMMANDS.filter(x => !x.writes)) assert.equal(c.unattended, undefined, `${c.area} ${c.name} only reads`);
   for (const [l, cs] of Object.entries(A.LEVELS)) for (const c of cs) assert.ok(c in A.CLASSES, `${l}: ${c}`);
-  assert.deepEqual([...A.allowed(SAFE)], ['pull', 'reconcile', 'prune', 'qualify', 'pr-prep']);
-  assert.deepEqual([...A.allowed({ level: 'safe', allow: ['upgrade'], deny: ['prune'] })], ['pull', 'reconcile', 'qualify', 'pr-prep', 'upgrade']);
+  assert.deepEqual([...A.allowed(SAFE)], ['pull', 'reconcile', 'prune', 'qualify', 'pr-prep', 'fleet-sync']);
+  assert.deepEqual([...A.allowed({ level: 'safe', allow: ['upgrade'], deny: ['prune'] })], ['pull', 'reconcile', 'qualify', 'pr-prep', 'fleet-sync', 'upgrade']);
   assert.ok(!A.allowed(ASK).size);
 });
 
@@ -107,7 +112,7 @@ test('[autonomy] in steward.toml: the defaults, a level and lists of classes; a 
   assert.doesNotMatch(bad.stderr, /"pull"/);
   // with no [autonomy] table, the defaults; steward config says what runs unattended
   const shown = spawnSync(process.execPath, [path.join(REPO, 'lib', 'config.js')], { encoding: 'utf8', env: { ...ENV, STEWARD_CONFIG: settings('') } });
-  assert.match(shown.stdout, /\[autonomy\]\n {2}level +safe +\[default\][\s\S]*subagents +4 +\[default\]\n {2}→ unattended: pull, reconcile, prune, qualify, pr-prep/);
+  assert.match(shown.stdout, /\[autonomy\]\n {2}level +safe +\[default\][\s\S]*subagents +4 +\[default\]\n {2}→ unattended: pull, reconcile, prune, qualify, pr-prep, fleet-sync/);
 });
 
 test('brief: each finding carries its actor and class; the work list unfolds what waits on what, in order', () => {
@@ -170,9 +175,12 @@ test('--unattended: a command a person runs, one not wired yet, and a class the 
   assert.equal(unwired.status, 4, unwired.stderr + unwired.stdout);
   assert.match(unwired.stderr, /doesn't run unattended yet/);
   const f = behind();
-  const held = steward(['fleet', 'sync', f.work, '--apply', '--unattended'], { STEWARD_CONFIG: settings('[autonomy]\nlevel = "safe"') });
+  const held = steward(['fleet', 'sync', f.work, '--apply', '--unattended'], { STEWARD_CONFIG: ask });
   assert.equal(held.status, 4, held.stderr + held.stdout);
-  assert.match(held.stderr, /level = "safe" doesn't allow after-merge\. To let it run unattended: allow = \["after-merge"\] in steward\.toml, or level = "maintainer"/);
+  assert.match(held.stderr, /level = "ask" doesn't allow fleet-sync\. To let it run unattended: allow = \["fleet-sync"\] in steward\.toml, or level = "safe"/);
+  const del = steward(['fleet', 'prune-merged', f.work, '--apply', '--unattended'], { STEWARD_CONFIG: settings('[autonomy]\nlevel = "safe"') });
+  assert.equal(del.status, 4, del.stderr + del.stdout);
+  assert.match(del.stderr, /level = "safe" doesn't allow prune-merged\. To let it run unattended: allow = \["prune-merged"\] in steward\.toml, or level = "maintainer"/);
   assert.notEqual(git(f.work, 'rev-parse', 'HEAD'), f.tip, 'nothing changed');
   // doctor installs only with --install, so that is refused too; on its own it reads
   const doctor = steward(['doctor', '--install', '--unattended'], { STEWARD_CONFIG: ask });
@@ -183,7 +191,7 @@ test('--unattended: a command a person runs, one not wired yet, and a class the 
 });
 
 test('--unattended: an allowed class answers its own question, and the receipt says so; the environment alone does not', () => {
-  const maint = settings('[autonomy]\nlevel = "maintainer"');
+  const maint = settings('[autonomy]\nlevel = "safe"');   // a fast-forward after merges is safe; deleting branches isn't
   const f = behind();
   // STEWARD_UNATTENDED from outside is dropped: without the flag, a person answers (and no one does)
   const env = steward(['fleet', 'sync', f.work, '--apply'], { STEWARD_CONFIG: maint, STEWARD_UNATTENDED: '1' });
@@ -191,7 +199,7 @@ test('--unattended: an allowed class answers its own question, and the receipt s
   assert.notEqual(git(f.work, 'rev-parse', 'HEAD'), f.tip);
   const r = steward(['fleet', 'sync', f.work, '--apply', '--unattended'], { STEWARD_CONFIG: maint });
   assert.equal(r.status, 0, r.stderr + r.stdout);
-  assert.match(r.stderr, /unattended: yes to "Drop the edits above and fast-forward\?" \(\[autonomy\] allows after-merge\)/);
+  assert.match(r.stderr, /unattended: yes to "Drop the edits above and fast-forward\?" \(\[autonomy\] allows fleet-sync\)/);
   assert.equal(git(f.work, 'rev-parse', 'HEAD'), f.tip);
   const bk = path.join(ENV.XDG_STATE_HOME, 'workstation-steward', 'backups');
   const dir = fs.readdirSync(bk).filter(d => d.startsWith(`sync-${path.basename(f.work)}-`)).pop();

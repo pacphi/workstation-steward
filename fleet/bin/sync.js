@@ -102,7 +102,7 @@ if (!flag('--apply')) { console.log('\nplan only. Add --apply to do it (asks fir
 
 // 4. apply
 // under --unattended, [autonomy] answers by the class (lib/autonomy.js); else a person, on the terminal
-if (!A.answer('after-merge', 'Drop the edits above and fast-forward?')) {
+if (!A.answer('fleet-sync', 'Drop the edits above and fast-forward?')) {
   fs.writeSync(2, '\nDrop the edits above and fast-forward? [y/N] ');
   const buf = Buffer.alloc(64); let n = 0; try { n = fs.readSync(0, buf, 0, 64, null); } catch { /* no stdin */ }
   if (!/^\s*y/i.test(buf.slice(0, n).toString())) die('aborted');

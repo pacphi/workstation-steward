@@ -267,8 +267,8 @@ subagents = 4      # independent items the fix skill may hand to sub-agents at o
 | Level | Runs unattended |
 | --- | --- |
 | `ask` | read-only steps only |
-| `safe` (the default) | read-only steps, plus `pull` (a config sync that fast-forwards), `reconcile`, `prune` (after the soak), `qualify` (a sandbox qualification) and `pr-prep` (a pull request prepared in a scratch clone, not pushed) |
-| `maintainer` | `safe`, plus `after-merge` (fleet sync and prune-merged), `release-verify` and `repin`. A class says only that no yes is needed; it doesn't make the step due. A maintainer repins when they ask for it |
+| `safe` (the default) | read-only steps, plus `pull` (a config sync that fast-forwards), `reconcile`, `prune` (after the soak), `qualify` (a sandbox qualification), `pr-prep` (a pull request prepared in a scratch clone, not pushed) and `fleet-sync` (fleet sync: a fast-forward after merges) |
+| `maintainer` | `safe`, plus `prune-merged` (deleting branches whose PR merged), `release-verify` and `repin`. A class says only that no yes is needed; it doesn't make the step due. A maintainer repins when they ask for it |
 
 Installs, upgrades, Node patches, pushes and pull requests always ask, unless you name their class in `allow`.
 
