@@ -57,8 +57,9 @@ steward projects reconcile <path> | --all   # after a promotion: bring the proje
 steward projects reconcile <path> --apply   # the same plan, then asks; edited copies are kept (`--take <unit>`, `--diff <unit>`)
 steward projects offboard <path> [--apply]   # a project with no AI tools: their wiring out, stores and copies moved to the backup
 just test                     # the merge rules and writers, then onboarding, reconciling and offboarding end to end on throwaway repos
-steward projects decide <path> --decision onboarded --ai aqe,brain   # record a decision (shows the change, asks)
+steward projects decide <path> --decision onboarded --ai aqe,brain   # record a decision (shows the change, asks, backs up)
 steward projects decide <path> --decision deferred --until 2026-11-30
+steward projects decide --rollback <receipt>   # put registry.toml back as it was before a decide (refuses if changed since)
 steward projects decide <worktree> --inherit                       # follow the parent's decision
 steward projects decide --batch decisions.json                    # several at once
 ```

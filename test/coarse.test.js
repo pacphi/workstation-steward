@@ -235,4 +235,20 @@ test('steward projects --apply: asks each new project its decision, shows the ch
   const after = fs.readFileSync(reg, 'utf8');
   assert.match(after, /app"[\s\S]*decision = "onboarded"[\s\S]*ai = \["ruflo"\]/);
   assert.match(after, /tool"[\s\S]*decision = "deferred"[\s\S]*until = "2026-12-01"/);
+  // a backup and a receipt first, and a way back
+  const rp = yes.stdout.match(/rollback: steward projects decide --rollback (\S+)/)[1].replace(/^~/, env.HOME);
+  const rc = JSON.parse(fs.readFileSync(rp, 'utf8'));
+  assert.deepEqual([rc.kind, rc.complete, rc.changes.length], ['registry', true, 2]);
+  assert.deepEqual(rc.changes.map(c => [c.before, c.after.decision]), [[null, 'onboarded'], [null, 'deferred']]);
+  const back = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'projects', 'decide', '--rollback', rp], { encoding: 'utf8', input: 'y\n', env: { ...BASE, ...env } });
+  assert.equal(back.status, 0, back.stderr);
+  assert.equal(fs.existsSync(reg) ? fs.readFileSync(reg, 'utf8') : '', before, 'the registry as it was');
+  assert.equal(JSON.parse(fs.readFileSync(rp, 'utf8')).rolled_back, true);
+  // a registry changed since: the rollback refuses
+  const again = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'projects', '--apply'], { encoding: 'utf8', input: 'i\ni\ny\n', env: { ...BASE, ...env } });
+  const rp2 = again.stdout.match(/rollback: steward projects decide --rollback (\S+)/)[1].replace(/^~/, env.HOME);
+  fs.appendFileSync(reg, '# an edit by hand\n');
+  const refused = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'projects', 'decide', '--rollback', rp2], { encoding: 'utf8', input: 'y\n', env: { ...BASE, ...env } });
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /refusing: .*registry\.toml changed since/);
 });
