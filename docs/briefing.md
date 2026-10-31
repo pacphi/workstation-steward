@@ -1,6 +1,6 @@
 # The briefing: `steward brief`
 
-![Revision 7](https://img.shields.io/badge/Revision-7-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 8](https://img.shields.io/badge/Revision-8-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 **One question, answered in under a second: what needs me, and what do I run next?** `steward brief` reads what is
 already on your disk and names **one** next step, with its exact command. When nothing needs you, it says so in one
@@ -293,8 +293,10 @@ but only where your level allows each one, question by question:
   what to add to `allow`. Nothing more is changed. Exit 4 means "waiting on you", not "failed".
 - The receipt records `"unattended": true`.
 
-For now these commands take it: `config sync`, `projects reconcile`, `sc prune`, `fleet sync` and
-`fleet prune-merged`. Any other command refuses it with "it doesn't run unattended yet", even when `allow` names its
+These commands take it: `config sync`, `upgrade` and its parts (`sc upgrade`, `sc node-patch`,
+`sc install-hybrids`), `sc prune`, `ai fix` and its five parts (`ai repin`, `guard`, `timeouts`, `approvals`,
+`transport`), `projects apply` and its parts (`projects onboard`, `reconcile`, `offboard`), and `fleet tidy` and its
+parts (`fleet sync`, `prune-merged`); `steward help --all` marks them. Any other command refuses it with "it doesn't run unattended yet", even when `allow` names its
 class. A read-only command ignores the flag.
 
 **Your yes, for one run: `--yes-to <class>`.** With `--unattended`, it lets the command answer questions of that

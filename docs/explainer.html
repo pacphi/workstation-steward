@@ -1,0 +1,1701 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Workstation Steward</title>
+<meta name="description" content="A cinematic, interactive tour of workstation-steward: why it exists, who it is for, the release-age gate, the pilot that comes aboard in Claude Code, per-project onboarding, and how to start.">
+<meta property="og:title" content="Workstation Steward">
+<meta property="og:description" content="A harbormaster for everything that lands on your machine, and a pilot when you need one.">
+<meta name="theme-color" content="#061820">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a film in nine acts. One dark harbor at dusk is the only world; full-bleed title cards open each act;
+   content sits in a 1180px column with a 16px+ safe gutter. Amber is the accent (sodium harbor light); red and
+   green are the ships' sidelights and mean held / cleared, never decoration. */
+:root{
+  --sea:#061820; --deep:#0A222D; --hull:#0F2B36; --hull-2:#15384A; --ink-well:#04121A;
+  --line:rgba(190,214,220,.14); --line-2:rgba(190,214,220,.28);
+  --chalk:#EEF4F3; --fog:#AEC2C8; --mist:#7A949C;
+  --lamp:#F3B33D; --lamp-deep:#C98A12; --lamp-glow:rgba(243,179,61,.35);
+  --brass:#D2B26B; --q:#F2D23B;
+  --port:#F25C4F; --port-ink:#FF8E84; --starboard:#3FD48E; --starboard-ink:#7BE9B5;
+  --paper:#F4EEDD; --paper-ink:#1C2B30; --paper-rule:#C9BFA3;
+  --f-display:"Big Shoulders Display","Oswald","Arial Narrow",Impact,sans-serif;
+  --f-serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --gutter-l:max(16px,env(safe-area-inset-left,0px));
+  --gutter-r:max(16px,env(safe-area-inset-right,0px));
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{overflow-x:clip;scroll-behavior:smooth;scroll-padding-top:12px}
+body{margin:0;background:var(--sea);color:var(--chalk);font:400 17px/1.62 var(--f-body);-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--sea);z-index:40}
+a{color:var(--lamp);text-underline-offset:.18em;text-decoration-thickness:1px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:3px solid var(--lamp);outline-offset:3px;border-radius:4px}
+button{font:inherit;color:inherit}
+code,kbd{font-family:var(--f-mono);font-size:.88em}
+p code{background:var(--hull);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--chalk);white-space:nowrap}
+.wrap{max-width:1180px;margin:0 auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:12px;top:-60px;background:var(--lamp);color:#1a1200;padding:10px 16px;border-radius:8px;z-index:100;font-weight:700}
+.skip:focus{top:calc(env(safe-area-inset-top,0px) + 12px)}
+
+/* ---- type ---- */
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--lamp);margin:0 0 14px}
+.eyebrow.dim{color:var(--mist)}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+.dek{font-family:var(--f-serif);font-style:italic;font-size:clamp(23px,3vw,34px);line-height:1.22;color:var(--chalk);margin:0;max-width:30ch}
+.lead{font-size:clamp(18px,1.6vw,20px);line-height:1.6;max-width:66ch;color:var(--fog)}
+.lead strong,.prose strong{color:var(--chalk)}
+.prose{max-width:66ch;color:var(--fog)}
+.prose p{margin:0 0 1em}
+.prose h3{font-size:26px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--chalk);margin:34px 0 10px}
+dfn{font-style:normal;color:var(--chalk);border-bottom:2px solid var(--lamp-deep)}
+.note{font-size:14.5px;color:var(--mist)}
+.note code{background:none;border:0;padding:0;color:var(--fog)}
+
+/* ---- chrome: progress, rail ---- */
+.progress{position:fixed;top:0;left:0;right:0;padding-top:env(safe-area-inset-top,0px);z-index:60;pointer-events:none}
+.progress span{display:block;height:3px;background:linear-gradient(90deg,var(--lamp-deep),var(--lamp));transform-origin:left;transform:scaleX(0);box-shadow:0 0 12px var(--lamp-glow)}
+.rail{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);z-index:50}
+.rail ol{list-style:none;margin:0;padding:0 10px 0 0;display:flex;flex-direction:column;gap:13px;border-right:2px solid var(--line)}
+.rail a{display:flex;align-items:center;justify-content:flex-end;gap:9px;text-decoration:none;color:var(--mist);font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.rail a span{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line-2);background:var(--sea);font-weight:600}
+.rail a em{font-style:normal;opacity:0;transform:translateX(6px);transition:opacity .25s,transform .25s;white-space:nowrap}
+.rail a:hover em,.rail a:focus-visible em{opacity:1;transform:none}
+.rail a.on{color:var(--lamp)}
+.rail a.on span{border-color:var(--lamp);background:var(--lamp);color:#1a1200}
+@media (max-width:1180px){.rail{display:none}}
+
+/* ---- hero ---- */
+.hero{position:relative;min-height:min(90vh,980px);overflow:hidden;isolation:isolate;
+  background:linear-gradient(180deg,#040F16 0%,#071E2A 38%,#0D3443 56%,#2A4B4E 60%,#0A2631 62%,#061820 100%)}
+.hero .layer{position:absolute;inset:0;pointer-events:none;will-change:transform}
+.hero svg.full{position:absolute;inset:0;width:100%;height:100%}
+#stars circle{fill:#E6F0F2;animation:twinkle 4s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
+.fog{position:absolute;width:70vw;height:34vh;border-radius:50%;filter:blur(38px);opacity:.5;pointer-events:none;will-change:transform}
+.fog.a{left:-10vw;top:38%;background:radial-gradient(closest-side,rgba(120,160,170,.35),transparent);animation:drift 38s ease-in-out infinite alternate}
+.fog.b{right:-20vw;top:46%;background:radial-gradient(closest-side,rgba(243,179,61,.14),transparent);animation:drift 46s ease-in-out infinite alternate-reverse}
+@keyframes drift{from{transform:translateX(-6vw)}to{transform:translateX(8vw)}}
+.beam{position:absolute;width:170vmax;height:170vmax;left:0;top:0;border-radius:50%;pointer-events:none;mix-blend-mode:screen;opacity:.75;will-change:transform;
+  background:conic-gradient(from -9deg,rgba(243,179,61,.42) 0deg,rgba(243,179,61,.16) 9deg,transparent 18deg,transparent 360deg);
+  animation:sweep 11s linear infinite}
+@keyframes sweep{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.beam{transform:translate(-50%,-50%) rotate(0deg)}
+#water{position:absolute;left:0;right:0;bottom:0;height:40%;width:100%;display:block}
+#lantern{position:absolute;left:0;top:0;width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;pointer-events:none;opacity:0;transition:opacity .6s;
+  background:radial-gradient(closest-side,rgba(243,179,61,.16),rgba(243,179,61,.05) 55%,transparent)}
+.hero:hover #lantern{opacity:1}
+.hero-copy{position:relative;z-index:3;padding-block:clamp(56px,9vh,120px) 120px;max-width:860px}
+.hero h1{font-weight:900;text-transform:uppercase;font-size:clamp(58px,12.4vw,172px);line-height:.86;letter-spacing:.004em;
+  background:linear-gradient(180deg,#FFFFFF 0%,#EEF4F3 60%,#B8CBD0 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:rise .9s cubic-bezier(.2,.7,.2,1) both}
+.hero .dek{margin-top:18px;font-size:clamp(24px,3.4vw,40px);text-shadow:0 1px 14px rgba(6,24,32,.9);animation:rise .9s .12s cubic-bezier(.2,.7,.2,1) both}
+.hero .sub{max-width:56ch;color:var(--fog);margin:18px 0 0;font-size:clamp(16px,1.5vw,19px);text-shadow:0 1px 10px rgba(6,24,32,.95);animation:rise .9s .22s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{transform:translateY(18px)}to{transform:none}}
+.hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px;animation:rise .9s .32s cubic-bezier(.2,.7,.2,1) both}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:10px 20px;border-radius:999px;font-weight:700;text-decoration:none;border:2px solid var(--chalk);color:var(--chalk);background:transparent;cursor:pointer}
+.btn.primary{background:var(--lamp);border-color:var(--lamp);color:#1a1200}
+.btn.primary:hover{background:#FFC65A;border-color:#FFC65A}
+.btn:hover{text-decoration:none}
+.btn:not(.primary):hover{background:rgba(238,244,243,.1)}
+.badges{display:flex;flex-wrap:wrap;gap:8px 18px;margin:26px 0 0;padding:0;list-style:none;font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mist)}
+.badges li::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--starboard);margin-right:8px;vertical-align:middle}
+.badges li.next::before{background:transparent;border:1.5px solid var(--mist)}
+.cue{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:3;font-family:var(--f-mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mist);display:flex;flex-direction:column;align-items:center;gap:6px}
+.cue i{width:1px;height:38px;background:linear-gradient(var(--lamp),transparent);animation:cue 1.8s ease-in-out infinite}
+@keyframes cue{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+@media (max-width:760px){.hero{min-height:0}.hero-copy{padding-bottom:150px}.fog{filter:blur(28px)}.cue{bottom:14px}}
+
+/* ---- ship symbol colors ---- */
+.ship-svg{--hull-paint:#0E2731;--hull-stripe:#DDE8EA;--cabin:#2A5466;--mast:#C7D7DB;--light:var(--starboard);--lantern:var(--lamp);display:block}
+.ship-svg.held{--light:var(--port)}
+.ship-svg.ask{--light:var(--lamp)}
+.lantern-glow{filter:drop-shadow(0 0 6px var(--lamp))}
+
+/* ---- act title cards ---- */
+.act{position:relative}
+.act-card{position:relative;overflow:hidden;background:linear-gradient(180deg,var(--sea),var(--deep) 50%,var(--sea));border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.act-card .wrap{padding-block:clamp(56px,9vh,110px) clamp(40px,6vh,80px);position:relative}
+.act-card::before,.act-card::after{content:"";position:absolute;left:0;right:0;height:10px;background:#02090D}
+.act-card::before{top:0}.act-card::after{bottom:0}
+.act-no{display:inline-flex;align-items:center;gap:12px;font-family:var(--f-mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--brass)}
+.act-no b{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--brass);font-family:var(--f-display);font-size:18px;font-weight:800;letter-spacing:0}
+.act-card h2{font-weight:900;text-transform:uppercase;font-size:clamp(46px,8vw,118px);line-height:.88;letter-spacing:.005em;margin:14px 0 18px;color:var(--chalk)}
+.act-card .dek{color:var(--fog)}
+.act-card .glow{position:absolute;right:-10%;top:-30%;width:60%;height:160%;background:radial-gradient(closest-side,rgba(243,179,61,.12),transparent);pointer-events:none}
+.act-body{padding-block:clamp(40px,6vh,72px) clamp(56px,8vh,100px)}
+.split{display:grid;grid-template-columns:minmax(0,1fr);gap:28px 56px}
+@media (min-width:900px){.split{grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);align-items:start}.split.even{grid-template-columns:1fr 1fr}}
+.panel{background:var(--hull);border:1px solid var(--line);border-radius:16px;padding:20px 22px;min-width:0}
+.panel h3{font-size:22px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px}
+.caption{font-family:var(--f-serif);font-style:italic;font-size:15.5px;color:var(--mist);margin:10px 0 0}
+
+/* ---- Act I: radio ---- */
+.radio{background:linear-gradient(180deg,#0C2530,#071B24);border:1px solid var(--line-2);border-radius:18px;padding:18px 20px 20px;box-shadow:0 30px 60px -30px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.05);min-width:0}
+.radio-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.freq{font-family:var(--f-mono);font-size:clamp(18px,2.4vw,26px);font-weight:600;color:var(--lamp);text-shadow:0 0 14px var(--lamp-glow);letter-spacing:.06em;background:#04131A;border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+.freq small{font-size:.5em;color:var(--mist);letter-spacing:.14em;text-shadow:none;margin-left:10px;vertical-align:middle}
+.meter{display:flex;gap:3px;align-items:flex-end;height:26px}
+.meter i{width:6px;background:var(--mist);opacity:.35;border-radius:1px;height:30%}
+.radio.live .meter i{animation:lvl 1.1s ease-in-out infinite}
+.meter i:nth-child(2){height:50%;animation-delay:.1s}.meter i:nth-child(3){height:70%;animation-delay:.2s}.meter i:nth-child(4){height:90%;animation-delay:.3s}.meter i:nth-child(5){height:60%;animation-delay:.4s}.meter i:nth-child(6){height:40%;animation-delay:.5s}
+@keyframes lvl{0%,100%{opacity:.35;background:var(--mist)}50%{opacity:1;background:var(--lamp)}}
+.tx{position:relative;min-height:214px;border-radius:12px;background:#04131A;border:1px solid var(--line);padding:18px 20px 60px;overflow:hidden}
+.tx::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(180deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px);opacity:.6}
+.tx.flick{animation:flick .35s steps(3) 1}
+@keyframes flick{0%{opacity:.4;transform:translateX(-2px)}50%{opacity:.9;transform:translateX(2px)}100%{opacity:1;transform:none}}
+.tx .tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--port-ink);display:inline-flex;align-items:center;gap:8px}
+.tx .tag::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--port);box-shadow:0 0 10px var(--port);animation:blink 1.2s steps(2) infinite}
+@keyframes blink{50%{opacity:.25}}
+.tx h3{font-size:clamp(26px,3.4vw,40px);font-weight:900;text-transform:uppercase;letter-spacing:.02em;line-height:.95;margin:10px 0 10px}
+.tx p{margin:0;color:var(--fog);font-size:16.5px;max-width:52ch}
+.tx .src{position:absolute;left:20px;right:20px;bottom:14px;font-family:var(--f-mono);font-size:11.5px;color:var(--mist);display:flex;gap:14px;flex-wrap:wrap}
+.tx .src a{color:var(--mist)}
+.radio-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;flex-wrap:wrap}
+.dots{display:flex;gap:8px;margin:0;padding:0;list-style:none}
+.dots button{width:34px;height:10px;border-radius:999px;border:1px solid var(--line-2);background:transparent;cursor:pointer;padding:0}
+.dots button[aria-current="true"]{background:var(--lamp);border-color:var(--lamp)}
+.rbtn{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 14px;border-radius:999px;border:1.5px solid var(--line-2);background:transparent;cursor:pointer;font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--fog)}
+.rbtn:hover{border-color:var(--chalk);color:var(--chalk)}
+.thesis{margin-top:clamp(40px,6vh,72px);padding:clamp(28px,4vw,48px);border-radius:20px;background:radial-gradient(120% 140% at 0% 0%,rgba(243,179,61,.14),transparent 55%),var(--hull);border:1px solid var(--line)}
+.thesis h3{font-size:clamp(34px,5.4vw,70px);font-weight:900;text-transform:uppercase;line-height:.92;max-width:18ch}
+.thesis h3 em{font-style:normal;color:var(--lamp)}
+.thesis p{max-width:62ch;color:var(--fog);font-size:18px;margin:18px 0 0}
+.thesis .dek{margin-top:16px;font-size:clamp(22px,2.6vw,30px)}
+
+/* ---- Act II: personas ---- */
+.pier{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:8px}
+.who{position:relative;background:var(--hull);border:1px solid var(--line);border-radius:16px;padding:22px 20px 20px;min-width:0;transition:transform .35s cubic-bezier(.2,.7,.2,1),border-color .35s,background .35s;overflow:hidden}
+.who:hover{transform:translateY(-4px);border-color:var(--lamp-deep);background:var(--hull-2)}
+.who::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--lamp),transparent);transform:scaleX(0);transform-origin:left;transition:transform .5s}
+.who:hover::after{transform:scaleX(1)}
+.who svg{width:44px;height:44px;display:block;margin-bottom:12px}
+.who h3{font-size:25px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;line-height:1;margin:0 0 10px}
+.who p{margin:0;color:var(--fog);font-size:16px}
+.who .gets{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line-2);font-size:14.5px;color:var(--chalk)}
+.who .gets b{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--starboard);display:block;margin-bottom:4px}
+.notyet{margin-top:28px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px 28px;padding:18px 22px;border:1px dashed var(--line-2);border-radius:14px}
+@media (min-width:860px){.notyet{grid-template-columns:auto 1fr;align-items:start}}
+.notyet h3{font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--port-ink);white-space:nowrap}
+.notyet ul{margin:0;padding:0 0 0 1.1em;color:var(--fog);font-size:16px}
+.notyet li{margin:.3em 0}
+
+/* ---- Act III: gate ---- */
+.gate{margin-top:14px;background:linear-gradient(180deg,var(--hull),var(--deep));border:1px solid var(--line-2);border-radius:20px;padding:20px;min-width:0}
+.gate-controls{display:grid;grid-template-columns:minmax(0,1fr);gap:14px 28px;align-items:center}
+@media (min-width:860px){.gate-controls{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}}
+.slider label{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-weight:700}
+.slider output{font-family:var(--f-display);font-size:42px;font-weight:900;color:var(--lamp);line-height:1;font-variant-numeric:tabular-nums}
+.slider output small{font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mist);margin-left:6px}
+.slider input[type=range]{width:100%;accent-color:var(--lamp);margin:10px 0 2px;height:28px}
+.ticks{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:11px;color:var(--mist)}
+.toggles{display:grid;gap:8px}
+.toggles label{display:flex;gap:10px;align-items:flex-start;font-size:15px;color:var(--fog);min-height:28px}
+.toggles input{width:20px;height:20px;accent-color:var(--starboard);margin:2px 0 0;flex:none}
+.gate-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.harbor{position:relative;margin-top:18px;display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+@media (min-width:860px){.harbor{grid-template-columns:minmax(0,1fr) 92px minmax(0,1fr)}}
+.zone{min-height:150px;border-radius:14px;border:1px dashed var(--line-2);padding:12px 12px 10px;background:rgba(4,19,26,.45);min-width:0}
+.zone h4{margin:0 0 8px;font-family:var(--f-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mist);display:flex;justify-content:space-between;gap:8px}
+.zone h4 b{color:var(--chalk);font-weight:600}
+.zone.quay{border-style:solid;border-color:rgba(63,212,142,.35)}
+.zone.office{border-color:rgba(243,179,61,.4)}
+.zone .ships{display:flex;flex-direction:column;gap:8px;min-height:40px}
+.ship{display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--hull);border:1px solid var(--line);border-radius:10px;padding:6px 10px 6px 6px;min-width:0}
+.ship.sail{animation:sail .7s cubic-bezier(.2,.7,.2,1) both}
+@keyframes sail{from{opacity:.2;transform:translateX(-28px)}to{opacity:1;transform:none}}
+.ship .ship-svg{width:62px;height:31px}
+.ship .nm{min-width:0;font-size:14px;line-height:1.3}
+.ship .nm b{display:block;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ship .nm span{display:block;color:var(--mist);font-family:var(--f-mono);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stamp{font-family:var(--f-display);font-weight:900;font-size:13px;letter-spacing:.12em;text-transform:uppercase;border:2px solid currentColor;border-radius:4px;padding:2px 7px;transform:rotate(-4deg);white-space:nowrap;line-height:1.25}
+.stamp.take{color:var(--starboard)}.stamp.hold{color:var(--port-ink)}.stamp.ask{color:var(--lamp)}
+@media (max-width:560px){.ship{grid-template-columns:62px minmax(0,1fr)}.ship .stamp{grid-column:2;justify-self:start;margin-top:2px}.ship .nm span{white-space:normal}}
+.lightline{display:none}
+@media (min-width:860px){.lightline{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--mist);font-family:var(--f-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;text-align:center}
+.lightline svg{width:44px;height:92px}}
+.gate-foot{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-top:16px;align-items:start}
+@media (min-width:860px){.gate-foot{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+pre.toml{margin:0;background:#04131A;border:1px solid var(--line);border-radius:12px;padding:14px 16px;font:13.5px/1.6 var(--f-mono);color:var(--fog);white-space:pre-wrap;overflow-wrap:anywhere}
+pre.toml b{color:var(--lamp);font-weight:600}
+pre.toml i{color:var(--mist);font-style:normal}
+.tally{font-size:15.5px;color:var(--fog)}
+.tally b{color:var(--chalk)}
+.rules{list-style:none;margin:28px 0 0;padding:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.rules li{background:var(--hull);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:15px;color:var(--fog)}
+.rules li b{display:block;font-family:var(--f-display);font-size:19px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--chalk);margin-bottom:4px}
+.flagQ{display:inline-block;width:14px;height:10px;background:var(--q);vertical-align:-1px;margin-right:6px;border:1px solid rgba(0,0,0,.3)}
+
+/* ---- Act IV: terminal, loop, receipt, soak ---- */
+.deck{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-top:10px}
+@media (min-width:980px){.deck{grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);align-items:start}}
+.term{background:#04131A;border:1px solid var(--line-2);border-radius:14px;overflow:hidden;box-shadow:0 30px 60px -30px rgba(0,0,0,.9);min-width:0}
+.term-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#0A1F29;border-bottom:1px solid var(--line);font-family:var(--f-mono);font-size:12px;color:var(--mist)}
+.term-bar i{width:11px;height:11px;border-radius:50%;background:#2E4A55}
+.term-bar i:nth-child(1){background:#F25C4F}.term-bar i:nth-child(2){background:#F3B33D}.term-bar i:nth-child(3){background:#3FD48E}
+.term-bar span{margin-left:8px}
+.term-body{padding:14px 16px 16px;min-height:300px;max-height:420px;overflow:auto;font:13.5px/1.6 var(--f-mono);color:var(--fog);white-space:pre-wrap;word-break:break-word;outline:none}
+.term-body .c{color:var(--chalk)}
+.term-body .c::before{content:"$ ";color:var(--lamp)}
+.term-body .ok{color:var(--starboard-ink)}
+.term-body .hold{color:var(--lamp)}
+.term-body .dim{color:var(--mist)}
+.term-body .warn{color:var(--port-ink)}
+.term-body .ask{color:var(--chalk)}
+.yn{display:inline-flex;gap:6px;margin-left:8px;vertical-align:middle}
+.yn button{font:600 12px var(--f-mono);min-width:34px;height:28px;border-radius:6px;border:1.5px solid var(--line-2);background:var(--hull);color:var(--chalk);cursor:pointer}
+.yn button.y{border-color:var(--starboard);color:var(--starboard)}
+.yn button:hover{background:var(--hull-2)}
+.caret{display:inline-block;width:8px;height:15px;background:var(--lamp);vertical-align:-2px;animation:blink 1s steps(2) infinite}
+.term-actions{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px;border-top:1px solid var(--line);background:#071B24}
+.tbtn{min-height:38px;padding:6px 14px;border-radius:999px;border:1.5px solid var(--line-2);background:transparent;cursor:pointer;font-family:var(--f-mono);font-size:12.5px;color:var(--chalk)}
+.tbtn.primary{background:var(--lamp);border-color:var(--lamp);color:#1a1200;font-weight:600}
+.tbtn:disabled{opacity:.4;cursor:not-allowed}
+.tbtn:not(:disabled):hover{border-color:var(--chalk)}
+.side{display:grid;gap:16px}
+.loop svg{width:100%;height:auto;display:block}
+.loop .node circle{fill:var(--hull);stroke:var(--line-2);stroke-width:2;transition:fill .3s,stroke .3s}
+.loop .node text{fill:var(--fog);font:800 13px var(--f-display);letter-spacing:.08em;text-anchor:middle;transition:fill .3s}
+.loop .node.on circle{fill:var(--lamp);stroke:var(--lamp)}
+.loop .node.on text{fill:#1a1200}
+.loop .node.done circle{stroke:var(--lamp)}
+.loop .node.done text{fill:var(--chalk)}
+.loop .ring{fill:none;stroke:var(--line-2);stroke-width:2}
+.loop .flow{fill:none;stroke:var(--lamp);stroke-width:2;stroke-dasharray:6 10;opacity:.5;animation:flowdash 2.2s linear infinite}
+@keyframes flowdash{to{stroke-dashoffset:-32}}
+.loop .back{fill:none;stroke:var(--starboard);stroke-width:2.5;stroke-dasharray:5 7;opacity:.35;transition:opacity .4s}
+.loop.back-on .back{opacity:1;animation:flowdash 1.2s linear infinite reverse}
+.loop .backlbl{fill:var(--starboard-ink);font:800 12px var(--f-display);letter-spacing:.1em;text-anchor:middle}
+.loop .hub{fill:var(--chalk);font:400 italic 15px var(--f-serif);text-anchor:middle}
+.receipt{position:relative;background:var(--paper);color:var(--paper-ink);border-radius:6px;padding:16px 18px 20px;font:12.5px/1.5 var(--f-mono);transform:rotate(-1.2deg) translateY(10px);opacity:0;transition:transform .7s cubic-bezier(.2,.9,.2,1.1),opacity .5s;box-shadow:0 24px 40px -20px rgba(0,0,0,.9)}
+.receipt.show{opacity:1;transform:rotate(-1.2deg)}
+.receipt::before,.receipt::after{content:"";position:absolute;left:0;right:0;height:8px;background:radial-gradient(circle at 6px 0,transparent 5px,var(--paper) 5.5px) 0 0/12px 8px repeat-x}
+.receipt::before{top:-7px;transform:rotate(180deg)}
+.receipt::after{bottom:-7px}
+.receipt h4{margin:0 0 8px;font:900 22px var(--f-display);letter-spacing:.14em;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
+.receipt h4 small{font:600 10px var(--f-mono);letter-spacing:.14em;color:#5E6E73}
+.receipt dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px}
+.receipt dt{color:#5E6E73;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;padding-top:2px}
+.receipt dd{margin:0;word-break:break-all}
+.receipt .rstamp{position:absolute;right:14px;bottom:12px;font:900 18px var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--port);border:3px solid var(--port);border-radius:6px;padding:2px 8px;transform:rotate(-9deg);opacity:0;transition:opacity .3s}
+.receipt.rolled .rstamp{opacity:.9}
+.receipt .rstamp.ok{color:#1F7A4B;border-color:#1F7A4B}
+.receipt.applied .rstamp.ok{opacity:.9}
+.receipt .rstamp.ok{bottom:46px}
+.yard{background:var(--hull);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:none}
+.yard.show{display:block}
+.yard h4{margin:0 0 6px;font:800 18px var(--f-display);letter-spacing:.06em;text-transform:uppercase}
+.yard .bar{height:8px;border-radius:999px;background:#04131A;overflow:hidden;margin:8px 0 6px}
+.yard .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--lamp-deep),var(--lamp));transition:width 6s linear}
+.yard .bar.go i{width:100%}
+.yard p{margin:0;font-size:14px;color:var(--fog)}
+
+/* ---- Act IV: the pilot (a Claude Code session), standing orders, the one next step ---- */
+.pilot-deck{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-top:10px}
+@media (min-width:980px){.pilot-deck{grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);align-items:start}}
+.cc-body{padding:14px 16px 16px;min-height:340px;max-height:520px;overflow:auto;font:13.5px/1.6 var(--f-mono);color:var(--fog);white-space:pre-wrap;word-break:break-word}
+.cc-body .you{color:var(--chalk)}
+.cc-body .you::before{content:"> ";color:var(--mist)}
+.cc-body .dot::before{content:"\23FA  ";color:var(--starboard)}
+.cc-body .dot.claude::before{color:#E08A62}
+.cc-body .say{color:var(--chalk)}
+.cc-body .say::before{content:"\23FA  ";color:var(--chalk)}
+.cc-body .res{color:var(--mist)}
+.cc-body .res::before{content:"  \23BF  ";color:var(--mist)}
+.cc-body .tbl{color:var(--fog)}
+.cc-body .hook{display:inline-block;color:var(--lamp);border-left:3px solid var(--lamp);padding-left:10px;margin-top:2px}
+.cc-body .hook small{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist);margin-left:8px}
+.cc-body .bang{color:var(--chalk)}
+.cc-body .bang::before{content:"$ ";color:var(--lamp)}
+.cc-body .ok{color:var(--starboard-ink)}
+.cc-body .hold{color:var(--lamp)}
+.cc-body .q{color:var(--chalk)}
+.cc-choices{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px;border-top:1px solid var(--line);background:#071B24;min-height:62px;align-items:center}
+.cc-choices button{min-height:38px;padding:6px 14px;border-radius:999px;border:1.5px solid var(--line-2);background:transparent;cursor:pointer;font-family:var(--f-mono);font-size:12.5px;color:var(--chalk);text-align:left}
+.cc-choices button.rec{background:var(--lamp);border-color:var(--lamp);color:#1a1200;font-weight:600}
+.cc-choices button:hover{border-color:var(--chalk)}
+.cc-choices .wait{font-family:var(--f-mono);font-size:12px;color:var(--mist)}
+.orders{margin-top:clamp(36px,5vh,56px);display:grid;grid-template-columns:minmax(0,1fr);gap:16px 40px}
+@media (min-width:980px){.orders{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);align-items:start}}
+.orders h3{font-size:clamp(28px,3.4vw,40px);font-weight:900;text-transform:uppercase;letter-spacing:.02em;line-height:.95;margin:0 0 10px}
+.orders .who-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.orders .who-list li{display:grid;grid-template-columns:118px minmax(0,1fr);gap:12px;align-items:start;background:var(--hull);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:15px;color:var(--fog)}
+.orders .who-list b{color:var(--chalk);font-weight:700}
+.orders .who-list code{font-size:.84em;color:var(--fog)}
+.by{font-family:var(--f-display);font-weight:900;font-size:13px;letter-spacing:.12em;text-transform:uppercase;border:2px solid currentColor;border-radius:4px;padding:2px 7px;transform:rotate(-3deg);white-space:nowrap;line-height:1.25;justify-self:start;margin-top:1px}
+.by.pilot{color:var(--starboard)}.by.word{color:var(--lamp)}.by.yours{color:var(--port-ink)}
+@media (max-width:560px){.orders .who-list li{grid-template-columns:minmax(0,1fr)}}
+.firstword{margin-top:clamp(36px,5vh,56px);display:grid;grid-template-columns:minmax(0,1fr);gap:18px 40px}
+@media (min-width:980px){.firstword{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}}
+.mini{background:#04131A;border:1px solid var(--line-2);border-radius:14px;overflow:hidden;min-width:0}
+.mini pre{margin:0;padding:14px 16px;font:13.5px/1.7 var(--f-mono);color:var(--fog);white-space:pre-wrap;word-break:break-word}
+.mini .c{color:var(--chalk)}.mini .c::before{content:"$ ";color:var(--lamp)}
+.mini .red{color:var(--port);font-weight:700}.mini .grn{color:var(--starboard);font-weight:700}.mini .dim{color:var(--mist)}.mini .ans{color:#79c0ff}
+
+/* the title is painted by a gradient clipped to its box: give the box the hero's full width, not the copy's 860px
+   (at 1440px the box cut WORKSTATION to WORKSTATIO) */
+.hero h1{width:calc(100vw - var(--gutter-l) - var(--gutter-r));max-width:1148px}
+/* the receipt: room for the stamps below the rows, and only one stamp at a time */
+.receipt{padding-bottom:58px}
+.receipt .rstamp.ok{bottom:14px;right:18px}
+.receipt.rolled .rstamp.ok{opacity:0}
+
+/* Act III: five rule cards in one row on a wide screen; a stamp is as wide as its word, never stretched */
+@media (min-width:1100px){.rules{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.ship .stamp{justify-self:end;width:max-content}
+/* the gate's "your call" items carry class ask, which Act IX's .ask grid also styles: keep them out of it */
+.ship .stamp.ask{display:block;margin-top:0;grid-template-columns:none}
+.ship .ship-svg.ask{display:block;margin-top:0}
+
+/* ---- Act IX: the eight ---- */
+.eight{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.eight li{display:grid;grid-template-columns:minmax(150px,auto) minmax(0,1fr);gap:12px;font-size:14.5px;color:var(--fog);align-items:baseline;border-top:1px dashed var(--line);padding-top:6px}
+.eight li:first-child{border-top:0;padding-top:0}
+.eight code{color:var(--chalk);white-space:nowrap}
+@media (max-width:560px){.eight li{grid-template-columns:minmax(0,1fr);gap:2px}}
+
+/* ---- Act V: harbor map ---- */
+.map{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-top:8px}
+@media (min-width:980px){.map{grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);align-items:start}}
+.map svg{width:100%;height:auto;display:block;background:radial-gradient(120% 90% at 50% 100%,#0D3443,var(--ink-well) 70%);border:1px solid var(--line-2);border-radius:18px}
+.berth{cursor:pointer}
+.berth .hit{fill:transparent}
+.berth .bld{fill:var(--hull-2);stroke:var(--line-2);stroke-width:1.5;transition:fill .3s,stroke .3s}
+.berth .roof{fill:#2A5466}
+.berth text{font:800 15px var(--f-display);letter-spacing:.1em;text-transform:uppercase;fill:var(--fog);pointer-events:none;transition:fill .3s}
+.berth text.sm{font:400 12px var(--f-body);letter-spacing:0;text-transform:none;fill:var(--mist)}
+.berth .lamp{fill:var(--mist);transition:fill .3s,filter .3s}
+.berth.on .bld{stroke:var(--lamp);fill:#1C4658}
+.berth.on text{fill:var(--chalk)}
+.berth.on .lamp{fill:var(--lamp);filter:drop-shadow(0 0 8px var(--lamp))}
+.berth:hover .bld{stroke:var(--lamp)}
+.mapwater{fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:2 10}
+.lane{fill:none;stroke:var(--line-2);stroke-width:2;stroke-dasharray:8 10;animation:flowdash 3s linear infinite}
+.mapboat{transition:transform .9s cubic-bezier(.3,.7,.2,1)}
+.berth-panel{min-width:0}
+.berth-panel .eyebrow{margin-bottom:6px}
+.berth-panel h3{font-size:30px;font-weight:900;text-transform:uppercase;letter-spacing:.02em;line-height:1}
+.berth-panel p{color:var(--fog);font-size:15.5px;margin:10px 0}
+.berth-panel .rule{font-family:var(--f-serif);font-style:italic;font-size:19px;color:var(--chalk);border-left:3px solid var(--lamp);padding-left:12px;margin:14px 0}
+.cmds{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.cmds li{font-family:var(--f-mono);font-size:12px;background:#04131A;border:1px solid var(--line);border-radius:6px;padding:4px 8px;color:var(--fog)}
+.addon{display:inline-block;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;border:1.5px solid var(--brass);color:var(--brass);border-radius:999px;padding:2px 8px;margin-left:8px;vertical-align:middle}
+.berth-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.berth-tabs button{min-height:36px;padding:4px 12px;border-radius:999px;border:1.5px solid var(--line-2);background:transparent;cursor:pointer;font-family:var(--f-mono);font-size:12px;color:var(--fog)}
+.berth-tabs button[aria-pressed="true"]{background:var(--lamp);border-color:var(--lamp);color:#1a1200;font-weight:600}
+.banner{margin-top:28px;display:grid;grid-template-columns:minmax(0,1fr);gap:0;border:1px solid var(--line-2);border-radius:16px;overflow:hidden}
+@media (min-width:760px){.banner{grid-template-columns:1fr 1fr}}
+.banner div{padding:20px 22px;background:var(--hull)}
+.banner div+div{border-top:1px solid var(--line-2)}
+@media (min-width:760px){.banner div+div{border-top:0;border-left:1px solid var(--line-2)}}
+.banner b{display:block;font:900 clamp(26px,3vw,38px) var(--f-display);text-transform:uppercase;letter-spacing:.02em;line-height:1}
+.banner b em{font-style:normal;color:var(--lamp)}
+.banner p{margin:8px 0 0;color:var(--fog);font-size:15px}
+
+/* ---- Act VI: onboarding board ---- */
+.board{margin-top:10px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+@media (min-width:980px){.board{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);align-items:start}}
+.registry{display:grid;gap:10px}
+.proj{background:var(--hull);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:10px;min-width:0;transition:border-color .3s}
+.proj.active{border-color:var(--lamp)}
+.proj-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.proj-head b{font-family:var(--f-mono);font-size:14px;color:var(--chalk)}
+.proj-head span{font-family:var(--f-mono);font-size:11.5px;color:var(--mist)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chips button{min-height:34px;padding:4px 12px;border-radius:999px;border:1.5px solid var(--line-2);background:transparent;cursor:pointer;font-family:var(--f-mono);font-size:12px;color:var(--fog)}
+.chips button[aria-pressed="true"]{background:var(--starboard);border-color:var(--starboard);color:#06251A;font-weight:600}
+.chips .none{font-family:var(--f-mono);font-size:11px;color:var(--mist);letter-spacing:.1em;text-transform:uppercase;margin-left:4px}
+.proj-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.decision{font-family:var(--f-mono);font-size:11.5px;color:var(--mist)}
+.decision b{color:var(--chalk);font-weight:600}
+.lineage{margin-top:22px;padding:18px 20px;border-radius:14px;border:1px solid var(--line);background:rgba(4,19,26,.5);font-size:15.5px;color:var(--fog)}
+.lineage b{color:var(--chalk)}
+
+/* ---- Act VII: ledger ---- */
+.ledger{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:8px}
+@media (min-width:860px){.ledger{grid-template-columns:1fr 1fr}}
+.ledger .panel h3{display:flex;align-items:center;gap:10px}
+.ledger .panel ul{margin:10px 0 0;padding-left:1.1em;color:var(--fog);font-size:15.5px}
+.ledger .panel li{margin:.35em 0}
+.tomlbox{margin-top:18px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media (min-width:980px){.tomlbox{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);align-items:start}}
+.toml-live{white-space:pre-wrap;overflow-wrap:anywhere;background:#04131A;border:1px solid var(--line-2);border-radius:14px;padding:16px 18px;font:13.5px/1.75 var(--f-mono);color:var(--fog);overflow-x:auto;min-width:0}
+.toml-live .k{color:var(--chalk)}
+.toml-live .sec{color:var(--brass)}
+.toml-live .cm{color:var(--mist)}
+.toml-live .v{display:inline-block;background:var(--hull);border:1.5px solid var(--line-2);border-radius:6px;padding:0 8px;color:var(--lamp);cursor:pointer;font:inherit;line-height:1.5;transition:border-color .2s,background .2s}
+.toml-live .v:hover{border-color:var(--lamp)}
+.toml-live .v.yours{border-color:var(--starboard);color:var(--starboard-ink)}
+.toml-live .tag{display:inline-block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-left:8px;color:var(--mist);border:1px solid var(--line);border-radius:999px;padding:0 6px;vertical-align:1px}
+.toml-live .tag.yours{color:var(--starboard-ink);border-color:var(--starboard)}
+.cfg-out{background:var(--hull);border:1px solid var(--line);border-radius:14px;padding:12px 16px 14px;font:13px/1.6 var(--f-mono);color:var(--fog);min-width:0}
+.cfg-out .row{padding:7px 0;border-top:1px dashed var(--line)}
+.cfg-out .row .k{display:block;color:var(--chalk)}
+.cfg-out .row .val{color:var(--lamp);overflow-wrap:anywhere}
+.cfg-out .row .src{color:var(--mist);margin-left:10px;font-size:11.5px}
+.cfg-out .row .src.yours{color:var(--starboard-ink)}
+.cfg-out .foot{padding-top:10px;color:var(--mist);font-size:12px}
+.cfg-out .c{margin-bottom:6px}
+.cfg-out .c{color:var(--chalk)}
+.cfg-out .c::before{content:"$ ";color:var(--lamp)}
+.cfg-out .src{color:var(--mist)}
+.cfg-out .src.yours{color:var(--starboard-ink)}
+
+/* ---- Act VIII: horizon ---- */
+.horizon{position:relative;margin-top:8px;border-radius:20px;overflow:hidden;border:1px solid var(--line-2);background:linear-gradient(180deg,#071B24 0%,#0D3443 54%,#1E464B 57%,#0A2631 59%,#061820 100%)}
+.horizon svg{display:block;width:100%;height:auto}
+.horizon .lh{transition:opacity .3s}
+.horizon .lh.planned{opacity:.55}
+.horizon .lh text{font:800 14px var(--f-display);letter-spacing:.08em;text-transform:uppercase;fill:var(--chalk);text-anchor:middle}
+.horizon .lh text.sm{font:400 11px var(--f-mono);letter-spacing:.08em;fill:var(--mist);text-transform:none}
+.horizon .lh.planned text{fill:var(--fog)}
+.horizon .tower{fill:#20414E;stroke:var(--line-2)}
+.horizon .lh.now .tower{fill:#2E5B6B}
+.horizon .glow{fill:var(--lamp);opacity:0}
+.horizon .lh.now .glow{opacity:1;animation:pulse 2.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.horizon .flare{fill:none;stroke:var(--lamp);stroke-width:1.2;opacity:0}
+.horizon .lh.now .flare{opacity:.5}
+.nownext{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:18px}
+@media (min-width:860px){.nownext{grid-template-columns:1.15fr .85fr}}
+.nownext .panel h3{display:flex;align-items:center;gap:10px}
+.nownext .panel h3 i{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--starboard);box-shadow:0 0 10px var(--starboard)}
+.nownext .panel.next h3 i{background:transparent;border:2px solid var(--mist);box-shadow:none}
+.feat{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+.feat li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;font-size:15px;color:var(--fog);align-items:start}
+.feat li b{color:var(--chalk);font-weight:700}
+.feat li .ck{width:20px;height:20px;border-radius:50%;background:rgba(63,212,142,.15);border:1.5px solid var(--starboard);display:grid;place-items:center;color:var(--starboard);font-size:12px;font-weight:700;margin-top:2px}
+.feat li .pl{width:20px;height:20px;border-radius:50%;border:1.5px dashed var(--mist);margin-top:2px}
+.feat li .tagp{display:inline-block;font-family:var(--f-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist);border:1px solid var(--line-2);border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:2px}
+
+/* ---- Act IX: start ---- */
+.steps{counter-reset:s;list-style:none;margin:10px 0 0;padding:0;display:grid;gap:12px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;background:var(--hull);border:1px solid var(--line);border-radius:14px;padding:16px}
+.steps li::before{content:counter(s);display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--lamp);color:#1a1200;font:900 20px var(--f-display)}
+.steps li>div{min-width:0}
+.steps h3{font-size:22px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin:4px 0 8px}
+.steps p{margin:8px 0 0;color:var(--fog);font-size:15px}
+.cmd{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;background:#04131A;border:1px solid var(--line);border-radius:10px;padding:8px 8px 8px 12px;min-width:0}
+.cmd+.cmd{margin-top:6px}
+.cmd code{font:13.5px/1.5 var(--f-mono);color:var(--chalk);overflow-x:auto;white-space:pre;display:block;scrollbar-width:thin}
+.cmd code::before{content:"$ ";color:var(--lamp)}
+.copy{min-height:34px;padding:4px 12px;border-radius:8px;border:1.5px solid var(--line-2);background:transparent;cursor:pointer;font-family:var(--f-mono);font-size:12px;color:var(--fog);white-space:nowrap}
+.copy:hover{border-color:var(--chalk);color:var(--chalk)}
+.copy.done{border-color:var(--starboard);color:var(--starboard-ink)}
+.ask{margin-top:26px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media (min-width:900px){.ask{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}}
+.chat{background:#04131A;border:1px solid var(--line-2);border-radius:16px;padding:16px;display:grid;gap:10px;min-width:0}
+.bubble{max-width:92%;padding:10px 14px;border-radius:14px;font-size:15px;line-height:1.5}
+.bubble.you{justify-self:end;background:var(--lamp);color:#1a1200;border-bottom-right-radius:4px}
+.bubble.skill{background:var(--hull);color:var(--fog);border-bottom-left-radius:4px}
+.bubble.skill b{color:var(--chalk)}
+.bubble .mono{font-family:var(--f-mono);font-size:12.5px;color:var(--starboard-ink);display:block;margin-top:6px}
+.links{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+details.fine{margin-top:18px;border:1px solid var(--line);border-radius:12px;background:var(--hull)}
+details.fine summary{cursor:pointer;padding:12px 16px;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.fine summary::-webkit-details-marker{display:none}
+details.fine summary::after{content:"+";font-family:var(--f-mono);color:var(--lamp)}
+details.fine[open] summary::after{content:"−"}
+details.fine .in{padding:0 16px 16px;color:var(--fog);font-size:15px}
+pre.block{margin:10px 0 0;background:#04131A;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font:12.5px/1.6 var(--f-mono);color:var(--fog);overflow-x:auto}
+
+/* ---- credits ---- */
+.credits{border-top:1px solid var(--line);padding-block:48px 72px;color:var(--mist);font-size:14.5px}
+.credits h2{font-size:28px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--fog);margin-bottom:12px}
+.credits ol{margin:0;padding-left:1.3em;columns:2 340px;column-gap:40px}
+.credits li{break-inside:avoid;margin:0 0 8px}
+.credits a{color:var(--fog)}
+
+/* ---- reveal + motion ---- */
+.rv{transition:opacity .75s ease,transform .75s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--d,0) * 90ms)}
+.rv.pre{opacity:0;transform:translateY(26px)}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation:none!important;transition-duration:0s!important;transition-delay:0s!important}
+  .rv.pre{opacity:1;transform:none}
+  .beam{opacity:.35}
+  .hero h1,.hero .dek,.hero .sub,.hero-actions{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#act-1">Skip to the first act</a>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="ship" viewBox="0 0 140 70">
+    <polygon points="4,44 136,44 124,64 16,64" fill="var(--hull-paint)"/>
+    <rect x="4" y="44" width="132" height="3.5" fill="var(--hull-stripe)" opacity=".85"/>
+    <rect x="92" y="28" width="30" height="16" rx="1.5" fill="var(--cabin)"/>
+    <rect x="98" y="33" width="6" height="5" fill="var(--lantern)" opacity=".9"/>
+    <rect x="109" y="33" width="6" height="5" fill="var(--lantern)" opacity=".9"/>
+    <rect x="18" y="32" width="20" height="12" fill="#B7542E"/>
+    <rect x="40" y="32" width="20" height="12" fill="#2E6B7A"/>
+    <rect x="62" y="32" width="20" height="12" fill="#C9A35A"/>
+    <rect x="29" y="20" width="20" height="12" fill="#3C5F6B"/>
+    <line x1="50" y1="32" x2="50" y2="5" stroke="var(--mast)" stroke-width="2"/>
+    <rect x="51" y="5" width="16" height="11" fill="var(--q)"/>
+    <circle cx="107" cy="25" r="3.2" fill="var(--lantern)" class="lantern-glow"/>
+    <circle cx="129" cy="54" r="3.6" fill="var(--light)"/>
+  </symbol>
+</svg>
+<div class="progress" aria-hidden="true"><span id="prog"></span></div>
+<nav class="rail" aria-label="Acts">
+  <ol>
+    <li><a href="#top"><em>Title</em><span>0</span></a></li>
+    <li><a href="#act-1"><em>One October</em><span>I</span></a></li>
+    <li><a href="#act-2"><em>Who</em><span>II</span></a></li>
+    <li><a href="#act-3"><em>Quarantine</em><span>III</span></a></li>
+    <li><a href="#act-4"><em>The pilot</em><span>IV</span></a></li>
+    <li><a href="#act-5"><em>Four berths</em><span>V</span></a></li>
+    <li><a href="#act-6"><em>Every vessel</em><span>VI</span></a></li>
+    <li><a href="#act-7"><em>The ledger</em><span>VII</span></a></li>
+    <li><a href="#act-8"><em>The horizon</em><span>VIII</span></a></li>
+    <li><a href="#act-9"><em>Cast off</em><span>IX</span></a></li>
+  </ol>
+</nav>
+
+<header class="hero" id="top">
+  <svg class="full layer" data-speed="0.35" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><g id="stars"></g></svg>
+  <div class="fog a layer" data-speed="0.2" aria-hidden="true"></div>
+  <svg class="full layer" data-speed="0.25" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <polygon points="980,472 1440,472 1440,386 1330,404 1220,432 1100,452" fill="#0B2733"/>
+    <polygon points="56,474 176,474 156,442 128,434 84,446" fill="#0A2430"/>
+    <polygon points="1166,442 1194,442 1189,318 1171,318" fill="#1A3B48"/>
+    <rect x="1162" y="304" width="36" height="16" rx="2" fill="#244C5B"/>
+    <rect x="1158" y="318" width="44" height="3" fill="#2E5A69"/>
+    <polygon points="1162,304 1198,304 1180,292" fill="#2E5A69"/>
+    <circle id="lamp" cx="1180" cy="312" r="6" fill="#F3B33D" class="lantern-glow"/>
+    <rect x="0" y="472" width="1440" height="4" fill="#2A4B4E" opacity=".7"/>
+  </svg>
+  <canvas id="water" aria-hidden="true"></canvas>
+  <svg class="full layer" data-speed="0.16" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <g transform="translate(1300 452) scale(.42)"><svg class="ship-svg" width="140" height="70"><use href="#ship"/></svg></g>
+    <g transform="translate(760 442) scale(.72)"><svg class="ship-svg" width="140" height="70"><use href="#ship"/></svg></g>
+    <g transform="translate(980 528) scale(1.25)"><svg class="ship-svg held" width="140" height="70"><use href="#ship"/></svg></g>
+  </svg>
+  <div class="fog b layer" data-speed="0.12" aria-hidden="true"></div>
+  <div class="beam" id="beam" aria-hidden="true"></div>
+  <svg class="full layer" data-speed="0.06" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <polygon points="0,800 0,662 236,662 282,684 282,800" fill="#031016" opacity=".3"/>
+    <polygon points="0,800 0,668 236,668 282,690 282,800" fill="#04121A"/>
+    <rect x="40" y="648" width="12" height="22" rx="3" fill="#0A2430"/>
+    <rect x="150" y="648" width="12" height="22" rx="3" fill="#0A2430"/>
+    <path d="M46,652 C90,640 110,640 156,652" fill="none" stroke="#23434E" stroke-width="2"/>
+    <rect x="246" y="560" width="5" height="110" fill="#0F2B36"/>
+    <rect x="236" y="552" width="25" height="12" rx="3" fill="#1A3B48"/>
+    <circle cx="248.5" cy="566" r="4" fill="#F3B33D" class="lantern-glow"/>
+  </svg>
+  <div id="lantern" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="hero-copy">
+      <p class="eyebrow">A film in nine acts · release 0.10.0</p>
+      <h1>Workstation Steward</h1>
+      <p class="dek">A harbormaster for everything that lands on your machine, and a pilot when you need one.</p>
+      <p class="sub">Your Mac runs hundreds of tools from many sources, and each one updates on its own schedule. The steward is the one place that decides what is allowed in, and when. With its skills installed, open Claude Code and it tells you, once, what needs you; answer in plain words. Nothing changes without your word, and every change can be undone.</p>
+      <div class="hero-actions">
+        <a class="btn primary" href="#act-1">Start the film</a>
+        <a class="btn" href="#act-9">Skip to the install</a>
+      </div>
+      <ul class="badges" aria-label="At a glance">
+        <li>macOS today</li>
+        <li>MIT · open source</li>
+        <li>Nothing changes on its own</li>
+        <li class="next">Linux and Windows on the horizon</li>
+      </ul>
+    </div>
+  </div>
+  <div class="cue" aria-hidden="true"><span>Scroll</span><i></i></div>
+</header>
+
+<main>
+<!-- ================= ACT I ================= -->
+<section class="act" id="act-1" aria-labelledby="h-act1">
+  <div class="act-card"><div class="glow"></div><div class="wrap">
+    <p class="act-no"><b>I</b> Why</p>
+    <h2 id="h-act1" class="rv">One October</h2>
+    <p class="dek rv" data-d="1">Four things that happened to real machines, in one month.</p>
+  </div></div>
+  <div class="wrap act-body">
+    <div class="split">
+      <div class="prose rv">
+        <p class="lead">Almost nothing on a developer's machine was installed by one tool. Language runtimes, command-line tools, Homebrew, desktop apps, AI coding tools and every project's own dependencies all arrive by their own roads, on their own schedules. Together those roads are your <dfn title="Every path a piece of software travels to reach your machine">software supply chain</dfn>.</p>
+        <p>Some of those arrivals are attacks. Some carry flaws. Nobody sees the whole harbor at once, because nobody is standing where the decisions get made. In October 2026 alone, four kinds of thing came in on the tide. Tune in to channel 16, the frequency ships call on when something is wrong.</p>
+      </div>
+      <div class="radio live rv" id="radio" data-d="1">
+        <div class="radio-head">
+          <div class="freq">156.800 MHz<small>CH 16 · CALLING</small></div>
+          <div class="meter" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="tx" id="tx" aria-live="polite">
+          <span class="tag">Transmission 1 of 4</span>
+          <h3>A hijacked release</h3>
+          <p>A compromised LiteLLM release reached PyPI and Docker Hub, including the <code>latest</code> tag. It was pulled within hours. Every machine that pulled <code>latest</code> in that window got it.</p>
+          <div class="src"><a href="https://github.com/pacphi/workstation-steward/blob/main/docs/guide.md#why-it-exists" rel="noopener">docs/guide.md</a><a href="https://smartscope.blog/en/blog/litellm-1-107-0-malware-incident-verification-commands-2026/" rel="noopener">incident write-up</a></div>
+        </div>
+        <div class="radio-foot">
+          <ol class="dots" id="dots" aria-label="Transmissions"></ol>
+          <div style="display:flex;gap:8px"><button class="rbtn" id="rprev" aria-label="Previous transmission">◂ Prev</button><button class="rbtn" id="rnext" aria-label="Next transmission">Next ▸</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="thesis rv">
+      <h3>Each one happened because a tool <em>decided for itself.</em></h3>
+      <p class="dek">And no one was watching the whole harbor.</p>
+      <p>The steward is the one place where that decision gets made, and written down. It aims for <strong>safe, explained and reversible</strong>, not merely newest. Think of it as a package manager for your package managers: one set of plain rules, with sensible defaults, applied to mise, Homebrew, your apps, your AI tools and every project you work on.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ACT II ================= -->
+<section class="act" id="act-2" aria-labelledby="h-act2">
+  <div class="act-card"><div class="glow"></div><div class="wrap">
+    <p class="act-no"><b>II</b> Who</p>
+    <h2 id="h-act2" class="rv">Who stands on the pier</h2>
+    <p class="dek rv" data-d="1">Four people who feel this first.</p>
+  </div></div>
+  <div class="wrap act-body">
+    <p class="lead rv">You do not need to be a security specialist. You need to have felt one of these.</p>
+    <div class="pier">
+      <article class="who rv" data-d="0">
+        <svg viewBox="0 0 44 44" aria-hidden="true"><rect x="4" y="22" width="14" height="14" rx="2" fill="#2E6B7A"/><rect x="20" y="22" width="14" height="14" rx="2" fill="#C9A35A"/><rect x="12" y="6" width="14" height="14" rx="2" fill="#B7542E"/><rect x="28" y="12" width="12" height="10" rx="2" fill="#3C5F6B"/></svg>
+        <h3>The builder with too many repos</h3>
+        <p>Dozens of projects under <code>~/Development</code>, each with its own tool files. You want them consistent, from one place, without visiting each one.</p>
+        <div class="gets"><b>What you get</b>A registry of your decisions, every project brought to its decision with one yes, and one weekly list of what needs you.</div>
+      </article>
+      <article class="who rv" data-d="1">
+        <svg viewBox="0 0 44 44" aria-hidden="true"><rect x="8" y="4" width="28" height="36" rx="2" fill="#F4EEDD"/><path d="M14 12h16M14 18h16M14 24h10" stroke="#1C2B30" stroke-width="2"/><rect x="24" y="28" width="10" height="8" fill="#F25C4F" transform="rotate(-8 29 32)"/></svg>
+        <h3>The consultant on client work</h3>
+        <p>You are trusted with other people's code. You need to say what is on your machine, when it got there, and that you can put it back.</p>
+        <div class="gets"><b>What you get</b>A receipt for every change, a backup before it, and releases whose build you can verify.</div>
+      </article>
+      <article class="who rv" data-d="2">
+        <svg viewBox="0 0 44 44" aria-hidden="true"><path d="M22 4 38 11v10c0 9-7 16-16 19C13 37 6 30 6 21V11z" fill="#1C4658" stroke="#3FD48E" stroke-width="2"/><path d="M14 22l6 6 11-12" fill="none" stroke="#3FD48E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3>The engineer who reads advisories</h3>
+        <p>You want a gate in front of new releases, a plan before anything runs, and a record after. Not a changelog you discover later.</p>
+        <div class="gets"><b>What you get</b>A 3-day release-age gate, an exception for the first patched release, and audits that only read.</div>
+      </article>
+      <article class="who rv" data-d="3">
+        <svg viewBox="0 0 44 44" aria-hidden="true"><line x1="22" y1="40" x2="22" y2="6" stroke="#C7D7DB" stroke-width="2.5"/><rect x="23" y="6" width="14" height="10" fill="#F2D23B"/><circle cx="22" cy="5" r="3" fill="#F3B33D"/><path d="M8 40h28" stroke="#C7D7DB" stroke-width="2.5"/></svg>
+        <h3>The agentic engineer</h3>
+        <p>You run Ruflo, AQE or Brain across projects. You want them pinned, qualified, and never updating or spending tokens on their own.</p>
+        <div class="gets"><b>What you get</b>Drift checks, repinning to stable paths, and guards that stay off whatever the tool defaults to.</div>
+      </article>
+    </div>
+    <div class="notyet rv">
+      <h3>Not for you, yet, if</h3>
+      <ul>
+        <li>you want updates to happen silently in the background. Nothing changes on its own, on purpose: the only thing that runs unasked is a short look that reads and never writes.</li>
+        <li>you want a window to click in. It is a conversation in Claude Code, and eight commands for when you'd rather type.</li>
+        <li>you work on Linux or Windows today. macOS came first; the rest is charted in Act VIII.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ACT III ================= -->
+<section class="act" id="act-3" aria-labelledby="h-act3">
+  <div class="act-card"><div class="glow"></div><div class="wrap">
+    <p class="act-no"><b>III</b> The gate</p>
+    <h2 id="h-act3" class="rv">Quarantine</h2>
+    <p class="dek rv" data-d="1">New releases wait at the anchorage. Three days, by default.</p>
+  </div></div>
+  <div class="wrap act-body">
+    
+      <div class="prose rv">
+        <p class="lead">In Venice, ships from plague ports waited forty days before anyone came ashore. <em>Quaranta giorni</em> gave us the word quarantine. The steward keeps the idea and shortens the wait.</p>
+        <p>A new version comes in once it is <strong>3 days old</strong>. This is the <dfn>release-age gate</dfn>. Most hijacked or broken releases are found and pulled within days, so a short wait lets other people find them first. You set the number once, in <code>steward.toml</code>, and it applies everywhere: mise, Homebrew and Renovate all read the same value.</p>
+        <p>A ship flying the yellow <span class="flagQ" aria-hidden="true"></span><strong>Q flag</strong> is asking to come ashore. Move the gate and watch who gets in.</p>
+      </div>
+      <div class="gate rv" id="gate">
+        <div class="gate-controls">
+          <div class="slider">
+            <label for="gate-days">Release-age gate <output id="gate-out" for="gate-days">3<small>days</small></output></label>
+            <input type="range" id="gate-days" min="0" max="14" step="1" value="3">
+            <div class="ticks" aria-hidden="true"><span>0 days</span><span>14 days</span></div>
+          </div>
+          <div class="toggles">
+            <label><input type="checkbox" id="tg-adv" checked> The first patched release for a published advisory may skip the gate</label>
+            <label><input type="checkbox" id="tg-browser" checked> Browsers are never held: nearly every release carries security fixes</label>
+          </div>
+        </div>
+        <div class="gate-actions">
+          <button class="tbtn primary" id="nextday">Advance one day ▸</button>
+          <button class="tbtn" id="gate-reset">Reset</button>
+          <span class="tally" id="tally" aria-live="polite"></span>
+        </div>
+        <div class="harbor">
+          <div class="zone anchorage"><h4>Anchorage · holding <b id="n-hold">0</b></h4><div class="ships" id="z-hold"></div></div>
+          <div class="lightline" aria-hidden="true">
+            <svg viewBox="0 0 44 92"><polygon points="16,88 28,88 26,30 18,30" fill="#1A3B48"/><rect x="12" y="20" width="20" height="10" rx="2" fill="#244C5B"/><circle cx="22" cy="25" r="4" fill="#F3B33D" class="lantern-glow"/><line x1="4" y1="90" x2="40" y2="90" stroke="#2A4B4E" stroke-width="2"/></svg>
+            <span>the gate</span>
+          </div>
+          <div class="zone quay"><h4>Quay · cleared <b id="n-take">0</b></h4><div class="ships" id="z-take"></div></div>
+          <div class="zone office" style="grid-column:1/-1"><h4>Harbormaster's office · your call <b id="n-ask">0</b></h4><div class="ships" id="z-ask"></div></div>
+        </div>
+        <div class="gate-foot">
+          <pre class="toml" aria-label="The policy line this control edits"><i># steward.toml</i>
+[policy]
+min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</i></pre>
+          <p class="note">The ages are real ones from recorded sessions. The steward's own release 0.10.0 shows its true age as you read this, because installed through mise it waits out the same gate as every other tool.</p>
+        </div>
+      </div>
+    <ul class="rules">
+      <li class="rv" data-d="0"><b>One number, everywhere</b>Set once in <code>steward.toml</code>. <code>steward sc release-age</code> changes it there and in the copies mise and Renovate need, and the audit flags any disagreement.</li>
+      <li class="rv" data-d="1"><b>The advisory exception</b>The first patched release for a published advisory (GitHub Advisory Database, RustSec, OSV) may skip the gate, with an expiry.</li>
+      <li class="rv" data-d="2"><b>Majors are deliberate</b>A major version always waits for your decision. A 0.x minor bump counts as a major.</li>
+      <li class="rv" data-d="3"><b>Signed data skips it too</b>Data that is signed by a pinned key, never code, checked against the gated runtime that reads it.</li>
+      <li class="rv" data-d="4"><b>See who is waiting</b><code>steward review</code> reads Renovate's Dependency Dashboard: each update held at the anchorage, when it clears in UTC, and the next step. It only reads.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= ACT IV ================= -->
+<section class="act" id="act-4" aria-labelledby="h-act4">
+  <div class="act-card"><div class="glow"></div><div class="wrap">
+    <p class="act-no"><b>IV</b> The pilot</p>
+    <h2 id="h-act4" class="rv">The pilot comes aboard</h2>
+    <p class="dek rv" data-d="1">The pilot knows the water. The captain keeps command. Every change goes in the log.</p>
+  </div></div>
+  <div class="wrap act-body">
+    <p class="lead rv">In a busy port, a <dfn title="A local expert who boards a ship to bring it in safely; the captain keeps command">harbor pilot</dfn> comes aboard to bring the ship in. Here the pilot is Claude, carrying the steward's skills. It takes soundings whenever it likes, because looking changes nothing. Anything that changes your machine waits for <strong>your word</strong>, follows one shape (a plan, a backup, a <dfn title="A small record of what changed and where the backup is">receipt</dfn>, a way back) and goes in the log. Bring the pilot aboard: the session below retells a recorded one, and it waits for you where the real one does.</p>
+    <div class="pilot-deck">
+      <div>
+        <div class="term" id="cc">
+          <div class="term-bar"><i></i><i></i><i></i><span>claude — ~/Development/web</span></div>
+          <div class="cc-body" id="cc-body" tabindex="0" aria-live="polite" aria-label="A Claude Code session. Your answers are the buttons below it."></div>
+          <div class="cc-choices" id="cc-choices" role="group" aria-label="Your answer"></div>
+        </div>
+        <p class="caption">Retold from recorded sessions (<code>docs/assets/steward-skills-updates.svg</code> and <code>steward-upgrade.svg</code>), with the line a command has printed since 0.10.0 when it answers with your yes. <q>Do you want to proceed?</q> is Claude Code's own prompt: the skill runs only read-only commands without asking. Paths are shortened with <code>~</code>, the way the steward prints them.</p>
+      </div>
+      <div class="side">
+        <div class="panel loop" id="loop">
+          <h3>One shape for every change</h3>
+          <svg viewBox="0 0 320 300" role="img" aria-label="A ring of five stops: plan, yes, backup, change, receipt. A dashed green path from receipt back to the start is the way back.">
+            <circle class="ring" cx="160" cy="150" r="104"/>
+            <circle class="flow" cx="160" cy="150" r="104"/>
+            <path class="back" d="M44 140 C 6 170, 6 230, 70 262"/>
+            <text class="backlbl" x="62" y="200">way back</text>
+            <text class="hub" x="160" y="146">plan · yes ·</text>
+            <text class="hub" x="160" y="166">backup · receipt</text>
+            <g class="node" data-s="plan"><circle cx="160" cy="46" r="28"/><text x="160" y="51">PLAN</text></g>
+            <g class="node" data-s="yes"><circle cx="259" cy="118" r="28"/><text x="259" y="123">YES</text></g>
+            <g class="node" data-s="backup"><circle cx="221" cy="234" r="28"/><text x="221" y="239">BACKUP</text></g>
+            <g class="node" data-s="change"><circle cx="99" cy="234" r="28"/><text x="99" y="239">CHANGE</text></g>
+            <g class="node" data-s="receipt"><circle cx="61" cy="118" r="28"/><text x="61" y="123">RECEIPT</text></g>
+          </svg>
+          <p class="note"><code>DRY_RUN=1</code> shows the plan and stops. Say no, and nothing happens at all.</p>
+        </div>
+        <div class="receipt" id="receipt" aria-live="polite">
+          <h4>Receipt <small>workstation-steward</small></h4>
+          <dl>
+            <dt>command</dt><dd>steward sc upgrade</dd>
+            <dt>yes</dt><dd>yours, for this run (--yes-to upgrade)</dd>
+            <dt>changed</dt><dd>gh 2.103.1 → 2.103.2</dd>
+            <dt>backup</dt><dd>~/.config/mise/backups/config.toml.20261028-112629</dd>
+            <dt>way back</dt><dd>steward rollback</dd>
+            <dt>soak</dt><dd>old gh kept 3 days; prune waits</dd>
+          </dl>
+          <span class="rstamp ok" aria-hidden="true">applied</span>
+          <span class="rstamp" aria-hidden="true">rolled back</span>
+        </div>
+        <div class="yard" id="yard">
+          <h4>The yard · <dfn title="The days after a change when the old install is kept, so going back is a restore, not a reinstall">soak</dfn></h4>
+          <p id="yard-text">gh 2.103.1 stays on disk for 3 days. <code>steward sc prune</code> waits them out, then asks.</p>
+          <div class="bar" id="yard-bar" aria-hidden="true"><i></i></div>
+          <p class="note" id="yard-days">day 0 of 3</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="orders">
+      <div class="prose rv">
+        <h3>Standing orders</h3>
+        <p>The engine labels every step with who may take it. How far the pilot goes without asking is yours to set, once, in <code>steward.toml</code>: <code>[autonomy] level</code>. No setting widens what is always yours, and every write still plans, backs up and writes a receipt.</p>
+        <div class="berth-tabs" role="group" aria-label="Your [autonomy] level" id="lvl">
+          <button type="button" data-l="ask" aria-pressed="false">ask</button><button type="button" data-l="safe" aria-pressed="true">safe · the default</button><button type="button" data-l="maintainer" aria-pressed="false">maintainer</button>
+        </div>
+        <p class="note" id="lvl-note" style="margin-top:12px"></p>
+      </div>
+      <ul class="who-list rv" data-d="1" id="orders" aria-live="polite"></ul>
+    </div>
+
+    <div class="firstword">
+      <div class="prose rv">
+        <h3>No Claude open? Type <code>steward</code></h3>
+        <p>On its own, <code>steward</code> reads what is already on your disk and names <strong>the one next step</strong>, with its exact command, or says nothing needs you. A step that stopped midway comes first, in red, with the step that finishes it. In Claude Code the same answer arrives as the pilot's first word: one <q>Steward:</q> line at the end of its first reply, once, then quiet. A broken or half-finished state shows as a notice instead.</p>
+        <p><code>steward fix</code> works the whole list the way the pilot does: it runs what your standing orders allow, asks you for the rest, and hands you what is yours.</p>
+      </div>
+      <div class="mini rv" data-d="1" role="img" aria-label="A terminal: steward names an upgrade that stopped after one of its two parts, and the one next step, steward upgrade. Once it has finished, steward says nothing needs you.">
+        <div class="term-bar"><i></i><i></i><i></i><span>steward — zsh</span></div>
+<pre><span class="c">steward</span>
+<span class="red">steward</span> upgrade stopped midway: 1 of 2 part(s) done
+<span class="dim">next:</span> <span class="ans">steward upgrade</span>
+<span class="dim">+1 more: steward brief --all</span>
+
+<span class="dim"># (here you run steward upgrade: it shows the part left, asks once, runs it)</span>
+
+<span class="c">steward</span>
+<span class="grn">steward</span> nothing needs you</pre>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ================= ACT V ================= -->
+<section class="act" id="act-5" aria-labelledby="h-act5">
+  <div class="act-card"><div class="glow"></div><div class="wrap">
+    <p class="act-no"><b>V</b> The map</p>
+    <h2 id="h-act5" class="rv">Four berths</h2>
+    <p class="dek rv" data-d="1">A machine has more than one supply chain. Each gets its own berth, its own rules and its own commands.</p>
+  </div></div>
+  <div class="wrap act-body">
+    <p class="lead rv">A toolchain falls behind. An app bundles an old runtime. An AI tool updates itself. A project pins a path that a cleanup removes. Left to one script, these overlap without knowing about each other. Giving each supply chain its own area makes the drift visible and the rules enforceable. Click a berth.</p>
+    <div class="map">
+      <svg viewBox="0 0 900 520" role="img" aria-label="A harbor map with four berths: the shipping lanes at sea, the docks, the bonded warehouse and the registry office." id="mapsvg">
+        <defs><clipPath id="mapclip"><rect x="0" y="0" width="900" height="520" rx="18"/></clipPath></defs>
+        <g clip-path="url(#mapclip)">
+          <g class="berth" data-b="fleet" tabindex="0" role="button" aria-label="The shipping lanes: fleet">
+            <rect class="hit" x="0" y="0" width="900" height="250"/>
+            <path class="lane" d="M-20 90 C 200 60, 420 120, 640 80 S 900 60, 940 70"/>
+            <path class="lane" d="M-20 170 C 240 140, 460 200, 700 160 S 900 150, 940 160"/>
+            <g class="bld-g"><ellipse class="bld" cx="790" cy="62" rx="70" ry="26"/><rect class="bld" x="770" y="30" width="40" height="30" rx="3"/><circle class="lamp" cx="790" cy="24" r="6"/></g>
+            <text x="790" y="118" text-anchor="middle">GitHub · the remote</text>
+            <circle cx="140" cy="122" r="6" fill="#F25C4F"/><circle cx="420" cy="104" r="6" fill="#3FD48E"/><circle cx="600" cy="190" r="6" fill="#F25C4F"/>
+            <text x="120" y="226">The shipping lanes</text>
+            <text class="sm" x="120" y="246">Fleet · Renovate PRs, one verified PR per repo, checkouts kept level</text>
+          </g>
+          <path class="mapwater" d="M0 300 H900"/>
+          <rect x="0" y="300" width="900" height="220" fill="#0A2430"/>
+          <g class="berth on" data-b="sc" tabindex="0" role="button" aria-label="The docks: supply chain">
+            <rect class="hit" x="20" y="300" width="400" height="220"/>
+            <rect class="bld" x="40" y="330" width="360" height="150" rx="4"/>
+            <rect x="60" y="430" width="48" height="30" fill="#B7542E"/><rect x="112" y="430" width="48" height="30" fill="#2E6B7A"/><rect x="164" y="430" width="48" height="30" fill="#C9A35A"/><rect x="86" y="400" width="48" height="30" fill="#3C5F6B"/><rect x="138" y="400" width="48" height="30" fill="#B7542E"/>
+            <polygon points="300,470 310,470 314,360 296,360" fill="#2E5A69"/><rect x="250" y="352" width="130" height="8" fill="#2E5A69"/><line x1="370" y1="360" x2="370" y2="400" stroke="#C7D7DB" stroke-width="2"/><rect x="360" y="400" width="20" height="14" fill="#C9A35A"/>
+            <circle class="lamp" cx="60" cy="350" r="6"/>
+            <text x="60" y="380">The docks</text>
+            <text class="sm" x="60" y="398">Supply chain · what lands, and when</text>
+          </g>
+          <g class="berth" data-b="ai" tabindex="0" role="button" aria-label="The bonded warehouse: AI tooling">
+            <rect class="hit" x="440" y="300" width="240" height="220"/>
+            <rect class="bld" x="460" y="352" width="200" height="128" rx="3"/>
+            <polygon class="roof" points="452,352 560,312 668,352"/>
+            <rect x="540" y="430" width="40" height="50" fill="#04131A"/>
+            <rect x="476" y="366" width="168" height="22" rx="2" fill="#04131A"/>
+            <text x="560" y="383" text-anchor="middle" style="font-size:13px;fill:#F3B33D">BONDED</text>
+            <circle class="lamp" cx="560" cy="330" r="6"/>
+            <text x="560" y="498" text-anchor="middle">The bonded warehouse</text>
+            <text class="sm" x="560" y="512" text-anchor="middle">AI tooling · add-on</text>
+          </g>
+          <g class="berth" data-b="projects" tabindex="0" role="button" aria-label="The registry office: projects">
+            <rect class="hit" x="690" y="300" width="210" height="220"/>
+            <rect class="bld" x="710" y="380" width="170" height="100" rx="3"/>
+            <polygon class="roof" points="704,380 795,346 886,380"/>
+            <rect x="780" y="440" width="30" height="40" fill="#04131A"/>
+            <rect x="726" y="398" width="28" height="24" fill="#F3B33D" opacity=".55"/><rect x="836" y="398" width="28" height="24" fill="#F3B33D" opacity=".55"/>
+            <circle class="lamp" cx="795" cy="362" r="6"/>
+            <text x="795" y="498" text-anchor="middle">The registry office</text>
+            <text class="sm" x="795" y="512" text-anchor="middle">Projects · add-on</text>
+          </g>
+          <g class="mapboat" id="mapboat" transform="translate(190 268)"><g transform="scale(.46)"><svg class="ship-svg" width="140" height="70"><use href="#ship"/></svg></g></g>
+        </g>
+      </svg>
+      <div class="berth-panel panel" id="berth-panel">
+        <p class="eyebrow" id="bp-area">Supply chain</p>
+        <h3 id="bp-title">The docks</h3>
+        <p id="bp-words">Everything that lands on the machine: mise tools and mise itself, the global npm command-line tools, Homebrew formulae and casks, apps and the runtimes they bundle, the App Store, macOS, trust stores, Docker images, and known signs of compromise.</p>
+        <p class="rule" id="bp-rule">Decides when a version may come in.</p>
+        <ul class="cmds" id="bp-cmds"></ul>
+        <div class="berth-tabs" role="group" aria-label="Choose a berth">
+          <button data-b="sc" aria-pressed="true">docks</button><button data-b="ai" aria-pressed="false">warehouse</button><button data-b="projects" aria-pressed="false">registry</button><button data-b="fleet" aria-pressed="false">lanes</button>
+        </div>
+      </div>
+    </div>
+    <div class="banner rv">
+      <div><b>Supply chain decides <em>when.</em></b><p>A version may come in once it is 3 days old, or is the first patched release for an advisory.</p></div>
+      <div><b>AI tooling decides <em>whether.</em></b><p>It never installs a version supply chain has not cleared, and adds its own qualification on top.</p></div>
+    </div>
+    <p class="lead rv" style="margin-top:26px">Each berth has <strong>one order for its routine</strong>, and it shows every part's plan before it asks once: <code>steward upgrade</code> at the docks, <code>steward ai fix</code> at the warehouse, <code>steward projects apply</code> at the registry office, <code>steward fleet tidy</code> in the lanes. Each part keeps its own backup, receipt and way back, and still runs on its own when only one thing is behind.</p>
+  </div>
+</section>
+
+<!-- ================= ACT VI ================= -->
+<section class="act" id="act-6" aria-labelledby="h-act6">
+  <div class="act-card"><div class="glow"></div><div class="wrap">
+    <p class="act-no"><b>VI</b> Projects</p>
+    <h2 id="h-act6" class="rv">Every vessel picks its own kit</h2>
+    <p class="dek rv" data-d="1">Configuration lives in each project. Consistent across projects, if you want it.</p>
+  </div></div>
+  <div class="wrap act-body">
+    <div class="split even">
+      <div class="prose rv">
+        <p class="lead">Most tools that manage AI tooling work at the user level: one global setting for every project you open. The steward does the opposite.</p>
+        <p>Each project chooses its tools, or none, and the choice is recorded in a <dfn>registry</dfn>. <strong>Onboarding</strong> writes only that project's files, shows every one first, backs up, and never commits anything. The files it creates are listed in <code>.git/info/exclude</code>, so <code>git status</code> stays clean. Tracked files are refused; those changes go through a pull request.</p>
+        <p>When a new version of a tool is qualified, <strong>reconcile</strong> brings every project's copies in step. Copies you edited are kept and reported, and <code>--take</code> adopts the new one when you want it. <strong>Offboard</strong> takes the tools back out of a project that no longer wants them, with the same plan, yes, backup and receipt.</p>
+      </div>
+      <div class="prose rv" data-d="1">
+        <p class="lead">Try it. Choose each project's kit, plan it, then apply.</p>
+        <p>The plan on the right is the real shape of <code>steward projects onboard</code>: the file, whether it is absent or ignored today, and what would be added. Nothing is written until the apply, and the apply asks. For many projects at once, <code>steward projects --apply</code> asks each new one's decision, and <code>steward projects apply</code> brings every project to its decision with one yes. Or tell the pilot: <q>onboard the new repo with AQE only</q>.</p>
+      </div>
+    </div>
+    <div class="board">
+      <div class="registry rv" id="registry"></div>
+      <div class="rv" data-d="1">
+        <div class="term" id="ob">
+          <div class="term-bar"><i></i><i></i><i></i><span>steward — zsh</span></div>
+          <div class="term-body" id="ob-body" tabindex="0" aria-label="Onboarding terminal. When a question appears, press y or n, or use the buttons." aria-live="polite"><span class="dim">Pick a project's tools, then press Plan.</span>
+</div>
+          <div class="term-actions">
+            <button class="tbtn primary" id="ob-apply" disabled>Apply with <code>--apply</code></button>
+            <button class="tbtn" id="ob-clear">Clear</button>
+          </div>
+        </div>
+        <p class="caption">Retold from a recorded run (<code>docs/assets/steward-projects.svg</code>), adapted to the tools you pick.</p>
+      </div>
+    </div>
+    <div class="lineage rv">
+      <b>If you used agentic-kit:</b> this is where its best parts went. Drift checks, guards against self-updates and background daemons, and verified installs live on under <code>steward ai</code>. What changed is where the configuration lives: in the project, under a decision you made and can read back.
+    </div>
+  </div>
+</section>
+
+<!-- ================= ACT VII ================= -->
+<section class="act" id="act-7" aria-labelledby="h-act7">
+  <div class="act-card"><div class="glow"></div><div class="wrap">
+    <p class="act-no"><b>VII</b> Your data</p>
+    <h2 id="h-act7" class="rv">The ledger is yours</h2>
+    <p class="dek rv" data-d="1">The engine holds none of your data. Your policy is a few plain lines, with defaults you can change.</p>
+  </div></div>
+  <div class="wrap act-body">
+    <div class="ledger">
+      <div class="panel rv">
+        <h3>The engine</h3>
+        <p class="note">The npm package. Code only.</p>
+        <ul>
+          <li>Knows no paths, no projects, no repos. <code>just leak-check</code> keeps it that way.</li>
+          <li>Every release since 0.1.0 is built and published by the repo's GitHub workflow, never from a laptop, and carries a signed <dfn title="A signed record of the commit and workflow that built a release">provenance</dfn> record anyone can check.</li>
+          <li>Installed through mise, it waits out the same release-age gate as every other tool.</li>
+        </ul>
+      </div>
+      <div class="panel rv" data-d="1">
+        <h3>Your instance</h3>
+        <p class="note">A folder: <code>~/.config/workstation-steward</code></p>
+        <ul>
+          <li><code>steward.toml</code> and the policy files beside it: where your projects live, the gate, the soak, which add-ons are on.</li>
+          <li>Best kept in a private Git repo: a history, Renovate for your toolchain, and a second Mac in minutes.</li>
+          <li><code>steward config sync</code> keeps this Mac and GitHub level, fast-forward only, with a plan and a yes.</li>
+          <li>Receipts and backups live outside any repo, in <code>~/.local/state/workstation-steward/</code>, mode 0700.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="lead rv" style="margin-top:30px">Click any value to change it. <code>steward config</code> reports every effective value and where it came from: the engine's default, or your file.</p>
+    <div class="tomlbox">
+      <div class="toml-live rv" id="toml" aria-label="steward.toml, with clickable values"></div>
+      <div class="cfg-out rv" data-d="1" id="cfg" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ACT VIII ================= -->
+<section class="act" id="act-8" aria-labelledby="h-act8">
+  <div class="act-card"><div class="glow"></div><div class="wrap">
+    <p class="act-no"><b>VIII</b> Now and next</p>
+    <h2 id="h-act8" class="rv">The horizon</h2>
+    <p class="dek rv" data-d="1">What ships today, lit. What is charted next, in outline.</p>
+  </div></div>
+  <div class="wrap act-body">
+    <div class="horizon rv">
+      <svg viewBox="0 0 1200 300" role="img" aria-label="A horizon with four lighthouses. The near one, macOS, is lit. Linux, Windows with WSL, and NixOS stand further out, unlit and marked planned.">
+        <rect x="0" y="168" width="1200" height="3" fill="#2A4B4E" opacity=".8"/>
+        <g class="lh now" transform="translate(190 0)">
+          <circle class="flare" cx="0" cy="92" r="26"/><circle class="flare" cx="0" cy="92" r="44"/>
+          <polygon class="tower" points="-16,168 16,168 11,104 -11,104"/><rect class="tower" x="-15" y="90" width="30" height="14" rx="2"/><polygon class="tower" points="-15,90 15,90 0,80"/>
+          <circle class="glow" cx="0" cy="97" r="6"/>
+          <text x="0" y="206">macOS</text>
+          <text class="sm" x="0" y="226">Homebrew · mise · App Store</text>
+          <text class="sm" x="0" y="244">apps · trust stores · Docker</text>
+          <text class="sm" x="0" y="266" style="fill:#3FD48E">shipping now · 0.10.0</text>
+        </g>
+        <g class="lh planned" transform="translate(560 0)">
+          <polygon class="tower" points="-10,168 10,168 7,124 -7,124"/><rect class="tower" x="-10" y="114" width="20" height="10" rx="2"/>
+          <text x="0" y="206">Linux</text>
+          <text class="sm" x="0" y="226">apt · dnf · zypper · pacman</text>
+          <text class="sm" x="0" y="244">portage · slackpkg · apk · xbps</text>
+          <text class="sm" x="0" y="266">planned · first</text>
+        </g>
+        <g class="lh planned" transform="translate(860 0)">
+          <polygon class="tower" points="-8,168 8,168 6,134 -6,134"/><rect class="tower" x="-8" y="126" width="16" height="8" rx="2"/>
+          <text x="0" y="206">Windows 11 + WSL</text>
+          <text class="sm" x="0" y="226">winget · Scoop · Chocolatey</text>
+          <text class="sm" x="0" y="266">planned · second</text>
+        </g>
+        <g class="lh planned" transform="translate(1080 0)">
+          <polygon class="tower" points="-6,168 6,168 5,142 -5,142"/><rect class="tower" x="-6" y="136" width="12" height="6" rx="1.5"/>
+          <text x="0" y="206">NixOS</text>
+          <text class="sm" x="0" y="226">a dated update of the flake</text>
+          <text class="sm" x="0" y="266">planned · third</text>
+        </g>
+      </svg>
+    </div>
+    <div class="nownext">
+      <div class="panel rv">
+        <h3><i></i>Shipping now</h3>
+        <ul class="feat">
+          <li><span class="ck">✓</span><span><b>A pilot in Claude Code:</b> a skill for each area, and <code>/steward:fix</code> to work the list. It speaks first, once, when something needs you, and asks before anything changes.</span></li>
+          <li><span class="ck">✓</span><span><b>One next step, <code>steward</code>,</b> and one weekly list, <code>steward review</code>, including what the release-age gate holds back and when it clears.</span></li>
+          <li><span class="ck">✓</span><span><b>Standing orders:</b> every step labelled with who takes it, your <code>[autonomy]</code> level for what runs unattended, and <code>steward fix</code> to work through it.</span></li>
+          <li><span class="ck">✓</span><span><b>Eight everyday commands,</b> and one yes for each routine job: <code>upgrade</code>, <code>ai fix</code>, <code>projects apply</code>, <code>fleet tidy</code>.</span></li>
+          <li><span class="ck">✓</span><span><b>The supply chain of a Mac:</b> mise tools and mise itself, global npm tools, Homebrew formulae and casks, apps and their bundled runtimes, the App Store, macOS, trust stores, Docker images, indicators of compromise.</span></li>
+          <li><span class="ck">✓</span><span><b>The gate, the soak and the way back:</b> a 3-day release-age gate with the advisory exception, old installs kept 3 days, <code>steward rollback</code>.</span></li>
+          <li><span class="ck">✓</span><span><b>Same-day Node security releases</b> through <code>steward sc node-patch</code>: checksummed, byte-checked, with the previous Node kept.</span></li>
+          <li><span class="ck">✓</span><span><b>AI tooling add-on:</b> Ruflo, AgentDB, AQE, Brain and RuVector. Drift checks, repinning, and guards that keep self-updates and daemons off.</span></li>
+          <li><span class="ck">✓</span><span><b>Projects add-on:</b> scan, decide, onboard, reconcile and offboard, with a registry of your decisions.</span></li>
+          <li><span class="ck">✓</span><span><b>Fleet:</b> Renovate patterns, a repo's bot PRs folded into one verified PR, checkouts brought level after merges.</span></li>
+          <li><span class="ck">✓</span><span><b>Signed build provenance</b> on every release since 0.1.0, and your config kept in step with its repo by <code>steward config sync</code>.</span></li>
+        </ul>
+      </div>
+      <div class="panel next rv" data-d="1">
+        <h3><i></i>Charted next</h3>
+        <ul class="feat">
+          <li><span class="pl"></span><span><b>Linux,</b> one package manager at a time: apt, dnf, zypper, pacman, portage, slackpkg, apk, xbps. <span class="tagp">planned</span></span></li>
+          <li><span class="pl"></span><span><b>Windows 11 and WSL:</b> winget, Scoop and Chocolatey. Inside WSL, the Linux providers apply. <span class="tagp">planned</span></span></li>
+          <li><span class="pl"></span><span><b>NixOS:</b> a dated update of the flake or channel as a whole, and a roll back to a previous generation. <span class="tagp">planned</span></span></li>
+          <li><span class="pl"></span><span><b><code>steward sc add &lt;tool&gt;</code>:</b> the whole vetting checklist as one guided command. <span class="tagp">planned</span></span></li>
+          <li><span class="pl"></span><span><b><code>steward doctor</code> checking a release's provenance</b> for you, and release notes that say what to run when a version changes behavior. <span class="tagp">planned</span></span></li>
+        </ul>
+        <p class="note" style="margin-top:14px">Planned means written down in <code>docs/lifecycle.md</code> with an order, not a date. Nothing here is lit until it ships.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ACT IX ================= -->
+<section class="act" id="act-9" aria-labelledby="h-act9">
+  <div class="act-card"><div class="glow"></div><div class="wrap">
+    <p class="act-no"><b>IX</b> Start</p>
+    <h2 id="h-act9" class="rv">Cast off</h2>
+    <p class="dek rv" data-d="1">Four steps aboard. Then ask the pilot, or type one of eight.</p>
+  </div></div>
+  <div class="wrap act-body">
+    <div class="split">
+      <div>
+        <ol class="steps">
+          <li class="rv"><div>
+            <h3>Install through mise</h3>
+            <div class="cmd"><code>mise use -g npm:workstation-steward@0.10.0</code><button class="copy" data-copy="mise use -g npm:workstation-steward@0.10.0">Copy</button></div>
+            <p>mise then keeps the steward current under the same release-age gate as your other tools. Needs Node 26 or later. 0.10.0 was the current release when this page was made. Plain <code>npm install -g</code> works too, and <code>npx workstation-steward@0.10.0 version</code> lets you look without installing.</p>
+            <p class="note">Until 27 November 2026, mise asks for an approval because the package is less than 30 days old. Use this form instead:</p>
+            <div class="cmd"><code>mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.10.0'</code><button class="copy" data-copy="mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.10.0'">Copy</button></div>
+          </div></li>
+          <li class="rv"><div>
+            <h3>Check it</h3>
+            <div class="cmd"><code>steward version</code><button class="copy" data-copy="steward version">Copy</button></div>
+            <p>Says which release is running and where your config will live.</p>
+          </div></li>
+          <li class="rv"><div>
+            <h3>Set up</h3>
+            <div class="cmd"><code>steward init</code><button class="copy" data-copy="steward init">Copy</button></div>
+            <p>Creates your config from the examples, shows every file it will write, and asks first. Then it walks the rest one question at a time: the AI tooling add-on, the projects add-on and where your projects live, and the Claude Code skills, the pilot.</p>
+          </div></li>
+          <li class="rv"><div>
+            <h3>Take a first look. None of these change anything.</h3>
+            <div class="cmd"><code>steward doctor</code><button class="copy" data-copy="steward doctor">Copy</button></div>
+            <div class="cmd"><code>steward</code><button class="copy" data-copy="steward">Copy</button></div>
+            <p>What this machine still needs; then the one next step, and the eight everyday commands under it.</p>
+          </div></li>
+        </ol>
+        <div class="panel rv" style="margin-top:14px">
+          <h3>The eight, for when you'd rather type</h3>
+          <ul class="eight">
+            <li><code>steward</code><span>the one next step, or that nothing needs you</span></li>
+            <li><code>steward review</code><span>weekly: everything waiting on a decision</span></li>
+            <li><code>steward fix</code><span>work the list under your standing orders</span></li>
+            <li><code>steward upgrade</code><span>tools past the gate; shows the plan, asks once</span></li>
+            <li><code>steward config sync</code><span>your config repo level with GitHub</span></li>
+            <li><code>steward projects</code><span>what is new or gone; <code>--apply</code> asks each decision</span></li>
+            <li><code>steward rollback</code><span>undo the last upgrade or Node patch</span></li>
+            <li><code>steward doctor</code><span>first run, or when something seems off</span></li>
+          </ul>
+          <p class="note" style="margin-top:10px"><code>steward help --all</code> lists the rest, by area. Old names keep working.</p>
+        </div>
+        <div class="links rv">
+          <a class="btn primary" href="https://github.com/pacphi/workstation-steward" rel="noopener">The repo on GitHub</a>
+          <a class="btn" href="https://www.npmjs.com/package/workstation-steward" rel="noopener">On npm</a>
+          <a class="btn" href="https://github.com/pacphi/workstation-steward/blob/main/docs/guide.md" rel="noopener">Start-here guide</a>
+        </div>
+      </div>
+      <div>
+        <div class="panel rv">
+          <h3>Bring the pilot aboard</h3>
+          <p class="note" style="margin-bottom:12px">The steward ships as a Claude Code plugin: one skill per area, and <code>/steward:fix</code> to work the list. Open a session and, when something needs you, it says so once. Say what you want in plain words. It runs the read-only commands, explains what they found, and asks before anything changes.</p>
+          <div class="chat" aria-label="An example conversation">
+            <div class="bubble you">what needs updating on this Mac?</div>
+            <div class="bubble skill"><b>Running the read-only checks first.</b><span class="mono">steward sc audit · steward sc plan</span></div>
+            <div class="bubble skill">Two things passed the gate: <b>gh 2.103.1 → 2.103.2</b> and <b>cloudflared 2026.10.5</b>. Python 3.15.2 is 2 days old, so it holds until tomorrow. Postgres 18 is a major, so that is your call. Want me to upgrade the two that are ready? I will show the plan and wait for your yes.</div>
+            <div class="bubble you">yes, the two</div>
+            <div class="bubble skill">Done, with a backup first and a receipt. Way back: <span class="mono">steward rollback</span></div>
+          </div>
+          <div class="cmd" style="margin-top:12px"><code>steward skills install</code><button class="copy" data-copy="steward skills install">Copy</button></div>
+          <p class="note" style="margin-top:8px">Run it in your own terminal, not inside a Claude Code session: Claude Code accepts a plugin's command only from a person.</p>
+        </div>
+        <details class="fine rv">
+          <summary>Check that a release is genuine</summary>
+          <div class="in">
+            <p>Every release carries a provenance record. It should name this repository and its release workflow. On npmjs.com a version that has one shows a green check; from a terminal, with <code>jq</code>:</p>
+<pre class="block">curl -s https://registry.npmjs.org/-/npm/v1/attestations/workstation-steward@0.10.0 |
+  jq -r '.attestations[] | select(.predicateType | test("slsa"))
+         | .bundle.dsseEnvelope.payload | @base64d | fromjson
+         | .predicate.buildDefinition.externalParameters.workflow | "\(.repository) \(.path)"'
+# https://github.com/pacphi/workstation-steward .github/workflows/release.yml</pre>
+          </div>
+        </details>
+        <details class="fine rv">
+          <summary>What you are promising yourself</summary>
+          <div class="in">
+            <p>No <code>curl … | sh</code> installer exists, on purpose: running a download straight into a shell is what the steward guards against. Nothing changes on its own: the only thing that runs unasked is a short look that reads and never writes, and there are no auto-updates. Anything that writes shows a plan, asks, backs up, writes a receipt and prints its way back. <code>DRY_RUN=1</code> previews any of them.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="credits"><div class="wrap">
+  <h2>Credits</h2>
+  <p>Made from the steward's own docs and recorded sessions, October 2026, for release 0.10.0. Where a number appears, it came from one of these.</p>
+  <ol>
+    <li><a href="https://github.com/pacphi/workstation-steward#readme" rel="noopener">workstation-steward README</a>: why it is different, install, the skills, provenance.</li>
+    <li><a href="https://github.com/pacphi/workstation-steward/blob/main/docs/guide.md" rel="noopener">docs/guide.md</a>: why it exists, the four October 2026 events, the rules it lives by.</li>
+    <li><a href="https://github.com/pacphi/workstation-steward/blob/main/docs/architecture.md" rel="noopener">docs/architecture.md</a>: why four areas, how they meet, every decision.</li>
+    <li><a href="https://github.com/pacphi/workstation-steward/blob/main/docs/lifecycle.md" rel="noopener">docs/lifecycle.md</a>: the promises, what is built and what is planned, the platform order.</li>
+    <li><a href="https://github.com/pacphi/workstation-steward/blob/main/docs/briefing.md" rel="noopener">docs/briefing.md</a>: the one next step, the session-start hook, who takes each step, standing orders (<code>[autonomy]</code>), <code>steward fix</code>.</li>
+    <li><a href="https://github.com/pacphi/workstation-steward/blob/main/skills/README.md" rel="noopener">skills/README.md</a>: the Claude Code skills, what to ask, and the recorded sessions the pilot retells.</li>
+    <li><a href="https://github.com/pacphi/workstation-steward/tree/main/docs/assets" rel="noopener">docs/assets</a>: the recorded sessions the terminals retell (the skills session, upgrade and rollback, projects, review, the briefing).</li>
+    <li><a href="https://registry.npmjs.org/workstation-steward" rel="noopener">npm registry</a>: 0.10.0 is the release this page describes, published 2026-10-31 UTC.</li>
+    <li>LiteLLM, 21 October 2026: <a href="https://smartscope.blog/en/blog/litellm-1-107-0-malware-incident-verification-commands-2026/" rel="noopener">SmartScope</a>, <a href="https://ai-tldr.dev/releases/litellm-1-107-0-pypi-compromise/" rel="noopener">ai-tldr</a>, <a href="https://techjacksolutions.com/scc-vendor-rollup/litellm-berriai-vulnerability-rollup-2026-10-22/" rel="noopener">TechJack</a>. Third-party write-ups; check the vendor's advisory before acting on timings.</li>
+    <li><a href="https://www.etymonline.com/word/quarantine" rel="noopener">Etymonline</a>: quarantine, from the Venetian <em>quaranta giorni</em>.</li>
+    <li><a href="https://en.wikipedia.org/wiki/International_Code_of_Signals" rel="noopener">International Code of Signals</a>: the Q flag requests free pratique, permission to enter port. Channel 16 is the marine VHF calling and distress channel, 156.800 MHz. <a href="https://en.wikipedia.org/wiki/Maritime_pilot" rel="noopener">Maritime pilot</a>: a local mariner who boards to guide a ship through dangerous or congested waters; the master keeps command.</li>
+    <li>See also: <a href="https://pacphi-workstation-steward-explain.vercel.app/" rel="noopener">workstation-steward, explained</a>, a quieter walkthrough of the same ideas.</li>
+  </ol>
+</div></footer>
+<script>
+(function(){
+'use strict';
+const $=(s,r)=>(r||document).querySelector(s), $$=(s,r)=>Array.from((r||document).querySelectorAll(s));
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep=ms=>new Promise(r=>setTimeout(r,RM?0:ms));
+const SVGNS='http://www.w3.org/2000/svg';
+const hero=$('.hero');
+
+/* ---------- progress, parallax, rail ---------- */
+const prog=$('#prog'), layers=$$('.hero .layer:not(.fog)');
+let ticking=false;
+function frame(){
+  ticking=false;
+  const y=scrollY, max=document.documentElement.scrollHeight-innerHeight;
+  prog.style.transform='scaleX('+(max>0?Math.min(1,y/max):0).toFixed(4)+')';
+  if(!RM && y<hero.offsetHeight){
+    for(const l of layers){ l.style.transform='translate3d(0,'+(y*parseFloat(l.dataset.speed||0)).toFixed(1)+'px,0)'; }
+  }
+}
+function onScroll(){ if(!ticking){ ticking=true; requestAnimationFrame(frame); } }
+addEventListener('scroll',onScroll,{passive:true}); frame();
+
+const railLinks=$$('.rail a');
+const railIO=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(!e.isIntersecting) return; const id='#'+e.target.id; railLinks.forEach(a=>a.classList.toggle('on',a.getAttribute('href')===id)); });
+},{rootMargin:'-40% 0px -55% 0px'});
+$$('header.hero, section.act').forEach(s=>railIO.observe(s));
+
+/* ---------- stars ---------- */
+(function stars(){
+  const g=$('#stars'); if(!g) return; const frag=document.createDocumentFragment();
+  for(let i=0;i<120;i++){
+    const c=document.createElementNS(SVGNS,'circle');
+    c.setAttribute('cx',(Math.random()*1440).toFixed(0)); c.setAttribute('cy',(Math.random()*440).toFixed(0));
+    c.setAttribute('r',(0.5+Math.random()*1.2).toFixed(2));
+    c.style.animationDelay=(Math.random()*4).toFixed(2)+'s'; c.style.animationDuration=(3+Math.random()*4).toFixed(2)+'s';
+    frag.appendChild(c);
+  }
+  g.appendChild(frag);
+})();
+
+/* ---------- lighthouse beam sits on the lamp ---------- */
+const beam=$('#beam');
+function placeBeam(){
+  const lamp=$('#lamp'); if(!lamp||!beam) return;
+  const r=lamp.getBoundingClientRect(), h=hero.getBoundingClientRect();
+  beam.style.left=(r.left-h.left+r.width/2).toFixed(1)+'px';
+  beam.style.top=(r.top-h.top+r.height/2).toFixed(1)+'px';
+}
+placeBeam(); addEventListener('resize',placeBeam);
+
+/* ---------- water ---------- */
+(function water(){
+  const cv=$('#water'); if(!cv) return; const ctx=cv.getContext('2d');
+  let W=0,H=0,t=0,run=false,raf=0;
+  const lights=[{x:.82,c:'243,179,61',w:1.7},{x:.53,c:'243,179,61',w:.9},{x:.72,c:'242,92,79',w:1.1},{x:.17,c:'243,179,61',w:.7}];
+  function size(){
+    const r=cv.getBoundingClientRect(), d=Math.min(2,devicePixelRatio||1);
+    W=r.width; H=r.height; cv.width=Math.round(W*d); cv.height=Math.round(H*d); ctx.setTransform(d,0,0,d,0,0);
+  }
+  function draw(){
+    t+=0.016; ctx.clearRect(0,0,W,H);
+    const rows=44;
+    for(let i=0;i<rows;i++){
+      const f=i/rows, y=Math.pow(f,1.55)*H+1, a=0.03+0.11*f;
+      ctx.strokeStyle='rgba(170,205,215,'+a.toFixed(3)+')'; ctx.lineWidth=0.8+f*1.6; ctx.beginPath();
+      const seg=16+f*26, gap=14+f*46, period=seg+gap;
+      let x=((t*22*(0.25+f))%period)-period+Math.sin(i*1.7)*23;
+      while(x<W){ const len=seg*(0.55+0.8*Math.abs(Math.sin(t*0.9+i*0.8+x*0.012))); ctx.moveTo(x,y); ctx.lineTo(x+len,y); x+=period; }
+      ctx.stroke();
+    }
+    for(const L of lights){
+      const sx=L.x*W;
+      for(let y=3;y<H;y+=7){
+        const f=y/H, wob=Math.sin(t*2.1+y*0.045+L.x*10)*(2+f*20), w=(2+f*10)*L.w;
+        const a=(0.5-f*0.46)*(0.72+0.28*Math.sin(t*3+y*0.1));
+        if(a<=0.01) continue;
+        ctx.fillStyle='rgba('+L.c+','+a.toFixed(3)+')'; ctx.fillRect(sx+wob-w/2,y,w,2.2);
+      }
+    }
+    if(run) raf=requestAnimationFrame(draw);
+  }
+  function start(){ if(run) return; run=true; raf=requestAnimationFrame(draw); }
+  function stop(){ run=false; cancelAnimationFrame(raf); }
+  size(); if(RM){ draw(); } else { start(); }
+  let rt; addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ size(); if(RM) draw(); },120); });
+  new IntersectionObserver(es=>es.forEach(e=>{ if(RM) return; e.isIntersecting?start():stop(); })).observe(hero);
+  document.addEventListener('visibilitychange',()=>{ if(RM) return; document.hidden?stop():start(); });
+})();
+
+/* ---------- a lantern follows the mouse in the hero ---------- */
+const lantern=$('#lantern');
+hero.addEventListener('pointermove',e=>{
+  if(e.pointerType!=='mouse'||!lantern) return;
+  const h=hero.getBoundingClientRect();
+  lantern.style.transform='translate('+(e.clientX-h.left).toFixed(0)+'px,'+(e.clientY-h.top).toFixed(0)+'px)';
+});
+
+/* ---------- reveal on scroll, only below the first screen ---------- */
+(function reveal(){
+  const els=$$('.rv'); if(RM){ return; }
+  const vh=innerHeight;
+  els.forEach(el=>{ if(el.getBoundingClientRect().top>vh*0.92) el.classList.add('pre'); });
+  const io=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.remove('pre'); io.unobserve(e.target); } }),{rootMargin:'0px 0px -6% 0px',threshold:0.05});
+  els.forEach(el=>io.observe(el));
+})();
+
+/* ---------- Act I: the radio ---------- */
+(function radio(){
+  const box=$('#radio'), tx=$('#tx'), dots=$('#dots'); if(!box) return;
+  const guide='https://github.com/pacphi/workstation-steward/blob/main/docs/guide.md#why-it-exists';
+  const T=[
+    {t:'A hijacked release',p:'A compromised LiteLLM release reached PyPI and Docker Hub, including the <code>latest</code> tag. It was pulled within hours. Every machine that pulled <code>latest</code> in that window got it.',s:[['docs/guide.md',guide],['incident write-up','https://smartscope.blog/en/blog/litellm-1-107-0-malware-incident-verification-commands-2026/']]},
+    {t:'Advisories, mid-rollout',p:'Security advisories landed in the middle of a rollout. The fix was out. So was the question: which machine had taken which version, and when? Nothing on the machine could answer it.',s:[['docs/guide.md',guide]]},
+    {t:'Tools that update themselves',p:'AI coding tools quietly installed their own updates. New behavior arrived with no plan, no yes and no way back.',s:[['docs/guide.md',guide]]},
+    {t:'Launchers that fetch @latest',p:'Project launchers ran <code>npx tool@latest</code> on every start. Whatever the registry served that morning is what ran on the machine.',s:[['docs/guide.md',guide]]}
+  ];
+  let i=0, timer=null;
+  T.forEach((_,k)=>{ const li=document.createElement('li'); const b=document.createElement('button'); b.setAttribute('aria-label','Transmission '+(k+1)); b.addEventListener('click',()=>{ show(k); hold(); }); li.appendChild(b); dots.appendChild(li); });
+  function show(k){
+    i=(k+T.length)%T.length; const d=T[i];
+    tx.classList.remove('flick'); void tx.offsetWidth; tx.classList.add('flick');
+    tx.innerHTML='<span class="tag">Transmission '+(i+1)+' of '+T.length+'</span><h3>'+d.t+'</h3><p>'+d.p+'</p><div class="src">'+d.s.map(x=>'<a href="'+x[1]+'" rel="noopener">'+x[0]+'</a>').join('')+'</div>';
+    $$('button',dots).forEach((b,k2)=>b.setAttribute('aria-current',k2===i?'true':'false'));
+  }
+  function tick(){ if(box.matches(':hover, :focus-within')) return; show(i+1); }
+  function auto(){ clearInterval(timer); if(!RM) timer=setInterval(tick,7000); }
+  function hold(){ clearInterval(timer); timer=setTimeout(auto,20000); }
+  $('#rprev').addEventListener('click',()=>{ show(i-1); hold(); });
+  $('#rnext').addEventListener('click',()=>{ show(i+1); hold(); });
+  show(0); auto();
+})();
+
+/* ---------- Act III: the gate ---------- */
+(function gate(){
+  const root=$('#gate'); if(!root) return;
+  const selfAge=Math.max(0,Math.floor((Date.now()-Date.parse('2026-10-31T19:42:45Z'))/864e5));
+  const R=[
+    {id:'gh',name:'gh',ver:'2.103.1 → 2.103.2',age:3,kind:'tool',via:'mise'},
+    {id:'cf',name:'cloudflared',ver:'2026.10.3 → 2026.10.5',age:3,kind:'tool',via:'brew'},
+    {id:'py',name:'python@3.15',ver:'3.15.1 → 3.15.2',age:2,kind:'tool',via:'brew'},
+    {id:'node',name:'node',ver:'security fix · advisory',age:0,kind:'advisory',via:'mise'},
+    {id:'ff',name:'firefox',ver:'new release · browser',age:0,kind:'browser',via:'cask'},
+    {id:'pg',name:'postgres',ver:'16.15 → 18 · major',age:12,kind:'major',via:'mise'},
+    {id:'ws',name:'workstation-steward',ver:'0.10.0 · itself',age:selfAge,kind:'tool',via:'mise'}
+  ];
+  const S={gate:3,adv:true,browser:true,day:0};
+  const zones={hold:$('#z-hold'),take:$('#z-take'),ask:$('#z-ask')};
+  const nodes=new Map();
+  const range=$('#gate-days'), out=$('#gate-out'), tomlDays=$('#toml-days'), tally=$('#tally');
+  function status(r){
+    const age=r.age+S.day;
+    if(r.kind==='major') return {z:'ask',stamp:'your call'};
+    if(r.kind==='browser'&&S.browser) return {z:'take',stamp:'never held'};
+    if(r.kind==='advisory'&&S.adv) return {z:'take',stamp:'advisory · in'};
+    if(age>=S.gate) return {z:'take',stamp:'take'};
+    return {z:'hold',stamp:'hold · '+(S.gate-age)+'d to go'};
+  }
+  function node(r){
+    if(nodes.has(r.id)) return nodes.get(r.id);
+    const el=document.createElement('div'); el.className='ship';
+    el.innerHTML='<svg class="ship-svg" viewBox="0 0 140 70" aria-hidden="true"><use href="#ship"/></svg><div class="nm"><b></b><span></span></div><span class="stamp"></span>';
+    nodes.set(r.id,el); return el;
+  }
+  function render(moved){
+    const counts={hold:0,take:0,ask:0};
+    for(const r of R){
+      const st=status(r), el=node(r), age=r.age+S.day;
+      counts[st.z]++;
+      $('.nm b',el).textContent=r.name;
+      $('.nm span',el).textContent=r.ver+' · '+r.via+' · '+age+'d old';
+      const stamp=$('.stamp',el); stamp.textContent=st.stamp; stamp.className='stamp '+st.z;
+      const svg=$('.ship-svg',el); svg.classList.toggle('held',st.z==='hold'); svg.classList.toggle('ask',st.z==='ask');
+      if(el.parentElement!==zones[st.z]){
+        zones[st.z].appendChild(el);
+        if(moved&&!RM){ el.classList.remove('sail'); void el.offsetWidth; el.classList.add('sail'); }
+      }
+    }
+    $('#n-hold').textContent=counts.hold; $('#n-take').textContent=counts.take; $('#n-ask').textContent=counts.ask;
+    out.innerHTML=S.gate+'<small>'+(S.gate===1?'day':'days')+'</small>'; range.value=S.gate; tomlDays.textContent=S.gate;
+    tally.innerHTML='<b>'+counts.take+'</b> cleared · <b>'+counts.hold+'</b> holding · <b>'+counts.ask+'</b> your call'+(S.day?' · <b>day +'+S.day+'</b>':'');
+    $('#tg-adv').checked=S.adv; $('#tg-browser').checked=S.browser;
+  }
+  range.addEventListener('input',()=>{ S.gate=+range.value; render(true); });
+  $('#tg-adv').addEventListener('change',e=>{ S.adv=e.target.checked; render(true); });
+  $('#tg-browser').addEventListener('change',e=>{ S.browser=e.target.checked; render(true); });
+  $('#nextday').addEventListener('click',()=>{ if(S.day<30) S.day++; render(true); });
+  $('#gate-reset').addEventListener('click',()=>{ S.gate=3; S.adv=true; S.browser=true; S.day=0; render(true); });
+  render(false);
+})();
+
+/* ---------- a small terminal engine ---------- */
+function makeTerm(body, buttons){
+  let busy=false, pending=null;
+  function scroll(){ body.scrollTop=body.scrollHeight; }
+  function line(text,cls){ const s=document.createElement('span'); if(cls) s.className=cls; s.textContent=text; body.appendChild(s); body.appendChild(document.createTextNode('\n')); scroll(); return s; }
+  async function cmd(text){ const s=line('','c'); for(const ch of text){ s.textContent+=ch; scroll(); await sleep(16+Math.random()*22); } await sleep(260); }
+  async function out(text,cls,wait){ await sleep(wait==null?110:wait); return line(text,cls); }
+  function ask(text){
+    return new Promise(res=>{
+      const s=line(text,'ask'); const yn=document.createElement('span'); yn.className='yn';
+      const y=document.createElement('button'); y.className='y'; y.type='button'; y.textContent='y'; y.setAttribute('aria-label','Answer yes');
+      const n=document.createElement('button'); n.type='button'; n.textContent='N'; n.setAttribute('aria-label','Answer no');
+      const caret=document.createElement('span'); caret.className='caret'; yn.append(y,n); s.append(yn,caret); scroll();
+      const done=v=>{ pending=null; s.textContent=text+' '+(v?'y':'n'); res(v); };
+      y.addEventListener('click',()=>done(true)); n.addEventListener('click',()=>done(false)); pending=done;
+      try{ body.focus({preventScroll:true}); }catch(e){}
+    });
+  }
+  body.addEventListener('keydown',e=>{ if(!pending) return; const k=e.key.toLowerCase(); if(k==='y'){ e.preventDefault(); pending(true); } else if(k==='n'||k==='enter'||k==='escape'){ e.preventDefault(); pending(false); } });
+  async function run(fn){
+    if(busy) return; busy=true; buttons.forEach(b=>b.disabled=true);
+    if(body.textContent.trim()) line('','');
+    try{ await fn({cmd,out,ask,line}); } finally { busy=false; buttons.forEach(b=>b.disabled=false); if(typeof run.after==='function') run.after(); }
+  }
+  function clear(hint){ body.textContent=''; if(hint) line(hint,'dim'); }
+  return {run,clear,line,isBusy:()=>busy};
+}
+
+/* ---------- Act IV: the pilot comes aboard (a Claude Code session), the log, standing orders ---------- */
+(function pilot(){
+  const body=$('#cc-body'), choices=$('#cc-choices'); if(!body||!choices) return;
+  const loop=$('#loop'), receipt=$('#receipt'), yard=$('#yard'), yardBar=$('#yard-bar'), yardDays=$('#yard-days'), yardText=$('#yard-text');
+  const order=['plan','yes','backup','change','receipt'];
+  let yardTimers=[], gen=0;
+  function stage(s){
+    const k=order.indexOf(s);
+    $$('.node',loop).forEach(n=>{ const i=order.indexOf(n.dataset.s); n.classList.toggle('on',i===k); n.classList.toggle('done',k>=0&&i<k); });
+    if(s==='all') $$('.node',loop).forEach(n=>{ n.classList.remove('on'); n.classList.add('done'); });
+    if(s==='none') $$('.node',loop).forEach(n=>n.classList.remove('on','done'));
+  }
+  function scroll(){ body.scrollTop=body.scrollHeight; }
+  function put(text,cls){ const s=document.createElement('span'); if(cls) s.className=cls; s.textContent=text; body.appendChild(s); body.appendChild(document.createTextNode('\n')); scroll(); return s; }
+  // each scene step checks gen, so a restart mid-scene stops the old one
+  async function say(g,text,cls,wait){ await sleep(wait==null?260:wait); if(g!==gen) throw 0; return put(text,cls); }
+  async function typed(g,text,cls){ if(g!==gen) throw 0; const s=put('',cls); for(const ch of text){ if(g!==gen) throw 0; s.textContent+=ch; scroll(); await sleep(14+Math.random()*20); } await sleep(220); }
+  function offer(list){
+    choices.innerHTML='';
+    list.forEach(([label,fn,rec])=>{ const b=document.createElement('button'); b.type='button'; b.textContent=label; if(rec) b.className='rec'; b.addEventListener('click',()=>{ choices.innerHTML='<span class="wait">…</span>'; fn().catch(()=>{}); }); choices.appendChild(b); });
+  }
+  function soakStart(){
+    yard.classList.add('show'); yardTimers.forEach(clearTimeout); yardTimers=[];
+    yardText.innerHTML='gh 2.103.1 stays on disk for 3 days. <code>steward sc prune</code> waits them out, then asks.';
+    yardBar.classList.remove('go'); void yardBar.offsetWidth; yardDays.textContent='day 0 of 3';
+    if(RM){ yardBar.classList.add('go'); yardDays.textContent='day 3 of 3 · the soak has ended; prune may run (it asks first)'; return; }
+    requestAnimationFrame(()=>yardBar.classList.add('go'));
+    [1,2,3].forEach(d=>yardTimers.push(setTimeout(()=>{ yardDays.textContent=d<3?'day '+d+' of 3':'day 3 of 3 · the soak has ended; prune may run (it asks first)'; },d*2000)));
+  }
+  function reset(){
+    gen++; body.textContent=''; stage('none'); receipt.classList.remove('show','rolled','applied'); loop.classList.remove('back-on');
+    yard.classList.remove('show'); yardTimers.forEach(clearTimeout);
+    put('A new session in ~/Development/web. The steward plugin is installed.','res');
+    offer([['Ask: what needs updating on this Mac?',ask,true]]);
+  }
+  async function ask(){
+    const g=gen;
+    await typed(g,'what needs updating on this Mac?','you');
+    await say(g,'Skill(steward:supply-chain)','dot claude',420);
+    await say(g,'Bash(steward sc audit)','dot',380);
+    await say(g,'Summary: 3 action(s), 0 alert(s)','res',700);
+    await say(g,'Bash(steward sc plan)','dot',300);
+    await say(g,'plan: 0 formula(e), 0 cask(s), 1 mise tool(s)','res',700);
+    await say(g,'Nothing alarming: no indicator of compromise matched. Here is what needs you:','say',420);
+    await say(g,'    Now        gh 2.103.1 → 2.103.2 is past the 3-day gate','tbl',120);
+    await say(g,'               Google Chrome 156 is out; browsers are never held, so update it from the app','tbl',90);
+    await say(g,'    Waiting    python@3.15 3.15.2 is 2 days old; it clears tomorrow','tbl',90);
+    await say(g,'    Your call  postgres 16 → 18 is a major, so it waits until you ask for it','tbl',90);
+    const h=await say(g,'Steward: a review is due (last 8 days ago). Say "run the review" when you want it.','hook',500);
+    const tag=document.createElement('small'); tag.textContent='the session hook, once'; h.appendChild(tag);
+    stage('plan');
+    offer([['1. Upgrade gh now',go,true],['2. Show me the full plan first',dry],['3. Not now',not]]);
+  }
+  async function dry(){
+    const g=gen;
+    await typed(g,'show me the full plan first','you');
+    await say(g,'Bash(DRY_RUN=1 steward sc upgrade)','dot',360);
+    await say(g,'take   gh 2.103.1 -> 2.103.2','res ok',600);
+    await say(g,'hold   python 3.15.1 -> 3.15.2 (2d old)','res hold',120);
+    await say(g,'plan only (DRY_RUN=1): nothing was changed.','res',160);
+    await say(g,'That is the whole plan: one tool, backed up first. Upgrade it?','say',380);
+    offer([['1. Yes, upgrade gh',go,true],['2. Not now',not]]);
+  }
+  async function not(){
+    const g=gen;
+    await typed(g,'not now','you');
+    await say(g,'Nothing changed. gh stays on the list; the steward names it again next time.','say',360);
+    stage('none');
+    offer([['Start over',async()=>reset()]]);
+  }
+  async function go(){
+    const g=gen;
+    await typed(g,'yes, upgrade gh','you');
+    stage('yes');
+    await say(g,'Bash(steward sc upgrade --unattended --yes-to upgrade)','dot',380);
+    await say(g,'Do you want to proceed?','q',300);
+    offer([['1. Yes',async()=>{
+      const g2=gen;
+      await say(g2,'❯ 1. Yes','q',80);
+      await say(g2,'unattended: yes to "Apply this plan?" (your yes to upgrade for this run (--yes-to))','res',380);
+      stage('backup');
+      await say(g2,'==> config backup: ~/.config/mise/backups/config.toml.20261028-112629','res',420);
+      stage('change');
+      await say(g2,'$ mise upgrade --bump --no-prune gh','res',360);
+      await say(g2,'==> all checks passed','res ok',700);
+      stage('receipt');
+      await say(g2,'==> done. rollback: steward rollback   (restores ~/.config/mise/backups/config.toml.20261028-112629)','res',260);
+      receipt.classList.add('show','applied'); soakStart();
+      await say(g2,'Done. gh 2.103.2 is installed and every tool passed verify. The old 2.103.1 stays on disk through the 3-day soak, so steward rollback brings it back if anything breaks. Chrome is yours: Chrome → About Google Chrome.','say',420);
+      offer([['Change my mind: put gh back',back],['Start over',async()=>reset()]]);
+    },true],['No',not]]);
+  }
+  async function back(){
+    const g=gen;
+    await typed(g,'put gh back','you');
+    await say(g,'A rollback asks its own question, so it is yours to run, in your own terminal:','say',380);
+    await say(g,'(your terminal)','res',200);
+    await typed(g,'steward rollback','bang');
+    await say(g,'Restore this config? [y/N]','q',300);
+    offer([['y',async()=>{
+      const g2=gen;
+      await say(g2,'y','q',60);
+      await say(g2,'==> restoring ~/.config/mise/backups/config.toml.20261028-112629','res',400);
+      await say(g2,'==> restored. Check with: steward sc verify','res ok',500);
+      receipt.classList.add('rolled'); loop.classList.add('back-on'); stage('all');
+      yardTimers.forEach(clearTimeout); yardBar.classList.remove('go');
+      yardText.innerHTML='gh 2.103.1 came back from the yard: a config restore, not a reinstall. That is what the soak is for.';
+      yardDays.textContent='';
+      offer([['Start over',async()=>reset()]]);
+    },true],['N',async()=>{ const g2=gen; await say(g2,'N','q',60); await say(g2,'nothing changed.','res',200); offer([['Start over',async()=>reset()]]); }]]);
+  }
+  reset();
+
+  /* standing orders: what the pilot may do without asking, by [autonomy] level (lib/autonomy.js, docs/briefing.md) */
+  const ROWS=[
+    {what:'<b>Soundings:</b> anything that only reads. <code>steward review</code>, <code>steward</code>, <code>sc plan</code>, <code>ai drift</code>',min:'ask'},
+    {what:'<b>A config pull</b> that only fast-forwards: <code>steward config sync</code>',min:'safe'},
+    {what:'<b>Housekeeping:</b> a prune after the soak, a reconcile, a fast-forward of a checkout (<code>fleet sync</code>)',min:'safe'},
+    {what:'<b>Groundwork:</b> a qualification in a sandbox, a pull request prepared in a scratch clone (not pushed)',min:'safe'},
+    {what:'<b>Tidying up after a merge:</b> deleting branches whose pull request merged; verifying and repinning a release',min:'maintainer'},
+    {what:'<b>Anything that installs or upgrades:</b> <code>steward upgrade</code>, a Node patch, the hybrids; a push or a pull request (unless you name its class in <code>allow</code>)',min:'never'},
+    {what:'<b>The captain\'s own:</b> a merge, <code>sudo</code>, a trust store, a dashboard tick, a fix by hand',min:'yours'}
+  ];
+  const RANK={ask:0,safe:1,maintainer:2};
+  const NOTE={ask:'<code>ask</code>: the pilot takes soundings and asks for your word on everything else.',safe:'<code>safe</code>, the default: routine housekeeping that only fast-forwards, prunes after the soak or prepares work runs on its own.',maintainer:'<code>maintainer</code>: for whoever maintains the steward itself; adds the after-merge tidy and the release checks.'};
+  const lvlBox=$('#lvl'), list=$('#orders'), note=$('#lvl-note');
+  function orders(l){
+    $$('button',lvlBox).forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===l?'true':'false'));
+    note.innerHTML=NOTE[l];
+    list.innerHTML=ROWS.map(r=>{
+      const by=r.min==='yours'?['yours','yours']:r.min==='never'?['word','your word']:RANK[l]>=RANK[r.min]?['pilot','pilot']:['word','your word'];
+      return '<li><span class="by '+by[0]+'">'+by[1]+'</span><span>'+r.what+'</span></li>';
+    }).join('');
+  }
+  $$('button',lvlBox).forEach(b=>b.addEventListener('click',()=>orders(b.dataset.l)));
+  orders('safe');
+})();
+
+/* ---------- Act V: the map ---------- */
+(function map(){
+  const svg=$('#mapsvg'); if(!svg) return;
+  const B={
+    sc:{area:'Supply chain',title:'The docks',words:'Everything that lands on the machine: mise tools and mise itself, the global npm command-line tools, Homebrew formulae and casks, apps and the runtimes they bundle, the App Store, macOS, trust stores, Docker images, and known signs of compromise.',rule:'Decides when a version may come in.',cmds:['steward upgrade','steward sc plan','steward sc audit','steward sc node-patch <x.y.z>','steward sc prune','steward rollback'],boat:'translate(190 268)'},
+    ai:{area:'AI tooling <span class="addon">add-on</span>',title:'The bonded warehouse',words:'Ruflo and AgentDB, AQE, RuvNet Brain and RuVector: which versions are qualified, how projects launch them, and the guards that keep them from updating or spending tokens on their own. Off until you turn it on.',rule:'Decides whether a version is qualified. It never installs one that supply chain has not cleared.',cmds:['steward ai drift','steward ai fix','steward ai repin','steward ai guard'],boat:'translate(560 268)'},
+    projects:{area:'Projects <span class="addon">add-on</span>',title:'The registry office',words:'Every project under your roots, found automatically. A registry records your decision for each: onboarded with its chosen tools, ignored, or deferred. Onboarding writes that project’s files, shows every one first, and never commits.',rule:'Runs the per-project steps of both areas. Each project chooses its own tools, or none.',cmds:['steward projects','steward projects --apply','steward projects apply','steward projects onboard <path>','steward projects offboard <path>'],boat:'translate(795 268)'},
+    fleet:{area:'Fleet',title:'The shipping lanes',words:'The GitHub side. Renovate proposes updates as pull requests. A repo’s pile of bot PRs gets folded into one verified PR with every audit green. After merges, steward fleet tidy brings a checkout level by fast-forward only and deletes the branches whose pull requests merged.',rule:'Repos change through pull requests only, never by editing a checkout.',cmds:['steward fleet tidy <repo>','steward fleet sync <repo>','/steward:pr-consolidation'],boat:'translate(420 150)'}
+  };
+  const boat=$('#mapboat');
+  function select(k){
+    const d=B[k]; if(!d) return;
+    $$('.berth',svg).forEach(g=>g.classList.toggle('on',g.dataset.b===k));
+    $$('.berth-tabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.b===k?'true':'false'));
+    $('#bp-area').innerHTML=d.area; $('#bp-title').textContent=d.title; $('#bp-words').textContent=d.words; $('#bp-rule').textContent=d.rule;
+    $('#bp-cmds').innerHTML=d.cmds.map(c=>'<li>'+c.replace(/</g,'&lt;')+'</li>').join('');
+    boat.setAttribute('transform',d.boat);
+  }
+  $$('.berth',svg).forEach(g=>{ g.addEventListener('click',()=>select(g.dataset.b)); g.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); select(g.dataset.b); } }); });
+  $$('.berth-tabs button').forEach(b=>b.addEventListener('click',()=>select(b.dataset.b)));
+  select('sc');
+})();
+
+/* ---------- Act VI: onboarding ---------- */
+(function onboard(){
+  const reg=$('#registry'), body=$('#ob-body'); if(!reg||!body) return;
+  const TOOLS=[['aqe','AQE'],['brain','Brain'],['ruflo','Ruflo']];
+  const P=[
+    {path:'~/Development/web',base:'web',kind:'git',stack:'node/ts',tools:['aqe','brain']},
+    {path:'~/Development/api',base:'api',kind:'git',stack:'go',tools:['ruflo']},
+    {path:'~/Development/notes',base:'notes',kind:'folder',stack:'markdown',tools:[]}
+  ];
+  const bApply=$('#ob-apply'), bClr=$('#ob-clear');
+  const T=makeTerm(body,[bApply,bClr]);
+  let planned=null;
+  function label(p){ return p.tools.length?'onboarded ['+p.tools.join(', ')+']':'onboarded [no AI tools]'; }
+  function render(){
+    reg.innerHTML='';
+    P.forEach((p,i)=>{
+      const card=document.createElement('article'); card.className='proj'+(planned===i?' active':''); card.dataset.i=i;
+      card.innerHTML='<div class="proj-head"><b>'+p.path+'</b><span>'+p.kind+' · stack: '+p.stack+'</span></div>'+
+        '<div class="chips" role="group" aria-label="AI tools for '+p.path+'">'+TOOLS.map(t=>'<button type="button" data-t="'+t[0]+'" aria-pressed="'+(p.tools.includes(t[0])?'true':'false')+'">'+t[1]+'</button>').join('')+(p.tools.length?'':'<span class="none">none chosen</span>')+'</div>'+
+        '<div class="proj-foot"><span class="decision">decision: <b>'+label(p)+'</b></span><button type="button" class="tbtn plan">Plan</button></div>';
+      $$('.chips button',card).forEach(b=>b.addEventListener('click',()=>{ const t=b.dataset.t; const k=p.tools.indexOf(t); if(k>=0) p.tools.splice(k,1); else p.tools.push(t); render(); }));
+      $('.plan',card).addEventListener('click',()=>plan(i));
+      reg.appendChild(card);
+    });
+  }
+  function planLines(p){
+    const L=[]; let create=0, edit=0, manual=0, settings=false; const s=p.tools;
+    const pad=(a,b)=>a.padEnd(46)+b;
+    const settingsLine=()=>{ if(settings){ L.push([pad('edit   .claude/settings.json','present'),'']); edit++; } else { L.push([pad('create .claude/settings.json','absent'),'']); create++; settings=true; } };
+    L.push(['==> onboard plan: '+p.path+' ('+(s.length?s.join(', '):'no AI tools')+')','']);
+    if(!s.length){ L.push(['nothing to write: this project chose no AI tools.','dim']); L.push(['steward projects offboard '+p.path+' removes anything the steward wrote here before.','dim']); }
+    if(s.includes('aqe')){ settingsLine(); L.push(['+ hook aqe PreToolUse ^(Write|Edit|MultiEdit)$ aqe-hook.cjs guard','ok']); L.push(['… 13 more','dim']);
+      L.push([pad('create .claude/hooks/aqe-hook.cjs','absent'),'']); create++;
+      L.push([pad('create .mcp.json','absent-ignored'),'']); create++; L.push(['+ mcpServers.agentic-qe.command','ok']); L.push(['… 5 more','dim']);
+      L.push([pad('create .claude/skills (aqe)','absent'),'']); create++; L.push(['+ 125 name(s)','ok']); manual++; }
+    if(s.includes('brain')){ settingsLine(); L.push(['+ enabledPlugins (brain)','ok']);
+      L.push([pad('create .codex/config.toml','absent-ignored'),'']); create++; L.push(['+ mcp_servers.ruvnet-brain','ok']); L.push(['+ plugins."ruvnet-brain@ruvnet-brain"','ok']); manual++; }
+    if(s.includes('ruflo')){ settingsLine(); L.push(['+ env, enabledPlugins, statusLine, claudeFlow (…)','ok']);
+      L.push([pad('create .claude/helpers/.LOCKED','absent'),'']); create++;
+      L.push([pad('create .claude-flow/memory-package.json','absent'),'']); create++;
+      L.push([pad('copy   4 file(s) from the qualified Ruflo install','absent'),'']); create+=4; }
+    if(s.length){
+      L.push(['==> .git/info/exclude (files onboarding creates, so `git status` stays clean)','']);
+      L.push(['+ /.claude/settings.json'+(s.includes('aqe')?'  + /.mcp.json  + /.claude/hooks/aqe-hook.cjs':'')+(s.includes('brain')?'  + /.codex/config.toml':'')+(s.includes('ruflo')?'  + /.claude-flow':'')+'  …','ok']);
+      if(s.includes('aqe')){ L.push(['==> hooks run a bare `node`','']); L.push(['mise resolves Node 26.12.1 here; aqe needs >=22.13.0','dim']); }
+      L.push(['==> manual steps (listed, never run)','']);
+      if(s.includes('aqe')) L.push(['aqe: Open Claude Code in the project and approve the agentic-qe server and the AQE hooks when asked.','dim']);
+      if(s.includes('brain')) L.push(['brain: approve its MCP server the first time Claude Code or Codex asks.','dim']);
+    }
+    L.push(['==> '+edit+' edit, '+create+' create, 0 PR, '+manual+' manual','']);
+    L.push(['plan only; `steward projects onboard <path> --apply` applies it (asks first)','dim']);
+    return {L,n:edit+create};
+  }
+  function plan(i){
+    const p=P[i];
+    T.run(async t=>{
+      planned=null; bApply.disabled=true; render();
+      await t.cmd('steward projects decide '+p.path+' --decision onboarded'+(p.tools.length?' --ai '+p.tools.join(','):' --ai none'));
+      await t.out('==> 1 registry change(s)','',300);
+      await t.out(p.path+': → '+label(p),'ok');
+      const ok=await t.ask('Record these in projects/registry.toml? [y/N]');
+      if(!ok){ await t.out('nothing recorded.','dim',200); return; }
+      await t.out('recorded 1; registry has '+P.length+' project(s). Commit projects/registry.toml through a PR.','',300);
+      await t.out('  receipt ~/.local/state/workstation-steward/backups/registry-20261031T094417/receipt.json; rollback: steward projects decide --rollback …','dim');
+      await t.cmd('steward projects onboard '+p.path);
+      for(const [txt,cls] of planLines(p).L) await t.out(txt,cls,90);
+      planned=i; render();
+    });
+  }
+  bApply.addEventListener('click',()=>{
+    if(planned==null) return; const p=P[planned], n=planLines(p).n;
+    T.run(async t=>{
+      await t.cmd('steward projects onboard '+p.path+' --apply');
+      await t.out('… the same plan …','dim',300);
+      if(!n){ await t.out('==> nothing to apply.','dim',200); return; }
+      const ok=await t.ask('Apply '+n+' change(s) to '+p.path+'? [y/N]');
+      if(!ok){ await t.out('nothing changed.','dim',200); return; }
+      await t.out('==> applied; receipt ~/.local/state/workstation-steward/backups/onboard-'+p.base+'-20261028T194417/receipt.json','ok',500);
+      await t.out('rollback: steward projects onboard --rollback ~/.local/state/…/onboard-'+p.base+'-20261028T194417/receipt.json','dim');
+      await t.out('check: the plan now has nothing left to apply','');
+      await t.cmd('git -C '+p.path+' status --short');
+      await t.out('# nothing: the new files are listed in .git/info/exclude','ok',300);
+    });
+  });
+  T.run.after=()=>{ bApply.disabled=(planned==null); };
+  bClr.addEventListener('click',()=>{ T.clear('Pick a project’s tools, then press Plan.'); planned=null; bApply.disabled=true; render(); });
+  render();
+})();
+
+/* ---------- Act VII: steward.toml you can click ---------- */
+(function ledger(){
+  const box=$('#toml'), cfg=$('#cfg'); if(!box||!cfg) return;
+  const K=[
+    {sec:'projects',k:'roots',o:['["~/Development"]','["~/Development", "~/Work"]','["~/code"]'],cm:'where your projects live'},
+    {sec:'policy',k:'min_release_age_days',o:['3','1','5','7'],cm:'the release-age gate, everywhere'},
+    {sec:'policy',k:'soak_days',o:['3','1','7'],cm:'old installs stay this long'},
+    {sec:'policy',k:'review_days',o:['7','14','3'],cm:'a review is due after this'},
+    {sec:'profiles',k:'ai_tooling',o:['false','true'],cm:'Ruflo, AgentDB, AQE, Brain, RuVector'},
+    {sec:'profiles',k:'projects',o:['false','true'],cm:'discovery, registry, onboarding'},
+    {sec:'skills',k:'pr_consolidation',o:['false','true'],cm:'the pr-consolidation skill'},
+    {sec:'autonomy',k:'level',o:['"safe"','"ask"','"maintainer"'],cm:'your standing orders (Act IV)'},
+    {sec:'brief',k:'refresh_hours',o:['6','12','0'],cm:'the read-only look; 0 turns it off'}
+  ];
+  const idx=K.map(()=>0);
+  function render(){
+    let html='<span class="cm"># steward.toml · anything left out uses the engine’s default</span>\n<span class="k">schema</span> = 1\n';
+    let sec='';
+    K.forEach((e,i)=>{
+      if(e.sec!==sec){ sec=e.sec; html+='\n<span class="sec">['+sec+']</span>\n'; }
+      const yours=idx[i]!==0;
+      html+='<span class="k">'+e.k+'</span> = <button type="button" class="v'+(yours?' yours':'')+'" data-i="'+i+'" aria-label="Change '+e.k+'">'+e.o[idx[i]].replace(/</g,'&lt;')+'</button><span class="tag'+(yours?' yours':'')+'">'+(yours?'yours':'default')+'</span> <span class="cm"># '+e.cm+'</span>\n';
+    });
+    box.innerHTML=html;
+    $$('.v',box).forEach(b=>b.addEventListener('click',()=>{ const i=+b.dataset.i; idx[i]=(idx[i]+1)%K[i].o.length; render(); }));
+    const row=(k,v,src,yours)=>'<div class="row"><span class="k">'+k+'</span><span class="val">'+v.replace(/</g,'&lt;')+'</span><span class="src'+(yours?' yours':'')+'">'+src+'</span></div>';
+    let c='<div class="c">steward config</div>'+row('instance','~/.config/workstation-steward','[default]',false);
+    K.forEach((e,i)=>{ const yours=idx[i]!==0; c+=row(e.sec+'.'+e.k,e.o[idx[i]],yours?'[steward.toml]':'[default]',yours); });
+    c+='<div class="foot">'+(idx.some(x=>x)?'Changed values came from your file; the rest are the engine’s defaults.':'Nothing set yet: every value is the engine’s default.')+'</div>';
+    cfg.innerHTML=c;
+  }
+  render();
+})();
+
+/* ---------- copy buttons ---------- */
+$$('.copy').forEach(b=>b.addEventListener('click',async()=>{
+  const text=b.dataset.copy||''; const old='Copy';
+  const flash=(m,ok)=>{ b.textContent=m; b.classList.toggle('done',!!ok); setTimeout(()=>{ b.textContent=old; b.classList.remove('done'); },1800); };
+  try{ await navigator.clipboard.writeText(text); flash('Copied',true); }
+  catch(e){ const code=b.parentElement&&b.parentElement.querySelector('code'); if(code){ const r=document.createRange(); r.selectNodeContents(code); const s=getSelection(); s.removeAllRanges(); s.addRange(r); } flash('Selected: press ⌘C',false); }
+}));
+})();
+</script>
+</body>
+</html>
