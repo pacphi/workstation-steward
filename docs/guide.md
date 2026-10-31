@@ -1,6 +1,6 @@
 # Start here
 
-![Revision 6](https://img.shields.io/badge/Revision-6-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 7](https://img.shields.io/badge/Revision-7-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 This guide is for you, after time away or new to the steward. It says why the repo exists, what it
 looks after, how to start, and what a normal week looks like. For how each part works, follow the links to the area
@@ -64,7 +64,7 @@ On a new machine, or the first time on this one:
 
 ## The routine
 
-**Any time:** `steward brief` names the one next step, or says nothing needs you. It reads what is on your disk, and
+**Any time:** `steward` on its own, or `steward brief`, names the one next step, or says nothing needs you. It reads what is on your disk, and
 about every 6 hours it looks again in the background: your config repo on GitHub, the newest steward, new projects,
 AI tooling drift and the active Node. That look only reads.
 

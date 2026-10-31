@@ -215,10 +215,11 @@ function devBanner(what) {
   console.error(tty ? `\x1b[1;35m${line}\x1b[0m` : line);
 }
 
+// banners() — what bare `steward` says before the help: the briefing (lib/brief.js), one process and no network. It
+// replaced five banners (new projects, projects behind, soak, review due, config repo), one of which walked every
+// project root on each run; the briefing covers each of them and names the one next step
 function banners() {
-  for (const a of [['projects/bin/projects.js', 'banner'], ['projects/bin/reconcile.js', '--banner'], ['lib/soak.js', '--banner'], ['lib/review.js', '--banner'], ['lib/configrepo.js', '--banner']]) {
-    spawnSync(process.execPath, a, { cwd: ENGINE, stdio: 'inherit' });
-  }
+  spawnSync(process.execPath, ['lib/brief.js', '--banner'], { cwd: ENGINE, stdio: 'inherit' });
 }
 
 (async () => {

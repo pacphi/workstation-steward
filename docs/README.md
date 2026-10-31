@@ -1,6 +1,6 @@
 # Docs index
 
-![Revision 11](https://img.shields.io/badge/Revision-11-green) ![Revised 2026-10-30](https://img.shields.io/badge/Revised-2026--10--30-green)
+![Revision 12](https://img.shields.io/badge/Revision-12-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 Every public doc, by kind. Each doc shows its revision and revision date in badges under the title. The number changes only when the
 content does; moving a file or fixing a link doesn't count. The rules are in
@@ -10,9 +10,9 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 
 | Doc | Rev | What it is |
 | --- | --- | --- |
-| [`guide.md`](guide.md) | 6, 2026-10-30 | Why the steward exists, what it looks after, the rules, first run, the weekly routine (with what the release-age gate holds back) and what to do when something happens, words you'll see |
-| [`briefing.md`](briefing.md) | 3, 2026-10-30 | `steward brief`: what needs you now as one next step with its command, read from disk without the network; the background refresh that looks at GitHub, npm and your projects (D57); the Claude Code session-start hook, once and then quiet (D48); the checks (detectors), their order, the output, and how to add one |
-| [`config-repo.md`](config-repo.md) | 6, 2026-10-30 | Keeping your config in a private Git repo: setting it up, Renovate, a second Mac, staying in step, and what the steward tells you about it |
+| [`guide.md`](guide.md) | 7, 2026-10-31 | Why the steward exists, what it looks after, the rules, first run, the weekly routine (with what the release-age gate holds back) and what to do when something happens, words you'll see |
+| [`briefing.md`](briefing.md) | 4, 2026-10-31 | `steward brief`: what needs you now as one next step with its command, read from disk without the network; the background refresh that looks at GitHub, npm and your projects (D57); the Claude Code session-start hook, once and then quiet (D48); the checks (detectors), their order, the output, and how to add one |
+| [`config-repo.md`](config-repo.md) | 7, 2026-10-31 | Keeping your config in a private Git repo: setting it up, Renovate, a second Mac, staying in step, and what the steward tells you about it |
 | [`prereqs.md`](prereqs.md) | 4, 2026-10-30 | Everything the steward needs on the machine, the order to install it on a new Mac, the services on GitHub (Renovate), and `steward doctor` |
 
 ## Design

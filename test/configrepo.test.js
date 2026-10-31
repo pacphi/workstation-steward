@@ -72,12 +72,13 @@ test('configrepo: newer commits upstream show only after a fetch; the banner nev
   assert.match(cr(f.inst, '--fetch').stdout, /fetch failed: /);
 });
 
-test('the steward banner and steward config show the config repo (D50)', () => {
+test('bare steward (the briefing) and steward config show the config repo (D50)', () => {
   const f = fixture();
   fs.appendFileSync(path.join(f.inst, 'mise', 'mise.lock'), 'lock 2\n');
   const env = { ...ENV, STEWARD_INSTANCE: f.inst };
   const bare = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js')], { encoding: 'utf8', env });
-  assert.match(plain(bare.stdout), /^config 1 file\(s\) changed here: steward config$/m);
+  // bare steward is the briefing: the change, then the one next step (no GitHub remote here, so config sync is off)
+  assert.match(plain(bare.stdout), /^steward config: 1 file\(s\) changed here: mise\/mise\.lock\nnext: git -C .* status$/m);
   const conf = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'config'], { encoding: 'utf8', env });
   assert.equal(conf.status, 0, conf.stderr);
   assert.match(conf.stdout, /\nrepo: +no GitHub remote \(main → origin\/main\)\n +1 file\(s\) changed here: mise\/mise\.lock\n +→ git -C /);
