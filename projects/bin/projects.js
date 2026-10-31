@@ -197,7 +197,8 @@ async function undoDecide(file) {
   if (rc.kind !== 'registry') throw new Error(`${P.tilde(rp)} is not a projects decide receipt`);
   if (rc.rolled_back) { console.log('already rolled back'); return; }
   const now = readText(P.REGISTRY);
-  if (now === null || sha(now) !== rc.sha_after) { console.error(`refusing: ${P.tilde(P.REGISTRY)} changed since this decide; put it back by hand from ${rc.backup || '(no file before)'}`); process.exitCode = 1; return; }
+  // a decide that stopped before its write finished has no sha_after: put back what it backed up
+  if (rc.sha_after && (now === null || sha(now) !== rc.sha_after)) { console.error(`refusing: ${P.tilde(P.REGISTRY)} changed since this decide; put it back by hand from ${rc.backup || '(no file before)'}`); process.exitCode = 1; return; }
   console.log(`\x1b[1;34m==>\x1b[0m undo ${rc.changes.length} registry change(s) from ${rc.at}`);
   for (const c of rc.changes) console.log(`  ${c.path}: ${c.after.decision} → ${c.before ? c.before.decision : '(not in the registry)'}`);
   const yes = require('../../lib/autonomy.js').answer('rollback', 'Restore registry.toml?') || /^y$/i.test((await prompt(`${rc.backup ? `Restore ${P.tilde(P.REGISTRY)} from ${rc.backup}` : `Remove ${P.tilde(P.REGISTRY)} (it didn't exist before)`}? [y/N] `)).trim());

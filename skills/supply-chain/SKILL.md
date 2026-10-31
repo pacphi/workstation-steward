@@ -50,7 +50,7 @@ End with the next step the user might want, and don't take it without their yes.
 | Step | Approval |
 | --- | --- |
 | Read-only commands: `audit`, `plan`, `status`, `verify`, `DRY_RUN=1 …` | Not needed. Run them freely and report what they show. |
-| Changing commands: `upgrade`, `upgrade-tool`, `node-patch`, `install-hybrids`, `retire-hybrid`, `prune`, `rollback`, `link` | Show the dry run and get the user's yes for *that* step. An approval covers one step, not the next. |
+| Changing commands: `upgrade`, `upgrade-tool`, `node-patch`, `install-hybrids`, `retire-hybrid`, `prune`, `rollback`, `link` | Show the dry run and get the user's yes for *that* step. An approval covers one step, not the next. Each asks its own [y/N], which gets no answer from your shell: after the user's yes, run `sc upgrade`, `node-patch`, `install-hybrids` or `prune` with `--unattended --yes-to <its class>` (`steward help <command>` names it); hand the others to the user's terminal. |
 | Commit, push, PR, merge | Ask first. Merging uses the full 40-character head SHA. |
 | Policy edits (`host.toml` exceptions, IOCs, distrusted roots, trust excludes) | Show the entry and its primary-source evidence, then ask. |
 | Trust-store changes, `sudo`, admin settings | Hand to the user to run in Terminal.app. |

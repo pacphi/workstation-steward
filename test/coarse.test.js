@@ -251,4 +251,11 @@ test('steward projects --apply: asks each new project its decision, shows the ch
   const refused = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'projects', 'decide', '--rollback', rp2], { encoding: 'utf8', input: 'y\n', env: { ...BASE, ...env } });
   assert.equal(refused.status, 1);
   assert.match(refused.stderr, /refusing: .*registry\.toml changed since/);
+  // a decide that stopped before its write finished (no sha_after): its rollback still puts the backup back
+  const stopped = { ...JSON.parse(fs.readFileSync(rp2, 'utf8')), complete: false };
+  delete stopped.sha_after;
+  fs.writeFileSync(rp2, JSON.stringify(stopped));
+  const undo = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'projects', 'decide', '--rollback', rp2], { encoding: 'utf8', input: 'y\n', env: { ...BASE, ...env } });
+  assert.equal(undo.status, 0, undo.stderr);
+  assert.equal(fs.readFileSync(reg, 'utf8'), fs.readFileSync(stopped.backup.replace(/^~/, env.HOME), 'utf8'));
 });
