@@ -117,7 +117,7 @@ test('the command: plan only without a terminal; --unattended under level "ask" 
   const plan = steward(['ai', 'fix'], env);
   assert.equal(plan.status, 0, plan.stderr);
   assert.match(plan.stdout, /\[1\/5\] .*\n[\s\S]*\[5\/5\] /);
-  assert.match(plan.stdout, /plan only: steward ai fix asks once at a terminal/);
+  assert.match(plan.stdout, /plan only: steward ai fix asks once/);
   const un = steward(['fleet', 'tidy', ROOT, '--unattended'], env);
   assert.equal(un.status, 4, un.stderr);
   assert.match(un.stderr, /level = "ask" doesn't allow prune-merged/);
@@ -134,6 +134,45 @@ test('install-hybrids: under --unattended it stops (exit 4) unless [autonomy] al
   assert.equal(r.status, 4, r.stdout + r.stderr);
   assert.match(r.stderr, /not answering "Install the hybrids .*doesn't allow install-hybrids/);
   assert.equal(fs.existsSync(path.join(ROOT, 'stub-calls')), false, 'npm, mise and ruflo never ran');
+  // allowed, it goes on to install: here only as far as the stand-ins
+  const ok = copy('hyb-ok', 'maintainer');
+  const toml = path.join(ok.STEWARD_INSTANCE, 'steward.toml');
+  fs.writeFileSync(toml, fs.readFileSync(toml, 'utf8').replace(/^allow = \[\]/m, 'allow = ["install-hybrids"]'));
+  const r2 = spawnSync(path.join(REPO, 'supply-chain', 'bin', 'install-hybrids'), [], { encoding: 'utf8',
+    env: { ...BASE, ...ok, PATH: `${STUBS}:${process.env.PATH}`, STEWARD_UNATTENDED: '1' } });
+  assert.match(r2.stderr, /unattended: yes to "Install the hybrids/);
+  assert.ok(fs.existsSync(path.join(ROOT, 'stub-calls')), 'past the guard, the install steps ran (the stand-ins)');
+  fs.rmSync(path.join(ROOT, 'stub-calls'));
+});
+
+test('end to end: steward ai fix, one yes on stdin: each part runs --apply --unattended --yes-to ai-fix; the record; the briefing', () => {
+  const env = copy('e2e', 'ask');
+  // a Claude Code settings file to guard (ai guard stops on a missing one, as it did before D61)
+  fs.mkdirSync(path.join(env.HOME, '.claude'));
+  fs.writeFileSync(path.join(env.HOME, '.claude', 'settings.json'), '{}\n');
+  const r = spawnSync(process.execPath, [path.join(REPO, 'bin', 'steward.js'), 'ai', 'fix'], { encoding: 'utf8', input: 'y\n', env: { ...BASE, ...env } });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  const backups = path.join(env.XDG_STATE_HOME, 'workstation-steward', 'backups');
+  const dir = fs.readdirSync(backups).find(d => d.startsWith('coarse-ai-fix-'));
+  assert.ok(dir, 'the record');
+  const rec = JSON.parse(fs.readFileSync(path.join(backups, dir, 'receipt.json'), 'utf8'));
+  assert.deepEqual([rec.kind, rec.command, rec.complete, rec.outcome, rec.parts, rec.yes_to], ['coarse', 'ai fix', true, 'done', 5, ['ai-fix']]);
+  const home = env.HOME;
+  const untilde = p => (p.startsWith('~/') ? path.join(home, p.slice(2)) : p);
+  for (const [i, n] of ['repin', 'guard', 'timeouts', 'approvals', 'transport'].entries()) {
+    assert.equal(rec.steps[i].outcome, 'done', n);
+    const log = fs.readFileSync(untilde(rec.steps[i].logs[0]), 'utf8');
+    assert.match(log, new RegExp(`^\\$ steward ai ${n} --apply --unattended --yes-to ai-fix\n`), n);
+    for (const f of rec.steps[i].receipts) assert.deepEqual(JSON.parse(fs.readFileSync(untilde(f), 'utf8')).yes_to, ['ai-fix'], `${n}: its receipt records the yes`);
+  }
+  // the same run left unfinished, its process gone: the briefing names it (without the finished run, which would
+  // supersede it)
+  fs.rmSync(path.join(backups, dir), { recursive: true });
+  const stopped = path.join(backups, 'coarse-ai-fix-20261030T080000');
+  fs.mkdirSync(stopped);
+  fs.writeFileSync(path.join(stopped, 'receipt.json'), JSON.stringify({ ...rec, at: '2026-10-30T08:00:00.000Z', pid: 999999, complete: false, outcome: 'started', steps: rec.steps.slice(0, 2) }));
+  const b = steward(['brief', '--all'], env);
+  assert.match(b.stdout, /steward ai fix stopped midway: 2 of 5 part\(s\) done/);
 });
 
 test('briefing: a bundled run left unfinished names its command and what it finished; a live one is left alone', () => {
