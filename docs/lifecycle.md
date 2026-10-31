@@ -1,6 +1,6 @@
 # Lifecycle
 
-![Revision 18](https://img.shields.io/badge/Revision-18-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 19](https://img.shields.io/badge/Revision-19-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 How someone installs workstation-steward, sets it up, uses it, and keeps it, their config and their projects safe
 over release after release. It is the contract the code is built to: each part is marked **built** or **planned**.
@@ -214,6 +214,8 @@ then Windows. Support follows package managers, not distributions: each package 
 pacman, winget, scoop …) is a provider that lists what is installed and outdated, gives publish dates for the
 release-age gate, upgrades one package, and says whether it can roll back. The steward reads `/etc/os-release` to
 pick Linux providers. The audit becomes a set of checks, each knowing which platforms it applies to (D43).
+
+The work for Linux and NixOS, and how far it has got, is tracked in [`platforms/parity.md`](platforms/parity.md).
 
 - The checks (`supply-chain/checks/`), the Homebrew and mise providers (`lib/providers/`), and `platforms` keys in
   host.toml: *Built (R5c).*
