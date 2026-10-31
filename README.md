@@ -135,6 +135,7 @@ steward init
 steward doctor        # what this machine still needs (--install fixes it)
 steward sc plan       # what an upgrade would take, hold or skip, and why
 steward brief         # what needs you now: the one next step, or one quiet line
+steward fix           # the plan to work through it (--apply does it, asking where it should)
 ```
 
 **5. Or just ask.** With the Claude Code skills installed (`steward init` offers them, or run `steward skills install`),

@@ -90,7 +90,7 @@ test('the classes: every writing command has one (or is a person\'s), every leve
   const { COMMANDS } = require('../lib/commands.js');
   for (const c of COMMANDS.filter(x => x.writes)) {
     const name = `${c.area} ${c.name}`;
-    if (c.area === 'skills') assert.equal(c.class, undefined, `${name} is run by a person`);
+    if (c.area === 'skills' || c.runner) assert.equal(c.class, undefined, `${name} is run by a person, or runs others under their own classes`);
     else assert.ok(c.class in A.CLASSES, `${name} has a class`);
     if (c.unattended) assert.ok(c.class, `${name} takes --unattended only with a class`);
   }

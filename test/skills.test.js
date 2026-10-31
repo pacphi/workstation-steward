@@ -14,9 +14,9 @@ const names = fs.readdirSync(SKILLS, { withFileTypes: true }).filter(e => e.isDi
 const front = text => (text.match(/^---\n([\s\S]*?)\n---\n/) || [undefined, ''])[1];
 const field = (fm, key) => (fm.match(new RegExp(`^${key}: (.*)$`, 'm')) || [undefined, ''])[1].trim();
 
-test('skills: the plugin holds the four skills, each named for its folder', () => {
+test('skills: the plugin holds the five skills, each named for its folder', () => {
   assert.equal(JSON.parse(fs.readFileSync(path.join(REPO, '.claude-plugin', 'plugin.json'), 'utf8')).name, 'steward');
-  assert.deepEqual(names, ['ai-tooling', 'pr-consolidation', 'projects', 'supply-chain']);
+  assert.deepEqual(names, ['ai-tooling', 'fix', 'pr-consolidation', 'projects', 'supply-chain']);
   for (const n of names) assert.equal(field(front(fs.readFileSync(path.join(SKILLS, n, 'SKILL.md'), 'utf8')), 'name'), n);
   assert.ok(require('../package.json').files.includes('skills/'), 'the skills ship in the npm package');
 });

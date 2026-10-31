@@ -1,6 +1,6 @@
 # The briefing: `steward brief`
 
-![Revision 5](https://img.shields.io/badge/Revision-5-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 6](https://img.shields.io/badge/Revision-6-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 **One question, answered in under a second: what needs me, and what do I run next?** `steward brief` reads what is
 already on your disk and names **one** next step, with its exact command. When nothing needs you, it says so in one
@@ -291,6 +291,43 @@ but only where your level allows each one, question by question:
 For now these commands take it: `config sync`, `projects reconcile`, `sc prune`, `fleet sync` and
 `fleet prune-merged`. Any other command refuses it with "it doesn't run unattended yet", even when `allow` names its
 class. A read-only command ignores the flag.
+
+**Your yes, for one run: `--yes-to <class>`.** With `--unattended`, it lets the command answer questions of that
+class too, for this run only. It is how your yes in a Claude Code conversation reaches the command. The receipt
+records it (`"yes_to": ["prune-merged"]`). It needs `--unattended`, it takes only a real class, and nothing can name a
+human-only step, which has none.
+
+## The fix runner: `steward fix`
+
+**`steward fix` turns the work list into done work (D59).** It reads `steward brief --plan`, or a list from a file
+(`steward review --json > list.json`, then `steward fix --from list.json`). It works the list top down, and it only
+ever runs `steward` commands, through its own engine.
+
+| What it does with a step | When |
+| --- | --- |
+| **run** | read-only, or every part's class is one your level allows; a writing command gets `--apply --unattended` |
+| **ask** | a writing command that takes `--unattended`, whose class needs your yes |
+| **terminal** | a writing command that doesn't take `--unattended` yet: it asks its own questions |
+| **yours** | a human-only step, or a command that isn't a `steward` command (`rm`, `mv`, `gh pr merge`, a `<placeholder>`). The list's own `actor` can't change this: the runner reads the command and your policy itself |
+| **skill** | a maintainer flow (`/steward-maintain …`), a sandbox qualification, a fleet repo for `pr-consolidation` |
+| **wait** | nothing to do yet |
+
+| Command | What you get |
+| --- | --- |
+| `steward fix` | The plan: each step and what `--apply` would do with it. Nothing runs |
+| `steward fix --apply` | It works the list. In a terminal, it asks you about each **ask** and **terminal** step |
+| `steward fix --apply --only <id> --yes-to <class>` | One step, with your yes to its class. This is what the fix skill runs after asking you |
+| `… --json` | The plan, or the summary, as data; each step's output stays on stderr |
+
+- A step whose `after` didn't get done waits on it.
+- A step that exits 4 (a question its policy may not answer) **waits on you**, with whatever it finished first.
+- Any other failure **stops the run**, with the rollback from the step or its receipt.
+- The summary has four parts: done (with each receipt), waiting on you, for the fix skill, and failed.
+- Each run writes a record, `<state>/backups/fix-<time>/receipt.json`, and each step's log beside it. If a run stops
+  midway, the briefing says so (`receipt-unfinished`), but not while the run is still going.
+
+In Claude Code, the fix skill (`/steward:fix`) drives it: the plan, the run, your yes one step at a time, your steps
+handed over as exact commands, sub-agents for independent items, then a summary and a fresh `steward brief`.
 
 ## Adding a detector
 

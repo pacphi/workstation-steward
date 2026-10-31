@@ -81,7 +81,7 @@ if (!A.answer('prune-merged', `Delete ${del.length} local branch(es)?`)) {
 }
 s = pg.stage('deleting');
 const bdir = C.newBackupDir(`prune-merged-${path.basename(dir)}`);
-const receipt = { kind: 'prune-merged', at: new Date().toISOString(), engine: C.ENGINE_VERSION, ...(A.unattended() ? { unattended: true } : {}), repo: dir, remote: repo, branches: del.map(r => ({ name: r.b, tip: r.tip, pr: r.pr })), deleted: [], complete: false };
+const receipt = { kind: 'prune-merged', at: new Date().toISOString(), engine: C.ENGINE_VERSION, ...A.mark(), repo: dir, remote: repo, branches: del.map(r => ({ name: r.b, tip: r.tip, pr: r.pr })), deleted: [], complete: false };
 const save = () => fs.writeFileSync(path.join(bdir, 'receipt.json'), JSON.stringify(receipt, null, 1) + '\n');
 save();
 for (const r of del) { git('branch', '-D', r.b); receipt.deleted.push(r.b); save(); }
