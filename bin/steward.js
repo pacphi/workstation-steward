@@ -275,13 +275,16 @@ function run(cmd, args) {
   delete env.STEWARD_UNATTENDED;
   delete env.STEWARD_YES_TO;
   const extra = unattended ? unattendedEnv(cmd, args, yesTo) : {};
-  // doctor: the engine and your config first (what version and check say), then the prerequisites; not for --json
+  // doctor: the engine and your config first (what version and check say), then the prerequisites; not for --json.
+  // It runs on a bare machine to say what is missing, so a config it can't read (no yq yet) is a line, not a stop
   let wanted = 0;
   if (cmd.area === '' && cmd.name === 'doctor' && !args.some(a => a === '--json' || a === '--markdown')) {
-    const cfg = report();
     console.log(`workstation-steward ${build()} on node ${process.versions.node}`);
     console.log(`instance: ${C.tilde(C.INSTANCE_ROOT)}   [${C.INSTANCE.source}]`);
-    const { ok, wants } = basics(cfg);
+    let cfg = null;
+    let why = '';
+    try { cfg = C.load({ allowMissing: true }); } catch (e) { why = e.message; }
+    const { ok, wants } = cfg ? basics(cfg) : { ok: [], wants: [`couldn't read your config (${why}); the prerequisites below may be why`] };
     for (const l of ok) console.log(`ok     ${l}`);
     for (const l of wants) console.log(`WANTS  ${l}`);
     wanted = wants.length;

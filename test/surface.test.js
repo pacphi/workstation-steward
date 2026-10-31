@@ -116,3 +116,11 @@ test('doctor: the version, the config format and the add-ons, then the prerequis
   const j = steward(['doctor', '--area', 'core', '--json']);
   assert.doesNotThrow(() => JSON.parse(j.stdout), j.stdout.slice(0, 200));
 });
+
+test('doctor: still runs on a bare machine (no yq to read the config): it says so, then the prerequisites', () => {
+  // doctor.js runs on plain Node so it can name what is missing; its header must not need yq either
+  const r = steward(['doctor', '--area', 'core'], { PATH: `${path.dirname(process.execPath)}:/usr/bin:/bin` });
+  assert.notEqual(r.status, 2, r.stderr);
+  assert.doesNotMatch(r.stderr, /ENOENT/);
+  assert.match(r.stdout, /yq/, "doctor's table names yq");
+});
