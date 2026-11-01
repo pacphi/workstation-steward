@@ -1,6 +1,6 @@
 # Docs index
 
-![Revision 18](https://img.shields.io/badge/Revision-18-green) ![Revised 2026-11-01](https://img.shields.io/badge/Revised-2026--11--01-green)
+![Revision 19](https://img.shields.io/badge/Revision-19-green) ![Revised 2026-11-01](https://img.shields.io/badge/Revised-2026--11--01-green)
 
 Every public doc, by kind. Each doc shows its revision and revision date in badges under the title. The number changes only when the
 content does; moving a file or fixing a link doesn't count. The rules are in
@@ -21,10 +21,10 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | Doc | Rev | What it is |
 | --- | --- | --- |
 | [`lifecycle.md`](lifecycle.md) | 21, 2026-11-01 | Install, set up, use, upgrade, migrate the config, keep old command names, reconcile projects, add tools, roll back, and the two channels (a worktree or npm for the release): the promises across releases, day to day (the briefing, the review and the gate, who takes each step, `steward fix`, the bundled commands), each marked built or planned (D40, D41) |
-| [`platforms/parity.md`](platforms/parity.md) | 4, 2026-11-01 | Planned: Linux and NixOS parity as a plan and a progress ledger. Why it matters, where it stands, the decisions (D-a to D-g, all made), the bar for the first Linux release (apt, dnf and zypper), the supported distributions and their minimum versions, each capability per platform, the milestones with a checkbox per item, the CI matrix and install checks, and the facts still to verify; every PR in this work updates it |
+| [`platforms/parity.md`](platforms/parity.md) | 5, 2026-11-01 | Planned: Linux and NixOS parity as a plan and a progress ledger. Why it matters, where it stands, the decisions (D-a to D-g, all made), the bar for the first Linux release (apt, dnf and zypper), the supported distributions and their minimum versions, each capability per platform, the milestones with a checkbox per item, the CI matrix and install checks, and the facts still to verify; every PR in this work updates it |
 | [`release-classes.md`](release-classes.md) | 3, 2026-10-29 | Built (D52): what may skip the release-age gate, as one release class per update source, update sources declared in `host.toml`, and the weekly upstream watch on shipped key pins |
 | [`maintainers.md`](maintainers.md) | 8, 2026-10-31 | Publishing the explainer site (on demand); releasing: the release PR, Conventional Commit titles, the one-time npm setup (placeholder and Trusted Publishing), the publish guard, a pre-push leak check (D46); the maintainer skill (D53); what to do when the upstream watch finds a shipped default changed (D52); checking that no command looks hung (`just progress-gaps`); trying the session hook before a release (`just try-hook`); Renovate on the engine repo |
-| [`architecture.md`](architecture.md) | 49, 2026-11-01 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D63 |
+| [`architecture.md`](architecture.md) | 50, 2026-11-01 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D64 |
 
 ## Living docs by area
 

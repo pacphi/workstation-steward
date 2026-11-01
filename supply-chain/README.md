@@ -74,6 +74,16 @@ steward sc link                               # re-link ~/.config/mise to ../mis
 Every mutating recipe backs up `config.toml` and `mise.lock` to `~/.config/mise/backups/` first. A mise update backs
 up the binary to `~/.local/state/workstation-steward/backups/mise-self-update-*`.
 
+## Package sources
+
+Each package manager, and each kind of package it handles, is a *source* (`lib/providers/index.js`, D64): Homebrew
+formulae and Homebrew casks today; apt, dnf and zypper next ([`../docs/platforms/parity.md`](../docs/platforms/parity.md)).
+`steward sc audit` and `steward sc plan` show a section for each source that applies on this machine, and judge each
+package in it the same way: taken once it is at least the release-age gate's days old, or when an unexpired
+`security_exception` names that version; held otherwise. A source that isn't installed says so and is skipped. One
+that needs root is listed with its exact `sudo` command for you to run; the steward never runs `sudo` itself (D-b).
+mise is not a source: it applies the gate itself.
+
 ## What may skip the gate
 
 Every update source has one **release class** (D52, [`release-classes.md`](../docs/release-classes.md)), and only
