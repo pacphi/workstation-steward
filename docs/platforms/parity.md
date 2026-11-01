@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 2](https://img.shields.io/badge/Revision-2-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-11-01](https://img.shields.io/badge/Revised-2026--11--01-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -10,6 +10,7 @@ is left.
 - [Where we are](#where-we-are)
 - [How to use this ledger](#how-to-use-this-ledger)
 - [Decisions](#decisions)
+- [The Linux release: the bar](#the-linux-release-the-bar)
 - [Supported platforms and minimum versions](#supported-platforms-and-minimum-versions)
 - [What parity means: the capabilities](#what-parity-means-the-capabilities)
 - [Milestone 0: a portable engine](#milestone-0-a-portable-engine)
@@ -39,12 +40,13 @@ combination we claim.
 
 | Milestone | What it delivers | Stage | Done |
 | --- | --- | --- | --- |
-| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Not started | 0 / 8 |
+| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 1 / 9 |
 | [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Not started | 0 / 10 |
 | [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 5 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
-| [Testing](#testing-the-ci-matrix-and-install-checks) | A CI row and an install-check row for every combination we claim | Not started | 0 / 6 |
-| [Decisions](#decisions) | The choices the work depends on | All made | 9 / 9 |
+| [Testing](#testing-the-ci-matrix-and-install-checks) | A CI row and an install-check row for every combination we claim | Not started | 0 / 7 |
+| [The Linux release](#the-linux-release-the-bar) | 0.11.0: Milestone 0, apt, dnf and zypper at full parity | Not started | 0 / 7 |
+| [Decisions](#decisions) | The choices the work depends on | All made | 12 / 12 |
 
 ## How to use this ledger
 
@@ -102,6 +104,36 @@ A box is ticked only when its check ran and passed. Something left undone stays 
 - [x] **D-g. mise on NixOS comes from nixpkgs, with `nix-ld`** (owner, 2026-10-31). `nix-ld` lets the prebuilt tools
   mise downloads run, so every mise capability works as it does elsewhere. Turning `nix-ld` on is a change to the
   host's config, made as a PR to the repo it lives in. The first NixOS PR checks the facts behind this first.
+- [x] **R-1. No release until apt, dnf and zypper reach full parity** (owner, 2026-11-01); see
+  [the bar](#the-linux-release-the-bar). They are built first, ahead of Flatpak, Snap, pacman and apk.
+- [x] **R-2. Install checks before the release run in worktree mode from a commit** (owner, 2026-11-01); npm mode runs
+  on every row right after the release, before it is announced.
+- [x] **R-3. An urgent fix during the hold** goes to the owner's instance first, else out in a Mac-only release
+  (owner, 2026-11-01).
+
+## The Linux release: the bar
+
+**No release of the steward until three Linux package managers reach full parity** (owner, 2026-11-01): **apt, dnf
+and zypper**. That release is 0.11.0; after it, each further package manager ships in a release of its own. Until
+then, release-please's release PR stays open and gathers every change; the owner merges it only when every box below is
+ticked.
+
+- [ ] **Milestone 0 done** (0.1 to 0.9).
+- [ ] **apt, dnf and zypper done:** each provider's checklist in [Milestone 1](#milestone-1-linux-one-package-manager-at-a-time).
+- [ ] **Their apps and trust items:** 2.1 for the Debian, Red Hat and SUSE families; 2.2 to 2.4 on their
+  distributions.
+- [ ] **CI green** on the oldest and newest supported release of Debian, Ubuntu, Linux Mint, Fedora, openSUSE Leap
+  and Tumbleweed.
+- [ ] **Install check, worktree mode,** from the release commit on every one of those rows (T.7).
+- [ ] **Say it:** `package.json` `os` adds `linux`, and the README and [`../lifecycle.md`](../lifecycle.md#platforms)
+  say the steward runs on Linux with apt, dnf and zypper.
+- [ ] **Release,** then the install check in npm mode on every row before the release is announced. A failure there is
+  fixed in 0.11.1.
+
+**An urgent fix during the hold** (owner, 2026-11-01). New policy data (an IOC, a distrusted root, an exception) goes
+into the owner's instance `host.toml` first, which needs no release. If code must ship, it goes out as a Mac-only
+release from `main`: `package.json` `os` stays `darwin` and the README stays macOS until the bar above, so the Linux
+code inside is dormant and unsupported. The Linux release is then 0.12.0.
 
 ## Supported platforms and minimum versions
 
@@ -158,11 +190,13 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 before. **Done when:** `steward sc plan` and `steward sc audit` run clean on `ubuntu-latest` with Linuxbrew, and the
 Mac's output before and after is identical.
 
-Stage: Not started.
+Stage: Under way (0.1 done).
 
-- [ ] **0.1 Know the platform.** `lib/platform.js` reads `/etc/os-release` (`ID`, `ID_LIKE`, `VERSION_ID`) and returns
+- [x] **0.1 Know the platform** (#84, D63). `lib/platform.js` reads `/etc/os-release` (`ID`, `ID_LIKE`, `VERSION_ID`) and returns
   the platform, distribution and family; NixOS by `ID=nixos`. `host.toml` entries take the optional `families` key
-  (D-f), and `lib/host.js` checks it as it checks `platforms`. Tests use sample os-release files.
+  (D-f), and `lib/host.js` checks it as it checks `platforms`. An entry with `families` must also say
+  `platforms = ["linux"]`, and the steward warns when it doesn't (owner, 2026-11-01). Tests use sample os-release
+  files for every row of the platforms table, and two that only `ID_LIKE` places.
 - [ ] **0.2 One contract for providers.** A written interface: `id`, `platforms`, `families`, `gateMode`, `available`,
   `installed`, `outdated`, `releaseDate` or `snapshot`, `upgradeCmd`, `needsRoot`, `canRollback`, `rollbackCmd`.
   `supply-chain/bin/upgrade.js` loops over the providers that apply instead of calling Homebrew directly. Proof: the
@@ -182,15 +216,25 @@ Stage: Not started.
   `security`, `softwareupdate`, `mas` and Homebrew are required everywhere. Install hints come per family.
 - [ ] **0.7 Words.** "This Mac" and macOS-only fix text become platform-aware in the review, the audit, the briefing,
   the guards and the package description.
-- [ ] **0.8 Package and first Linux CI row.** `package.json` `os` adds `linux` (npm users see this, so release-please
-  makes it a minor release); publish no longer needs macOS; Tests run on `ubuntu-latest` too.
+- [ ] **0.8 Ready to package for Linux, and the first Linux CI row.** Publishing no longer needs macOS, and Tests run on
+  `ubuntu-latest` too. `package.json` `os` keeps only `darwin` until [the bar](#the-linux-release-the-bar) is met
+  (R-3), so a release before then stays Mac-only.
+- [ ] **0.9 Test each distribution locally, in containers** (owner, 2026-11-01). `just linux-test <distro|all>`
+  builds one image per distribution from a base pinned by digest (Renovate keeps it current, behind the gate), with
+  bash, git, just and Node 26. It runs `just test` on a read-only copy of the checkout as a non-root user, with no
+  network, in a container removed after the run (`--rm`). Results go to a file under the state folder;
+  `just linux-clean` removes the test images after a plan and a yes. The same list as the CI matrix (T.1) feeds it.
+  It adds to the CI matrix and never replaces it: every supported distribution still gets its CI job on every PR, and
+  its install-check row (owner, 2026-11-01).
+  Containers run arm64 on an Apple-silicon Mac (x64 by emulation) and have no systemd, so the NixOS VM stays in CI.
+  Built right after 0.2.
 
 ## Milestone 1: Linux, one package manager at a time
 
 **Goal:** each package manager is a provider that lists what is installed and behind, dates each version for the
 gate, upgrades with a plan, a yes, a backup and a receipt, and says how to go back. Order, as in
-[`../lifecycle.md`](../lifecycle.md#platforms): the fully supported providers first, then the best-effort ones (owner,
-2026-10-31).
+[`../lifecycle.md`](../lifecycle.md#platforms): apt, dnf and zypper first, for the Linux release (R-1); then the other
+fully supported providers; then the best-effort ones (owner, 2026-10-31 and 2026-11-01).
 
 **Each provider's checklist** (one PR each; copy it into the provider's section when the work starts):
 
@@ -208,11 +252,11 @@ gate, upgrades with a plan, a yes, a backup and a receipt, and says how to go ba
 
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
 | --- | --- | --- | --- | --- |
-| ⬜ apt | Debian, Ubuntu, Linux Mint | per package | Not started | |
-| ⬜ dnf | Fedora | per package | Not started | |
+| ⬜ apt | Debian, Ubuntu, Linux Mint (the Linux release) | per package | Not started | |
+| ⬜ dnf | Fedora (the Linux release) | per package | Not started | |
+| ⬜ zypper | openSUSE Leap, Tumbleweed (the Linux release) | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ Flatpak | any | per package | Not started | |
 | ⬜ Snap | Ubuntu and others | per package | Not started | |
-| ⬜ zypper | openSUSE Leap, Tumbleweed | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ pacman | Arch | dated snapshot | Not started | |
 | ⬜ apk | Alpine | per package | Not started (feasibility spike first) | |
 | ⬜ xbps | Void (best effort) | dated snapshot | Not started | |
@@ -275,6 +319,8 @@ Stage: Not started. Comes after Linux and before Windows (D-e).
 - [ ] **T.4** The install check as a matrix, with a Linux row.
 - [ ] **T.5** Container rows join with each provider (Milestone 1).
 - [ ] **T.6** The NixOS VM row (Milestone 3).
+- [ ] **T.7** The install check takes a `ref`: worktree mode from any commit of `main`, so Linux rows run before the
+  release (R-2). npm mode stays for released versions.
 
 > [!IMPORTANT]
 > Linux runners and containers cost nothing on the public repo. macOS rows keep running by hand on a private copy,
@@ -300,5 +346,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-10-31 | 2 | Decisions D-a to D-g made and written in; minimum-version rule (n-3, capped) and support level filled in for each distribution; NixOS moves ahead of Windows, and fully supported providers ahead of best-effort ones, in `lifecycle.md` | |
+| 2026-11-01 | 4 | The Linux release bar (R-1 to R-3): apt, dnf and zypper first; 0.8 keeps `os` Mac-only until the bar; T.7 install check from a commit | #84 |
+| 2026-11-01 | 3 | 0.1 done: the distribution and family from os-release, and `host.toml`'s `families` key (D63); 0.9 added: local container tests; Milestone 0 under way | #84 |
+| 2026-10-31 | 2 | Decisions D-a to D-g made and written in; minimum-version rule (n-3, capped) and support level filled in for each distribution; NixOS moves ahead of Windows, and fully supported providers ahead of best-effort ones, in `lifecycle.md` | #83 |
 | 2026-10-31 | 1 | First version: the plan, the two decisions made, the open ones, every milestone not started | #82 |
