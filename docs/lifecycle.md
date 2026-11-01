@@ -222,8 +222,9 @@ The work for Linux and NixOS, and how far it has got, is tracked in [`platforms/
 - `steward sc audit`, `plan` and `upgrade` run them: *Built (R5c).* Each switched only after the Bash and Node versions
   printed identical output on the same Mac; the Bash audit and upgrade are retired.
 - Then, one provider per PR, in this order: *Planned.*
-  1. **Linux**, by package manager: apt (Debian, Ubuntu, Linux Mint), dnf (Fedora), zypper (openSUSE), pacman (Arch),
-     portage (Gentoo), slackpkg (Slackware), apk (Alpine), xbps (Void);
+  1. **Linux**, by package manager, the fully supported ones first: apt (Debian, Ubuntu, Linux Mint), dnf (Fedora),
+     Flatpak and Snap, zypper (openSUSE), pacman (Arch), apk (Alpine); then, best effort, xbps (Void), portage (Gentoo)
+     and slackpkg (Slackware);
   2. **NixOS** ([nixos.org](https://nixos.org/)): declarative, so its provider plans a dated update of the flake or
      channel as a whole rather than one package at a time, and rolls back to a previous generation;
   3. **Windows 11 and WSL**: winget, Scoop and Chocolatey; inside WSL, the Linux providers apply.

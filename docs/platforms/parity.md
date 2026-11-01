@@ -188,8 +188,9 @@ Stage: Not started.
 ## Milestone 1: Linux, one package manager at a time
 
 **Goal:** each package manager is a provider that lists what is installed and behind, dates each version for the
-gate, upgrades with a plan, a yes, a backup and a receipt, and says how to go back. Order:
-[`../lifecycle.md`](../lifecycle.md#platforms), with Flatpak and Snap after dnf.
+gate, upgrades with a plan, a yes, a backup and a receipt, and says how to go back. Order, as in
+[`../lifecycle.md`](../lifecycle.md#platforms): the fully supported providers first, then the best-effort ones (owner,
+2026-10-31).
 
 **Each provider's checklist** (one PR each; copy it into the provider's section when the work starts):
 
@@ -213,10 +214,10 @@ gate, upgrades with a plan, a yes, a backup and a receipt, and says how to go ba
 | ⬜ Snap | Ubuntu and others | per package | Not started | |
 | ⬜ zypper | openSUSE Leap, Tumbleweed | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ pacman | Arch | dated snapshot | Not started | |
-| ⬜ portage | Gentoo (best effort) | dated snapshot | Not started | |
-| ⬜ slackpkg | Slackware (best effort) | to find out | Not started | |
 | ⬜ apk | Alpine | per package | Not started (feasibility spike first) | |
 | ⬜ xbps | Void (best effort) | dated snapshot | Not started | |
+| ⬜ portage | Gentoo (best effort) | dated snapshot | Not started | |
+| ⬜ slackpkg | Slackware (best effort) | to find out | Not started | |
 
 ## Milestone 2: Linux apps and trust stores
 
@@ -299,5 +300,5 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-10-31 | 2 | Decisions D-a to D-g made and written in; minimum-version rule (n-3, capped) and support level filled in for each distribution; NixOS moves ahead of Windows in `lifecycle.md` | |
+| 2026-10-31 | 2 | Decisions D-a to D-g made and written in; minimum-version rule (n-3, capped) and support level filled in for each distribution; NixOS moves ahead of Windows, and fully supported providers ahead of best-effort ones, in `lifecycle.md` | |
 | 2026-10-31 | 1 | First version: the plan, the two decisions made, the open ones, every milestone not started | #82 |
