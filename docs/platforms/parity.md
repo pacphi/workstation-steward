@@ -197,7 +197,7 @@ Stage: Under way (0.1 and 0.2 done).
   (D-f), and `lib/host.js` checks it as it checks `platforms`. An entry with `families` must also say
   `platforms = ["linux"]`, and the steward warns when it doesn't (owner, 2026-11-01). Tests use sample os-release
   files for every row of the platforms table, and two that only `ID_LIKE` places.
-- [x] **0.2 One contract for package sources** (#PR, D64). Each package manager and kind is a source
+- [x] **0.2 One contract for package sources** (#86, D64). Each package manager and kind is a source
   (`lib/providers/index.js`), and `judge()` makes the take-or-hold call for the audit and the plan alike. The plan loops
   over the sources that apply and are installed; a source that needs root is listed for the user and refused by
   `apply` until the apt provider brings the hand-off (owner, 2026-11-01). mise keeps its own path. Proof: the Mac's host
@@ -349,7 +349,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-01 | 5 | 0.2 done: package sources with one contract, judged in one place (D64) | #PR |
+| 2026-11-01 | 5 | 0.2 done: package sources with one contract, judged in one place (D64) | #86 |
 | 2026-11-01 | 4 | The Linux release bar (R-1 to R-3): apt, dnf and zypper first; 0.8 keeps `os` Mac-only until the bar; T.7 install check from a commit | #84 |
 | 2026-11-01 | 3 | 0.1 done: the distribution and family from os-release, and `host.toml`'s `families` key (D63); 0.9 added: local container tests; Milestone 0 under way | #84 |
 | 2026-10-31 | 2 | Decisions D-a to D-g made and written in; minimum-version rule (n-3, capped) and support level filled in for each distribution; NixOS moves ahead of Windows, and fully supported providers ahead of best-effort ones, in `lifecycle.md` | #83 |
