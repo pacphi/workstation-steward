@@ -3,6 +3,14 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.11.0](https://github.com/pacphi/workstation-steward/compare/v0.10.1...v0.11.0) (2026-11-01)
+
+
+### Features
+
+* know the Linux distribution and family, and host.toml's families key (parity 0.1) ([#84](https://github.com/pacphi/workstation-steward/issues/84)) ([3766b1d](https://github.com/pacphi/workstation-steward/commit/3766b1d54d05f4119f81a47c4eed1fd3913de53b))
+* package sources with one contract; the plan and the audit judge them in one place (parity 0.2) ([#86](https://github.com/pacphi/workstation-steward/issues/86)) ([a7b197d](https://github.com/pacphi/workstation-steward/commit/a7b197dd77bcdfd4a7e8a59ce7071c76e7038781))
+
 ## [0.10.1](https://github.com/pacphi/workstation-steward/compare/v0.10.0...v0.10.1) (2026-10-31)
 
 
