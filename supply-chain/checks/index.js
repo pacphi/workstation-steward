@@ -11,13 +11,12 @@ const fs = require('fs');
 const path = require('path');
 const { X509Certificate } = require('crypto');
 const brew = require('../../lib/providers/brew.js');
+const P = require('../../lib/providers/index.js');
 const U = require('../../lib/updaters.js');
 
 const ALL = ['macos', 'linux', 'windows'];
-const DAY = 86400e3;
-
-// ageDays(iso, now) — whole days since iso, or -1 when it doesn't parse (bash age_days)
-const ageDays = (iso, now) => { const t = Date.parse(iso); return iso && !Number.isNaN(t) ? Math.floor((now - t) / DAY) : -1; };
+// ageDays and securityException live with the package sources (lib/providers/index.js); kept here for the checks
+const { ageDays, securityException } = P;
 
 // verLt(a, b) — a sorts before b as `sort -V` would (bash ver_lt): runs of digits compare as numbers
 function verLt(a, b) {
@@ -70,10 +69,20 @@ function pickCask(casks, id) {
   return mine ? { cask: mine.c } : { other: named[0] };
 }
 
-// securityException(ctx, kind, name, version) — the advisory of an unexpired security_exception for that version
-const securityException = (ctx, kind, name, version) => {
-  const e = (ctx.policy.security_exception || []).find(x => x.kind === kind && x.name === name && x.version === version && x.expires >= ctx.today);
-  return e ? e.advisory : '';
+// packages(id) — the audit check's run for a package source (parity 0.2): each package behind, judged as the plan
+// judges it (lib/providers/index.js judge); a self-updating one is left to the app check
+const packages = id => async (ctx, out) => {
+  const s = P.byId(id), min = minAge(ctx);
+  for (const it of await s.outdated(ctx)) {
+    if (it.auto) continue;
+    const { name, have, want } = it;
+    const j = await P.judge(ctx, s, it), age = j.age;
+    const facts = { fix: FIX.upgrade, name, have, want, age };
+    if (j.exception) out.action(`${s.tag}: ${name} ${have} -> ${want} (security exception: ${j.exception})`, { ...facts, note: `security exception: ${j.exception}` });
+    else if (j.verdict === 'take') out.action(`${s.tag}: ${name} ${have} -> ${want} (${age}d old)`, facts);
+    else out.held(`${name} ${have} -> ${want} (${age}d old${s.heldEta ? `; eligible in ${min - age}d` : ''})`, { ...facts, note: `eligible in ${min - age}d` });
+  }
+  for (const l of await s.manual(ctx)) out.line(s.manualText('audit', l));
 };
 
 const minAge = ctx => ctx.cfg.policy.min_release_age_days;
@@ -155,31 +164,11 @@ const CHECKS = [
   {
     id: 'brew-formulae', name: 'Homebrew formulae', platforms: brew.platforms, provider: brew,
     title: ctx => `Homebrew formulae (live API; eligible = at least ${minAge(ctx)}d in homebrew-core, or a host.toml security exception)`,
-    async run(ctx, out) {
-      const min = minAge(ctx);
-      for (const { name, have, want } of (await brew.outdated(ctx, 'formula'))) {
-        const age = ageDays((await brew.releaseDate(ctx, 'formula', name, want)), ctx.now);
-        const exc = securityException(ctx, 'formula', name, want.replace(/_[^_]*$/, ''));
-        const facts = { fix: FIX.upgrade, name, have, want, age };
-        if (exc) out.action(`brew: ${name} ${have} -> ${want} (security exception: ${exc})`, { ...facts, note: `security exception: ${exc}` });
-        else if (age >= min) out.action(`brew: ${name} ${have} -> ${want} (${age}d old)`, facts);
-        else out.held(`${name} ${have} -> ${want} (${age}d old; eligible in ${min - age}d)`, { ...facts, note: `eligible in ${min - age}d` });
-      }
-      for (const l of (await ctx.run('brew', ['outdated', '--formula', '--verbose'])).stdout.split('\n').filter(l => l.includes('/'))) out.line(`tap (as of last brew update): ${l}`);
-    },
+    run: packages('brew-formula'),
   },
   {
     id: 'brew-casks', name: 'Homebrew casks', platforms: ['macos'], provider: brew, title: () => 'Homebrew casks (casks that update themselves are judged by their app bundle below)',
-    async run(ctx, out) {
-      const min = minAge(ctx);
-      for (const { name, have, want, auto } of (await brew.outdated(ctx, 'cask'))) {
-        if (auto) continue;
-        const age = ageDays((await brew.releaseDate(ctx, 'cask', name, want)), ctx.now);
-        const facts = { fix: FIX.upgrade, name, have, want, age };
-        if (age >= min) out.action(`cask: ${name} ${have} -> ${want} (${age}d old)`, facts);
-        else out.held(`${name} ${have} -> ${want} (${age}d old)`, { ...facts, note: `eligible in ${min - age}d` });
-      }
-    },
+    run: packages('brew-cask'),
   },
   {
     id: 'apps', name: 'Apps and Electron', platforms: ['macos'],

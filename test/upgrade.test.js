@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { plan, apply, crossesMajor } = require('../supply-chain/bin/upgrade.js');
+const { plan, apply, crossesMajor, refreshSteps } = require('../supply-chain/bin/upgrade.js');
 
 const ROOT = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'steward-upgrade-')));
 const NOW = new Date('2026-10-27T12:00:00Z');
@@ -82,7 +82,7 @@ test('plan: takes what is old enough or excepted, holds the rest, and says what 
     'take   npm:renovate 44.176.1 -> 44.181.5',
     'take   mise 2026.10.18 -> 2026.10.19 (3d old)',
   ]);
-  assert.deepEqual(p, { formulae: ['git', 'openssl@3'], casks: [], tools: ['gh', 'npm:renovate'], updaters: [], miseSelf: '2026.10.19' });
+  assert.deepEqual(p, { packages: [{ source: 'brew-formula', names: ['git', 'openssl@3'] }], tools: ['gh', 'npm:renovate'], updaters: [], miseSelf: '2026.10.19' });
   assert.deepEqual(sections, ['Homebrew formulae', 'Homebrew casks (self-updating casks are left to their own updaters)', 'mise tools (mise already applies minimum_release_age)', 'Declared updaters ([[updater]]: signed_data, always_current and an unexpired exception skip the gate)', "mise itself (D38: the gate and advisories decide; Homebrew's mise is judged with the formulae)"]);
 });
 
@@ -125,7 +125,7 @@ async function applyWith(p, fails = {}, o = {}) {
   try { code = await apply(p, { script: record, step: record, dry: false, ...o }); } finally { Object.assign(console, keep); }
   return { code, calls, lines: out.join('\n').replace(/\x1b\[[0-9;]*m/g, '').split('\n') };
 }
-const PLAN = { formulae: ['git'], casks: [], tools: ['npm:renovate', 'github:gastownhall/beads', 'gh'], updaters: [], miseSelf: '' };
+const PLAN = { packages: [{ source: 'brew-formula', names: ['git'] }], tools: ['npm:renovate', 'github:gastownhall/beads', 'gh'], updaters: [], miseSelf: '' };
 
 test('apply: a failed tool doesn\'t stop the others; the end names it with its way back, and the run exits 1, never "done"', async () => {
   const backups = path.join(ROOT, 'apply-backups');
@@ -156,12 +156,12 @@ test('apply: a failed brew step and a failed declared updater are listed too', a
 test('apply: a failed mise self-update exits 1 and says whether a binary backup was made', async () => {
   const stateBackups = path.join(ROOT, 'apply-state');
   fs.mkdirSync(stateBackups, { recursive: true });
-  const r = await applyWith({ ...PLAN, tools: [], formulae: [], miseSelf: '2026.10.19' }, { 'mise-self-update': 1 }, { stateBackups });
+  const r = await applyWith({ ...PLAN, tools: [], packages: [], miseSelf: '2026.10.19' }, { 'mise-self-update': 1 }, { stateBackups });
   assert.equal(r.code, 1);
   assert.ok(r.lines.some(l => l.includes('✗ mise self-update to 2026.10.19 (exit 1)')));
   assert.ok(r.lines.some(l => l.includes('stopped before its binary backup')), r.lines.join('\n'));
   const made = () => { fs.mkdirSync(path.join(stateBackups, 'mise-self-update-20261029T100000Z'), { recursive: true }); return 1; };
-  const r2 = await applyWith({ ...PLAN, tools: [], formulae: [], miseSelf: '2026.10.19' }, { 'mise-self-update': made }, { stateBackups });
+  const r2 = await applyWith({ ...PLAN, tools: [], packages: [], miseSelf: '2026.10.19' }, { 'mise-self-update': made }, { stateBackups });
   assert.ok(r2.lines.some(l => l.includes('way back: if mise changed, steward sc rollback mise')), r2.lines.join('\n'));
 });
 
@@ -187,6 +187,69 @@ test('apply: a dry run verifies nothing and says nothing changed', async () => {
   assert.equal(r.code, 0);
   assert.equal(r.calls.filter(c => c.name === 'verify').length, 0);
   assert.ok(r.lines.some(l => /^==> dry run: nothing changed/.test(l)));
+});
+
+// fake(o) — a stand-in package source (parity 0.2): two packages behind, a 5 days old and b 1 day old
+const fake = (o = {}) => ({
+  id: 'fake', check: 'fake', provider: 'fake', title: 'Fake packages', noun: 'fake(s)', tag: 'fake', platforms: ['macos'], families: null,
+  gateMode: 'per-package', exceptionKind: null, needsRoot: false, heldEta: false, back: 'fake way back',
+  available: async () => true, refresh: () => ({ cmd: 'fake', args: ['refresh'] }),
+  outdated: async () => [{ name: 'a', have: '1', want: '2' }, { name: 'b', have: '1', want: '2' }],
+  releaseDate: async (_c, name) => (name === 'a' ? daysAgo(5) : daysAgo(1)), manual: async () => [],
+  upgradeCmd: names => ({ cmd: 'fake', args: ['upgrade', ...names] }), ...o,
+});
+const NO_MISE = { 'mise outdated --bump --json': '{}', [`node ${path.join(ENGINE, 'supply-chain', 'bin', 'mise-self.js')} --plan`]: 'current\t2026.10.18\t\tcurrent\tfalse\n' };
+const planOf = async (sources, commands = {}) => {
+  const c = { ...ctx({ ...NO_MISE, ...commands }), sources };
+  const lines = [], sections = [];
+  const p = await plan(c, { section: (_n, t) => sections.push(t), line: l => lines.push(l), warn: () => {} });
+  return { p, lines, sections };
+};
+
+test('plan: any package source gets its own section, judged by the gate (parity 0.2)', async () => {
+  const { p, lines, sections } = await planOf([fake()]);
+  assert.equal(sections[0], 'Fake packages');
+  assert.deepEqual(lines.slice(0, 2), ['take   a 1 -> 2 (5d old)', 'hold   b 1 -> 2 (1d old)']);
+  assert.deepEqual(p.packages, [{ source: 'fake', names: ['a'] }]);
+});
+
+test('plan: a source that isn\'t installed says so and is skipped, and is not refreshed (parity 0.2)', async () => {
+  const gone = fake({ available: async () => false });
+  const { p, lines } = await planOf([gone]);
+  assert.equal(lines[0], 'fake not found: skipped');
+  assert.deepEqual(p.packages, []);
+  const c = { ...ctx(NO_MISE), sources: [gone, fake({ id: 'here' })] };
+  assert.deepEqual(await refreshSteps(c), [{ cmd: 'fake', args: ['refresh'] }], 'only the installed source refreshes');
+});
+
+test('plan: a source that needs root is listed as manual with its exact command, never planned (D-b, parity 0.2)', async () => {
+  const { p, lines } = await planOf([fake({ needsRoot: true })]);
+  assert.deepEqual(lines.slice(0, 2), [
+    "manual fake: needs root; the steward doesn't run sudo yet (D-b, comes with the apt provider): sudo fake upgrade a",
+    'hold   b 1 -> 2 (1d old)',
+  ]);
+  assert.deepEqual(p.packages, []);
+  assert.deepEqual(await refreshSteps({ ...ctx(NO_MISE), sources: [fake({ needsRoot: true })] }), [], 'nor refreshed');
+});
+
+test('apply: a source\'s upgrade runs its own command; a failure lists its way back (parity 0.2)', async () => {
+  const sources = [fake()];
+  const ok = await applyWith({ packages: [{ source: 'fake', names: ['a'] }], tools: [], updaters: [], miseSelf: '' }, {}, { sources });
+  assert.equal(ok.code, 0);
+  assert.deepEqual(ok.calls[0], { name: 'fake', args: ['upgrade', 'a'], env: undefined });
+  const bad = await applyWith({ packages: [{ source: 'fake', names: ['a'] }], tools: [], updaters: [], miseSelf: '' }, { 'fake upgrade': 1 }, { sources });
+  assert.equal(bad.code, 1);
+  const i = bad.lines.findIndex(l => l.includes('✗ fake upgrade a (exit 1)'));
+  assert.ok(i >= 0, bad.lines.join('\n'));
+  assert.match(bad.lines[i + 1], /way back: fake way back/);
+});
+
+test('apply: a plan naming a source that needs root, or one it doesn\'t know, is refused, and nothing runs for it (parity 0.2)', async () => {
+  const r = await applyWith({ packages: [{ source: 'fake', names: ['a'] }, { source: 'nope', names: ['z'] }], tools: [], updaters: [], miseSelf: '' }, {}, { sources: [fake({ needsRoot: true })] });
+  assert.equal(r.code, 1);
+  assert.ok(!r.calls.some(c => c.name === 'fake'), 'no upgrade ran');
+  assert.ok(r.lines.some(l => l.includes("✗ fake: needs root; the steward doesn't run sudo yet (D-b, comes with the apt provider) (exit 1)")), r.lines.join('\n'));
+  assert.ok(r.lines.some(l => l.includes('✗ nope: no such package source (exit 1)')), r.lines.join('\n'));
 });
 
 test.after(() => fs.rmSync(ROOT, { recursive: true, force: true }));

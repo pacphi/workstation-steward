@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 // Upgrade what can be upgraded from the CLI, within host.toml's policy (R5c, D43): `steward sc upgrade`, and with
 // DRY_RUN=1 `steward sc plan`. The plan comes from the providers (lib/providers/):
-//   - Homebrew formulae and non-self-updating casks whose new version has been in Homebrew for at least the release-age
-//     gate (steward.toml [policy]), or that match an unexpired host.toml security_exception;
+//   - each package source that applies here and is installed (lib/providers/index.js, parity 0.2: Homebrew formulae
+//     and non-self-updating casks today), for versions at least the release-age gate (steward.toml [policy]) old, or
+//     that match an unexpired host.toml security_exception; a source that needs root is listed for the user (D-b);
 //   - mise tools (mise holds them to minimum_release_age; majors are skipped and listed; Node goes through node-patch;
 //     AI tooling's own tools follow its qualification);
 //   - declared updaters ([[updater]], D52) that are behind and whose class may skip the gate (lib/updaters.js);
 //   - mise itself, when it is the standalone build (bin/mise-self.js chooses; bin/mise-self-update applies, last).
-// Applying asks first, then runs the Bash steps that back up and record: brew upgrade, bin/upgrade-tool per mise tool,
+// Applying asks first, then runs each source's upgrade (brew upgrade) and the Bash steps that back up and record: bin/upgrade-tool per mise tool,
 // lib/updaters.js --apply per declared updater, bin/mise-self-update; then bin/verify once, for all of them
 // (STEWARD_DEFER_VERIFY=1 tells upgrade-tool and mise-self-update to leave it to this run). Every step's exit status is
 // kept: a failed step is reported as it happens and the run carries on with the others (each is independent); the end
@@ -20,10 +21,9 @@ const path = require('path');
 const readline = require('readline');
 const { spawn } = require('child_process');
 const C = require('../../lib/config.js');
-const brew = require('../../lib/providers/brew.js');
+const P = require('../../lib/providers/index.js');
 const mise = require('../../lib/providers/mise.js');
 const { ui: makeUi } = require('../../lib/ui.js');
-const { ageDays, securityException } = require('../checks/index.js');
 const { context } = require('./audit.js');
 const U = require('../../lib/updaters.js');
 
@@ -63,28 +63,35 @@ function crossesMajor(current, target) {
   return c !== t && /^[0-9]/.test(current);
 }
 
-// plan(ctx, out) — {formulae, casks, tools, updaters, miseSelf}: what applying would take. out.section(name, title) starts a
+// ROOT — why a source that needs root is listed, never run (D-b: the hand-off comes with the apt provider)
+const ROOT = "needs root; the steward doesn't run sudo yet (D-b, comes with the apt provider)";
+
+// refreshSteps(ctx) — the metadata refresh of each source that applies, is installed and needs no root (brew update)
+async function refreshSteps(ctx) {
+  const steps = [];
+  for (const s of P.sources(ctx)) if (!s.needsRoot && s.refresh() && (await s.available(ctx))) steps.push(s.refresh());
+  return steps;
+}
+
+// plan(ctx, out) — {packages: [{source, names}], tools, updaters, miseSelf}: what applying would take. out.section(name, title) starts a
 // part; out.line(text) is one of its lines (take, hold, skip, manual, ai)
 async function plan(ctx, out) {
-  const min = ctx.cfg.policy.min_release_age_days;
-  const p = { formulae: [], casks: [], tools: [], updaters: [], miseSelf: '' };
-
-  out.section('Homebrew formulae', 'Homebrew formulae');
-  for (const { name, have, want } of await brew.outdated(ctx, 'formula')) {
-    const age = ageDays(await brew.releaseDate(ctx, 'formula', name, want), ctx.now);
-    const exc = securityException(ctx, 'formula', name, want.replace(/_[^_]*$/, ''));
-    if (exc) { p.formulae.push(name); out.line(`take   ${name} ${have} -> ${want} (security exception: ${exc})`); }
-    else if (age >= min) { p.formulae.push(name); out.line(`take   ${name} ${have} -> ${want} (${age}d old)`); }
-    else out.line(`hold   ${name} ${have} -> ${want} (${age}d old)`);
-  }
-  for (const l of (await ctx.run('brew', ['outdated', '--formula', '--verbose'])).stdout.split('\n').filter(l => l.includes('/'))) out.line(`manual tap formula (review its release, then brew upgrade): ${l}`);
-
-  out.section('Homebrew casks', 'Homebrew casks (self-updating casks are left to their own updaters)');
-  for (const { name, have, want, auto } of await brew.outdated(ctx, 'cask')) {
-    if (auto) continue;
-    const age = ageDays(await brew.releaseDate(ctx, 'cask', name, want), ctx.now);
-    if (age >= min) { p.casks.push(name); out.line(`take   ${name} ${have} -> ${want} (${age}d old)`); }
-    else out.line(`hold   ${name} ${have} -> ${want} (${age}d old)`);
+  const p = { packages: [], tools: [], updaters: [], miseSelf: '' };
+  for (const s of P.sources(ctx)) {
+    out.section(s.name, s.title);
+    if (!(await s.available(ctx))) { out.line(`${s.provider} not found: skipped`); continue; }
+    const names = [];
+    for (const it of await s.outdated(ctx)) {
+      if (it.auto) continue;
+      const j = await P.judge(ctx, s, it);
+      const what = `${it.name} ${it.have} -> ${it.want}`;
+      if (j.verdict === 'hold') { out.line(`hold   ${what} (${j.age}d old)`); continue; }
+      if (s.needsRoot) { const c = s.upgradeCmd([it.name]); out.line(`manual ${s.provider}: ${ROOT}: sudo ${[c.cmd, ...c.args].join(' ')}`); continue; }
+      names.push(it.name);
+      out.line(`take   ${what} (${j.exception ? `security exception: ${j.exception}` : `${j.age}d old`})`);
+    }
+    for (const l of await s.manual(ctx)) out.line(s.manualText('plan', l));
+    if (names.length) p.packages.push({ source: s.id, names });
   }
 
   out.section('mise tools', 'mise tools (mise already applies minimum_release_age)');
@@ -130,8 +137,8 @@ async function main() {
   const u = process.argv.includes('--plain') ? null : makeUi();
   const tty = Boolean(u && u.tty);
   const ctx = context();
-  // Refresh Homebrew's own metadata so `brew upgrade` sees the versions the live API reports
-  await step('brew', ['update', '--quiet']);
+  // Refresh each source's own metadata (brew update), so its upgrade sees the versions the plan judged
+  for (const r of await refreshSteps(ctx)) await step(r.cmd, r.args);
 
   let st = null, lines = [], counts = { take: 0, hold: 0, other: 0 };
   const finish = () => {
@@ -160,8 +167,9 @@ async function main() {
   const p = await plan(ctx, out);
   finish();
 
-  if (!p.formulae.length && !p.casks.length && !p.tools.length && !p.updaters.length && !p.miseSelf) { log('nothing eligible; see steward sc audit for held and manual items'); return 0; }
-  log(`plan: ${p.formulae.length} formula(e), ${p.casks.length} cask(s), ${p.tools.length} mise tool(s)${p.updaters.length ? `, ${p.updaters.length} declared updater(s)` : ''}${p.miseSelf ? `, mise ${p.miseSelf}` : ''}`);
+  if (!p.packages.length && !p.tools.length && !p.updaters.length && !p.miseSelf) { log('nothing eligible; see steward sc audit for held and manual items'); return 0; }
+  const sourceCounts = P.sources(ctx).map(s => `${((p.packages.find(x => x.source === s.id) || { names: [] }).names).length} ${s.noun}, `).join('');
+  log(`plan: ${sourceCounts}${p.tools.length} mise tool(s)${p.updaters.length ? `, ${p.updaters.length} declared updater(s)` : ''}${p.miseSelf ? `, mise ${p.miseSelf}` : ''}`);
   if (!(await ask('Apply this plan?'))) { console.error('\x1b[1;31mERROR\x1b[0m aborted'); return 1; }
 
   const paths = ctx.cfg.paths;
@@ -173,7 +181,8 @@ const err = s => console.error(`\x1b[1;31mERROR\x1b[0m ${s}`);
 // apply(p, o) — run the plan's steps in order, verify once, and report; the exit code. Every step's status is kept and a
 // failed step doesn't stop the others: each tool, formula batch, updater and mise itself is its own change, with its
 // own backup. o.backups: where upgrade-tool's config backups land, o.stateBackups: the state folder's backups (for the
-// rollback hints); o.script and o.step: the runners (tests pass stand-ins); o.dry: DRY_RUN
+// rollback hints); o.script and o.step: the runners (tests pass stand-ins); o.sources: the package sources (tests);
+// o.dry: DRY_RUN
 async function apply(p, o = {}) {
   const run = o.script || script, show = o.step || step, dry = o.dry === undefined ? DRY : o.dry;
   // the scripts leave verification to the single run at the end (they still verify when run on their own)
@@ -182,10 +191,16 @@ async function apply(p, o = {}) {
   const failed = [];
   const fail = (what, code, back) => { failed.push({ what, code, back }); err(`${what} failed (exit ${code}); the other steps still run, and the end lists it`); };
 
-  // Homebrew keeps no old keg to roll back to (brew upgrade cleans up), so its way back is a reinstall
-  const brewBack = 'brew reinstall the previous bottle (Homebrew keeps no old keg; brew named what failed above)';
-  if (p.formulae.length) { const c = await show('brew', ['upgrade', '--formula', ...p.formulae]); if (c) fail(`brew upgrade --formula ${p.formulae.join(' ')}`, c, brewBack); }
-  if (p.casks.length) { const c = await show('brew', ['upgrade', '--cask', ...p.casks]); if (c) fail(`brew upgrade --cask ${p.casks.join(' ')}`, c, brewBack); }
+  // each source's upgrade, with its own way back; a source this engine doesn't know, or one that needs root, is refused
+  const list = o.sources || P.ALL;
+  for (const { source, names } of p.packages || []) {
+    const s = P.byId(source, list);
+    if (!s) { fail(`${source}: no such package source`, 1, 'none needed: nothing ran for it'); continue; }
+    if (s.needsRoot) { fail(`${s.provider}: ${ROOT}`, 1, 'none needed: nothing ran for it'); continue; }
+    const u = s.upgradeCmd(names);
+    const c = await show(u.cmd, u.args);
+    if (c) fail([u.cmd, ...u.args].join(' '), c, s.back);
+  }
   // bin/upgrade-tool backs up config + lock, upgrades with --no-prune, records and locks each tool, and honours DRY_RUN
   for (const [i, t] of p.tools.entries()) {
     log(`mise tool ${i + 1}/${p.tools.length}: ${t}`);
@@ -224,6 +239,6 @@ async function apply(p, o = {}) {
   return 0;
 }
 
-module.exports = { plan, apply, crossesMajor };
+module.exports = { plan, apply, crossesMajor, refreshSteps };
 
 if (require.main === module) main().then(code => { process.exitCode = code; }).catch(e => { console.error(`\x1b[1;31mERROR\x1b[0m ${e.message}`); process.exitCode = 1; });

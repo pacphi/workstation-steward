@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-11-01](https://img.shields.io/badge/Revised-2026--11--01-green)
+![Revision 5](https://img.shields.io/badge/Revision-5-green) ![Revised 2026-11-01](https://img.shields.io/badge/Revised-2026--11--01-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -40,7 +40,7 @@ combination we claim.
 
 | Milestone | What it delivers | Stage | Done |
 | --- | --- | --- | --- |
-| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 1 / 9 |
+| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 2 / 9 |
 | [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Not started | 0 / 10 |
 | [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 5 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
@@ -190,17 +190,20 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 before. **Done when:** `steward sc plan` and `steward sc audit` run clean on `ubuntu-latest` with Linuxbrew, and the
 Mac's output before and after is identical.
 
-Stage: Under way (0.1 done).
+Stage: Under way (0.1 and 0.2 done).
 
 - [x] **0.1 Know the platform** (#84, D63). `lib/platform.js` reads `/etc/os-release` (`ID`, `ID_LIKE`, `VERSION_ID`) and returns
   the platform, distribution and family; NixOS by `ID=nixos`. `host.toml` entries take the optional `families` key
   (D-f), and `lib/host.js` checks it as it checks `platforms`. An entry with `families` must also say
   `platforms = ["linux"]`, and the steward warns when it doesn't (owner, 2026-11-01). Tests use sample os-release
   files for every row of the platforms table, and two that only `ID_LIKE` places.
-- [ ] **0.2 One contract for providers.** A written interface: `id`, `platforms`, `families`, `gateMode`, `available`,
-  `installed`, `outdated`, `releaseDate` or `snapshot`, `upgradeCmd`, `needsRoot`, `canRollback`, `rollbackCmd`.
-  `supply-chain/bin/upgrade.js` loops over the providers that apply instead of calling Homebrew directly. Proof: the
-  Mac's `steward sc plan` output is identical before and after.
+- [x] **0.2 One contract for package sources** (#86, D64). Each package manager and kind is a source
+  (`lib/providers/index.js`), and `judge()` makes the take-or-hold call for the audit and the plan alike. The plan loops
+  over the sources that apply and are installed; a source that needs root is listed for the user and refused by
+  `apply` until the apt provider brings the hand-off (owner, 2026-11-01). mise keeps its own path. Proof: the Mac's host
+  report, audit and plan were identical before and after (2026-11-01).
+  - [ ] A tidy-up for later: the audit's held line says "eligible in N days" for a formula and not for a cask. Kept so
+    the before-and-after proof stayed exact; make them match in a PR of its own.
 - [ ] **0.3 Bash that runs on GNU and busybox.**
   - The blocker: `mktemp -t steward-quiet` in `lib/lib.sh` fails on GNU, so every script that uses `quiet` or
     `run_shown` stops on Linux.
@@ -346,6 +349,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-01 | 5 | 0.2 done: package sources with one contract, judged in one place (D64) | #86 |
 | 2026-11-01 | 4 | The Linux release bar (R-1 to R-3): apt, dnf and zypper first; 0.8 keeps `os` Mac-only until the bar; T.7 install check from a commit | #84 |
 | 2026-11-01 | 3 | 0.1 done: the distribution and family from os-release, and `host.toml`'s `families` key (D63); 0.9 added: local container tests; Milestone 0 under way | #84 |
 | 2026-10-31 | 2 | Decisions D-a to D-g made and written in; minimum-version rule (n-3, capped) and support level filled in for each distribution; NixOS moves ahead of Windows, and fully supported providers ahead of best-effort ones, in `lifecycle.md` | #83 |
