@@ -213,10 +213,10 @@ gate, upgrades with a plan, a yes, a backup and a receipt, and says how to go ba
 | ⬜ Snap | Ubuntu and others | per package | Not started | |
 | ⬜ zypper | openSUSE Leap, Tumbleweed | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ pacman | Arch | dated snapshot | Not started | |
-| ⬜ apk | Alpine | per package | Not started (feasibility spike first) | |
-| ⬜ xbps | Void (best effort) | dated snapshot | Not started | |
 | ⬜ portage | Gentoo (best effort) | dated snapshot | Not started | |
 | ⬜ slackpkg | Slackware (best effort) | to find out | Not started | |
+| ⬜ apk | Alpine | per package | Not started (feasibility spike first) | |
+| ⬜ xbps | Void (best effort) | dated snapshot | Not started | |
 
 ## Milestone 2: Linux apps and trust stores
 
