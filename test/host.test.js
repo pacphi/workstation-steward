@@ -76,6 +76,42 @@ test('merge: an entry with platforms holds only there; one without holds everywh
   assert.match(merge({ ioc: [{ name: 'x', platforms: ['mac'] }] }, {}, 'macos').warnings[0], /platforms must list macos, linux, windows \(not mac\)/);
 });
 
+test('merge: families narrows a Linux entry to those families; it needs platforms = ["linux"] beside it (parity 0.1, D63)', () => {
+  const defaults = {
+    vendored_node: [{ path: '/run/current-system/sw/bin/node', platforms: ['linux'], families: ['nixos'] }, { path: '/opt/x/node', platforms: ['linux'] }],
+    ioc: [{ name: 'debian only', platforms: ['linux'], families: ['debian'] }, { name: 'bare', families: ['rhel'] }, { name: 'typo', platforms: ['linux'], families: ['debain'] }],
+  };
+  const nix = merge(defaults, {}, 'linux', 'nixos');
+  assert.deepEqual(nix.policy.vendored_node, ['/run/current-system/sw/bin/node', '/opt/x/node']);
+  assert.deepEqual(nix.policy.ioc.map(i => i.name), []);
+  const deb = merge(defaults, {}, 'linux', 'debian');
+  assert.deepEqual(deb.policy.vendored_node, ['/opt/x/node']);
+  assert.deepEqual(deb.policy.ioc.map(i => i.name), ['debian only']);
+  const away = deb.sources.find(x => x.source === 'elsewhere' && x.item === '/run/current-system/sw/bin/node');
+  assert.equal(away.why, 'default; platforms = ["linux"], families = ["nixos"]');
+  assert.deepEqual(merge(defaults, {}, 'linux', 'rhel').policy.ioc.map(i => i.name), ['bare'], 'families without platforms still holds on Linux');
+  assert.deepEqual(merge(defaults, {}, 'macos', null).policy.ioc.map(i => i.name), [], 'and only on Linux');
+  assert.deepEqual(deb.warnings, [
+    'ioc bare: families needs platforms = ["linux"] too (an older steward ignores families and would apply the entry everywhere)',
+    'ioc typo: families must list debian, rhel, suse, arch, alpine, void, gentoo, slackware, nixos (not debain)',
+  ]);
+});
+
+test('merge: without families, a Mac merges exactly as before (parity 0.1)', () => {
+  const defaults = { always_current: ['firefox', { name: 'google-chrome', platforms: ['macos'] }], ioc: [{ name: 'linux', platforms: ['linux'] }] };
+  const three = merge(defaults, {}, 'macos');
+  const four = merge(defaults, {}, 'macos', null);
+  assert.deepEqual(four, three);
+  assert.equal(three.sources.find(x => x.source === 'elsewhere').why, 'default; platforms = ["linux"]');
+});
+
+test('host.js: the report names the platform as before on macOS (parity 0.1)', { skip: process.platform !== 'darwin' && 'macOS only' }, () => {
+  const ROOT = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'steward-host-')));
+  fs.writeFileSync(path.join(ROOT, 'steward.toml'), 'schema = 1\n');
+  const report = spawnSync(process.execPath, [path.join(REPO, 'lib', 'host.js')], { encoding: 'utf8', env: { ...process.env, STEWARD_INSTANCE: ROOT } }).stdout;
+  assert.match(report.split('\n')[0], /^host policy \(macos\): \d+ default\(s\) from the engine/);
+});
+
 test('merge: [[updater]] merges by name and turns off with [off]; an incomplete one is left out and reported (D52)', () => {
   const full = { why: 'w', check: 'c', apply: 'a', backup: ['b'] };
   const defaults = { updater: [{ name: 'kb', class: 'signed_data', require_output: 'ok', pin: { file: 'f', match: 'm', sha256: 'aa' }, ...full }, { name: 'sigs', class: 'always_current', ...full }] };
