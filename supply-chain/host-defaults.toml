@@ -10,6 +10,8 @@
 # security_exception entries are yours alone: they name your versions and expire.
 # An entry for some platforms only says so: `platforms = ["macos"]` on a table, or a list item written as a table,
 # { name = "…", platforms = ["macos"] } (path = for a path). Without the key an entry holds on every platform.
+# On Linux, `families = ["nixos"]` (debian, rhel, suse, arch, alpine, void, gentoo, slackware, nixos) narrows an entry to
+# those families; it needs `platforms = ["linux"]` beside it, since an older steward ignores `families` (D63).
 
 # Apps that bundle their own Node runtime (steward sc plan reports their versions; a path that isn't on a machine is
 # skipped). Patch them by updating the app.

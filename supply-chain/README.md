@@ -18,7 +18,7 @@ shows what it would remove, asks, and removes it.
 | `../mise/config.toml`, `../mise/mise.lock` | mise tools: versions, `minimum_release_age = "3d"`, install-script allow-lists, trust exceptions |
 | `../steward.toml` | `[policy] min_release_age_days`: the release-age gate for every area (default 3). `steward sc release-age <days>` sets it and mise's and Renovate's copies. |
 | `host-defaults.toml` (engine) | The shared host policy every machine gets: `always_current` browsers, apps with a bundled Node (`vendored_node`), the Electron window, distrusted roots, IOC sets, and declared update sources (`[[updater]]`, active only where their tool is installed). A release brings the newest |
-| `host.toml` (instance) | Yours, on top of the defaults: additions (your own `[[updater]]` too), a same-name entry replaces a default, `[off]` turns defaults off; dated security exceptions. An entry for some platforms only says `platforms = ["macos"]` (D43). `steward sc host` shows the merged result and each value's source |
+| `host.toml` (instance) | Yours, on top of the defaults: additions (your own `[[updater]]` too), a same-name entry replaces a default, `[off]` turns defaults off; dated security exceptions. An entry for some platforms only says `platforms = ["macos"]` (D43); on Linux, `families = ["debian"]` beside `platforms = ["linux"]` narrows it to those families (D63). `steward sc host` shows the merged result and each value's source |
 | `hybrids.toml` | CLIs that need `npm install -g` into the active Node, with each one's reason, upstream issue and allowed install scripts |
 | `verify.tsv` | Expected output for every CLI, used by `steward sc verify` |
 | `vendor/` | `github-token-utilities-3.4.0.tgz` (not on the npm registry) |

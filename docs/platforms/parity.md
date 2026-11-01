@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 2](https://img.shields.io/badge/Revision-2-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 3](https://img.shields.io/badge/Revision-3-green) ![Revised 2026-11-01](https://img.shields.io/badge/Revised-2026--11--01-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -39,7 +39,7 @@ combination we claim.
 
 | Milestone | What it delivers | Stage | Done |
 | --- | --- | --- | --- |
-| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Not started | 0 / 8 |
+| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 1 / 9 |
 | [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Not started | 0 / 10 |
 | [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 5 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
@@ -158,11 +158,13 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 before. **Done when:** `steward sc plan` and `steward sc audit` run clean on `ubuntu-latest` with Linuxbrew, and the
 Mac's output before and after is identical.
 
-Stage: Not started.
+Stage: Under way (0.1 done).
 
-- [ ] **0.1 Know the platform.** `lib/platform.js` reads `/etc/os-release` (`ID`, `ID_LIKE`, `VERSION_ID`) and returns
+- [x] **0.1 Know the platform** (#PR, D63). `lib/platform.js` reads `/etc/os-release` (`ID`, `ID_LIKE`, `VERSION_ID`) and returns
   the platform, distribution and family; NixOS by `ID=nixos`. `host.toml` entries take the optional `families` key
-  (D-f), and `lib/host.js` checks it as it checks `platforms`. Tests use sample os-release files.
+  (D-f), and `lib/host.js` checks it as it checks `platforms`. An entry with `families` must also say
+  `platforms = ["linux"]`, and the steward warns when it doesn't (owner, 2026-11-01). Tests use sample os-release
+  files for every row of the platforms table, and two that only `ID_LIKE` places.
 - [ ] **0.2 One contract for providers.** A written interface: `id`, `platforms`, `families`, `gateMode`, `available`,
   `installed`, `outdated`, `releaseDate` or `snapshot`, `upgradeCmd`, `needsRoot`, `canRollback`, `rollbackCmd`.
   `supply-chain/bin/upgrade.js` loops over the providers that apply instead of calling Homebrew directly. Proof: the
@@ -184,6 +186,15 @@ Stage: Not started.
   the guards and the package description.
 - [ ] **0.8 Package and first Linux CI row.** `package.json` `os` adds `linux` (npm users see this, so release-please
   makes it a minor release); publish no longer needs macOS; Tests run on `ubuntu-latest` too.
+- [ ] **0.9 Test each distribution locally, in containers** (owner, 2026-11-01). `just linux-test <distro|all>`
+  builds one image per distribution from a base pinned by digest (Renovate keeps it current, behind the gate), with
+  bash, git, just and Node 26. It runs `just test` on a read-only copy of the checkout as a non-root user, with no
+  network, in a container removed after the run (`--rm`). Results go to a file under the state folder;
+  `just linux-clean` removes the test images after a plan and a yes. The same list as the CI matrix (T.1) feeds it.
+  It adds to the CI matrix and never replaces it: every supported distribution still gets its CI job on every PR, and
+  its install-check row (owner, 2026-11-01).
+  Containers run arm64 on an Apple-silicon Mac (x64 by emulation) and have no systemd, so the NixOS VM stays in CI.
+  Built right after 0.2.
 
 ## Milestone 1: Linux, one package manager at a time
 
@@ -300,5 +311,6 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-10-31 | 2 | Decisions D-a to D-g made and written in; minimum-version rule (n-3, capped) and support level filled in for each distribution; NixOS moves ahead of Windows, and fully supported providers ahead of best-effort ones, in `lifecycle.md` | |
+| 2026-11-01 | 3 | 0.1 done: the distribution and family from os-release, and `host.toml`'s `families` key (D63); 0.9 added: local container tests; Milestone 0 under way | #PR |
+| 2026-10-31 | 2 | Decisions D-a to D-g made and written in; minimum-version rule (n-3, capped) and support level filled in for each distribution; NixOS moves ahead of Windows, and fully supported providers ahead of best-effort ones, in `lifecycle.md` | #83 |
 | 2026-10-31 | 1 | First version: the plan, the two decisions made, the open ones, every milestone not started | #82 |
