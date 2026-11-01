@@ -156,7 +156,7 @@ async function main() {
     },
     warn: t => process.stderr.write(`\x1b[1;33mWARN\x1b[0m ${t}\n`),
   };
-  if (tty) u.header(DRY ? 'steward sc plan' : 'steward sc upgrade', `${ctx.platform} · release-age gate ${ctx.cfg.policy.min_release_age_days}d`);
+  if (tty) u.header(DRY ? 'steward sc plan' : 'steward sc upgrade', `${require('../../lib/platform.js').label({ platform: ctx.platform, distro: ctx.distro || null, version: ctx.version || null })} · release-age gate ${ctx.cfg.policy.min_release_age_days}d`);
   const p = await plan(ctx, out);
   finish();
 

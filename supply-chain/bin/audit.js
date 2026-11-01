@@ -47,7 +47,7 @@ function context(o = {}) {
   const cfg = C.load().values;
   const now = o.now || new Date();
   return {
-    run, cfg, now, platform: PL.current(), policy: H.load().policy, instance: C.INSTANCE_ROOT, engine: path.join(__dirname, '..', '..'),
+    run, cfg, now, platform: PL.current(), family: PL.describe().family, distro: PL.describe().distro, version: PL.describe().version, policy: H.load().policy, instance: C.INSTANCE_ROOT, engine: path.join(__dirname, '..', '..'),
     detail: t => { if (onLabel) onLabel(t); }, // the live step's detail on a terminal; nothing elsewhere
     cache: cfg.paths.cache, home: os.homedir(), today: localDay(now), ...o,
   };
@@ -95,7 +95,7 @@ async function audit(ctx, o = {}) {
   const found = []; // every action and alert with its facts, for the Summary
   let folded = 0;
   const todo = CHECKS.filter(c => !o.only || o.only.includes(c.id));
-  if (u) u.header('steward sc audit', `${ctx.platform} · ${todo.filter(c => c.platforms.includes(ctx.platform)).length} checks`);
+  if (u) u.header('steward sc audit', `${PL.label({ platform: ctx.platform, distro: ctx.distro || null, version: ctx.version || null })} · ${todo.filter(c => c.platforms.includes(ctx.platform)).length} checks`);
   for (const c of todo) {
     if (!c.platforms.includes(ctx.platform)) { skipped.push(c.id); continue; }
     // this check's lines: printed as they come (plain), or kept and printed under its row (ui): its other lines, then
