@@ -1,6 +1,6 @@
 # Lifecycle
 
-![Revision 19](https://img.shields.io/badge/Revision-19-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 20](https://img.shields.io/badge/Revision-20-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 How someone installs workstation-steward, sets it up, uses it, and keeps it, their config and their projects safe
 over release after release. It is the contract the code is built to: each part is marked **built** or **planned**.
@@ -210,7 +210,7 @@ the tool copies under `.claude/` and `.claude-flow/`, `.git/info/exclude`). Trac
 ## Platforms
 
 v1 runs on **macOS**. mise and Homebrew are the first two providers, and both also run on Linux, which comes next,
-then Windows. Support follows package managers, not distributions: each package manager (Homebrew, apt, dnf,
+then NixOS, then Windows. Support follows package managers, not distributions: each package manager (Homebrew, apt, dnf,
 pacman, winget, scoop …) is a provider that lists what is installed and outdated, gives publish dates for the
 release-age gate, upgrades one package, and says whether it can roll back. The steward reads `/etc/os-release` to
 pick Linux providers. The audit becomes a set of checks, each knowing which platforms it applies to (D43).
@@ -224,8 +224,8 @@ The work for Linux and NixOS, and how far it has got, is tracked in [`platforms/
 - Then, one provider per PR, in this order: *Planned.*
   1. **Linux**, by package manager: apt (Debian, Ubuntu, Linux Mint), dnf (Fedora), zypper (openSUSE), pacman (Arch),
      portage (Gentoo), slackpkg (Slackware), apk (Alpine), xbps (Void);
-  2. **Windows 11 and WSL**: winget, Scoop and Chocolatey; inside WSL, the Linux providers apply;
-  3. **NixOS** ([nixos.org](https://nixos.org/)): declarative, so its provider plans a dated update of the flake or
+  2. **NixOS** ([nixos.org](https://nixos.org/)): declarative, so its provider plans a dated update of the flake or
+  3. **Windows 11 and WSL**: winget, Scoop and Chocolatey; inside WSL, the Linux providers apply.
      channel as a whole rather than one package at a time, and rolls back to a previous generation.
 
 ## How releases are tested

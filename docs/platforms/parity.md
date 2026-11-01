@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 1](https://img.shields.io/badge/Revision-1-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 2](https://img.shields.io/badge/Revision-2-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -44,7 +44,7 @@ combination we claim.
 | [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 5 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
 | [Testing](#testing-the-ci-matrix-and-install-checks) | A CI row and an install-check row for every combination we claim | Not started | 0 / 6 |
-| [Decisions](#decisions) | The choices the work depends on | 2 of 9 made | 2 / 9 |
+| [Decisions](#decisions) | The choices the work depends on | All made | 9 / 9 |
 
 ## How to use this ledger
 
@@ -78,46 +78,59 @@ A box is ticked only when its check ran and passed. Something left undone stays 
   by hand rather than taking them.
 - [x] **Every combination we claim gets an install check and a CI row** (owner, 2026-10-31).
 
-**Open.** These are asked one at a time; nothing below is decided until the owner says so.
-
-- [ ] **D-a. How the gate works where partial upgrades aren't supported.** Proposed: two modes. *Per package* for apt,
-  dnf, zypper and apk. *Dated snapshot* for pacman, xbps, portage and Nix: the whole system moves to a repo snapshot at
-  least the gate's days old, because these managers don't support taking one package and holding another.
-- [ ] **D-b. Upgrades that need root.** Either always hand them to the user as a command, or allow `sudo -n` under
-  `[autonomy]`. This must be decided before the apt provider. `!` can't read a sudo password, and running the
-  steward under sudo would write receipts as root.
-- [ ] **D-c. Minimum version of each distribution** (see [the table below](#supported-platforms-and-minimum-versions)).
-- [ ] **D-d. Supported or best effort** for each distribution (slackpkg and portage are the likely best-effort ones).
-- [ ] **D-e. Does NixOS move ahead of Windows and WSL?** [`../lifecycle.md`](../lifecycle.md#platforms) puts Windows
-  first.
-- [ ] **D-f. NixOS in `host.toml`:** its own `platforms` value (`nixos`), or `linux` plus a family.
-- [ ] **D-g. mise on NixOS:** `nix-ld` for the tools mise downloads, or let Nix own the runtimes.
+- [x] **D-a. Two gate modes** (owner, 2026-10-31). *Per package* for apt, dnf, zypper and apk: each package waits
+  until it has been in the repo at least the gate's days. *Dated snapshot* for pacman, xbps, portage and Nix: the whole
+  system moves to a repo snapshot at least the gate's days old, because these managers don't support taking one package
+  and holding another. The snapshot code is built once for Arch and reused for NixOS.
+- [x] **D-b. Root steps are handed to the user** (owner, 2026-10-31). The steward plans, and backs up what it can as
+  the user. Then it prints one exact `sudo` command for the user to run in their own terminal (`actor: human`). After
+  that it checks the result and writes the receipt. It never runs `sudo` itself, and it never runs under `sudo`, so
+  receipts and backups stay the user's.
+- [x] **D-c. Minimum versions: n-3, capped** (owner, 2026-10-31). Each distribution's newest release and the three
+  before it, but never a release its vendor no longer gives security fixes. Ubuntu counts its LTS releases only.
+  Rolling releases are current only. NixOS counts its stable channels, plus unstable.
+- [x] **D-d. Six fully supported, three best effort** (owner, 2026-10-31). Full support means a CI row on every PR, an
+  install-check row for each release, and bugs fixed before a release. It covers apt (Debian, Ubuntu, Linux Mint), dnf
+  (Fedora), zypper (openSUSE), pacman (Arch), apk (Alpine, if its feasibility spike passes) and NixOS. Best effort
+  means CI tests only, no install check, and fixes when someone reports them. It covers xbps (Void), portage (Gentoo)
+  and slackpkg (Slackware).
+- [x] **D-e. NixOS comes before Windows and WSL** (owner, 2026-10-31). It reuses the Linux work: the snapshot gate and
+  the Linux checks. [`../lifecycle.md`](../lifecycle.md#platforms) has the new order.
+- [x] **D-f. NixOS stays platform `linux`; `host.toml` gains an optional `families` key** (owner, 2026-10-31). An
+  entry narrows itself with `families = ["nixos"]` or `["debian", "rhel"]`. The key is additive, like `platforms`
+  (D43), so there is no format bump. A `linux` entry also holds on NixOS unless it is narrowed.
+- [x] **D-g. mise on NixOS comes from nixpkgs, with `nix-ld`** (owner, 2026-10-31). `nix-ld` lets the prebuilt tools
+  mise downloads run, so every mise capability works as it does elsewhere. Turning `nix-ld` on is a change to the
+  host's config, made as a PR to the repo it lives in. The first NixOS PR checks the facts behind this first.
 
 ## Supported platforms and minimum versions
 
-The minimum versions wait on decision D-c. The proposed rule:
+The rule (D-c):
 
-- support what the vendor still supports, and name the oldest release of each;
-- rolling releases are current only;
-- a release below the floor that Node 26's Linux binaries or mise need drops out, whatever its vendor says.
+- each distribution's newest release and the three before it (**n-3**);
+- never a release its vendor no longer gives security fixes, since the steward can't keep it current;
+- Ubuntu counts its LTS releases only; rolling releases are current only; NixOS counts its stable channels, plus
+  unstable;
+- a release below the floor that Node 26's Linux binaries or mise need drops out, whatever the count says.
 
-When a vendor's support ends, the release drops in the steward's next minor release. `steward doctor` names a release
-that isn't supported.
+When a release leaves the rule, it drops in the steward's next minor release. `steward doctor` names a release that
+isn't supported. Each provider PR checks the actual version numbers against the vendor's lifecycle page, cites it,
+and writes them into this table.
 
 | Distribution | Package manager | Kind | Minimum version | Support | Provider |
 | --- | --- | --- | --- | --- | --- |
-| Debian | apt | fixed releases | *D-c*: stable and oldstable proposed | *D-d* | ⬜ |
-| Ubuntu | apt | fixed releases | *D-c*: LTS releases in standard support proposed | *D-d* | ⬜ |
-| Linux Mint | apt | fixed releases | *D-c*: follows its Ubuntu base | *D-d* | ⬜ |
-| Fedora | dnf | fixed releases | *D-c*: the two current releases proposed | *D-d* | ⬜ |
-| openSUSE Leap | zypper | fixed releases | *D-c*: the current release proposed | *D-d* | ⬜ |
-| openSUSE Tumbleweed | zypper | rolling | current | *D-d* | ⬜ |
-| Arch Linux | pacman | rolling | current | *D-d* | ⬜ |
-| Alpine | apk | fixed releases (musl) | *D-c*: supported branches proposed | *D-d* (feasibility spike first) | ⬜ |
-| Void | xbps | rolling | current | *D-d* | ⬜ |
-| Gentoo | portage | rolling, built from source | current | *D-d*: best effort proposed | ⬜ |
-| Slackware | slackpkg | fixed releases | *D-c* | *D-d*: best effort proposed | ⬜ |
-| NixOS | nix | declarative | *D-c*: current stable channel and unstable proposed | *D-d* | ⬜ |
+| Debian | apt | fixed releases | n-3, capped (numbers in the apt PR) | Full | ⬜ |
+| Ubuntu | apt | fixed releases | n-3 of the LTS releases, capped (numbers in the apt PR) | Full | ⬜ |
+| Linux Mint | apt | fixed releases | n-3, capped, on a supported Ubuntu LTS base | Full | ⬜ |
+| Fedora | dnf | fixed releases | n-3, capped (in practice the vendor supports two) | Full | ⬜ |
+| openSUSE Leap | zypper | fixed releases | n-3, capped | Full | ⬜ |
+| openSUSE Tumbleweed | zypper | rolling | current | Full | ⬜ |
+| Arch Linux | pacman | rolling | current | Full | ⬜ |
+| Alpine | apk | fixed releases (musl) | n-3, capped | Full, if the feasibility spike passes | ⬜ |
+| Void | xbps | rolling | current | Best effort | ⬜ |
+| Gentoo | portage | rolling, built from source | current | Best effort | ⬜ |
+| Slackware | slackpkg | fixed releases | n-3, capped | Best effort | ⬜ |
+| NixOS | nix | declarative | n-3 of the stable channels, capped, plus unstable | Full | ⬜ |
 | Any of the above + Linuxbrew | brew (formulae only) | overlay | as its base | *D-d* | ⬜ |
 
 ## What parity means: the capabilities
@@ -126,7 +139,7 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 
 | Capability | macOS (built) | Linux | NixOS | Status |
 | --- | --- | --- | --- | --- |
-| mise toolchain, hybrids, gate, soak, prune, rollback | ✅ | works after Milestone 0; `node-patch` needs Linux tarballs | mise is in nixpkgs; the tools it downloads need `nix-ld` or Nix-owned runtimes (D-g) | ⬜ |
+| mise toolchain, hybrids, gate, soak, prune, rollback | ✅ | works after Milestone 0; `node-patch` needs Linux tarballs | mise from nixpkgs, with `nix-ld` for the tools it downloads (D-g) | ⬜ |
 | System packages | Homebrew | one provider per package manager; Linuxbrew reuses Homebrew's | one `nix` provider over the flake or channel | ⬜ |
 | Release-age gate | Homebrew commit dates | the date a version reached the repo, or a dated snapshot (D-a) | a nixpkgs revision at least the gate's days old | ⬜ |
 | Way back | mise yes, Homebrew no | per manager; where there is none, the plan says so | generations | ⬜ |
@@ -148,7 +161,8 @@ Mac's output before and after is identical.
 Stage: Not started.
 
 - [ ] **0.1 Know the platform.** `lib/platform.js` reads `/etc/os-release` (`ID`, `ID_LIKE`, `VERSION_ID`) and returns
-  the platform, distribution and family; NixOS by `ID=nixos`. Tests use sample os-release files.
+  the platform, distribution and family; NixOS by `ID=nixos`. `host.toml` entries take the optional `families` key
+  (D-f), and `lib/host.js` checks it as it checks `platforms`. Tests use sample os-release files.
 - [ ] **0.2 One contract for providers.** A written interface: `id`, `platforms`, `families`, `gateMode`, `available`,
   `installed`, `outdated`, `releaseDate` or `snapshot`, `upgradeCmd`, `needsRoot`, `canRollback`, `rollbackCmd`.
   `supply-chain/bin/upgrade.js` loops over the providers that apply instead of calling Homebrew directly. Proof: the
@@ -197,12 +211,12 @@ gate, upgrades with a plan, a yes, a backup and a receipt, and says how to go ba
 | ⬜ dnf | Fedora | per package | Not started | |
 | ⬜ Flatpak | any | per package | Not started | |
 | ⬜ Snap | Ubuntu and others | per package | Not started | |
-| ⬜ zypper | openSUSE Leap, Tumbleweed | per package (Leap); snapshot (Tumbleweed)? | Not started | |
+| ⬜ zypper | openSUSE Leap, Tumbleweed | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ pacman | Arch | dated snapshot | Not started | |
 | ⬜ apk | Alpine | per package | Not started (feasibility spike first) | |
-| ⬜ xbps | Void | dated snapshot | Not started | |
-| ⬜ portage | Gentoo | dated snapshot | Not started | |
-| ⬜ slackpkg | Slackware | to find out | Not started | |
+| ⬜ xbps | Void (best effort) | dated snapshot | Not started | |
+| ⬜ portage | Gentoo (best effort) | dated snapshot | Not started | |
+| ⬜ slackpkg | Slackware (best effort) | to find out | Not started | |
 
 ## Milestone 2: Linux apps and trust stores
 
@@ -211,7 +225,7 @@ gate, upgrades with a plan, a yes, a backup and a receipt, and says how to go ba
 Stage: Not started.
 
 - [ ] **2.1 Trust store, the denying half, per family:** Debian (`update-ca-certificates`), Red Hat (`update-ca-trust`),
-  SUSE, Arch and Alpine. Root needed, so it is handed to the user (D-b).
+  SUSE, Arch and Alpine. It needs root, so the steward hands the user the exact command (D-b).
 - [ ] **2.2 Apps and the Electron support window** for Flatpak, Snap, AppImage and `/opt`.
 - [ ] **2.3 Vendored Node on Linux:** Linux paths in the engine's `vendored_node` defaults.
 - [ ] **2.4 Browsers kept current on Linux:** Linux names in the engine's `always_current` defaults.
@@ -222,7 +236,7 @@ Stage: Not started.
 **Goal:** a NixOS host keeps its supply chain current the declarative way: the whole system moves to a dated nixpkgs
 revision, is built and compared before it is switched on, and can go back a generation.
 
-Stage: Not started. Waits on D-e (order), D-f and D-g.
+Stage: Not started. Comes after Linux and before Windows (D-e).
 
 - [ ] **3.1 Can CI run a NixOS VM?** Check whether `ubuntu-latest` offers `/dev/kvm` for a `nixosTest`. The
   `nixos/nix` container has no systemd, so it covers only Nix on another Linux.
@@ -231,7 +245,7 @@ Stage: Not started. Waits on D-e (order), D-f and D-g.
 - [ ] **3.3 Channels:** the same for hosts that use channels instead of a flake.
 - [ ] **3.4 Changes to the host's Nix config** (packages, `security.pki`) go as a PR to the repo it lives in, never as an
   edit in place (D6).
-- [ ] **3.5 mise on NixOS** as D-g decides.
+- [ ] **3.5 mise on NixOS:** mise from nixpkgs, with `nix-ld` turned on by a PR to the host's config (D-g).
 - [ ] **3.6 An advisory source for Nix** (for example `vulnix`), checked and cited first.
 
 ## Testing: the CI matrix and install checks
@@ -250,7 +264,7 @@ Stage: Not started. Waits on D-e (order), D-f and D-g.
 | Tier | When | Cells |
 | --- | --- | --- |
 | Tests | every PR | macOS; `ubuntu-latest` on x64 and arm64; a container for the oldest and newest release of each distribution whose provider has landed |
-| Install check | by hand, each release (`gh workflow run install-check.yml -f version=X.Y.Z`) | each supported distribution × mise's own installer × {worktree, npm}; Linuxbrew on Ubuntu; a NixOS VM |
+| Install check | by hand, each release (`gh workflow run install-check.yml -f version=X.Y.Z`) | each fully supported distribution (D-d) × mise's own installer × {worktree, npm}; Linuxbrew on Ubuntu; a NixOS VM |
 | Extended | by hand, before a platform is called supported | mise from the distribution and from Homebrew; arm64 install checks |
 | Not supported | ➖ | any cell not above, listed in [`../lifecycle.md`](../lifecycle.md#platforms) |
 
@@ -285,4 +299,5 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-10-31 | 1 | First version: the plan, the two decisions made, the open ones, every milestone not started | |
+| 2026-10-31 | 2 | Decisions D-a to D-g made and written in; minimum-version rule (n-3, capped) and support level filled in for each distribution; NixOS moves ahead of Windows in `lifecycle.md` | |
+| 2026-10-31 | 1 | First version: the plan, the two decisions made, the open ones, every milestone not started | #82 |
