@@ -75,7 +75,7 @@ test('upgrade-tool on its own verifies before it locks; with STEWARD_DEFER_VERIF
 
 test('steward sc upgrade\'s apply on the real scripts: a failed tool and a failed mise self-update, the rest still run, verify once, exit 1', () => {
   const s = sandbox('apply');
-  const plan = { formulae: [], casks: [], tools: ['npm:a', 'github:example/bad', 'npm:b'], updaters: [], miseSelf: '2026.10.19' };
+  const plan = { packages: [], tools: ['npm:a', 'github:example/bad', 'npm:b'], updaters: [], miseSelf: '2026.10.19' };
   const o = { backups: path.join(s.box, 'mise', 'backups'), stateBackups: path.join(s.box, 'state', 'backups') };
   const js = `require(${JSON.stringify(BIN('upgrade.js'))}).apply(${JSON.stringify(plan)}, ${JSON.stringify(o)}).then(c => { process.exitCode = c; })`;
   const r = s.run(process.execPath, ['-e', js]);
