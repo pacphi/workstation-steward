@@ -223,7 +223,7 @@ Stage: Under way (0.1, 0.2, 0.3, 0.4 and 0.9 done).
   - [ ] Still open: the RuVector add-on check names `ruvector-core-darwin-arm64` (`supply-chain/bin/addon-check.js`)
     rather than the add-on for this platform. It runs only with the AI tooling add-on, so no test caught it; it moves
     with 0.7.
-- [x] **0.4 Indicators of compromise on every platform** (#PR, D67). Linux lists processes from `/proc` (minimal
+- [x] **0.4 Indicators of compromise on every platform** (#89, D67). Linux lists processes from `/proc` (minimal
   installs have no `ps`); IOCs gain an `environment` list apart from `processes`; the sweep opens with a coverage line;
   "couldn't look" is never "clean" (owner, 2026-11-02). Found on the way: **macOS shows no process environment**, so the
   LiteLLM marker had never been checkable on a Mac (confirmed in the owner's terminal, macOS 27.2); the audit now says
@@ -394,7 +394,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-02 | 8 | 0.4 done: IOCs on every platform, the environment key, the coverage line, the rule (D67); macOS shows no process environment; 2.6 added for later | #PR |
+| 2026-11-02 | 8 | 0.4 done: IOCs on every platform, the environment key, the coverage line, the rule (D67); macOS shows no process environment; 2.6 added for later | #89 |
 | 2026-11-02 | 7 | 0.3 done: the shell on GNU and busybox, no perl, no lsof on Linux (D66); every Linux row passes; jq joins the Linux prerequisites; the Mint image corrected; the RuVector add-on name moves to 0.7 | #88 |
 | 2026-11-02 | 6 | 0.9 done: local container tests (D65), the first Linux baseline, the libatomic finding; end-to-end runs added to each provider's checklist and the release bar | #87 |
 | 2026-11-01 | 5 | 0.2 done: package sources with one contract, judged in one place (D64) | #86 |
