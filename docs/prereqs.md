@@ -1,9 +1,10 @@
 # Prerequisites
 
-![Revision 5](https://img.shields.io/badge/Revision-5-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 6](https://img.shields.io/badge/Revision-6-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
-Everything this repo needs on the machine, and where each piece comes from. The list lives in
+Everything this repo needs on the machine, and where each piece comes from, on macOS and on Linux. The list lives in
 [`lib/prereqs.json`](../lib/prereqs.json); the table below is printed from it, and a test keeps the two equal.
+`steward doctor` shows only what applies to your platform (D69).
 
 ## Check it
 
@@ -31,6 +32,25 @@ Each step needs the one before it.
    `npm` and the rest.
 5. `brew install jq mas`. The fleet scripts need `jq`, and `mas` is optional. Docker Desktop is optional.
 6. `gh auth login`, then `steward doctor`.
+
+## The order on Linux
+
+The steward isn't released for Linux yet ([the Linux release](platforms/parity.md#the-linux-release-the-bar)); this is
+for running the engine from a clone. Install the system packages first, in one line for your family:
+
+| Family | One line |
+| --- | --- |
+| Debian, Ubuntu, Linux Mint | `sudo apt-get install git curl ca-certificates libatomic1 jq` |
+| Fedora | `sudo dnf install git-core curl ca-certificates libatomic jq` |
+| openSUSE | `sudo zypper install git-core curl ca-certificates libatomic1 jq` |
+
+> [!IMPORTANT]
+> Install `libatomic` before `mise install`. Node 26's Linux builds need it, and `steward doctor` can't tell you it's
+> missing, because Node won't start without it. Without it, `mise install` stops with:
+> `node: error while loading shared libraries: libatomic.so.1: cannot open shared object file: No such file or directory`
+
+Then mise (`curl https://mise.run | sh`), and steps 3, 4 and 6 of the Mac's order. Homebrew is optional on Linux
+(Linuxbrew, formulae only).
 
 ## Services, outside this Mac
 
