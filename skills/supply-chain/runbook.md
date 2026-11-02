@@ -1,6 +1,6 @@
 # Supply chain runbook
 
-![Revision 9](https://img.shields.io/badge/Revision-9-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 10](https://img.shields.io/badge/Revision-10-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 Procedures for the supply-chain area: mise, the npm -g hybrids, Homebrew, apps, the App Store, macOS, trust
 stores, Docker and IOCs. The rules behind them are in [`../../AGENTS.md`](../../AGENTS.md) (Toolchain, Release
@@ -14,6 +14,7 @@ commands run from any folder. Every changing step asks first, and `DRY_RUN=1` pr
 - [A Renovate PR arrives](#a-renovate-pr-arrives)
 - [Check the queue](#check-the-queue)
 - [A same-day Node security release](#a-same-day-node-security-release)
+- [Known vulnerabilities](#known-vulnerabilities)
 - [A new advisory or incident report](#a-new-advisory-or-incident-report)
 - [A trust exception](#a-trust-exception)
 - [A declared source is behind](#a-declared-source-is-behind)
@@ -121,11 +122,36 @@ those issues for you. It changes nothing.
    - verifies and locks.
 3. After 3 days, relax the pin to the major (`"26"`) and run `mise lock --global node`.
 
+## Known vulnerabilities
+
+`steward sc vulns` (read-only; also part of `steward sc audit`, so `steward review` and `steward brief` list what it
+finds) checks mise's npm, pipx, cargo and go tools, the packages inside them, the npm -g hybrids and Node against the
+feeds in `host.toml` `[[advisory_feed]]`: OSV (which carries the GitHub Advisory Database), nodejs.org and CISA KEV.
+
+1. Run it and read the ACTION lines first. A **known-exploited** finding comes before everything else.
+2. **The tool itself is affected:** its line names the fix, `steward sc upgrade-tool <tool> <version>`, an exact pin
+   that skips the release-age gate. Show the dry run, then take it after a yes. Record the advisory as a
+   `[[security_exception]]` with an expiry when the fixed release is younger than the gate.
+3. **Packages inside a tool:** that tool's next release carries the fix. Check whether one already does
+   (`steward sc plan`); otherwise it waits, and the line stays on the work list until it's gone. A tool AI tooling
+   owns goes to the `ai-tooling` skill.
+4. **Node:** `steward sc node-patch <version>` (A same-day Node security release).
+5. **Not checked** (a feed gave no answer) or **not covered** (core, aqua, github, asdf and vfox tools; Homebrew;
+   apps; Docker): say so; neither is clean. For a specific advisory there, use the next section.
+6. **Doesn't apply here** (the affected code is never reached): an `[[advisory_ignore]]` in `host.toml` with the exact
+   advisory, package, version, the evidence as its reason, and an expiry, after the user's yes.
+7. **An advisory no database carries yet:** an OSV-format record in an `osv-dir` feed folder of the instance, so
+   every later sweep checks it. `[vulns]` in `host.toml` changes what counts as an action and what is looked at.
+
 ## A new advisory or incident report
 
 1. Verify every claim against primary sources: the vendor advisory, GHSA, RustSec, OSV, NVD, CISA KEV and the
    registries. Social posts exaggerate.
-2. Sweep local exposure read-only: `steward sc audit`, plus targeted `find`, `ps` or `docker` checks.
+2. Sweep local exposure read-only: `steward sc vulns` (known vulnerabilities in mise's npm, pipx, cargo and go tools, the
+   packages inside them, the hybrids and Node; `--verbose` lists each one), then `steward sc audit`, plus targeted `find`,
+   `ps` or `docker` checks. An advisory no database carries yet can go in an `osv-dir` feed (host.toml
+   `[[advisory_feed]]`) so later sweeps keep checking; one that doesn't apply here goes in `[[advisory_ignore]]`, with
+   the reason and an expiry.
 3. **A first patched release younger than 3 days:** add a `[[security_exception]]` to
    `supply-chain/host.toml` with the advisory and an expiry, and use `steward sc upgrade-tool` for mise tools.
 4. **Indicators and bad certificates:** add `[[ioc]]` and `[[distrusted_root]]` entries, so later audits keep

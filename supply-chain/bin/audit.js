@@ -95,7 +95,10 @@ async function audit(ctx, o = {}) {
   const found = []; // every action and alert with its facts, for the Summary
   let folded = 0;
   const todo = CHECKS.filter(c => !o.only || o.only.includes(c.id));
-  if (u) u.header('steward sc audit', `${PL.label({ platform: ctx.platform, distro: ctx.distro || null, version: ctx.version || null })} · ${todo.filter(c => c.platforms.includes(ctx.platform)).length} checks`);
+  // the command that ran: steward sc vulns is the audit's vulns check alone (o.command)
+  const command = o.command || 'steward sc audit';
+  const nChecks = todo.filter(c => c.platforms.includes(ctx.platform)).length;
+  if (u) u.header(command, `${PL.label({ platform: ctx.platform, distro: ctx.distro || null, version: ctx.version || null })} · ${nChecks} check${nChecks === 1 ? '' : 's'}`);
   for (const c of todo) {
     if (!c.platforms.includes(ctx.platform)) { skipped.push(c.id); continue; }
     // this check's lines: printed as they come (plain), or kept and printed under its row (ui): its other lines, then
@@ -144,7 +147,7 @@ async function audit(ctx, o = {}) {
     u.header('Summary', `${actions.length} action(s) · ${alerts.length} alert(s) · ${u.fmt(Date.now() - T0)}`);
     for (const l of summaryLines(u, found)) u.print(l);
     if (!actions.length && !alerts.length) u.print(`  ${u.paint('32', u.sym.ok)}  nothing to act on`);
-    if (folded) u.print(u.paint('2', `  ${folded} check(s) have more lines: steward sc audit --verbose`));
+    if (folded) u.print(u.paint('2', `  ${folded} check(s) have more lines: ${command} --verbose`));
     return { actions, alerts, skipped };
   }
   write(`\x1b[1;34m==>\x1b[0m Summary: ${actions.length} action(s), ${alerts.length} alert(s) \x1b[2m[${elapsed()}]\x1b[0m`);
@@ -160,6 +163,7 @@ if (require.main === module) {
   const i = process.argv.indexOf('--only');
   const only = i > 0 ? process.argv[i + 1].split(',') : null;
   const u = process.argv.includes('--plain') ? null : makeUi();
-  audit(context(), { only, ui: u, verbose: process.argv.includes('--verbose') }).then(r => { if (r.alerts.length) process.exitCode = 2; })
+  const ci = process.argv.indexOf('--command');
+  audit(context(), { only, ui: u, verbose: process.argv.includes('--verbose'), command: ci > 0 ? process.argv[ci + 1] : undefined }).then(r => { if (r.alerts.length) process.exitCode = 2; })
     .catch(e => { console.error(`ERROR ${e.message}`); process.exitCode = 1; });
 }

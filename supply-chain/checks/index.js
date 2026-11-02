@@ -14,6 +14,7 @@ const { X509Certificate } = require('crypto');
 const brew = require('../../lib/providers/brew.js');
 const P = require('../../lib/providers/index.js');
 const U = require('../../lib/updaters.js');
+const V = require('../../lib/vulns.js');
 
 const ALL = ['macos', 'linux', 'windows'];
 // ageDays and securityException live with the package sources (lib/providers/index.js); kept here for the checks
@@ -382,6 +383,66 @@ const CHECKS = [
         if (!hits && unchecked.size) out.note(`${i.name} (${i._source}): not fully checked: ${[...unchecked].join('; ')}`);
         else if (!hits) out.clean(`${i.name} (${i._source})`);
       }
+    },
+  },
+  {
+    // Known vulnerabilities (D70, lib/vulns.js): what's installed against the [[advisory_feed]] feeds. High, critical,
+    // unrated and known-exploited findings are actions; the rest are listed. A package inside a tool is fixed by that
+    // tool's next release, so a tool's serious ones make one action. A feed that couldn't be read is said, never clean
+    id: 'vulns', name: 'Known vulnerabilities', platforms: ALL,
+    title: () => 'Known vulnerabilities (advisory_feed: the engine\'s defaults and yours; read-only; steward sc vulns)',
+    async run(ctx, out) {
+      const feeds = ctx.policy.advisory_feed || [];
+      if (!feeds.length) { out.action('vuln-feed: every advisory_feed is turned off in host.toml, so nothing was checked'); return; }
+      detail(ctx, 'mise ls --json, and the packages inside each tool');
+      const s = ctx.policy.vulns || V.SETTINGS;
+      const inv = await V.inventory(ctx, s, { say: t => detail(ctx, t) });
+      const { findings, failed, checked } = await V.lookup(ctx, feeds, inv, t => detail(ctx, t), s);
+      const serious = f => V.serious(f, s);
+      for (const f of failed) out.action(`vuln-feed: ${f.feed} not checked (${f.error}); what it would have found is missing`, { fix: 'check the network or the feed, then steward sc vulns', name: f.feed, note: 'not checked' });
+      for (const e of ctx.policy.advisory_ignore || []) if (String(e.expires) < ctx.today) out.info(`advisory_ignore ${e.id} (${e.name} ${e.version}) expired ${e.expires}: shown again`);
+      const shown = [];
+      for (const f of findings) {
+        const e = V.ignored(f, ctx.policy.advisory_ignore, ctx.today);
+        if (e) out.info(`ignored until ${e.expires}: ${f.id} in ${f.pkg.name} ${f.pkg.version} (${f.pkg.tool}): ${e.reason}`);
+        else shown.push(f);
+      }
+      const nth = n => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
+      const label = f => `${f.id} ${f.malicious ? 'MALICIOUS PACKAGE' : f.severity}${f.kev ? ', known exploited' : ''}${f.epss ? `, EPSS ${nth(Math.round(f.epss.percentile * 100))} percentile` : ''}`;
+      const fixedText = f => (f.pkg.ecosystem === 'eol' ? `supported: ${(f.supported || []).join(', ') || 'see the link'}` : f.fixed ? `fixed in ${f.fixed}` : f.upstream ? 'fixed upstream, in no release yet' : 'no fixed release yet');
+      const how = f => (f.pkg.ecosystem === 'Homebrew' ? (f.fixed ? 'steward sc plan, then steward sc upgrade (a security_exception of kind formula takes it before the gate)' : '')
+        : f.pkg.ecosystem === 'eol' ? '' : V.fixCommand(f) || (f.fixed && f.pkg.tool.startsWith('npm -g ') ? 'steward sc install-hybrids (after its version in hybrids.toml)' : ''));
+      // the tool itself (its own version, Node, a Homebrew formula, an end of life): one line per tool, its worst
+      // advisory first, with the command that takes the fix (the highest fixed version they name)
+      const own = shown.filter(f => f.pkg.top);
+      for (const tool of [...new Set(own.map(f => f.pkg.tool))]) {
+        const mine = own.filter(f => f.pkg.tool === tool);
+        const f = mine[0];
+        const fixed = mine.map(x => x.fixed).filter(Boolean).sort(V.cmpVer).pop() || '';
+        const g = { ...f, fixed, upstream: !fixed && mine.some(x => x.upstream) };
+        const cmd = how(g);
+        const more = mine.length > 1 ? ` and ${mine.length - 1} more (${mine.slice(1, 4).map(x => x.id).join(', ')}${mine.length > 4 ? ', …' : ''})` : '';
+        const text = `vuln: ${tool} ${f.pkg.version}: ${label(f)}${more}, ${fixedText(g)} ${f.url}${cmd ? `: ${cmd}` : ''}`;
+        if (mine.some(serious)) out.action(text, { fix: cmd || (f.pkg.ecosystem === 'eol' ? 'move to a supported release (a major is deliberate)' : 'read the advisory: no fixed release yet'), name: tool, have: f.pkg.version, want: fixed, note: label(f) });
+        else out.info(text);
+      }
+      // packages inside a tool: listed one by one, and a tool's serious ones as one action
+      const inside = shown.filter(f => !f.pkg.top);
+      for (const f of inside) out.info(`${f.pkg.tool}: ${f.pkg.name} ${f.pkg.version} inside it: ${label(f)}, ${fixedText(f)} ${f.url}`);
+      for (const tool of [...new Set(inside.filter(serious).map(f => f.pkg.tool))]) {
+        const mine = inside.filter(f => f.pkg.tool === tool && serious(f));
+        const ids = [...new Set(mine.map(f => f.id))];
+        const pkgs = new Set(mine.map(f => `${f.pkg.name}@${f.pkg.version}`)).size;
+        out.action(`vuln: ${tool}: ${ids.length} serious advisor${ids.length === 1 ? 'y' : 'ies'} in ${pkgs} package(s) inside it (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? ` and ${ids.length - 3} more` : ''}); update it when a release carries the fixes (steward sc vulns --verbose lists them)`,
+          { fix: 'update the tool that bundles it, when a release carries the fix', name: tool, note: `${ids.length} in ${pkgs} package(s)` });
+      }
+      for (const c of inv.coverage || []) if (c.failed) out.action(`vuln-feed: ${c.source} ${c.text}`); else (out.note || out.info)(`coverage: ${c.source === 'elsewhere' ? '' : `${c.source}: `}${c.text}`);
+      if (inv.uncovered.length && s.list_not_covered) out.info(`not covered (no advisory ecosystem; not the same as clean): ${inv.uncovered.join(', ')}`);
+      const nSerious = shown.filter(serious).length;
+      const line = `${new Set(inv.packages.map(p => `${p.ecosystem}\0${p.name}\0${p.version}`)).size} package version(s) in ${inv.covered.length} tool(s), checked with ${checked.join(', ') || 'no feed'}: ${nSerious} serious (${s.action_severity} and up${s.exploited_always_action ? ', or exploited' : ''}), ${shown.length - nSerious} other`;
+      if (shown.length) out.ok(line);
+      else if (!failed.length) out.clean(line);
+      else out.info(line);
     },
   },
 ];
