@@ -13,7 +13,8 @@
 # source = "https://…"
 # files = ["/tmp/marker"]
 # site_packages_files = []
-# processes = ["bad-process"]
+# processes = ["bad-process"]          # a word in a process's command line
+# environment = ["BAD_MARKER"]         # a variable in a process's environment (Linux; macOS shows none, D67)
 # docker_digests = []
 
 # Turn defaults off, by name or value (the audit flags one that matches no default, likely a typo).
@@ -56,7 +57,7 @@
 # advisory = "https://github.com/advisories/GHSA-xxxx-xxxx-xxxx"
 # expires = "2026-11-03"                   # a week or so: by then the version is past the gate anyway
 
-# Known vulnerabilities (steward sc vulns, D65). The engine's feeds are osv, nodejs and kev (host-defaults.toml); add
+# Known vulnerabilities (steward sc vulns, D69). The engine's feeds are osv, nodejs and kev (host-defaults.toml); add
 # your own, replace one by name, or turn one off with [off] advisory_feed = ["kev"]. Feeds are data, never code.
 # [[advisory_feed]]
 # name = "ours"

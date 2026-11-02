@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 5](https://img.shields.io/badge/Revision-5-green) ![Revised 2026-11-01](https://img.shields.io/badge/Revised-2026--11--01-green)
+![Revision 9](https://img.shields.io/badge/Revision-9-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -40,12 +40,12 @@ combination we claim.
 
 | Milestone | What it delivers | Stage | Done |
 | --- | --- | --- | --- |
-| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 2 / 9 |
+| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 6 / 9 |
 | [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Not started | 0 / 10 |
-| [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 5 |
+| [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 6 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
 | [Testing](#testing-the-ci-matrix-and-install-checks) | A CI row and an install-check row for every combination we claim | Not started | 0 / 7 |
-| [The Linux release](#the-linux-release-the-bar) | 0.11.0: Milestone 0, apt, dnf and zypper at full parity | Not started | 0 / 7 |
+| [The Linux release](#the-linux-release-the-bar) | 0.11.0: Milestone 0, apt, dnf and zypper at full parity | Not started | 0 / 8 |
 | [Decisions](#decisions) | The choices the work depends on | All made | 12 / 12 |
 
 ## How to use this ledger
@@ -125,6 +125,7 @@ ticked.
 - [ ] **CI green** on the oldest and newest supported release of Debian, Ubuntu, Linux Mint, Fedora, openSUSE Leap
   and Tumbleweed.
 - [ ] **Install check, worktree mode,** from the release commit on every one of those rows (T.7).
+- [ ] **End-to-end runs** (`--e2e`) pass for apt, dnf and zypper.
 - [ ] **Say it:** `package.json` `os` adds `linux`, and the README and [`../lifecycle.md`](../lifecycle.md#platforms)
   say the steward runs on Linux with apt, dnf and zypper.
 - [ ] **Release,** then the install check in npm mode on every row before the release is announced. A failure there is
@@ -178,7 +179,7 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 | OS updates | `softwareupdate -l` | part of the system provider | moving nixpkgs is the OS update | ⬜ |
 | Apps and the Electron window | `/Applications`, casks | Flatpak, Snap, AppImage, `/opt` | Nix apps; Flatpak where enabled | ⬜ |
 | App store | `mas` | Flatpak and Snap stand in | ➖ | ⬜ |
-| Trust store: finding distrusted roots | keychain, PEM bundles, Node's roots | PEM bundles and Node's roots (portable today), the system bundle | the system bundle | ⬜ |
+| Trust store: finding distrusted roots | keychain, PEM bundles, Node's roots | the family's system bundle, Linuxbrew's and Node's roots (0.5) | the system bundle | 🟨 |
 | Trust store: denying a root | admin trust setting (by hand) | per family: Debian, Red Hat, SUSE, Arch, Alpine | `security.pki` in the host's config, by a PR | ⬜ |
 | Indicators of compromise | `ps`, Mac paths | procps or busybox `ps`, `/proc`, Linux paths | `/nix/store` paths | ⬜ |
 | `steward doctor` install hints | Homebrew, mise | per package manager | per Nix setup | ⬜ |
@@ -190,7 +191,7 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 before. **Done when:** `steward sc plan` and `steward sc audit` run clean on `ubuntu-latest` with Linuxbrew, and the
 Mac's output before and after is identical.
 
-Stage: Under way (0.1 and 0.2 done).
+Stage: Under way (0.1 to 0.5, and 0.9, done).
 
 - [x] **0.1 Know the platform** (#84, D63). `lib/platform.js` reads `/etc/os-release` (`ID`, `ID_LIKE`, `VERSION_ID`) and returns
   the platform, distribution and family; NixOS by `ID=nixos`. `host.toml` entries take the optional `families` key
@@ -204,25 +205,46 @@ Stage: Under way (0.1 and 0.2 done).
   report, audit and plan were identical before and after (2026-11-01).
   - [ ] A tidy-up for later: the audit's held line says "eligible in N days" for a formula and not for a cask. Kept so
     the before-and-after proof stayed exact; make them match in a PR of its own.
-- [ ] **0.3 Bash that runs on GNU and busybox.**
-  - The blocker: `mktemp -t steward-quiet` in `lib/lib.sh` fails on GNU, so every script that uses `quiet` or
-    `run_shown` stops on Linux.
-  - APFS clones (`cp -c`) become a helper that uses `cp -a --reflink=auto` on GNU, where `-c` means something else.
-  - `mv -h` becomes `mv -T`; `shasum` falls back to `sha256sum`; BSD date arithmetic moves to Node.
-  - `node-patch` picks Linux tarballs; the RuVector add-on check names the add-on for this platform; offboarding stops
-    needing `lsof`.
-- [ ] **0.4 Indicators of compromise on Linux.** `ps` per flavor (BSD, procps, busybox), `/proc` where `ps` can't show
-  the environment, and Linux paths.
-- [ ] **0.5 Trust store, the finding half.** The PEM-bundle and Node-roots checks leave the macOS-only trust check, so
-  Linux reports distrusted roots from the start.
+- [x] **0.3 Bash that runs on GNU and busybox** (#88, D66). Five helpers in `lib/lib.sh` (`tmpfile`, `cp_clone`,
+  `mv_onto`, `SHA256`/`SHA1`/`sha256_of`, `node_tarball`) replace 18 BSD-only sites, among them the `mktemp -t` blocker.
+  Node replaces perl (`lib/timeout.js`, `lib/subst.js`; owner, 2026-11-02). Offboarding reads `/proc` on Linux instead
+  of `lsof`. `node-patch` fetches the Linux build. A refresh step with under 50 ms left is no longer started.
+  `test/portable.test.js` guards against the BSD-only forms coming back. Every Linux row passes:
+
+  | Row | Baseline (0.9) | After 0.3 |
+  | --- | --- | --- |
+  | Debian 13 | 386 / 403 | 414 / 415 ✓ |
+  | Ubuntu 26.04 | 387 / 403 | 414 / 415 ✓ |
+  | Fedora 44 | 384 / 403 | 414 / 415 ✓ |
+  | openSUSE Leap 16.0 | 386 / 403 | 414 / 415 ✓ |
+  | openSUSE Tumbleweed | 386 / 403 | 414 / 415 ✓ |
+
+  The one not counted on each row is the macOS-only host report test, skipped there.
+  - [ ] Still open: the RuVector add-on check names `ruvector-core-darwin-arm64` (`supply-chain/bin/addon-check.js`)
+    rather than the add-on for this platform. It runs only with the AI tooling add-on, so no test caught it; it moves
+    with 0.7.
+- [x] **0.4 Indicators of compromise on every platform** (#89, D67). Linux lists processes from `/proc` (minimal
+  installs have no `ps`); IOCs gain an `environment` list apart from `processes`; the sweep opens with a coverage line;
+  "couldn't look" is never "clean" (owner, 2026-11-02). Found on the way: **macOS shows no process environment**, so the
+  LiteLLM marker had never been checkable on a Mac (confirmed in the owner's terminal, macOS 27.2); the audit now says
+  so. Python packages are also searched in `dist-packages` and the per-user folders on Linux and macOS. Every Linux row
+  passes (423 of 424 each; the other is the macOS-only test, skipped).
+- [x] **0.5 Trust store, the finding half** (#90, D68). The `trust` check runs on Linux too: the family's system CA
+  bundle, then Linuxbrew's and Node's roots. A root still trusted is an action; a bundle that can't be found is a note.
+  The Mac's audit is unchanged. **Found:** run with the engine's defaults in the test images, `emSign ECC Root CA - G3`
+  is still trusted in the Fedora 44 and Tumbleweed images (p11-kit's `trust list` agrees), and not in Debian, Ubuntu or
+  Leap.
 - [ ] **0.6 `steward doctor` per platform.** Each prerequisite says which platforms need it. Today `sw_vers`,
-  `security`, `softwareupdate`, `mas` and Homebrew are required everywhere. Install hints come per family.
-- [ ] **0.7 Words.** "This Mac" and macOS-only fix text become platform-aware in the review, the audit, the briefing,
+  `security`, `softwareupdate`, `mas` and Homebrew are required everywhere. Install hints come per family. On Linux,
+  `libatomic` is a prerequisite: Node 26's arm64 binary needs `libatomic.so.1`, which minimal installs leave out (found
+  by 0.9's first run, 2026-11-02). So is `jq`, which `lock-age` and the release check use (found by 0.3's Linux run).
+- [ ] **0.7 Words, and the RuVector add-on name** (moved from 0.3). `addon-check.js` names the add-on for this OS and
+  CPU. "This Mac" and macOS-only fix text become platform-aware in the review, the audit, the briefing,
   the guards and the package description.
 - [ ] **0.8 Ready to package for Linux, and the first Linux CI row.** Publishing no longer needs macOS, and Tests run on
   `ubuntu-latest` too. `package.json` `os` keeps only `darwin` until [the bar](#the-linux-release-the-bar) is met
   (R-3), so a release before then stays Mac-only.
-- [ ] **0.9 Test each distribution locally, in containers** (owner, 2026-11-01). `just linux-test <distro|all>`
+- [x] **0.9 Test each distribution locally, in containers** (#87, D65; owner, 2026-11-01). `just linux-test <distro|all>`
   builds one image per distribution from a base pinned by digest (Renovate keeps it current, behind the gate), with
   bash, git, just and Node 26. It runs `just test` on a read-only copy of the checkout as a non-root user, with no
   network, in a container removed after the run (`--rm`). Results go to a file under the state folder;
@@ -230,7 +252,26 @@ Stage: Under way (0.1 and 0.2 done).
   It adds to the CI matrix and never replaces it: every supported distribution still gets its CI job on every PR, and
   its install-check row (owner, 2026-11-01).
   Containers run arm64 on an Apple-silicon Mac (x64 by emulation) and have no systemd, so the NixOS VM stays in CI.
-  Built right after 0.2.
+  Linux Mint's rows join with the apt provider (owner, 2026-11-02): Docker Hub has `linuxmintd/mint22-amd64` and
+  `linuxmintd/mint22.2-amd64` (amd64 only), to be confirmed as the Mint project's own account first; until then its
+  Ubuntu base stands in locally. (#87 said Mint has no official image; that was wrong.) Tumbleweed's row
+  pins a `latest` digest under a recorded gate exception (owner, 2026-11-02; expires 2026-11-05): its dated snapshots
+  that pass the gate have no arm64 build.
+
+**The first Linux baseline** (`just linux-test all`, 2026-11-02, arm64): the work list for 0.3 to 0.8.
+
+| Row | Pass | Fail |
+| --- | --- | --- |
+| Debian 13 | 386 / 403 | 16 |
+| Ubuntu 26.04 | 387 / 403 | 15 |
+| Fedora 44 | 384 / 403 | 18 |
+| openSUSE Leap 16.0 | 386 / 403 | 16 |
+| openSUSE Tumbleweed | 386 / 403 | 16 |
+
+- On every row (15): mostly `mktemp -t` in `lib/lib.sh`, through `quiet` and `run_shown`: verify, `upgrade-tool`,
+  `install-hybrids`, lock-age and the release check. Offboarding needs `lsof`. All are 0.3.
+- On some rows (4): the declared-updater apply (Fedora, Leap, Tumbleweed); the AQE gates' `mark()` and a `run_shown`
+  dry run (Fedora); the refresh time cap (Debian, perhaps timing). 0.3 looks into each.
 
 ## Milestone 1: Linux, one package manager at a time
 
@@ -251,6 +292,10 @@ fully supported providers; then the best-effort ones (owner, 2026-10-31 and 2026
 - `steward doctor` install hints;
 - a CI row for the oldest and newest supported release;
 - an install-check row;
+- an end-to-end run in a container, `just linux-test <id> --e2e` (owner, 2026-11-02): network on, older packages
+  seeded, then `steward sc plan` (its takes and holds checked against the real repo dates), `steward sc upgrade` with
+  the test playing the user for the root hand-off (D-b), verify, and rollback where the manager has one. Run before
+  the provider is ticked, not on every PR;
 - docs and a D-row.
 
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
@@ -273,11 +318,14 @@ fully supported providers; then the best-effort ones (owner, 2026-10-31 and 2026
 Stage: Not started.
 
 - [ ] **2.1 Trust store, the denying half, per family:** Debian (`update-ca-certificates`), Red Hat (`update-ca-trust`),
-  SUSE, Arch and Alpine. It needs root, so the steward hands the user the exact command (D-b).
+  SUSE, Arch and Alpine. It needs root, so the steward hands the user the exact command (D-b). First test cases: the
+  Fedora 44 and Tumbleweed images, which still trust `emSign ECC Root CA - G3` (found by 0.5).
 - [ ] **2.2 Apps and the Electron support window** for Flatpak, Snap, AppImage and `/opt`.
 - [ ] **2.3 Vendored Node on Linux:** Linux paths in the engine's `vendored_node` defaults.
 - [ ] **2.4 Browsers kept current on Linux:** Linux names in the engine's `always_current` defaults.
 - [ ] **2.5 Indicators of compromise:** Linux locations added to the engine's defaults as advisories name them.
+- [ ] **2.6 An optional endpoint source, later** (owner, 2026-11-02): for what `ps` can't see on macOS (process
+  environments), an opt-in source such as osquery, installed and gated like any other tool. Nothing built yet.
 
 ## Milestone 3: NixOS
 
@@ -340,6 +388,7 @@ in the PR that relies on it.
 - [ ] `dnf history undo` on dnf5; the pacman cache and snapper as ways back.
 - [ ] How each family denies a root: `update-ca-certificates`, `update-ca-trust`, p11-kit's blocklist.
 - [ ] The oldest glibc Node 26's Linux binaries need, and mise's.
+- [x] Node 26's Linux arm64 binary needs `libatomic.so.1` (seen on all five rows of 0.9's first run, 2026-11-02).
 - [ ] Node 26 on Alpine: official tarballs have no musl build, and Alpine's package may be older than 26.
 - [ ] mise on NixOS: in nixpkgs; the tools it downloads need `nix-ld`.
 - [ ] GitHub's arm64 Linux runners for public repos, and `/dev/kvm` on `ubuntu-latest`.
@@ -349,6 +398,10 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-02 | 9 | 0.5 done: distrusted roots found on Linux (D68); emSign still trusted in the Fedora 44 and Tumbleweed images, the first cases for 2.1 | #90 |
+| 2026-11-02 | 8 | 0.4 done: IOCs on every platform, the environment key, the coverage line, the rule (D67); macOS shows no process environment; 2.6 added for later | #89 |
+| 2026-11-02 | 7 | 0.3 done: the shell on GNU and busybox, no perl, no lsof on Linux (D66); every Linux row passes; jq joins the Linux prerequisites; the Mint image corrected; the RuVector add-on name moves to 0.7 | #88 |
+| 2026-11-02 | 6 | 0.9 done: local container tests (D65), the first Linux baseline, the libatomic finding; end-to-end runs added to each provider's checklist and the release bar | #87 |
 | 2026-11-01 | 5 | 0.2 done: package sources with one contract, judged in one place (D64) | #86 |
 | 2026-11-01 | 4 | The Linux release bar (R-1 to R-3): apt, dnf and zypper first; 0.8 keeps `os` Mac-only until the bar; T.7 install check from a commit | #84 |
 | 2026-11-01 | 3 | 0.1 done: the distribution and family from os-release, and `host.toml`'s `families` key (D63); 0.9 added: local container tests; Milestone 0 under way | #84 |

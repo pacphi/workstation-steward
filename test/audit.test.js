@@ -196,11 +196,11 @@ test('updaters: behind is an action when its class skips the gate and held when 
   assert.ok(none.out.includes('  none active here'));
 });
 
-test('platforms: on Linux the macOS-only checks are skipped; Homebrew formulae still run where brew is', async () => {
+test('platforms: on Linux the macOS-only checks are skipped, trust is not; Homebrew formulae still run where brew is', async () => {
   const c = ctx({ ...BREW, 'brew list --formula --versions': '', 'brew list --formula --full-name': '' }, { platform: 'linux' });
   const w = lines();
   const r = (await audit(c, { only: ['brew-formulae', 'brew-casks', 'apps', 'app-store', 'macos', 'trust'], write: w.write }));
-  assert.deepEqual(r.skipped.sort(), ['app-store', 'apps', 'brew-casks', 'macos', 'trust']);
+  assert.deepEqual(r.skipped.sort(), ['app-store', 'apps', 'brew-casks', 'macos'], 'trust runs on Linux too (parity 0.5)');
   assert.ok(w.out.some(l => l.startsWith('==> Homebrew formulae')));
   const none = ctx({}, { platform: 'linux' });
   const w2 = lines();
@@ -312,4 +312,13 @@ test('apps: an app is not compared with another product\'s cask of the same name
   assert.deepEqual(r.actions, []);
   assert.ok(!w.out.some(l => l.includes('held')), w.out.join('\n'));
   assert.ok(w.out.includes('  info   Copilot (com.microsoft.m365copilot): cask copilot-money is another app of that name (com.copilot.production); not compared'), w.out.join('\n'));
+});
+
+test('terminal: the IOC coverage line and a "not fully checked" line show without --verbose (a gap is never folded away, parity 0.4)', async () => {
+  const c = ctx({ 'docker info': { status: 1, stdout: '' }, 'ps -axeww -o pid=,command=': '  1 /sbin/launchd\n' });
+  c.policy.ioc = [{ name: 'Env marker', _source: 'default', environment: ['PRIVCOLLECT_ACTIVE'] }];
+  const out = await tty(c, ['ioc']);
+  assert.ok(out.some(l => l.includes('coverage here: files ✓') && l.includes("environments ✗ (macOS doesn't show them)")), out.join('\n'));
+  assert.ok(out.some(l => l.includes("Env marker (default): not fully checked: environment (macOS doesn't show process environments)")), out.join('\n'));
+  assert.ok(!out.some(l => l.includes('have more lines')), 'nothing else was folded');
 });
