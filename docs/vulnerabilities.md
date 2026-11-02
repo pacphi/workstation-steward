@@ -37,7 +37,7 @@ Each package version is asked of every **feed** in `host.toml` `[[advisory_feed]
 
 - **`osv`**: [api.osv.dev](https://osv.dev). It carries the GitHub Advisory Database for npm, PyPI, crates.io and Go,
   the Go vulnerability database, and OpenSSF's [malicious-packages](https://github.com/ossf/malicious-packages) reports
-  (`MAL-` IDs);
+  (`MAL-` IDs) ([OSV's data sources](https://google.github.io/osv.dev/data/));
 - **`nodejs`**: nodejs.org's release index;
 - **`kev`**: CISA's [Known Exploited Vulnerabilities](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
   catalog. It marks a finding whose CVE is being exploited now;
@@ -134,18 +134,28 @@ isolated yet.
 ## Limitations
 
 - **No reachability analysis.** A finding means the vulnerable version is present, not that your use reaches the
-  flaw. Go's `govulncheck` can tell for Go programs; the steward doesn't run it (see below).
+  flaw. Go's [`govulncheck`](https://go.dev/doc/security/vuln/) can tell for Go programs; the steward doesn't run it
+  (see below).
 - **Unrated findings count as high.** Some databases (Go's, PyPI's, and many Homebrew matches) give no rating, so a
   run can show more actions than you expect. `unrated` and `advisory_ignore` tune it.
-- **Homebrew's coverage is Homebrew's.** `brew vulns` matches a formula to its upstream tag; a formula built from a
-  plain tarball may be skipped, and casks are not covered.
-- **NVD is not a source.** Since April 2026 NIST enriches only priority CVEs, with a backlog of tens of thousands, and
-  CPE matching guesses at product names. CVE IDs still arrive as aliases through OSV.
-- **The steward runs no third-party scanner.** A scanner reads everything and is a target itself: Trivy's release and
-  GitHub Actions were compromised in March 2026 (CVE-2026-33634). Planned instead: a CycloneDX inventory any scanner you
-  choose can read.
-- **EPSS and endoflife.date are best effort.** EPSS is a probability, not a verdict; endoflife.date is a community
-  dataset whose API is in beta. A feed that doesn't answer is reported as not checked.
+- **Homebrew's coverage is Homebrew's.** `brew vulns` checks installed formulae against OSV.dev and knows the patches
+  Homebrew applies ([Homebrew 7.0.0](https://brew.sh/2026/09/13/homebrew-7.0.0/)); a formula it can't match is
+  skipped (`--list-skipped`), and casks are not scanned (`brew vulns --help`).
+- **NVD is not a source.** Since 15 April 2026 NIST enriches only CVEs in CISA's KEV catalog, in software the federal
+  government uses, or in critical software; the rest are marked "Lowest Priority - not scheduled for immediate
+  enrichment", and its backlog from before 1 March 2026 moved to "Not Scheduled"
+  ([NIST](https://www.nist.gov/news-events/news/2026/04/nist-updates-nvd-operations-address-record-cve-growth)).
+  CPE matching also guesses at product names. CVE IDs still arrive as aliases through OSV.
+- **The steward runs no third-party scanner.** A scanner reads everything and is a target itself: on 19 March 2026 a
+  malicious Trivy release was published and 76 of the 77 `trivy-action` tags were repointed to malicious commits
+  ([GHSA-69fq-xp46-6x23](https://github.com/aquasecurity/trivy/security/advisories/GHSA-69fq-xp46-6x23),
+  CVE-2026-33634, added to CISA's KEV catalog on 26 March 2026). Planned instead: a CycloneDX inventory any scanner
+  you choose can read.
+- **EPSS and endoflife.date are best effort.** EPSS "estimates the probability that a published CVE will be exploited
+  in the wild in the next 30 days" ([FIRST](https://www.first.org/epss/)): a probability, not a verdict.
+  endoflife.date is a community dataset whose API "is currently in Beta, and breaking changes can happen"
+  ([its README](https://github.com/endoflife-date/endoflife.date)). A feed that doesn't answer is reported as not
+  checked.
 
 ## Exceptions
 
@@ -215,11 +225,33 @@ need no network.
 In order, each its own PR (also in [`lifecycle.md`](lifecycle.md#known-vulnerabilities)):
 
 1. **OpenVEX**: your `advisory_ignore` entries written as an OpenVEX document, and vendors' VEX documents read as a
-   feed, so a vendor's "not affected" counts here.
-2. **CycloneDX and SARIF**: `steward sc sbom` writes the machine's inventory as a CycloneDX SBOM that any scanner can
-   read, and `steward sc vulns --sarif` writes findings for code-scanning dashboards.
+   feed, so a vendor's "not affected" counts here. Red Hat, openSUSE and Microsoft publish CSAF VEX and Chainguard
+   publishes OpenVEX, though adoption "remains inconsistent and uncertain" ([OpenSSF](https://openssf.org/blog/2026/01/08/signal-in-the-noise-an-industry-wide-perspective-on-the-state-of-vex/)).
+2. **CycloneDX and SARIF**: `steward sc sbom` writes the machine's inventory as a CycloneDX SBOM
+   ([ECMA-424](https://ecma-international.org/publications-and-standards/standards/ecma-424/), 2nd edition, CycloneDX
+   1.7) that any scanner can read, and `steward sc vulns --sarif` writes findings for code-scanning dashboards.
 3. **Provenance before the gate**: vulns-fix checks that a fixed npm version carries build provenance before it pins it
-   past the gate. Provenance shows where a package was built, not that it's safe, so it adds to the gate, never
+   past the gate. Provenance links a package to its source and build, but "does not guarantee the package has no
+   malicious code" ([npm](https://docs.npmjs.com/generating-provenance-statements)), so it adds to the gate, never
    replaces it.
 4. **Each Linux source** (apt, dnf, zypper, apk first) reports its packages with the distribution's OSV ecosystem as
    it lands; pacman, portage, xbps and Nix need their own trackers.
+
+## Sources
+
+Each claim on this page was checked against its primary source on 2 November 2026.
+
+| Claim | Primary source |
+| --- | --- |
+| OSV carries the GitHub Advisory Database, the Go and PyPI databases, RustSec and OpenSSF's malicious-packages reports | [OSV: data sources](https://google.github.io/osv.dev/data/) |
+| OSV's API takes a Package-URL as well as a name and ecosystem; purl is an Ecma standard | [OSV API](https://google.github.io/osv.dev/post-v1-query/); [ECMA-427 (TC54)](https://github.com/Ecma-TC54/ECMA-427/) |
+| What CISA's KEV catalog is, and that CVE-2026-33634 (Trivy) was added on 26 March 2026 | [KEV catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) and its [JSON feed](https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json) |
+| What EPSS estimates, published daily | [FIRST: EPSS](https://www.first.org/epss/) |
+| endoflife.date's data and its API's status | [endoflife.date README](https://github.com/endoflife-date/endoflife.date) |
+| `go version -m` prints a program's embedded module information | [The go command](https://pkg.go.dev/cmd/go#hdr-Print_Go_version) |
+| Homebrew 7's `brew vulns` (OSV.dev, Homebrew's own advisory database, patches, `--list-skipped`); casks not scanned | [Homebrew 7.0.0](https://brew.sh/2026/09/13/homebrew-7.0.0/); `brew vulns --help` (Homebrew 7.0.12) |
+| NIST's NVD enrichment since 15 April 2026 | [NIST, 15 April 2026](https://www.nist.gov/news-events/news/2026/04/nist-updates-nvd-operations-address-record-cve-growth) |
+| The Trivy compromise of March 2026 | [Aqua: GHSA-69fq-xp46-6x23](https://github.com/aquasecurity/trivy/security/advisories/GHSA-69fq-xp46-6x23) |
+| Provenance doesn't guarantee a package is free of malicious code | [npm: provenance](https://docs.npmjs.com/generating-provenance-statements); [SLSA threats](https://slsa.dev/spec/v1.1/threats-overview) |
+| Who publishes VEX, and how far adoption has got | [OpenSSF, January 2026](https://openssf.org/blog/2026/01/08/signal-in-the-noise-an-industry-wide-perspective-on-the-state-of-vex/) |
+| CycloneDX is ECMA-424, 2nd edition (CycloneDX 1.7) | [Ecma: ECMA-424](https://ecma-international.org/publications-and-standards/standards/ecma-424/) |
