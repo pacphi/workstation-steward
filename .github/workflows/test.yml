@@ -14,7 +14,8 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  # each test job names its OS, so a check's name says where it ran
+  test-macos:
     if: ${{ !github.event.repository.private || github.event_name == 'workflow_dispatch' }}
     runs-on: macos-latest
     env:

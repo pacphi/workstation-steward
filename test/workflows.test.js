@@ -18,8 +18,10 @@ test('test.yml: a Linux job on every PR (no private-copy guard), with the same s
   assert.equal(j.if, undefined, 'it runs on the private copy too: Linux minutes are cheap');
   const runs = j.steps.map(s => s.run || '').join('\n');
   for (const c of ['mise install', 'npm ci --ignore-scripts --prefix tools/types', 'node bin/steward.js config', 'just test']) assert.ok(runs.includes(c), c);
-  assert.equal(t.jobs.test['runs-on'], 'macos-latest', 'the macOS job stays');
-  assert.ok(String(t.jobs.test.if).includes('private'), 'and keeps its guard');
+  // each test job names its OS, so a check's name says where it ran (the owner, 2026-11-02)
+  assert.equal(t.jobs.test, undefined, 'no job named plain test');
+  assert.equal(t.jobs['test-macos']['runs-on'], 'macos-latest', 'the macOS job stays, as test-macos');
+  assert.ok(String(t.jobs['test-macos'].if).includes('private'), 'and keeps its guard');
 });
 
 test('test.yml: Milestone 0\'s exit criterion: the audit and the plan on Ubuntu with Linuxbrew, checked, in the summary', () => {
@@ -43,11 +45,15 @@ test('release.yml: the release is tested on Linux as well, and publish waits for
   const j = r.jobs['test-linux'];
   assert.ok(j, 'a test-linux job');
   assert.equal(j['runs-on'], 'ubuntu-latest');
-  assert.deepEqual(j.needs, r.jobs.test.needs, 'started the same way as the macOS test job');
-  assert.equal(j.if, r.jobs.test.if);
+  assert.equal(r.jobs.test, undefined, 'no job named plain test');
+  assert.equal(r.jobs['test-macos']['runs-on'], 'macos-latest');
+  assert.deepEqual(j.needs, r.jobs['test-macos'].needs, 'started the same way as the macOS test job');
+  assert.equal(j.if, r.jobs['test-macos'].if);
   const runs = j.steps.map(s => s.run || '').join('\n');
   for (const c of ['mise install', 'just test', 'just lint']) assert.ok(runs.includes(c), c);
-  assert.ok([].concat(r.jobs.publish.needs).includes('test-linux'), 'publish needs test-linux');
-  assert.match(r.jobs.publish.if, /needs\.test-linux\.result == 'success'/);
+  assert.deepEqual([].concat(r.jobs.publish.needs).sort(), ['release-please', 'test-linux', 'test-macos']);
+  assert.match(r.jobs.publish.if, /needs\.test-macos\.result == 'success' && needs\.test-linux\.result == 'success'/);
+  const uses = JSON.stringify(r.jobs.publish);
+  assert.ok(!/needs\.test\./.test(uses), 'publish reads the tag and commit from test-macos');
   assert.equal(r.jobs.publish['runs-on'], 'macos-latest', 'publish moves to Linux only at the release step (owner, 2026-11-02)');
 });
