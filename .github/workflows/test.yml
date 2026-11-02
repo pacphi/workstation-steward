@@ -1,5 +1,5 @@
-# The tests and lint on macOS, against the example instance (examples/): the engine must work on a fresh Mac with
-# none of the owner's data (D39). The public repo runs it on every PR (no paths filter, so it can be a required
+# The tests and lint on macOS, and the tests on Linux (parity 0.8), against the example instance (examples/): the engine
+# must work on a fresh machine with none of the owner's data (D39). The public repo runs it on every PR (no paths filter, so it can be a required
 # check) and every push to main. A private copy runs it only when started by hand, since macOS runners bill 10x on
 # private repos: gh workflow run test.yml --ref <branch>
 name: Tests
@@ -39,3 +39,54 @@ jobs:
       - run: node bin/steward.js config   # no launcher on a runner: the client straight from the checkout
       - run: just test
       - run: just lint
+
+  # The same tests on Linux (parity 0.8), on every PR, private copy included (Linux minutes are cheap), then Milestone 0's
+  # exit criterion (docs/platforms/parity.md): the audit and the plan on Ubuntu, without Homebrew and with Linuxbrew
+  test-linux:
+    runs-on: ubuntu-latest
+    env:
+      STEWARD_INSTANCE: ${{ github.workspace }}/examples
+      MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
+      MISE_IGNORED_CONFIG_PATHS: ${{ github.workspace }}/mise
+      NO_PROGRESS: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        with:
+          version: 2026.10.21
+          install: false
+      - run: mise install
+      - run: npm ci --ignore-scripts --prefix tools/types
+      - run: node bin/steward.js config
+      - run: just test
+      - name: "Milestone 0's exit criterion: the audit and the plan on Ubuntu, without Homebrew and with Linuxbrew"
+        env:
+          GH_TOKEN: ${{ github.token }}   # the Homebrew source dates versions through gh api
+        run: |
+          where="$(node -e 'process.stdout.write(require("./lib/platform.js").label())')"
+          echo "platform: ${where}"
+          [[ "${where}" == "linux (ubuntu"* ]] || { echo "expected linux (ubuntu …), got ${where}"; exit 1; }
+          # check FILE: the plain audit ran to its end, with Linux's sections and none of macOS's
+          check() {
+            grep -q "Trust stores" "$1" || { echo "$1: no Trust stores section"; exit 1; }
+            grep -q "Summary:" "$1" || { echo "$1: the audit didn't reach its Summary"; exit 1; }
+            for absent in 'macOS (softwareupdate' 'App Store' 'Homebrew casks'; do
+              if grep -qF "${absent}" "$1"; then echo "$1: a macOS-only section on Linux: ${absent}"; exit 1; fi
+            done
+          }
+          # 1. without Homebrew, as most Linux machines are
+          rc=0; node bin/steward.js sc audit --plain > audit-plain.txt 2>&1 || rc=$?
+          [[ ${rc} == 0 ]] || { cat audit-plain.txt; echo "sc audit (no Homebrew) exited ${rc}"; exit 1; }
+          check audit-plain.txt
+          grep -q "brew not found: skipped" audit-plain.txt || { echo "expected Homebrew to be skipped"; exit 1; }
+          # 2. with Linuxbrew, which GitHub's Ubuntu image ships off PATH
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew --version | head -1
+          rc=0; node bin/steward.js sc audit --plain > audit-brew.txt 2>&1 || rc=$?
+          [[ ${rc} == 0 ]] || { cat audit-brew.txt; echo "sc audit (Linuxbrew) exited ${rc}"; exit 1; }
+          check audit-brew.txt
+          grep -q "Homebrew formulae" audit-brew.txt || { echo "no Homebrew formulae section"; exit 1; }
+          rc=0; DRY_RUN=1 node bin/steward.js sc plan --plain > plan.txt 2>&1 || rc=$?
+          [[ ${rc} == 0 ]] || { cat plan.txt; echo "sc plan exited ${rc}"; exit 1; }
+          strip() { sed -E 's/\x1b\[[0-9;]*m//g' "$1"; }
+          { echo "## Milestone 0 on ${where}"; for f in audit-plain.txt audit-brew.txt plan.txt; do echo; echo "### ${f}"; echo; echo '```text'; strip "$f"; echo '```'; done; } >> "$GITHUB_STEP_SUMMARY"

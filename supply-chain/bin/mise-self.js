@@ -83,7 +83,8 @@ if (require.main === module) {
   const ver = run(bin || 'mise', ['--version']);
   const current = ((ver.stdout || '').match(/\b(\d{4}\.\d+\.\d+)\b/) || [])[1];
   if (!current) { if (plan) out('unknown', '?', '?', 'mise --version gave no version'); console.log('  mise --version gave no version'); process.exit(0); }
-  const prefix = run('brew', ['--prefix']).stdout.trim();
+  // no Homebrew on the machine (most Linux machines): no prefix, so not a Homebrew mise (a missing brew gives stdout null)
+  const prefix = (run('brew', ['--prefix']).stdout || '').trim();
   if (prefix && bin.startsWith(`${prefix}/`)) {
     if (plan) out('brew', current, current, 'Homebrew formula: judged with the formulae');
     console.log(`  mise ${current} from Homebrew (${C.tilde(bin)}): judged with the Homebrew formulae`);

@@ -26,6 +26,10 @@ test('test.yml: Milestone 0\'s exit criterion: the audit and the plan on Ubuntu 
   const s = wf('test.yml').jobs['test-linux'].steps.find(x => /exit criterion/i.test(x.name || ''));
   assert.ok(s, 'the smoke step');
   assert.match(s.run, /brew shellenv/);
+  // first without Homebrew, as most Linux machines are (a run with Linuxbrew alone hid a crash), then with it
+  const at = re => s.run.search(re);
+  assert.ok(at(/sc audit --plain/) >= 0 && at(/sc audit --plain/) < at(/brew shellenv/), 'an audit before Linuxbrew is on PATH');
+  assert.ok(s.run.lastIndexOf('sc audit --plain') > at(/brew shellenv/), 'and one after');
   assert.match(s.run, /linux \(ubuntu/);
   assert.match(s.run, /sc audit --plain/);
   assert.match(s.run, /DRY_RUN=1 node bin\/steward\.js sc plan --plain/);
