@@ -112,6 +112,23 @@ test('host.js: the report names the platform as before on macOS (parity 0.1)', {
   assert.match(report.split('\n')[0], /^host policy \(macos\): \d+ default\(s\) from the engine/);
 });
 
+test('merge: an IOC must list something checkable on each platform it applies to (parity 0.4); the shipped defaults do', () => {
+  const ioc = [
+    { name: 'env only', environment: ['X'] },
+    { name: 'env on linux', platforms: ['linux'], environment: ['X'] },
+    { name: 'packages', site_packages_files: ['cook.pth'] },
+    { name: 'nothing', files: [], processes: [''] },
+  ];
+  assert.deepEqual(merge({ ioc }, {}, 'macos').warnings, [
+    'ioc env only: nothing it lists can be checked on macos (environment markers need Linux; add a file, process or package marker)',
+    'ioc nothing: nothing it lists can be checked on macos or linux',
+  ]);
+  const mine = merge({}, { ioc: [{ name: 'mine', environment: ['Y'] }] }, 'linux');
+  assert.match(mine.warnings[0], /^ioc mine: nothing it lists can be checked on macos/);
+  const report = spawnSync(process.execPath, [path.join(REPO, 'lib', 'host.js')], { encoding: 'utf8', env: { ...process.env, STEWARD_INSTANCE: path.join(REPO, 'examples') } }).stdout;
+  assert.ok(!/nothing it lists can be checked/.test(report), report);
+});
+
 test('merge: [[updater]] merges by name and turns off with [off]; an incomplete one is left out and reported (D52)', () => {
   const full = { why: 'w', check: 'c', apply: 'a', backup: ['b'] };
   const defaults = { updater: [{ name: 'kb', class: 'signed_data', require_output: 'ok', pin: { file: 'f', match: 'm', sha256: 'aa' }, ...full }, { name: 'sigs', class: 'always_current', ...full }] };

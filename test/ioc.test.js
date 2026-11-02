@@ -47,20 +47,25 @@ test('processes on Linux: /proc gives each command line with its environment; ou
   put(path.join(proc, 'self', 'cmdline'), 'x');
   const r = await K.processes(ctx({}, { platform: 'linux', proc }));
   assert.equal(r.error, null);
-  assert.deepEqual(r.lines, ['101 python3 -m worker HOME=/srv PRIVCOLLECT_ACTIVE=1', '102 /usr/bin/mylovelyminer --x']);
+  assert.deepEqual(r.list, [{ pid: 101, cmd: 'python3 -m worker', env: 'HOME=/srv PRIVCOLLECT_ACTIVE=1' }, { pid: 102, cmd: '/usr/bin/mylovelyminer --x', env: null }]);
   const none = await K.processes(ctx({}, { platform: 'linux', proc: path.join(ROOT, 'no-proc') }));
   assert.match(none.error, /^\/proc can't be read/);
 });
 
-test('processes: a real process with a marker in its environment is seen (ps on macOS, /proc on Linux)', async () => {
-  const marker = `STEWARD_IOC_PROBE_${crypto.randomBytes(6).toString('hex')}`;
-  const child = spawn('sleep', ['30'], { env: { ...process.env, [marker]: '1' }, stdio: 'ignore' });
+test('processes: a real process\'s command line is seen everywhere; its environment on Linux, and on macOS never (it doesn\'t show it)', async () => {
+  const tag = crypto.randomBytes(6).toString('hex');
+  const arg = `steward-ioc-probe-${tag}`, env = `STEWARD_IOC_PROBE_${tag}`;
+  const child = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 30000)', arg], { env: { ...process.env, [env]: '1' }, stdio: 'ignore' });
   try {
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise(r => setTimeout(r, 300));
     const run = async (cmd, args = []) => { const p = spawnSync(cmd, args, { encoding: 'utf8' }); return { status: p.error ? 127 : p.status, stdout: p.stdout || '' }; };
     const r = await K.processes(ctx({}, { platform: PL.current(), run }));
     assert.equal(r.error, null);
-    assert.ok(r.lines.some(l => l.startsWith(`${child.pid} `) && l.includes(marker)), `pid ${child.pid} with ${marker} among ${r.lines.length} processes`);
+    const me = r.list.find(p => p.pid === child.pid);
+    assert.ok(me, `pid ${child.pid} among ${r.list.length} processes`);
+    assert.ok(me.cmd.includes(arg), me.cmd);
+    if (PL.current() === 'linux') assert.ok(me.env && me.env.includes(`${env}=1`), 'Linux: its environment, from /proc');
+    else assert.equal(me.env, null, 'macOS: no environment (confirmed on macOS 27.2, 2026-11-02)');
   } finally { child.kill(); }
 });
 
@@ -102,4 +107,47 @@ test('Python packages: site-packages and dist-packages, under the system, per-us
   const find = c.calls.find(k => k.startsWith('find '));
   assert.ok(find.includes('-path */site-packages/cook.pth -o -path */dist-packages/cook.pth'), find);
   assert.deepEqual(r.alerts, [`LiteLLM: ${sys}/usr/lib/python3/dist-packages/cook.pth`]);
+});
+
+// a fake /proc with one process: the given command line and environment
+function oneProc(name, cmdline, environ) {
+  const proc = path.join(ROOT, name);
+  put(path.join(proc, '201', 'cmdline'), cmdline.split(' ').join('\0'));
+  if (environ !== undefined) put(path.join(proc, '201', 'environ'), environ.split(' ').join('\0'));
+  return proc;
+}
+
+test('environment markers: matched in the environment only; a processes marker matches the command line only', async () => {
+  const proc = oneProc('proc-env', 'python3 worker.py', 'HOME=/srv PRIVCOLLECT_ACTIVE=1');
+  const ioc = [{ name: 'Env', _source: 'default', environment: ['PRIVCOLLECT_ACTIVE'] }, { name: 'Cmd', _source: 'default', processes: ['PRIVCOLLECT_ACTIVE'] }];
+  const w = lines();
+  const r = await audit(ctx({ 'docker info': { status: 1, stdout: '' } }, { platform: 'linux', proc, policy: { ioc } }), { only: ['ioc'], write: w.write });
+  assert.deepEqual(r.alerts, ["Env: process environment matching 'PRIVCOLLECT_ACTIVE' (pid 201)"]);
+  assert.ok(w.out.includes('  clean  Cmd (default)'), 'an environment variable is not a command line');
+});
+
+test('environment markers on macOS: "not fully checked", never "clean"; the IOC\'s other markers still checked', async () => {
+  const ioc = [{ name: 'LiteLLM', _source: 'default', environment: ['PRIVCOLLECT_ACTIVE'], processes: ['remote_code_loader'] }];
+  const w = lines();
+  const r = await audit(ctx({ 'docker info': { status: 1, stdout: '' }, 'ps -axeww -o pid=,command=': '  301 /usr/bin/python3 remote_code_loader\n' }, { policy: { ioc } }), { only: ['ioc'], write: w.write });
+  assert.deepEqual(r.alerts, ["LiteLLM: process matching 'remote_code_loader'"]);
+  assert.deepEqual(r.actions, [], 'a platform limit is no action');
+  const w2 = lines();
+  await audit(ctx({ 'docker info': { status: 1, stdout: '' }, 'ps -axeww -o pid=,command=': '  1 /sbin/launchd\n' }, { policy: { ioc } }), { only: ['ioc'], write: w2.write });
+  assert.ok(w2.out.includes("  info   LiteLLM (default): not fully checked: environment (macOS doesn't show process environments)"), w2.out.join('\n'));
+});
+
+test('the coverage line: what the sweep can and can\'t see on this machine, in one format on every platform', async () => {
+  const home = path.join(ROOT, 'cov-home');
+  fs.mkdirSync(path.join(home, 'Library', 'Python', '3.12'), { recursive: true });
+  const w = lines();
+  await audit(ctx({ 'docker info': { status: 1, stdout: '' }, 'ps -axeww -o pid=,command=': '  1 /sbin/launchd\n' }, { home }), { only: ['ioc'], write: w.write });
+  assert.ok(w.out.includes("  info   coverage here: files ✓ · command lines ✓ · environments ✗ (macOS doesn't show them) · Python packages ✓ (1 folder) · Docker images ✗ (not running)"), w.out.join('\n'));
+  const proc = oneProc('proc-cov', 'bash', 'HOME=/srv');
+  const w2 = lines();
+  await audit(ctx({ 'docker info': '', 'docker images --digests --format {{.Digest}}': '' }, { platform: 'linux', proc, home: path.join(ROOT, 'empty-home'), sysroot: path.join(ROOT, 'empty-sys') }), { only: ['ioc'], write: w2.write });
+  assert.ok(w2.out.includes('  info   coverage here: files ✓ · command lines ✓ · environments ✓ (your processes; others need root) · Python packages ✗ (no Python folders found) · Docker images ✓'), w2.out.join('\n'));
+  const w3 = lines();
+  await audit(ctx({ 'docker info': { status: 1, stdout: '' } }, { platform: 'linux', proc: path.join(ROOT, 'no-proc-here'), home: path.join(ROOT, 'empty-home') }), { only: ['ioc'], write: w3.write });
+  assert.ok(w3.out.some(l => l.startsWith("  info   coverage here: files ✓ · command lines ✗ (/proc can't be read") && l.includes("environments ✗ (/proc can't be read")), w3.out.join('\n'));
 });
