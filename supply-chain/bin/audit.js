@@ -100,18 +100,19 @@ async function audit(ctx, o = {}) {
     if (!c.platforms.includes(ctx.platform)) { skipped.push(c.id); continue; }
     // this check's lines: printed as they come (plain), or kept and printed under its row (ui): its other lines, then
     // its findings in columns
-    const mine = { actions: 0, alerts: 0, held: 0, lines: [], findings: [] };
-    const PLAIN = { line: '  ', ok: '  ok     ', held: '  held   ', info: '  info   ', clean: '  clean  ', action: '  \x1b[1;33mACTION\x1b[0m ', alert: '  \x1b[1;31mALERT\x1b[0m ' };
-    const SHOWN = { ok: ['ok', '32'], clean: ['ok', '32'], held: ['held', '2'], info: ['info', '2'], line: [null, '2'], action: ['warn', '33'], alert: ['fail', '31'] };
+    const mine = { actions: 0, alerts: 0, held: 0, lines: [], notes: [], findings: [] };
+    const PLAIN = { line: '  ', ok: '  ok     ', held: '  held   ', info: '  info   ', note: '  info   ', clean: '  clean  ', action: '  \x1b[1;33mACTION\x1b[0m ', alert: '  \x1b[1;31mALERT\x1b[0m ' };
+    const SHOWN = { ok: ['ok', '32'], clean: ['ok', '32'], held: ['held', '2'], info: ['info', '2'], note: ['info', '2'], line: [null, '2'], action: ['warn', '33'], alert: ['fail', '31'] };
     const emit = (kind, t, facts) => {
       if (!u) { write(`${PLAIN[kind]}${t}`); return; }
       if (kind === 'action' || kind === 'alert' || kind === 'held') { mine.findings.push({ kind, text: strip(t), facts }); return; }
       const [sym, col] = SHOWN[kind];
-      const body = kind === 'line' || kind === 'info' || kind === 'held' ? u.paint('2', u.cut(strip(t), u.cols() - 8)) : u.cut(strip(t), u.cols() - 8);
-      mine.lines.push(`      ${sym ? `${u.paint(col, u.sym[sym])} ` : '  '}${body}`);
+      const body = kind === 'line' || kind === 'info' || kind === 'note' || kind === 'held' ? u.paint('2', u.cut(strip(t), u.cols() - 8)) : u.cut(strip(t), u.cols() - 8);
+      (kind === 'note' ? mine.notes : mine.lines).push(`      ${sym ? `${u.paint(col, u.sym[sym])} ` : '  '}${body}`);
     };
     const out = {
-      line: t => emit('line', t), ok: t => emit('ok', t), held: (t, f) => { mine.held++; emit('held', t, f); }, info: t => emit('info', t), clean: t => emit('clean', t),
+      // note: an info line the terminal view never folds away (what the check could not see, parity 0.4)
+      line: t => emit('line', t), note: t => emit('note', t), ok: t => emit('ok', t), held: (t, f) => { mine.held++; emit('held', t, f); }, info: t => emit('info', t), clean: t => emit('clean', t),
       action: (t, f) => { actions.push(t); found.push({ kind: 'action', text: t, facts: f }); mine.actions++; emit('action', t, f); },
       alert: t => { alerts.push(t); found.push({ kind: 'alert', text: t }); mine.alerts++; emit('alert', t); },
       warn: t => process.stderr.write(`\x1b[1;33mWARN\x1b[0m ${t}\n`),
@@ -135,7 +136,7 @@ async function audit(ctx, o = {}) {
       const fix = f => (f.facts && f.facts.fix) || '';
       const list = ['alert', 'action', 'held'].flatMap(k => mine.findings.filter(f => f.kind === k).sort((a, b) => (k === 'action' ? fix(a).localeCompare(fix(b)) : 0)));
       const rows = u.rows(list.map(f => [{ text: u.sym[SYMS[f.kind][0]], color: SYMS[f.kind][1] }, ...cells(u, f, { note: true })]), { indent: 6 });
-      step.done(status, summary, [...(quiet ? [] : mine.lines), ...rows]);
+      step.done(status, summary, [...mine.notes, ...(quiet ? [] : mine.lines), ...rows]);
     }
   }
   if (u) {

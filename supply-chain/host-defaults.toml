@@ -52,7 +52,10 @@ name = "LiteLLM 1.107.0 PyPI/Docker backdoor (2026-10-21)"
 source = "https://github.com/advisories/GHSA-92x9-889m-jgmw"
 files = ["/tmp/.pc_once_72129118c59f5636c0bb", "/tmp/remote_code_loader.lock"]
 site_packages_files = ["cook.pth", "cook.py"]
-processes = ["PRIVCOLLECT_ACTIVE", "remote_code_loader", "cook.py"]
+# processes: words in a command line; environment: variables in a process's environment (checked on Linux; macOS
+# shows no process environment, so there the audit says "not fully checked")
+processes = ["remote_code_loader", "cook.py"]
+environment = ["PRIVCOLLECT_ACTIVE"]
 docker_digests = ["sha256:1bbcb1443bc962e45f5aad53fe3d2c30600e0379715fb6c664cdd3ac126c339e"]
 
 [[ioc]]

@@ -59,7 +59,7 @@ test('merge: an entry with platforms holds only there; one without holds everywh
   const defaults = {
     always_current: ['firefox', { name: 'google-chrome', platforms: ['macos'] }],
     vendored_node: [{ path: '/Applications/X.app/node', platforms: ['macos'] }, { path: '/opt/x/node', platforms: ['linux'] }],
-    ioc: [{ name: 'everywhere' }, { name: 'mac only', platforms: ['macos'] }],
+    ioc: [{ name: 'everywhere', files: ['/x'] }, { name: 'mac only', platforms: ['macos'], files: ['/x'] }],
   };
   const mine = { security_exception: [{ kind: 'formula', name: 'a' }, { kind: 'formula', name: 'b', platforms: ['linux'] }], off: { always_current: ['google-chrome'] } };
   const mac = merge(defaults, mine, 'macos');
@@ -79,7 +79,7 @@ test('merge: an entry with platforms holds only there; one without holds everywh
 test('merge: families narrows a Linux entry to those families; it needs platforms = ["linux"] beside it (parity 0.1, D63)', () => {
   const defaults = {
     vendored_node: [{ path: '/run/current-system/sw/bin/node', platforms: ['linux'], families: ['nixos'] }, { path: '/opt/x/node', platforms: ['linux'] }],
-    ioc: [{ name: 'debian only', platforms: ['linux'], families: ['debian'] }, { name: 'bare', families: ['rhel'] }, { name: 'typo', platforms: ['linux'], families: ['debain'] }],
+    ioc: [{ name: 'debian only', platforms: ['linux'], families: ['debian'], files: ['/x'] }, { name: 'bare', families: ['rhel'], files: ['/x'] }, { name: 'typo', platforms: ['linux'], families: ['debain'], files: ['/x'] }],
   };
   const nix = merge(defaults, {}, 'linux', 'nixos');
   assert.deepEqual(nix.policy.vendored_node, ['/run/current-system/sw/bin/node', '/opt/x/node']);

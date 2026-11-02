@@ -313,3 +313,12 @@ test('apps: an app is not compared with another product\'s cask of the same name
   assert.ok(!w.out.some(l => l.includes('held')), w.out.join('\n'));
   assert.ok(w.out.includes('  info   Copilot (com.microsoft.m365copilot): cask copilot-money is another app of that name (com.copilot.production); not compared'), w.out.join('\n'));
 });
+
+test('terminal: the IOC coverage line and a "not fully checked" line show without --verbose (a gap is never folded away, parity 0.4)', async () => {
+  const c = ctx({ 'docker info': { status: 1, stdout: '' }, 'ps -axeww -o pid=,command=': '  1 /sbin/launchd\n' });
+  c.policy.ioc = [{ name: 'Env marker', _source: 'default', environment: ['PRIVCOLLECT_ACTIVE'] }];
+  const out = await tty(c, ['ioc']);
+  assert.ok(out.some(l => l.includes('coverage here: files ✓') && l.includes("environments ✗ (macOS doesn't show them)")), out.join('\n'));
+  assert.ok(out.some(l => l.includes("Env marker (default): not fully checked: environment (macOS doesn't show process environments)")), out.join('\n'));
+  assert.ok(!out.some(l => l.includes('have more lines')), 'nothing else was folded');
+});
