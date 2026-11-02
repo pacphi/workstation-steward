@@ -35,6 +35,8 @@ test('validate: names what is wrong with a row or the mise pin', () => {
     'mise: sha256.arm64 must be 64 hex characters',
     'mise: sha256.x64 must be 64 hex characters',
   ]);
+  const exc = { rows: [{ id: 'tw', family: 'suse', image: `opensuse/tumbleweed:latest@sha256:${'a'.repeat(64)}`, gate_exception: { why: 'w', decided: 'owner' } }], mise: { version: '1', sha256: { arm64: 'a'.repeat(64), x64: 'b'.repeat(64) } } };
+  assert.deepEqual(L.validate(exc), ['tw: gate_exception needs why, decided and expires (YYYY-MM-DD)'], 'an exception to the release-age gate says why, who and until when');
 });
 
 test('the mise in the images is the mise the CI workflows pin', () => {
