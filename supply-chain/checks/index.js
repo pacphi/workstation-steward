@@ -208,12 +208,16 @@ const CHECKS = [
       for (const u of list) {
         const cls = U.classOf(u, ctx.today);
         const off = U.selfUpdate(u);
-        if (!off.ok) out.action(`${u.name}: its own updater isn't off (${u.self_update_off.file} = ${off.have}); set it to ${u.self_update_off.value}`, { fix: FIX.selfUpdate(u.name), name: `${u.name} self-update`, have: off.have, want: String(u.self_update_off.value) });
+        if (!off.ok) out.action(`${u.name}: its own updater isn't off (${off.where} = ${off.have}); set ${off.want.includes(' = ') ? off.want : `it to ${off.want}`}`, { fix: FIX.selfUpdate(u.name), name: `${u.name} self-update`, have: off.have, want: off.want });
         const pin = U.pinState(u);
         if (!pin.ok) { out.action(`${u.name}: ${pin.why}; review the new key, then update the pin in a config-repo PR`, { fix: FIX.pin, name: u.name, note: 'signing key changed' }); continue; }
-        const c = await U.check(u, ctx.run);
-        if (c.state === 'current') out.ok(`${u.name} (${cls}, ${u._source}): up to date`);
-        else if (c.state === 'unknown') out.info(`${u.name}: its check couldn't tell (exit ${c.status})`);
+        if (U.dated(u) && ctx.detail) ctx.detail(`${u.name}: release dates`);
+        const c = await U.check(u, ctx.run, { minDays: cls === 'gated' ? minAge(ctx) : 0, now: ctx.now });
+        const also = [c.waiting ? `${c.waiting} waits until ${c.waitingClears}` : '', c.major ? `${c.major} is a new major: yours to take` : ''].filter(Boolean).join('; ');
+        if (c.state === 'current') out.ok(`${u.name} (${cls}, ${u._source}): up to date${c.installed ? ` at ${c.installed}` : ''}${also ? `; ${also}` : ''}`);
+        else if (c.state === 'young') out.held(`${u.name} (${cls}): ${c.out}`, { name: u.name, have: c.installed, note: 'installed early' });
+        else if (c.state === 'unknown') out.info(`${u.name}: its check couldn't tell (${U.dated(u) ? c.out : `exit ${c.status}`})`);
+        else if (cls === 'gated' && U.dated(u)) out.action(`${u.name}: ${c.out}`, { fix: FIX.upgrade, name: u.name, have: c.installed, want: c.target, note: 'gated, dated' });
         else if (cls === 'gated') out.held(`${u.name} (gated): behind; a declared source has no release date, so it waits for you`, { name: u.name, note: 'gated' });
         else out.action(`${u.name}: behind (${cls}: ${U.SKIPS[cls]})`, { fix: FIX.upgrade, name: u.name, note: cls });
       }

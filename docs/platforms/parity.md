@@ -240,7 +240,7 @@ Stage: Under way (0.1 to 0.7, and 0.9, done; 0.8 is left).
   byte-identical. Since the doctor can't report a missing `libatomic` (Node won't start), `docs/prereqs.md` gives a
   first-run order per family that installs it first. A follow-up (#95): a required mise tool missing from your own
   `mise/config.toml` gets the line to add, by hand, instead of an install that won't stick (owner, 2026-11-02).
-- [x] **0.7 Words, and the RuVector add-on name** (#97, D72). Messages say "this machine" (owner, 2026-11-02); the
+- [x] **0.7 Words, and the RuVector add-on name** (#97, D73). Messages say "this machine" (owner, 2026-11-02); the
   audit's "Next:" line and the vulns coverage name only what applies here; the help texts are platform-neutral; the
   add-on is named for this OS, CPU and C library, with none (not a failure) where RuVector ships none. Found and fixed
   on the way: a test file that ended early yet passed, and doctor tests that wrote receipts into the real state folder.
@@ -401,7 +401,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-02 | 12 | 0.7 done: the words, the per-platform lists, the RuVector add-on name (D72); Milestone 0 has only 0.8 left | #97 |
+| 2026-11-02 | 12 | 0.7 done: the words, the per-platform lists, the RuVector add-on name (D73); Milestone 0 has only 0.8 left | #97 |
 | 2026-11-02 | 11 | 0.6 follow-up: the doctor names a mise tool missing from your own toolchain | #95 |
 | 2026-11-02 | 10 | 0.6 done: steward doctor per platform (D69); the Linux first-run order | #91 |
 | 2026-11-02 | 9 | 0.5 done: distrusted roots found on Linux (D68); emSign still trusted in the Fedora 44 and Tumbleweed images, the first cases for 2.1 | #90 |

@@ -24,7 +24,8 @@
 # updater = ["brain-kb"]
 
 # Release classes (D52): each update source has one, and it says whether the source waits for the release-age gate.
-#   gated           the default: waits (a declared source has no release date, so one that's behind waits for you)
+#   gated           the default: waits (a declared source has no release date, so one that's behind waits for you,
+#                   unless it is dated: `released` below, D72)
 #   always_current  never held: nearly every release is a security release (the browsers in always_current above)
 #   signed_data     data, never code: signed by a key the updater pins, content-addressed, checked against the gated
 #                   runtime that reads it. Skips the gate, and starts no soak; its copies are kept for soak_days
@@ -47,6 +48,22 @@
 # file = "~/.local/share/some-tool/update.sh"
 # match = "-----BEGIN PUBLIC KEY-----[\\s\\S]*?-----END PUBLIC KEY-----"   # the text whose sha256 must match
 # sha256 = "<sha256 of that text>"
+#
+# A dated one (D72): a tool that installs itself, can install an exact version, and publishes dated releases. The
+# steward takes the newest version on the installed line that is past the gate; no check is needed.
+# [[updater]]
+# name = "some-cli"
+# when = "~/.local/share/some-cli/versions"
+# why = "what you reviewed: where its releases are dated, how it installs one version, where its checksums are"
+# installed = "readlink ~/.local/bin/some-cli"  # prints the version in use
+# released = { npm = "some-cli" }                # or { github = "owner/repo" }: its releases, drafts and prereleases left out
+# apply = "~/.local/bin/some-cli install {version}"   # {version}, {installed} and {platform} are filled in
+# verify = { url = "https://example.com/releases/{version}/manifest.json", json = "platforms.{platform}.checksum", file = "~/.local/share/some-cli/versions/{version}" }
+# backup = ["~/.local/bin/some-cli", "~/.local/share/some-cli/versions/{installed}"]   # a link is copied as a link
+# self_update_off = [   # any one holding is enough; key reads one JSON value (a dotted path)
+#   { file = "~/.some-cli.json", key = "autoUpdates", value = false },
+#   { file = "~/.some-cli/settings.json", key = "env.DISABLE_AUTOUPDATER", value = "1" },
+# ]
 
 # A version younger than the release-age gate is taken only when it is the first patched release for an advisory
 # listed in the GitHub Advisory DB, RustSec or OSV. Each entry names the exact version and expires.

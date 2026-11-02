@@ -180,6 +180,15 @@ mise's `trust_policy_excludes` takes exact versions only.
   your yes. It checks the key pin, copies the `backup` paths to
   `~/.local/state/workstation-steward/backups/updater-<name>-*` (an APFS clone on macOS), runs `apply`, and refuses
   unless the output says `require_output`. The receipt there holds what `check` printed before and after.
+- **ACTION `<name>: <have> -> <want> (published …, past the 3-day wait)`:** a dated source (D72, such as
+  `claude-code`). `steward sc upgrade` takes that exact version after your yes: it fetches the vendor's manifest, copies
+  the `backup` paths (a launcher link as a link), runs `apply` with the version filled in, and compares the installed
+  file's sha256 with the manifest's. A mismatch puts the copies back and fails.
+- **held `<name> (gated): <version> is installed, published …: it clears … at …`:** that version was installed before it
+  cleared the gate (by hand, or by the tool's own updater). Nothing is downgraded; the line goes once it clears. If its
+  own updater did it, see "its own updater isn't off" below.
+- **ok `… up to date at <version>; <newer> waits until …; <major> is a new major: yours to take`:** a dated source on
+  the newest version past the gate. A new major is never taken for you.
 - **held `<name> (gated)`:** a declared source has no release date, so the plan never takes it. Read the tool's own
   release notes and run its updater yourself when it's past the gate.
 - **ACTION `the signing key … hashes to …`:** the key the updater checks bundles with is not the one reviewed. Stop.
@@ -187,7 +196,9 @@ mise's `trust_policy_excludes` takes exact versions only.
   engine's `host-defaults.toml` for a shipped default, your `host.toml` for yours). If an apply brought the new key,
   the steward has already put the reviewed updater back.
 - **ACTION `its own updater isn't off`:** the tool can take releases behind the steward's back. Set the file named
-  in `self_update_off` back to its value.
+  in `self_update_off` back to its value. With several, any one is enough: for Claude Code, `"autoUpdates": false` in
+  `~/.claude.json`, or `"env": {"DISABLE_AUTOUPDATER": "1"}` in `~/.claude/settings.json` (where `claude install`
+  moves it).
 - **info `its check couldn't tell`:** usually offline. Nothing is taken; run the audit again later.
 
 If an apply fails, the receipt says why and how to go back: `steward sc rollback <receipt>`. For Brain, an old updater
@@ -200,6 +211,10 @@ can fail on a newer bundle; update the runtime first (it's gated), then try agai
    against the installed runtime before it lands, and it refuses an older generation.
 2. Write the entry in your `host.toml` (the example in `examples/supply-chain/host.toml` lists every field). `why`
    records what you reviewed: who signs it, how the updater checks it, and why the gate can't apply.
+   A tool that installs itself and can install an exact version is `gated` and **dated** instead: `installed`
+   prints the version in use, `released` names its dated releases (`{ npm = "<package>" }` or
+   `{ github = "<owner>/<repo>" }`), `apply` says `{version}`, and `verify` names the vendor's checksum manifest, which
+   stands in for `require_output` and the pin (steps 3 and 4).
 3. Find the text that `require_output` must match in the updater's own output for its normal source, so a fallback
    to a pinned or moving source is refused.
 4. Pin the key: `pin.match` finds the key's text in the updater, and `pin.sha256` is the sha256 of that text.

@@ -103,6 +103,8 @@ Every update source has one **release class** (D52, [`release-classes.md`](../do
 Sources the steward doesn't install itself are declared as `[[updater]]` entries: `steward sc audit` runs each
 `check`, `steward sc plan` lists what `upgrade` would apply and why, and `steward sc upgrade` copies the `backup`
 paths, runs `apply`, refuses unless `require_output` appears, stops if the signing key changed, and writes a receipt.
+A **dated** one (D72) names where its release dates are published, so a `gated` source is applied too, once its
+newest version is past the gate, and checked against its vendor's sha256: Claude Code's native build ships as one.
 The schema is in [`examples/supply-chain/host.toml`](../examples/supply-chain/host.toml).
 
 ## Distrusted roots

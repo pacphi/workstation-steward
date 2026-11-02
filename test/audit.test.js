@@ -196,6 +196,18 @@ test('updaters: behind is an action when its class skips the gate and held when 
   assert.ok(none.out.includes('  none active here'));
 });
 
+test('updaters: a dated one behind is an action with its versions, one installed early is held until it clears, a newer major is named (D72)', async () => {
+  const t = h => new Date(NOW.getTime() - h * 3600e3).toISOString();
+  const times = JSON.stringify({ '1.0.0': t(300), '1.0.1': t(100), '1.0.2': t(5), '2.0.0': t(200) });
+  const u = (name, extra = {}) => ({ name, class: 'gated', _source: 'default', why: 'w', installed: `ver-${name}`, released: { npm: 'p' }, apply: 'a {version}', backup: ['b'], ...extra });
+  const c = ctx({ 'npm view p time --json': times, 'bash -c ver-old': '1.0.0', 'bash -c ver-early': '1.0.2', 'bash -c ver-fine': '1.0.1' }, { policy: { updater: [u('old'), u('early'), u('fine')] } });
+  const w = lines();
+  const r = await audit(c, { only: ['updaters'], write: w.write });
+  assert.deepEqual(r.actions, ['old: 1.0.0 -> 1.0.1 (published 2026-10-23 08:00 UTC, past the 3-day wait)']);
+  assert.ok(w.out.includes('  held   early (gated): 1.0.2 is installed, published 2026-10-27 07:00 UTC: it clears the 3-day wait at 2026-10-30 07:00 UTC'));
+  assert.ok(w.out.includes('  ok     fine (gated, default): up to date at 1.0.1; 1.0.2 waits until 2026-10-30 07:00 UTC; 2.0.0 is a new major: yours to take'));
+});
+
 test('platforms: on Linux the macOS-only checks are skipped, trust is not; Homebrew formulae still run where brew is', async () => {
   const c = ctx({ ...BREW, 'brew list --formula --versions': '', 'brew list --formula --full-name': '' }, { platform: 'linux' });
   const w = lines();

@@ -87,6 +87,26 @@ match = "-----BEGIN PUBLIC KEY-----[\\s\\S]*?-----END PUBLIC KEY-----"
 sha256 = "ee12cea9da10accad46fe3a562fb392a54870576347ee99d87425d428709f103"
 watch = "https://raw.githubusercontent.com/stuinfla/ruvnet-brain/main/kb/forge-update.mjs"   # the maintainer's weekly watch
 
+# A dated entry (D72) names where its release dates are published, so a gated one is applied too: the newest version on
+# the installed line that is past the release-age gate. It has no check; `installed` prints the version in use, and
+# {version}, {installed} and {platform} are filled in. `verify` compares the installed file with the sha256 its vendor
+# publishes for this platform; a mismatch puts back what the apply replaced.
+[[updater]]
+name = "claude-code"
+class = "gated"
+when = "~/.local/share/claude/versions"   # the native install; an npm or Homebrew one updates through those
+why = "Claude Code's native build installs any exact version (`claude install <version>`) and keeps old ones beside it, but its own updater takes the newest the day it ships. Its releases are dated on npm and each build's sha256 is in Anthropic's manifest, so it waits out the gate like the tools mise installs. Reviewed 2026-11-02 at 2.1.316"
+installed = "basename \"$(readlink ~/.local/bin/claude)\""   # the link names the version: …/versions/2.1.316
+released = { npm = "@anthropic-ai/claude-code" }
+apply = "~/.local/share/claude/versions/{installed} install {version}"
+verify = { url = "https://downloads.claude.ai/claude-code-releases/{version}/manifest.json", json = "platforms.{platform}.checksum", file = "~/.local/share/claude/versions/{version}" }
+backup = ["~/.local/bin/claude", "~/.local/share/claude/versions/{installed}"]   # the link and the build it points to
+# its own updater off: either switch counts, since `claude install` moves autoUpdates into settings.json's env
+self_update_off = [
+  { file = "~/.claude.json", key = "autoUpdates", value = false },
+  { file = "~/.claude/settings.json", key = "env.DISABLE_AUTOUPDATER", value = "1" },
+]
+
 # Where `steward sc vulns` (and the audit's vulns check) reads known vulnerabilities from (D70). Data, never code: each
 # feed is a kind the engine knows how to read. Your host.toml adds one (an OSV mirror, or a folder of your own OSV
 # records), replaces one of these by name, or turns one off with [off] advisory_feed = ["kev"].
