@@ -358,8 +358,8 @@ const CHECKS = [
         out.action(`vuln: ${tool}: ${ids.length} serious advisor${ids.length === 1 ? 'y' : 'ies'} in ${pkgs} package(s) inside it (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? ` and ${ids.length - 3} more` : ''}); ${when} (steward sc vulns --verbose lists them)${owner}${iso ? `; exploited or critical with no fix: ${iso}` : ''}`,
           { fix: iso || 'update the tool that bundles it, when a release carries the fix', name: tool, note: `${ids.length} in ${pkgs} package(s)` });
       }
-      if (shown.some(f => serious(f) && f.pkg.top && V.fixCommand(f) && !isOwned(f.pkg.tool))) out.line('steward sc vulns-fix takes every fix named above in one plan (and old installs that carry serious advisories)');
-      for (const c of inv.coverage || []) if (c.failed) out.action(`vuln-feed: ${c.source} ${c.text}`); else out.info(`coverage: ${c.source}: ${c.text}`);
+      if (shown.some(f => serious(f) && f.pkg.top && V.fixCommand(f) && !isOwned(f.pkg.tool))) (out.keep || out.line)('steward sc vulns-fix takes every fix named above in one plan (and old installs that carry serious advisories)');
+      for (const c of inv.coverage || []) if (c.failed) out.action(`vuln-feed: ${c.source} ${c.text}`); else (out.keep || out.info)(`coverage: ${c.source === 'elsewhere' ? '' : `${c.source}: `}${c.text}`);
       if (inv.uncovered.length && s.list_not_covered) out.info(`not covered (no advisory ecosystem; not the same as clean): ${inv.uncovered.join(', ')}`);
       const nSerious = shown.filter(serious).length;
       const line = `${new Set(inv.packages.map(p => `${p.ecosystem}\0${p.name}\0${p.version}`)).size} package version(s) in ${inv.covered.length} tool(s), checked with ${checked.join(', ') || 'no feed'}: ${nSerious} serious (${s.action_severity} and up${s.exploited_always_action ? ', or exploited' : ''}), ${shown.length - nSerious} other`;
