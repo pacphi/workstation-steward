@@ -78,7 +78,7 @@ async function plan(ctx, o = {}) {
     const fixed = b.list.map(x => x.fixed).filter(Boolean).sort(V.cmpVer).pop();
     const what = `${b.tool} ${b.version}: ${few(b.list.map(x => x.id))}`;
     if (fixed) p.handed.push(`${what}, fixed in ${fixed}: a security_exception of kind formula, then steward sc upgrade`);
-    else p.held.push(`${what}: ${b.list.some(x => x.upstream) ? 'fixed upstream, in no release yet' : 'no fixed release yet'}`);
+    else p.held.push(`${what}: ${b.list.some(x => x.upstream) ? 'fixed upstream, unreleased' : 'no fixed release yet'}`);
   }
   // a fix across a major (or a 0.x minor) is deliberate: handed over with its command unless [vulns] fix_majors = "take"
   for (const u of byTool.values()) {
