@@ -232,15 +232,15 @@ test('host.toml: advisory_feed merges with the engine\'s defaults and [off]; bad
   };
   const { policy, warnings } = H.merge(defaults, mine, 'macos', null);
   assert.deepEqual(policy.advisory_feed.map(f => f.name), ['osv', 'nodejs', 'mirror']);
-  assert.ok(warnings.some(w => /advisory_feed bad \(yours\): kind must be osv-api, osv-dir, nodejs, kev; left out/.test(w)), warnings.join('\n'));
+  assert.ok(warnings.some(w => /advisory_feed bad \(yours\): kind must be osv-api, osv-dir, nodejs, kev, epss, eol; left out/.test(w)), warnings.join('\n'));
   assert.ok(warnings.some(w => /advisory_feed plain \(yours\): url must start with https:\/\//.test(w)));
   assert.deepEqual(policy.advisory_ignore.map(e => e.id), ['GHSA-x']);
   assert.ok(warnings.some(w => /advisory_ignore GHSA-y: needs version; left out/.test(w)));
 });
 
-test('the engine\'s defaults ship the osv, nodejs and kev feeds, each usable', () => {
+test('the engine\'s defaults ship the osv, nodejs, kev, epss and endoflife feeds, each usable', () => {
   const { policy, warnings } = H.merge(JSON.parse(require('child_process').execFileSync('yq', ['-p', 'toml', '-o', 'json', '.', H.DEFAULTS_FILE], { encoding: 'utf8' })), {}, 'macos', null);
-  assert.deepEqual(policy.advisory_feed.map(f => `${f.name}:${f.kind}`), ['osv:osv-api', 'nodejs:nodejs', 'kev:kev']);
+  assert.deepEqual(policy.advisory_feed.map(f => `${f.name}:${f.kind}`), ['osv:osv-api', 'nodejs:nodejs', 'kev:kev', 'epss:epss', 'endoflife:eol']);
   assert.deepEqual(warnings.filter(w => w.includes('advisory')), []);
 });
 
@@ -265,7 +265,8 @@ test('[vulns] settings: defaults, overrides key by key, and a wrong kind or unkn
   assert.equal(values.unrated, 'moderate');
   assert.equal(values.parallel, V.SETTINGS.parallel);
   assert.equal(values.inside_tools, true);
-  assert.deepEqual(problems, ['parallel must be a whole number from 1 to 32', 'inside_tools must be true or false', 'unknown key colour (action_severity, unrated, exploited_always_action, inside_tools, hybrids, list_not_covered, batch_size, parallel, timeout_seconds)']);
+  assert.deepEqual(problems.slice(0, 2), ['parallel must be a whole number from 1 to 32', 'inside_tools must be true or false']);
+  assert.match(problems[2], /^unknown key colour \(action_severity, unrated, .*epss_action_percentile\)$/);
   const { policy, warnings } = H.merge({ vulns: { action_severity: 'high', batch_size: 500 } }, { vulns: { action_severity: 'moderate', batch_size: 0 } }, 'macos', null);
   assert.equal(policy.vulns.action_severity, 'moderate');
   assert.equal(policy.vulns.batch_size, 500);
@@ -284,7 +285,7 @@ test('[vulns] settings change what is an action and what is looked at', async ()
   // only the tools themselves: nothing inside is looked at, so only the tool's own advisory is found
   text = (await plain(ctx(m, {}, { policy: policy({ inside_tools: false, hybrids: false, list_not_covered: false }) }))).out.join('\n');
   assert.match(text, /ACTION vuln: npm:cooltool 2\.0\.0: GHSA-aaaa/);
-  assert.doesNotMatch(text, /leftish|hybridy|not covered/);
+  assert.doesNotMatch(text, /leftish|hybridy|not covered \(no advisory/);
   // the request timeout reaches curl
   await plain(ctx(m, {}, { policy: policy({ timeout_seconds: 9 }) }));
   assert.ok(base.seen.length === 0);
@@ -292,4 +293,116 @@ test('[vulns] settings change what is an action and what is looked at', async ()
   await plain(c);
   assert.ok(c.seen.some(x => x.startsWith('curl -fsS -m 9 ')));
   assert.ok(c.seen.filter(x => x.endsWith('/querybatch')).length >= 3, 'one package version per request');
+});
+
+const SRC = require('../lib/vulnsources.js');
+const FD = require('../lib/vulnfeeds.js');
+
+test('purl: the Package-URL of each ecosystem (ECMA-427)', () => {
+  assert.equal(SRC.purl('npm', '@scope/x', '1.2.3'), 'pkg:npm/%40scope/x@1.2.3');
+  assert.equal(SRC.purl('PyPI', 'Python_Multipart', '0.0.5'), 'pkg:pypi/python-multipart@0.0.5');
+  assert.equal(SRC.purl('Go', 'github.com/cli/cli/v2', '2.83.0'), 'pkg:golang/github.com/cli/cli/v2@v2.83.0');
+  assert.equal(SRC.purl('Go', 'stdlib', '1.27.3'), 'pkg:golang/stdlib@1.27.3');
+  assert.equal(SRC.purl('crates.io', 'time', '0.1.40'), 'pkg:cargo/time@0.1.40');
+  assert.equal(SRC.purl('eol', 'nodejs', '25'), '');
+});
+
+test('Go build info: the main module, each dependency (replacements followed) and Go itself', () => {
+  const b = SRC.buildInfo('/x/gh: go1.27.3\n\tpath\tgithub.com/cli/cli/v2/cmd/gh\n\tmod\tgithub.com/cli/cli/v2\tv2.83.0\th1:x\n\tdep\tgolang.org/x/net\tv0.30.0\th1:y\n\tdep\tgithub.com/a/b\tv1.0.0\n\t=>\tgithub.com/c/b\tv1.0.1\th1:z\n\tbuild\t-trimpath=true\n');
+  assert.equal(b.go, '1.27.3');
+  assert.deepEqual(b.main, { name: 'github.com/cli/cli/v2', version: 'v2.83.0' });
+  assert.deepEqual(b.deps, [{ name: 'golang.org/x/net', version: 'v0.30.0' }, { name: 'github.com/c/b', version: 'v1.0.1' }]);
+  assert.equal(SRC.buildInfo('/x/script: not a Go program'), null);
+});
+
+test('inventory: a core tool that is a Go program is covered by its modules; Homebrew\'s own check comes in as found', async () => {
+  const m = machine('go-brew');
+  const ghDir = path.join(m.dir, 'installs', 'gh', '2.83.0');
+  put(path.join(ghDir, 'bin', 'gh'), 'x'.repeat(200000)); fs.chmodSync(path.join(ghDir, 'bin', 'gh'), 0o755);
+  m.ls.gh = [{ version: '2.83.0', install_path: ghDir, installed: true, active: true }];
+  const brew = { findings: [{ formula: 'libheif', version: '1.23.7', vulnerabilities: [{ id: 'GHSA-heif', severity: 'HIGH', summary: 's', aliases: ['CVE-2026-1'], fixed_versions: ['1.23.8'] }] }], skipped_formulae: ['jpeg'], checked: 9, complete: false };
+  const c = ctx(m);
+  const base = c.run;
+  c.run = async (cmd, args = []) => {
+    const k = [cmd, ...args].join(' ');
+    if (k === 'mise which go') return { status: 0, stdout: '/x/go\n' };
+    if (k === '/x/go version') return { status: 0, stdout: 'go version go1.27.3 darwin/arm64\n' };
+    if (cmd === '/x/go' && args[0] === 'version' && args[1] === '-m') return { status: 0, stdout: `${args[2]}: go1.27.3\n\tmod\tgithub.com/cli/cli/v2\tv2.83.0\th1:x\n\tdep\tgolang.org/x/net\tv0.30.0\th1:y\n` };
+    if (k === 'brew --version') return { status: 0, stdout: 'Homebrew 7.0.12\n' };
+    if (k === 'brew vulns --json') return { status: 1, stdout: JSON.stringify(brew) };
+    if (k === 'sw_vers -productVersion') return { status: 0, stdout: '27.2\n' };
+    return base(cmd, args);
+  };
+  const inv = await V.inventory(c);
+  assert.ok(inv.packages.some(p => p.tool === 'gh' && p.ecosystem === 'Go' && p.name === 'golang.org/x/net' && p.version === '0.30.0' && p.purl === 'pkg:golang/golang.org/x/net@v0.30.0'));
+  assert.ok(inv.packages.some(p => p.tool === 'gh' && p.name === 'stdlib' && p.version === '1.27.3'));
+  assert.ok(!inv.uncovered.includes('gh') && inv.uncovered.includes('aqua:cli/cli'));
+  assert.equal(inv.os, '27.2');
+  assert.deepEqual(inv.installs.map(i => i.tool).sort(), ['aqua:cli/cli', 'gh', 'node', 'npm:cooltool'], 'the install list, not mise\'s own');
+  assert.match(inv.coverage.find(x => x.source === 'mise').text, /^3 of 4 tools: 2 by package ecosystem, 1 by the modules their Go programs list; 1 not covered$/);
+  assert.match(inv.coverage.find(x => x.source === 'Homebrew').text, /^9 of 10 formulae \(1 skipped: .*\); casks not covered$/);
+  const { findings } = await V.lookup(c, FEEDS, inv);
+  const h = findings.find(f => f.id === 'GHSA-heif');
+  assert.equal(h.pkg.tool, 'brew libheif');
+  assert.equal(h.severity, 'high');
+  assert.equal(h.fixed, '1.23.8');
+});
+
+test('a malicious package (MAL-) is critical and serious whatever else it says', async () => {
+  const m = machine('mal');
+  REC['MAL-2026-1'] = { id: 'MAL-2026-1', summary: 'Malicious code in leftish', affected: [{ package: { ecosystem: 'npm', name: 'leftish' }, versions: ['1.2.3'] }] };
+  try {
+    const c = ctx(m);
+    const { findings } = await V.lookup(c, FEEDS, await V.inventory(c));
+    const f = findings.find(x => x.id === 'MAL-2026-1');
+    assert.equal(f.malicious, true);
+    assert.equal(f.severity, 'critical');
+    assert.ok(V.serious(f, V.settings({ action_severity: 'critical', exploited_always_action: false }).values));
+    const out = [];
+    await audit(c, { only: ['vulns'], write: x => out.push(x) });
+    assert.match(out.join('\n'), /MAL-2026-1 MALICIOUS PACKAGE/);
+  } finally { delete REC['MAL-2026-1']; }
+});
+
+test('EPSS: scores attach by CVE, rank the findings, and with epss_action_percentile make a likely one an action', async () => {
+  const m = machine('epss');
+  const feeds = [...FEEDS, { name: 'epss', kind: 'epss', url: 'https://epss.example/v1/epss' }];
+  const c = ctx(m);
+  const base = c.run;
+  const data = { data: [{ cve: 'CVE-2026-0001', epss: '0.9', percentile: '0.99', date: '2026-11-02' }, { cve: 'CVE-2026-0002', epss: '0.01', percentile: '0.30', date: '2026-11-02' }] };
+  c.run = async (cmd, args = []) => (cmd === 'curl' && String(args[args.length - 1]).startsWith('https://epss.example/v1/epss?cve=') ? { status: 0, stdout: JSON.stringify(data) } : base(cmd, args));
+  const { findings, failed } = await V.lookup(c, feeds, await V.inventory(c));
+  assert.deepEqual(failed, []);
+  assert.equal(findings.find(f => f.id === 'GHSA-aaaa-aaaa-aaaa').epss.percentile, 0.99);
+  const low = { severity: 'low', kev: false, epss: { percentile: 0.97 } };
+  assert.equal(V.serious(low), false);
+  assert.equal(V.serious(low, V.settings({ epss_action_percentile: 95 }).values), true);
+});
+
+test('end of life: a runtime or macOS past its cycle\'s end is a finding with the supported cycles; a current one is not', async () => {
+  const cycles = [{ cycle: '26', eol: '2029-04-30' }, { cycle: '25', eol: '2026-06-01' }, { cycle: '24', eol: '2028-04-30' }];
+  assert.equal(FD.cycleOf([{ cycle: '3.1' }, { cycle: '3.15' }], '3.15.2').cycle, '3.15');
+  assert.deepEqual(FD.productOf('java', 'liberica-25.0.5.0.3+5'), { product: 'bellsoft-liberica', version: '25.0.5.0.3+5' });
+  assert.equal(FD.productOf('gh', '2.0.0'), null);
+  const answers = { 'https://eol.example/api/nodejs.json': cycles, 'https://eol.example/api/macos.json': [{ cycle: '27', eol: false }, { cycle: '14', eol: '2026-09-14' }] };
+  const c = { today: '2026-11-02', run: async (_cmd, args) => { const u = args[args.length - 1]; return u in answers ? { status: 0, stdout: JSON.stringify(answers[u]) } : { status: 22, stdout: '' }; } };
+  const r = await FD.eol(c, { url: 'https://eol.example/api' }, { installs: [{ tool: 'node', version: '25.9.0' }, { tool: 'node', version: '26.12.1' }], os: '14.7.1' }, V.SETTINGS);
+  assert.deepEqual(r.hits.map(h => `${h.pkg.tool} ${h.record.id} ${h.record._severity} [${h.record._supported}]`), ['node EOL-nodejs-25 high [26,24]', 'macOS EOL-macos-14 high [27]']);
+  assert.equal(r.error, '');
+});
+
+test('Homebrew: a fix named only as an upstream commit is no release; an unrated finding takes its OSV record\'s rating', async () => {
+  const h = await SRC.homebrew({ run: async (_cmd, args) => (args[0] === '--version' ? { status: 0, stdout: 'Homebrew 7.0.12' } : { status: 1, stdout: JSON.stringify({ findings: [{ formula: 'tidy', version: '5.8.0', vulnerabilities: [{ id: 'CVE-2026-0001', severity: 'UNKNOWN', fixed_versions: ['a576687c0f981ceb4ae63752210254c05824d4ee'] }] }], skipped_formulae: [], checked: 1 }) }) }, { cmpVer: V.cmpVer });
+  assert.equal(h.hits[0].record._fixed, '');
+  assert.equal(h.hits[0].record._upstream, true);
+  const m = machine('brew-rate');
+  const c = ctx(m, { [`${OSV}/vulns/CVE-2026-0001`]: { id: 'CVE-2026-0001', severity: [{ type: 'CVSS_V3', score: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H' }] } });
+  const inv = await V.inventory(c);
+  inv.prematched = h.hits;
+  const { findings } = await V.lookup(c, FEEDS, inv);
+  const f = findings.find(x => x.id === 'CVE-2026-0001');
+  assert.equal(f.severity, 'critical');
+  assert.equal(f.upstream, true);
+  const out = [];
+  await audit(c, { only: ['vulns'], write: x => out.push(x) });
 });

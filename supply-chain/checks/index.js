@@ -309,7 +309,7 @@ const CHECKS = [
       if (!feeds.length) { out.action('vuln-feed: every advisory_feed is turned off in host.toml, so nothing was checked'); return; }
       detail(ctx, 'mise ls --json, and the packages inside each tool');
       const s = ctx.policy.vulns || V.SETTINGS;
-      const inv = await V.inventory(ctx, s);
+      const inv = await V.inventory(ctx, s, { say: t => detail(ctx, t) });
       const { findings, failed, checked } = await V.lookup(ctx, feeds, inv, t => detail(ctx, t), s);
       const serious = f => V.serious(f, s);
       for (const f of failed) out.action(`vuln-feed: ${f.feed} not checked (${f.error}); what it would have found is missing`, { fix: 'check the network or the feed, then steward sc vulns', name: f.feed, note: 'not checked' });
@@ -320,13 +320,23 @@ const CHECKS = [
         if (e) out.info(`ignored until ${e.expires}: ${f.id} in ${f.pkg.name} ${f.pkg.version} (${f.pkg.tool}): ${e.reason}`);
         else shown.push(f);
       }
-      const label = f => `${f.id} ${f.severity}${f.kev ? ', known exploited' : ''}`;
-      const fixedText = f => (f.fixed ? `fixed in ${f.fixed}` : 'no fixed release yet');
-      // the tool itself (and Node): one line each, with the command that takes the fix
-      for (const f of shown.filter(f => f.pkg.top)) {
-        const cmd = V.fixCommand(f) || (f.fixed && f.pkg.tool.startsWith('npm -g ') ? 'steward sc install-hybrids (after its version in hybrids.toml)' : '');
-        const text = `vuln: ${f.pkg.tool} ${f.pkg.version}: ${label(f)}, ${fixedText(f)} ${f.url}${cmd ? `: ${cmd}` : ''}`;
-        if (serious(f)) out.action(text, { fix: cmd || 'read the advisory: no fixed release yet', name: f.pkg.tool, have: f.pkg.version, want: f.fixed, note: label(f) });
+      const nth = n => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
+      const label = f => `${f.id} ${f.malicious ? 'MALICIOUS PACKAGE' : f.severity}${f.kev ? ', known exploited' : ''}${f.epss ? `, EPSS ${nth(Math.round(f.epss.percentile * 100))} percentile` : ''}`;
+      const fixedText = f => (f.pkg.ecosystem === 'eol' ? `supported: ${(f.supported || []).join(', ') || 'see the link'}` : f.fixed ? `fixed in ${f.fixed}` : f.upstream ? 'fixed upstream, in no release yet' : 'no fixed release yet');
+      const how = f => (f.pkg.ecosystem === 'Homebrew' ? (f.fixed ? 'steward sc plan, then steward sc upgrade (a security_exception of kind formula takes it before the gate)' : '')
+        : f.pkg.ecosystem === 'eol' ? '' : V.fixCommand(f) || (f.fixed && f.pkg.tool.startsWith('npm -g ') ? 'steward sc install-hybrids (after its version in hybrids.toml)' : ''));
+      // the tool itself (its own version, Node, a Homebrew formula, an end of life): one line per tool, its worst
+      // advisory first, with the command that takes the fix (the highest fixed version they name)
+      const own = shown.filter(f => f.pkg.top);
+      for (const tool of [...new Set(own.map(f => f.pkg.tool))]) {
+        const mine = own.filter(f => f.pkg.tool === tool);
+        const f = mine[0];
+        const fixed = mine.map(x => x.fixed).filter(Boolean).sort(V.cmpVer).pop() || '';
+        const g = { ...f, fixed, upstream: !fixed && mine.some(x => x.upstream) };
+        const cmd = how(g);
+        const more = mine.length > 1 ? ` and ${mine.length - 1} more (${mine.slice(1, 4).map(x => x.id).join(', ')}${mine.length > 4 ? ', …' : ''})` : '';
+        const text = `vuln: ${tool} ${f.pkg.version}: ${label(f)}${more}, ${fixedText(g)} ${f.url}${cmd ? `: ${cmd}` : ''}`;
+        if (mine.some(serious)) out.action(text, { fix: cmd || (f.pkg.ecosystem === 'eol' ? 'move to a supported release (a major is deliberate)' : 'read the advisory: no fixed release yet'), name: tool, have: f.pkg.version, want: fixed, note: label(f) });
         else out.info(text);
       }
       // packages inside a tool: listed one by one, and a tool's serious ones as one action
@@ -339,6 +349,7 @@ const CHECKS = [
         out.action(`vuln: ${tool}: ${ids.length} serious advisor${ids.length === 1 ? 'y' : 'ies'} in ${pkgs} package(s) inside it (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? ` and ${ids.length - 3} more` : ''}); update it when a release carries the fixes (steward sc vulns --verbose lists them)`,
           { fix: 'update the tool that bundles it, when a release carries the fix', name: tool, note: `${ids.length} in ${pkgs} package(s)` });
       }
+      for (const c of inv.coverage || []) if (c.failed) out.action(`vuln-feed: ${c.source} ${c.text}`); else out.info(`coverage: ${c.source}: ${c.text}`);
       if (inv.uncovered.length && s.list_not_covered) out.info(`not covered (no advisory ecosystem; not the same as clean): ${inv.uncovered.join(', ')}`);
       const nSerious = shown.filter(serious).length;
       const line = `${new Set(inv.packages.map(p => `${p.ecosystem}\0${p.name}\0${p.version}`)).size} package version(s) in ${inv.covered.length} tool(s), checked with ${checked.join(', ') || 'no feed'}: ${nSerious} serious (${s.action_severity} and up${s.exploited_always_action ? ', or exploited' : ''}), ${shown.length - nSerious} other`;
