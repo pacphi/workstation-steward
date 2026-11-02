@@ -91,3 +91,21 @@ jobs:
           [[ ${rc} == 0 ]] || { cat plan.txt; echo "sc plan exited ${rc}"; exit 1; }
           strip() { sed -E 's/\x1b\[[0-9;]*m//g' "$1"; }
           { echo "## Milestone 0 on ${where}"; for f in audit-plain.txt audit-brew.txt plan.txt; do echo; echo "### ${f}"; echo; echo '```text'; strip "$f"; echo '```'; done; } >> "$GITHUB_STEP_SUMMARY"
+
+  # The check main requires: it passes when every OS job did, so the required check stays `test` while jobs are added
+  # (the owner's idea, 2026-11-02). A skipped job counts (macOS is skipped on a private copy); at least one must pass.
+  test:
+    if: ${{ always() }}
+    needs: [test-macos, test-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every test job passed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "results: ${RESULTS}"
+          passed=0
+          for r in ${RESULTS}; do
+            case "${r}" in success) passed=1 ;; skipped) ;; *) echo "a test job ended ${r}"; exit 1 ;; esac
+          done
+          [[ ${passed} == 1 ]] || { echo "no test job passed"; exit 1; }

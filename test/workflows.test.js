@@ -19,7 +19,6 @@ test('test.yml: a Linux job on every PR (no private-copy guard), with the same s
   const runs = j.steps.map(s => s.run || '').join('\n');
   for (const c of ['mise install', 'npm ci --ignore-scripts --prefix tools/types', 'node bin/steward.js config', 'just test']) assert.ok(runs.includes(c), c);
   // each test job names its OS, so a check's name says where it ran (the owner, 2026-11-02)
-  assert.equal(t.jobs.test, undefined, 'no job named plain test');
   assert.equal(t.jobs['test-macos']['runs-on'], 'macos-latest', 'the macOS job stays, as test-macos');
   assert.ok(String(t.jobs['test-macos'].if).includes('private'), 'and keeps its guard');
 });
@@ -56,4 +55,21 @@ test('release.yml: the release is tested on Linux as well, and publish waits for
   const uses = JSON.stringify(r.jobs.publish);
   assert.ok(!/needs\.test\./.test(uses), 'publish reads the tag and commit from test-macos');
   assert.equal(r.jobs.publish['runs-on'], 'macos-latest', 'publish moves to Linux only at the release step (owner, 2026-11-02)');
+});
+
+test('test.yml: one job named test passes only when every OS job did, so main\'s required check stays test (the owner\'s idea, 2026-11-02)', () => {
+  const g = wf('test.yml').jobs.test;
+  assert.ok(g, 'a gate job named test');
+  assert.deepEqual([].concat(g.needs).sort(), ['test-linux', 'test-macos']);
+  assert.equal(g.if, '${{ always() }}', 'it runs even when a job it needs failed, and then fails itself');
+  assert.equal(g['runs-on'], 'ubuntu-latest');
+  const run = g.steps.map(s => s.run || '').join('\n');
+  assert.match(JSON.stringify(g.steps), /join\(needs\.\*\.result/, 'every job it needs, whatever is added later');
+  // its own script, run with each mix of results the jobs it needs can end in
+  const gate = results => require('child_process').spawnSync('bash', ['-c', run], { encoding: 'utf8', env: { ...process.env, RESULTS: results } }).status;
+  assert.equal(gate('success success'), 0);
+  assert.equal(gate('skipped success'), 0, 'a skipped job (macOS on a private copy) counts');
+  assert.notEqual(gate('success failure'), 0);
+  assert.notEqual(gate('cancelled success'), 0);
+  assert.notEqual(gate('skipped skipped'), 0, 'at least one must have passed');
 });
