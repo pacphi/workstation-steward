@@ -40,7 +40,7 @@ a:hover{text-decoration-thickness:2px}
 :focus-visible{outline:3px solid var(--lamp);outline-offset:3px;border-radius:4px}
 button{font:inherit;color:inherit}
 code,kbd{font-family:var(--f-mono);font-size:.88em}
-p code{background:var(--hull);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--chalk);white-space:nowrap}
+p code{background:var(--hull);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--chalk)}
 .wrap{max-width:1180px;margin:0 auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .skip{position:absolute;left:12px;top:-60px;background:var(--lamp);color:#1a1200;padding:10px 16px;border-radius:8px;z-index:100;font-weight:700}
@@ -515,9 +515,14 @@ pre.toml i{color:var(--mist);font-style:normal}
 .steps li>div{min-width:0}
 .steps h3{font-size:22px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin:4px 0 8px}
 .steps p{margin:8px 0 0;color:var(--fog);font-size:15px}
-.cmd{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;background:#04131A;border:1px solid var(--line);border-radius:10px;padding:8px 8px 8px 12px;min-width:0}
+/* a command is shown whole: it wraps at spaces, and inside a long word only when it must, with a hanging indent under
+   the "$ " so a wrapped line reads as one command; the Copy button stays at the top */
+.cmd{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start;background:#04131A;border:1px solid var(--line);border-radius:10px;padding:8px 8px 8px 12px;min-width:0}
 .cmd+.cmd{margin-top:6px}
-.cmd code{font:13.5px/1.5 var(--f-mono);color:var(--chalk);overflow-x:auto;white-space:pre;display:block;scrollbar-width:thin}
+/* inline code in running text stays in one piece and moves to the next line whole; only code longer than a whole line
+   wraps inside, so a long command never runs past its card on a phone */
+p code{display:inline-block;max-width:100%;white-space:normal;overflow-wrap:anywhere;vertical-align:bottom}
+.cmd code{font:13.5px/1.5 var(--f-mono);color:var(--chalk);white-space:pre-wrap;overflow-wrap:break-word;display:block;padding:7px 0 7px 2ch;text-indent:-2ch;min-width:0}
 .cmd code::before{content:"$ ";color:var(--lamp)}
 .copy{min-height:34px;padding:4px 12px;border-radius:8px;border:1.5px solid var(--line-2);background:transparent;cursor:pointer;font-family:var(--f-mono);font-size:12px;color:var(--fog);white-space:nowrap}
 .copy:hover{border-color:var(--chalk);color:var(--chalk)}
@@ -1192,10 +1197,10 @@ inside_tools = <b id="toml-inside">true</b></pre>
         <ol class="steps">
           <li class="rv"><div>
             <h3>Install through mise</h3>
-            <div class="cmd"><code>mise use -g npm:workstation-steward@0.10.1</code><button class="copy" data-copy="mise use -g npm:workstation-steward@0.10.1">Copy</button></div>
+            <div class="cmd"><code>mise use -g npm:<wbr>workstation-steward@0.10.1</code><button class="copy" data-copy="mise use -g npm:workstation-steward@0.10.1">Copy</button></div>
             <p>mise then keeps the steward current under the same release-age gate as your other tools. Needs Node 26 or later. 0.10.1 was the current release when this page was made. Plain <code>npm install -g</code> works too, and <code>npx workstation-steward@0.10.1 version</code> lets you look without installing.</p>
             <p class="note">Until 27 November 2026, mise asks for an approval because the package is less than 30 days old. Use this form instead:</p>
-            <div class="cmd"><code>mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.10.1'</code><button class="copy" data-copy="mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.10.1'">Copy</button></div>
+            <div class="cmd"><code>mise use -g 'npm:<wbr>workstation-steward[<wbr>allow_low_downloads=true]@0.10.1'</code><button class="copy" data-copy="mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.10.1'">Copy</button></div>
           </div></li>
           <li class="rv"><div>
             <h3>Check it</h3>
