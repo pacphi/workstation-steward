@@ -33,12 +33,38 @@ die()  { printf '\033[1;31mERROR\033[0m %s\n' "$*" >&2; exit 1; }
 
 # quiet LABEL CMD... — run a slow step that prints nothing useful while it works: its output goes to QUIET_OUT (and a
 # log), a terminal shows a live timer, then a ✓ with its time, or ✗ and the log's last lines. Returns CMD's status.
+# Portable forms (parity 0.3): one way each that works on macOS (BSD), GNU and busybox. test/portable.test.js fails
+# when engine shell goes back to a BSD-only form; a helper's own BSD-only line carries `bsd-ok: <why>`.
+# tmpfile NAME — a new empty file under TMPDIR (BSD's `mktemp -t NAME` has no template, which GNU requires)
+tmpfile() { local d="${TMPDIR:-/tmp}"; mktemp "${d%/}/$1.XXXXXX"; }
+# cp_clone SRC DST — a copy that keeps modes and times: an APFS clone on macOS (blocks shared until one side changes), a
+# reflink where the Linux file system has them, else a plain copy (busybox has no --reflink)
+cp_clone() {
+  if [[ "$(uname -s)" == Darwin ]]; then cp -cpR "$1" "$2" 2>/dev/null || cp -pR "$1" "$2"   # bsd-ok: the APFS clone, macOS only
+  else cp -a --reflink=auto "$1" "$2" 2>/dev/null || cp -a "$1" "$2"; fi
+}
+# mv_onto SRC LINK — rename SRC over LINK itself, never into the folder LINK points at (BSD mv -h, GNU mv -T)
+mv_onto() { node -e 'require("fs").renameSync(process.argv[1], process.argv[2])' "$1" "$2"; }
+# SHA256 and SHA1 — the digest commands ("hash  name" lines, -c to check); shasum first, so macOS runs what it always ran
+# shellcheck disable=SC2034 # SHA1 is used by the scripts that source this file (build.sh)
+if command -v shasum >/dev/null 2>&1; then SHA256=(shasum -a 256); SHA1=(shasum); else SHA256=(sha256sum); SHA1=(sha1sum); fi   # bsd-ok: shasum where it exists
+# sha256_of FILE — its SHA-256, hex
+sha256_of() { "${SHA256[@]}" "$1" | cut -d' ' -f1; }
+# node_tarball VERSION — the official Node tarball's name for this OS and CPU
+node_tarball() {
+  local os arch
+  os="$(uname -s)"; arch="$(uname -m)"
+  case "${os}" in Darwin) os=darwin ;; Linux) os=linux ;; *) die "no official Node build for ${os}" ;; esac
+  case "${arch}" in x86_64 | amd64) arch=x64 ;; aarch64 | arm64) arch=arm64 ;; esac
+  printf 'node-v%s-%s-%s.tar.gz\n' "$1" "${os}" "${arch}"
+}
+
 # shellcheck disable=SC2034 # QUIET_OUT is read by the scripts that call quiet
 QUIET_OUT=""
 quiet() {
   local label="$1"; shift
   local logf start=${SECONDS} ticker="" rc=0
-  logf="$(mktemp -t steward-quiet)"
+  logf="$(tmpfile steward-quiet)"
   if [[ -t 2 && "${NO_PROGRESS:-0}" != 1 ]]; then
     ( while :; do printf '\r\033[2K   … %s %ss' "${label}" "$((SECONDS - start))" >&2; sleep 1; done ) & ticker=$!
   else printf '   … %s\n' "${label}" >&2; fi
@@ -67,7 +93,7 @@ run_shown() {
   if [[ ! -t 2 || "${NO_PROGRESS:-0}" == 1 ]]; then "$@"; return; fi
   local label="$*" logf start=${SECONDS} ticker rc=0
   (( $# > 3 )) && label="$1 $2 … ${*: -1}"   # one short line, so the timer redraws in place
-  logf="$(mktemp -t steward-run)"
+  logf="$(tmpfile steward-run)"
   ( while :; do printf '\r\033[2K   … %s %ss' "${label}" "$((SECONDS - start))" >&2; sleep 1; done ) & ticker=$!
   "$@" >"${logf}" 2>&1 </dev/null || rc=$?
   kill "${ticker}" 2>/dev/null; wait "${ticker}" 2>/dev/null || true; printf '\r\033[2K' >&2
@@ -174,7 +200,7 @@ backup_ruflo_policy() {
   while IFS= read -r d; do
     [[ -n "${d}" ]] || continue
     mkdir -p "${dest}/home/$(dirname "${d#"${HOME}"/}")"
-    cp -cpR "${d}" "${dest}/home/${d#"${HOME}"/}" || die "Ruflo policy backup failed at ${d}"
+    cp_clone "${d}" "${dest}/home/${d#"${HOME}"/}" || die "Ruflo policy backup failed at ${d}"
     n=$((n + 1))
   done <<<"${dirs}"
   printf '%s\n' "${dirs}" >"${dest}/paths.txt"

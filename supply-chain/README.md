@@ -101,6 +101,37 @@ Sources the steward doesn't install itself are declared as `[[updater]]` entries
 paths, runs `apply`, refuses unless `require_output` appears, stops if the signing key changed, and writes a receipt.
 The schema is in [`examples/supply-chain/host.toml`](../examples/supply-chain/host.toml).
 
+## Distrusted roots
+
+Each `[[distrusted_root]]` (the engine's defaults and yours) is looked for wherever the machine trusts it (D68). On
+macOS: the system keychain and its trust settings, `/etc/ssl/cert.pem`, Homebrew's `ca-certificates` and Node's bundled
+roots. On Linux: the system CA bundle, then Linuxbrew's `ca-certificates` and Node's bundled roots.
+
+| Family | System CA bundle |
+| --- | --- |
+| Debian, Ubuntu, Linux Mint (and Arch) | `/etc/ssl/certs/ca-certificates.crt` |
+| Fedora and the Red Hat family | `/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem` |
+| openSUSE | `/var/lib/ca-certificates/ca-bundle.pem` |
+
+A root still trusted is an action. On Linux you remove it by hand for now; the steward will hand you each family's
+command later (`docs/platforms/parity.md`, 2.1).
+
+## Indicators of compromise
+
+`steward sc audit` sweeps for each `[[ioc]]` in the engine's defaults and your `host.toml`: `files` that exist,
+`processes` (a word in a process's command line), `environment` (a variable in a process's environment),
+`site_packages_files` (a Python package file, in `site-packages` or `dist-packages`) and `docker_digests`. Any hit is an
+ALERT. The section opens with what the sweep can see on this machine (D67):
+
+```text
+  info   coverage here: files ✓ · command lines ✓ · environments ✗ (macOS doesn't show them) · Python packages ✓ (3 folders) · Docker images ✓
+```
+
+macOS shows no process environment, so there an IOC with `environment` markers says `not fully checked` instead of
+`clean`; Linux reads them from `/proc`. If the process list can't be read at all, the audit raises an action and says
+which IOCs it couldn't fully check. An IOC must list at least one marker that can be checked on macOS and on Linux;
+`steward sc host` warns when one can't be.
+
 ## When a Renovate PR arrives
 
 1. Read the PR: release notes, age, provenance.

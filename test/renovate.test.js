@@ -30,7 +30,16 @@ test('renovate: the public repo pins actions by digest and extends its own prese
   const pub = read(path.join(REPO, '.github', 'renovate.json'));
   assert.ok(pub.extends.includes('helpers:pinGitHubActionDigests'));
   assert.ok(pub.extends.includes('local>pacphi/workstation-steward//renovate/steward'));
-  assert.deepEqual([...pub.enabledManagers].sort(), ['github-actions', 'mise', 'npm']);
+  assert.deepEqual([...pub.enabledManagers].sort(), ['custom.regex', 'github-actions', 'mise', 'npm']);
+  // the one custom manager: the Linux test images' digests, in matrix.json only, never a new distribution release (parity 0.9)
+  assert.deepEqual(pub.customManagers.map(m => m.managerFilePatterns), [['/^test/containers/matrix\\.json$/']]);
+  const m = pub.customManagers[0].matchStrings[0];
+  assert.match(m, /\(\?<currentDigest>/);
+  const off = pub.packageRules.find(r => (r.matchFileNames || []).includes('test/containers/matrix.json'));
+  assert.equal(off && off.enabled, false);
+  assert.deepEqual(off.matchUpdateTypes, ['major', 'minor', 'patch'], 'only digest updates stay on');
+  const row = JSON.parse(fs.readFileSync(path.join(REPO, 'test', 'containers', 'matrix.json'), 'utf8')).rows[0];
+  assert.ok(new RegExp(m.replace(/\(\?<\w+>/g, '(')).test(`"image": "${row.image}"`), 'the pattern matches a row');
 });
 
 test('workflows: every action the public repo runs is pinned to a commit SHA with a version comment', () => {

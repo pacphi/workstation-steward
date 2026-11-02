@@ -14,10 +14,10 @@ here="$(cd "$(dirname "$0")" && pwd)"
 source "${here}/../../../lib/lib.sh"
 policy_value() { node -e 'const C=require(process.argv[1]);const v=process.argv[2].split(".").reduce((o,k)=>o[k],C.policy("ai-tooling/ai-tooling.toml"));process.stdout.write(String(v))' "${REPO_ROOT}/lib/config.js" "$1"; }
 runtime="$(policy_value aqe.runtime)"
-tree() { (cd "$1" && find . -type f -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1); }
+tree() { (cd "$1" && find . -type f -print0 | sort -z | xargs -0 "${SHA256[@]}" | "${SHA256[@]}" | cut -d' ' -f1); }
 relink() { # relink <release name>: current -> releases/<name>, by renaming a new link over the old one
   ln -s "releases/$1" "${runtime}/current.promote-$$"
-  mv -h "${runtime}/current.promote-$$" "${runtime}/current"
+  mv_onto "${runtime}/current.promote-$$" "${runtime}/current"
 }
 
 if [[ "${1:-}" == "--rollback" ]]; then
@@ -62,13 +62,13 @@ for f in ${stores[@]+"${stores[@]}"}; do
   i=$((i + 1)); [[ -t 2 ]] && printf '\r\033[2K   … store %s/%s' "${i}" "${#stores[@]}" >&2
   rel="${f#"${HOME}"/}" dst="${dir}/stores/${f#"${HOME}"/}"
   mkdir -p "$(dirname "${dst}")"
-  cp -c -p "${f}" "${dst}"
+  cp_clone "${f}" "${dst}"
   cmp -s "${f}" "${dst}" || die "backup of ~/${rel} differs from its source: stopping before anything is switched"
 done
 [[ -t 2 ]] && printf '\r\033[2K' >&2
 chmod -R go-rwx "${dir}"
 log "install releases/${release}"
-quiet "clone the stage into releases/" cp -c -R "${stage}" "${runtime}/releases/${release}.partial"
+quiet "clone the stage into releases/" cp_clone "${stage}" "${runtime}/releases/${release}.partial"
 quiet "hash the stage" tree "${stage}"; want="${QUIET_OUT}"
 quiet "hash the installed copy" tree "${runtime}/releases/${release}.partial"
 [[ "${QUIET_OUT}" == "${want}" ]] || die "installed tree differs from the stage"

@@ -40,9 +40,9 @@ if [[ "${DRY_RUN}" != "1" ]]; then
   cp -p "${steward}" "${BACKUP_DIR}/steward.toml.${stamp}"
   cp -p "${renovate}" "${BACKUP_DIR}/renovate.json.${stamp}"
 fi
-run perl -pi -e "s/^(min_release_age_days *= *)[0-9]+/\${1}${days}/" "${steward}"
-run perl -pi -e "s/^(minimum_release_age *= *\")[^\"]*\"/\${1}${days}d\"/" "${mise_cfg}"
-run perl -pi -e "s/(\"minimumReleaseAge\": *\")[^\"]*\"/\${1}${days} ${unit}\"/" "${renovate}"
+run node "${REPO_ROOT}/lib/subst.js" "${steward}" '^(min_release_age_days *= *)[0-9]+' "\$1${days}"
+run node "${REPO_ROOT}/lib/subst.js" "${mise_cfg}" '^(minimum_release_age *= *")[^"]*"' "\$1${days}d\""
+run node "${REPO_ROOT}/lib/subst.js" "${renovate}" '("minimumReleaseAge": *")[^"]*"' "\$1${days} ${unit}\""
 [[ "${DRY_RUN}" == "1" ]] && { log "dry run: nothing changed"; exit 0; }
 
 log "after"

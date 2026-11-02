@@ -59,7 +59,7 @@ test('merge: an entry with platforms holds only there; one without holds everywh
   const defaults = {
     always_current: ['firefox', { name: 'google-chrome', platforms: ['macos'] }],
     vendored_node: [{ path: '/Applications/X.app/node', platforms: ['macos'] }, { path: '/opt/x/node', platforms: ['linux'] }],
-    ioc: [{ name: 'everywhere' }, { name: 'mac only', platforms: ['macos'] }],
+    ioc: [{ name: 'everywhere', files: ['/x'] }, { name: 'mac only', platforms: ['macos'], files: ['/x'] }],
   };
   const mine = { security_exception: [{ kind: 'formula', name: 'a' }, { kind: 'formula', name: 'b', platforms: ['linux'] }], off: { always_current: ['google-chrome'] } };
   const mac = merge(defaults, mine, 'macos');
@@ -79,7 +79,7 @@ test('merge: an entry with platforms holds only there; one without holds everywh
 test('merge: families narrows a Linux entry to those families; it needs platforms = ["linux"] beside it (parity 0.1, D63)', () => {
   const defaults = {
     vendored_node: [{ path: '/run/current-system/sw/bin/node', platforms: ['linux'], families: ['nixos'] }, { path: '/opt/x/node', platforms: ['linux'] }],
-    ioc: [{ name: 'debian only', platforms: ['linux'], families: ['debian'] }, { name: 'bare', families: ['rhel'] }, { name: 'typo', platforms: ['linux'], families: ['debain'] }],
+    ioc: [{ name: 'debian only', platforms: ['linux'], families: ['debian'], files: ['/x'] }, { name: 'bare', families: ['rhel'], files: ['/x'] }, { name: 'typo', platforms: ['linux'], families: ['debain'], files: ['/x'] }],
   };
   const nix = merge(defaults, {}, 'linux', 'nixos');
   assert.deepEqual(nix.policy.vendored_node, ['/run/current-system/sw/bin/node', '/opt/x/node']);
@@ -110,6 +110,23 @@ test('host.js: the report names the platform as before on macOS (parity 0.1)', {
   fs.writeFileSync(path.join(ROOT, 'steward.toml'), 'schema = 1\n');
   const report = spawnSync(process.execPath, [path.join(REPO, 'lib', 'host.js')], { encoding: 'utf8', env: { ...process.env, STEWARD_INSTANCE: ROOT } }).stdout;
   assert.match(report.split('\n')[0], /^host policy \(macos\): \d+ default\(s\) from the engine/);
+});
+
+test('merge: an IOC must list something checkable on each platform it applies to (parity 0.4); the shipped defaults do', () => {
+  const ioc = [
+    { name: 'env only', environment: ['X'] },
+    { name: 'env on linux', platforms: ['linux'], environment: ['X'] },
+    { name: 'packages', site_packages_files: ['cook.pth'] },
+    { name: 'nothing', files: [], processes: [''] },
+  ];
+  assert.deepEqual(merge({ ioc }, {}, 'macos').warnings, [
+    'ioc env only: nothing it lists can be checked on macos (environment markers need Linux; add a file, process or package marker)',
+    'ioc nothing: nothing it lists can be checked on macos or linux',
+  ]);
+  const mine = merge({}, { ioc: [{ name: 'mine', environment: ['Y'] }] }, 'linux');
+  assert.match(mine.warnings[0], /^ioc mine: nothing it lists can be checked on macos/);
+  const report = spawnSync(process.execPath, [path.join(REPO, 'lib', 'host.js')], { encoding: 'utf8', env: { ...process.env, STEWARD_INSTANCE: path.join(REPO, 'examples') } }).stdout;
+  assert.ok(!/nothing it lists can be checked/.test(report), report);
 });
 
 test('merge: [[updater]] merges by name and turns off with [off]; an incomplete one is left out and reported (D52)', () => {

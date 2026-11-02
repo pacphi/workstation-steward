@@ -39,8 +39,10 @@ const bash = (script, env) => spawnSync('bash', ['-c', `source ${JSON.stringify(
 // onTTY(script, env) — the same in a pseudo-terminal (script(1)): {status, out}, stdout and stderr as one terminal shows them
 function onTTY(script, env) {
   const cmd = `source ${JSON.stringify(path.join(REPO, 'lib', 'lib.sh'))}; ${script}`;
-  const args = process.platform === 'darwin' ? ['-q', '/dev/null', 'bash', '-c', cmd] : ['-qec', `bash -c ${JSON.stringify(cmd)}`, '/dev/null'];
-  const r = spawnSync('script', args, { encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'] });
+  // util-linux script runs -c through a shell: the command goes in an environment variable, so that shell can't expand
+  // what's in it ($? would be its own status; the first Linux run, parity 0.3)
+  const args = process.platform === 'darwin' ? ['-q', '/dev/null', 'bash', '-c', cmd] : ['-qec', 'bash -c "$STEWARD_TTY_CMD"', '/dev/null'];
+  const r = spawnSync('script', args, { encoding: 'utf8', env: { ...(env || process.env), STEWARD_TTY_CMD: cmd }, stdio: ['ignore', 'pipe', 'pipe'] });
   return { status: r.status, raw: r.stdout, out: strip(`${r.stdout}${r.stderr}`).replace(/\r/g, '\n') };
 }
 
@@ -182,6 +184,7 @@ const LONG = [
   ['lib/coarse.js', /^(?!\s*\/\/).*nodejs\.org\/dist\/index\.json'/, /\.stage\(/, 1],
   ['lib/vulns.js', /^(?!\s*\/\/).*\/querybatch`, body|\/vulns\/\$\{encodeURIComponent/, /\bsay\(/, 2],
   ['supply-chain/checks/index.js', /await V\.(inventory|lookup)\(/, /\bdetail\(ctx, |t => detail\(ctx, t\)/, 1],
+  ['tools/linux-test.js', /^(?!\s*\/\/)(?!.*\bfunction\b).*\b(buildArgs\(row, \{ tag|runArgs\(\{ tag)/, /\bstream\(.*, st, log\)/, 0],
 ];
 const GATES = ['g1', 'g2', 'g3g4', 'g5', 'g6', 'g7', 'g8', 'smoke'];
 
@@ -215,4 +218,13 @@ test('tools/progress-gaps.js runs read-only by default: writing commands only un
   assert.throws(() => G.args(['steward sc status']), /after --/);
   assert.equal(G.args([]).cmds, G.DEFAULTS);
   assert.throws(() => G.args(['--gap', 'x']), /--gap/);
+});
+
+test('progress: a stage that failed ends with ✗ and its summary, never ✓ (parity 0.9: a failed image build showed ✓)', () => {
+  const js = `const { progress } = require(${JSON.stringify(path.join(REPO, 'lib', 'progress.js'))}); const pg = progress(2); pg.stage('build').fail('FAILED (exit 1)'); pg.stage('tests').done('ok');`;
+  const r = spawnSync(process.execPath, ['-e', js], { encoding: 'utf8', env: { ...process.env, NO_PROGRESS: '' } });
+  assert.equal(r.status, 0, r.stderr);
+  const lines = r.stderr.split('\n').filter(Boolean);
+  assert.match(lines[1], /^✗ \[1\/2\] build: FAILED \(exit 1\) \(\d+s\)$/);
+  assert.match(lines[3], /^✓ \[2\/2\] tests: ok \(\d+s\)$/);
 });
