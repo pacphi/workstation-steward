@@ -23,7 +23,7 @@ say() { log "$@"; }
 fail() { die "$@"; }
 logged() { local f="$1"; shift; "$@" >"${f}" 2>&1; }   # logged FILE CMD…: CMD's output into the workspace log
 in_dir() { local d="$1"; shift; (cd "${d}" && "$@"); }
-sha() { shasum -a 256 "$1" | cut -d' ' -f1; }
+sha() { sha256_of "$1"; }
 
 say "upstream ${tag}"
 [[ -d "${QW}/src" ]] || quiet "clone ${tag}" git clone -q --depth 1 --branch "${tag}" https://github.com/proffesor-for-testing/agentic-qe.git "${QW}/src"
@@ -31,7 +31,7 @@ git -C "${QW}/src" rev-parse HEAD > "${QW}/evidence/source-commit.txt"
 mkdir -p "${QW}/official"
 [[ -f "${QW}/official/agentic-qe-${QVERSION}.tgz" ]] || quiet "download the official tarball" logged "${logs}/official-pack.log" in_dir "${QW}/official" npm pack "agentic-qe@${QVERSION}"
 want="$(npm view "agentic-qe@${QVERSION}" dist.shasum)"
-[[ "$(shasum "${QW}/official/agentic-qe-${QVERSION}.tgz" | cut -d' ' -f1)" == "${want}" ]] || fail "official tarball doesn't match the registry's shasum"
+[[ "$("${SHA1[@]}" "${QW}/official/agentic-qe-${QVERSION}.tgz" | cut -d' ' -f1)" == "${want}" ]] || fail "official tarball doesn't match the registry's SHA-1 (dist.shasum)"
 
 say "unpatched rebuild"
 git -C "${QW}/src" checkout -q -- .
@@ -64,7 +64,7 @@ cp "${QW}/patched-pack/agentic-qe-${QVERSION}.tgz" "${QSTAGE}/artifacts/"
 node -e 'const fs=require("fs");const p=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));p.dependencies["agentic-qe"]="file:artifacts/agentic-qe-"+process.argv[2]+".tgz";fs.writeFileSync(process.argv[3],JSON.stringify(p,null,2)+"\n")' \
   "${QCURRENT}/package.json" "${QVERSION}" "${QSTAGE}/package.json"
 cp -R "${QCURRENT}/bin" "${QCURRENT}/runtime" "${QCURRENT}/models" "${QSTAGE}/"
-before="$(date -u -v-"${STEWARD_POLICY_MIN_RELEASE_AGE_DAYS:-3}"d +%Y-%m-%dT%H:%M:%SZ)"
+before="$(node -e 'process.stdout.write(new Date(Date.now() - 86400e3 * Number(process.argv[1])).toISOString().replace(/\.\d+Z$/, "Z"))' "${STEWARD_POLICY_MIN_RELEASE_AGE_DAYS:-3}")"
 npm_config_build_from_source=true npm_config_nodedir="$(dirname "${QNODEBIN}")" \
   quiet "npm install the stage (natives compiled here)" logged "${logs}/stage-npm-install.log" in_dir "${QSTAGE}" npm install --before="${before}" \
   || fail "stage npm install failed: ${logs}/stage-npm-install.log"

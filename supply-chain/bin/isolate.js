@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// steward sc isolate (D66): switch a tool off without removing it, while it carries a vulnerability with no fix (or one
+// steward sc isolate (D70): switch a tool off without removing it, while it carries a vulnerability with no fix (or one
 // being exploited), and switch it back on with --undo. Writes only after a plan and a yes; a backup, a receipt, and the
 // list of what is isolated (<state>/isolated.json), which steward brief shows.
 //   - a mise tool: added to [settings] disable_tools in the config folder's mise/config.toml, mise's own switch: it

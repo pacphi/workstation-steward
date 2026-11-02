@@ -2,7 +2,8 @@
 // that apply to it and a package manager is a provider (lib/providers/). Read-only: a check reports, it never changes
 // anything. Every command goes through ctx.run (async, so a live display keeps moving), so tests hand them canned output.
 //   check: { id, name (the step's short name), title(ctx) (the plain output's header), platforms, async run(ctx, out) }
-//   out:   line(text) (an indented line as it comes), ok/held/info/clean(text), action(text), alert(text)
+//   out:   line(text) (an indented line as it comes), ok/held/info/clean(text), note(text) (info the terminal never
+//          folds away), action(text), alert(text)
 //          action and held also take facts, which only the terminal view reads (the plain text stays as it is):
 //          { fix (what to do, the heading a finding is listed under), name, have, want, age (days), note }
 // ctx: { run, cfg (lib/config.js values), policy (lib/host.js merged), instance, engine, cache, today, home, now,
@@ -87,6 +88,60 @@ const packages = id => async (ctx, out) => {
 };
 
 const minAge = ctx => ctx.cfg.policy.min_release_age_days;
+// processes(ctx) — {list: [{pid, cmd, env}], error}: every process but the audit's own, its command line and, where this
+// user may read it, its environment (null when not). ps on macOS, which shows no process environment (checked on macOS
+// 27.2, 2026-11-02); /proc on Linux, since minimal installs often have no ps (the debian:13 and fedora:44 images have
+// none; parity 0.4). error says why there is no list, so the IOC check says "not fully checked" instead of a clean that
+// never looked.
+async function processes(ctx) {
+  if (ctx.platform === 'linux') return fromProc(ctx.proc || '/proc');
+  if (ctx.platform !== 'macos') return { list: [], error: 'no process list on this platform yet' };
+  const r = await ctx.run('ps', ['-axeww', '-o', 'pid=,command=']);
+  if (r.status !== 0) return { list: [], error: `ps failed, exit ${r.status}` };
+  const list = r.stdout.split('\n').map(l => l.trim().match(/^(\d+)\s+(.*)$/)).filter(m => m && Number(m[1]) !== process.pid).map(m => ({ pid: Number(m[1]), cmd: m[2], env: null }));
+  return list.length ? { list, error: null } : { list: [], error: 'ps listed no processes' };
+}
+// fromProc(proc) — processes() on Linux: each /proc/<pid>'s cmdline and environ, NULs as spaces; a process with no
+// command line (a kernel thread) or that is gone is skipped, and an environment this user can't read is null
+function fromProc(proc) {
+  let pids;
+  try { pids = fs.readdirSync(proc).filter(n => /^\d+$/.test(n) && Number(n) !== process.pid).sort((a, b) => Number(a) - Number(b)); } catch (e) { return { list: [], error: `/proc can't be read (${e.code || e.message})` }; }
+  const read = f => { try { return fs.readFileSync(f).toString('utf8').split('\0').filter(Boolean).join(' '); } catch { return null; } };
+  const list = [];
+  for (const pid of pids) {
+    const cmd = read(path.join(proc, pid, 'cmdline'));
+    if (cmd) list.push({ pid: Number(pid), cmd, env: read(path.join(proc, pid, 'environ')) });
+  }
+  return { list, error: null };
+}
+
+// SYSTEM_BUNDLE — each Linux family's system CA bundle, the file its TLS libraries read (each checked in its test image,
+// 2026-11-02: Debian 13 and Ubuntu 26.04; Fedora 44; openSUSE Leap 16.0 and Tumbleweed); parity 0.5
+const SYSTEM_BUNDLE = {
+  debian: '/etc/ssl/certs/ca-certificates.crt',
+  rhel: '/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem',
+  suse: '/var/lib/ca-certificates/ca-bundle.pem',
+};
+// systemBundle(ctx) — this machine's system CA bundle: its family's, else the first of the others that exists (Arch, for
+// one, uses Debian's path), else null. ctx.sysroot stands in for / in tests
+function systemBundle(ctx) {
+  const at = p => path.join(ctx.sysroot || '/', p);
+  const tries = [SYSTEM_BUNDLE[ctx.family], ...Object.values(SYSTEM_BUNDLE)].filter(Boolean).map(at);
+  return tries.find(f => { try { return fs.statSync(f).isFile(); } catch { return false; } }) || null;
+}
+
+// pythonRoots(ctx) — the Python folders beyond the tools' own that hold packages: on Linux the system's
+// (/usr/lib/python3*, /usr/local/lib/python3*: Debian's dist-packages among them) and pip --user's
+// (~/.local/lib/python3*); on macOS pip --user's (~/Library/Python/3.*). Only folders that exist. ctx.sysroot: tests
+function pythonRoots(ctx) {
+  const sys = ctx.sysroot || '/';
+  const under = (dir, re) => { try { return fs.readdirSync(dir).filter(n => re.test(n)).map(n => path.join(dir, n)); } catch { return []; } };
+  const roots = ctx.platform === 'linux'
+    ? [...under(path.join(sys, 'usr', 'lib'), /^python3/), ...under(path.join(sys, 'usr', 'local', 'lib'), /^python3/), ...under(path.join(ctx.home, '.local', 'lib'), /^python3/)]
+    : ctx.platform === 'macos' ? under(path.join(ctx.home, 'Library', 'Python'), /^3\./) : [];
+  return roots.filter(d => { try { return fs.statSync(d).isDirectory(); } catch { return false; } });
+}
+
 // detail(ctx, text) — what a slow check is on now, for the terminal's live line only (audit.js ctx.detail; plain output
 // and the tests' contexts have none)
 const detail = (ctx, text) => { if (ctx.detail) ctx.detail(text); };
@@ -101,6 +156,8 @@ const FIX = {
   docker: 'by hand: pin each image by tag@digest',
   pin: 'review the new key, then update the pin in a config-repo PR (the supply-chain runbook)',
   selfUpdate: name => `turn ${name}'s own updater off`,
+  processList: 'by hand: let the audit read the process list (ps on macOS, /proc on Linux), then run it again',
+  trustLinux: 'by hand: remove the root from the system trust store (parity 2.1 adds the command)',
 };
 const tomlGet = async (ctx, file, expr) => { const r = (await ctx.run('yq', ['-p', 'toml', '-oy', '-r', expr, file])); return r.status === 0 ? r.stdout.trim() : ''; };
 
@@ -236,7 +293,7 @@ const CHECKS = [
     },
   },
   {
-    id: 'trust', name: 'Trust stores', platforms: ['macos'], title: () => "Trust stores (distrusted_root: the engine's defaults and yours)",
+    id: 'trust', name: 'Trust stores', platforms: ['macos', 'linux'], title: () => "Trust stores (distrusted_root: the engine's defaults and yours)",
     async run(ctx, out) {
       const pemHas = (file, sha) => {
         let text; try { text = fs.readFileSync(file, 'utf8'); } catch { return false; }
@@ -244,16 +301,25 @@ const CHECKS = [
       };
       const nodeHas = sha => require('tls').rootCertificates.some(p => new X509Certificate(p).fingerprint256.replace(/:/g, '') === sha.toUpperCase());
       const brewPrefix = (await brew.available(ctx)) ? (await brew.prefix(ctx)) : null;
-      for (const r of ctx.policy.distrusted_root || []) {
-        const roots = (await ctx.run('security', ['find-certificate', '-a', '-Z', '-c', r.name, '/System/Library/Keychains/SystemRootCertificates.keychain'])).stdout;
-        if (roots.toLowerCase().includes(`sha-256 hash: ${r.sha256.toLowerCase()}`)) {
-          const settings = (await ctx.run('security', ['dump-trust-settings', '-d'])).stdout;
-          let hit = false, deny = false;
-          for (const l of settings.split('\n')) { if (/^Cert [0-9]+:/.test(l)) hit = l.includes(r.name); if (hit && l.includes('ResultDeny')) deny = true; }
-          if (deny) out.ok(`${r.name} (${r._source}): in macOS system roots, admin trust setting = Deny`);
-          else out.action(`trust: ${r.name} is trusted by macOS; deny it: sudo security add-trusted-cert -d -r deny <pem> (see AGENTS.md)`);
-        } else out.ok(`${r.name} (${r._source}): not in macOS system roots`);
-        if (pemHas('/etc/ssl/cert.pem', r.sha256)) out.info(`${r.name}: still in /etc/ssl/cert.pem (Apple-managed; leaves with a macOS update)`);
+      const distrusted = ctx.policy.distrusted_root || [];
+      // Linux: the family's system bundle (parity 0.5); one that can't be found is said, never taken for "not in"
+      const bundle = ctx.platform === 'linux' ? systemBundle(ctx) : null;
+      if (ctx.platform === 'linux' && !bundle && distrusted.length) out.note(`system CA bundle not found (looked in ${[...new Set(Object.values(SYSTEM_BUNDLE))].join(', ')}); distrusted roots there were not checked`);
+      for (const r of distrusted) {
+        if (ctx.platform === 'macos') {
+          const roots = (await ctx.run('security', ['find-certificate', '-a', '-Z', '-c', r.name, '/System/Library/Keychains/SystemRootCertificates.keychain'])).stdout;
+          if (roots.toLowerCase().includes(`sha-256 hash: ${r.sha256.toLowerCase()}`)) {
+            const settings = (await ctx.run('security', ['dump-trust-settings', '-d'])).stdout;
+            let hit = false, deny = false;
+            for (const l of settings.split('\n')) { if (/^Cert [0-9]+:/.test(l)) hit = l.includes(r.name); if (hit && l.includes('ResultDeny')) deny = true; }
+            if (deny) out.ok(`${r.name} (${r._source}): in macOS system roots, admin trust setting = Deny`);
+            else out.action(`trust: ${r.name} is trusted by macOS; deny it: sudo security add-trusted-cert -d -r deny <pem> (see AGENTS.md)`);
+          } else out.ok(`${r.name} (${r._source}): not in macOS system roots`);
+          if (pemHas('/etc/ssl/cert.pem', r.sha256)) out.info(`${r.name}: still in /etc/ssl/cert.pem (Apple-managed; leaves with a macOS update)`);
+        } else if (bundle) {
+          if (pemHas(bundle, r.sha256)) out.action(`trust: ${r.name} is in the system bundle ${bundle}; distrust it by hand for now (parity 2.1 adds the family's own command)`, { fix: FIX.trustLinux });
+          else out.ok(`${r.name} (${r._source}): not in the system bundle ${bundle}`);
+        }
         if (brewPrefix && pemHas(path.join(brewPrefix, 'etc', 'ca-certificates', 'cert.pem'), r.sha256)) out.action(`trust: ${r.name} in Homebrew ca-certificates: brew upgrade ca-certificates`);
         if (nodeHas(r.sha256)) out.action(`trust: ${r.name} in Node ${process.version}'s bundled roots: steward sc node-patch <fixed version>`);
       }
@@ -276,30 +342,51 @@ const CHECKS = [
     id: 'ioc', name: 'Indicators of compromise', platforms: ALL, title: () => "Indicators of compromise (ioc: the engine's defaults and yours; read-only)",
     async run(ctx, out) {
       const roots = [path.join(ctx.cfg.paths.mise_data_dir, 'installs', 'python'), path.join(ctx.home, '.local', 'share', 'uv'),
-        ...((await brew.available(ctx)) ? [path.join((await brew.prefix(ctx)), 'lib')] : []), ...((ctx.cfg.ioc && ctx.cfg.ioc.extra_roots) || [])];
+        ...((await brew.available(ctx)) ? [path.join((await brew.prefix(ctx)), 'lib')] : []), ...pythonRoots(ctx), ...((ctx.cfg.ioc && ctx.cfg.ioc.extra_roots) || [])];
       detail(ctx, 'docker images');
       const dockerUp = (await ctx.run('docker', ['info'])).status === 0;
       const digests = dockerUp ? (await ctx.run('docker', ['images', '--digests', '--format', '{{.Digest}}'])).stdout : '';
       // every process but this audit's own (its command line could hold a pattern only as an argument)
-      const ps = (await ctx.run('ps', ['-axeww', '-o', 'pid=,command='])).stdout.split('\n').filter(l => Number(l.trim().split(/\s/)[0]) !== process.pid);
-      for (const i of ctx.policy.ioc || []) {
+      const ps = await processes(ctx);
+      // what the sweep can see here, in one format on every platform (parity 0.4): a gap is named, never silent
+      const envSeen = ps.error ? `✗ (${ps.error})` : ctx.platform === 'linux' ? '✓ (your processes; others need root)' : ctx.platform === 'macos' ? "✗ (macOS doesn't show them)" : '✗ (not on this platform)';
+      const folders = roots.filter(d => { try { return fs.statSync(d).isDirectory(); } catch { return false; } }).length;
+      out.note(`coverage here: files ✓ · command lines ${ps.error ? `✗ (${ps.error})` : '✓'} · environments ${envSeen} · Python packages ${folders ? `✓ (${folders} folder${folders === 1 ? '' : 's'})` : '✗ (no Python folders found)'} · Docker images ${dockerUp ? '✓' : '✗ (not running)'}`);
+      const iocs = ctx.policy.ioc || [];
+      if (ps.error && iocs.some(i => [...(i.processes || []), ...(i.environment || [])].some(Boolean))) out.action(`ioc: the process list couldn't be read (${ps.error}); process indicators were not checked`, { fix: FIX.processList });
+      for (const i of iocs) {
         let hits = 0;
+        const unchecked = new Set();
         for (const f of i.files || []) if (f && fs.existsSync(f)) { out.alert(`${i.name}: file present ${f}`); hits++; }
-        for (const p of i.processes || []) if (p && ps.some(l => l.includes(p))) { out.alert(`${i.name}: process matching '${p}'`); hits++; }
+        // processes: words in a command line; environment: variables in a process's environment (Linux only)
+        for (const p of i.processes || []) {
+          if (!p) continue;
+          if (ps.error) { unchecked.add(`processes (${ps.error})`); continue; }
+          if (ps.list.some(x => x.cmd.includes(p))) { out.alert(`${i.name}: process matching '${p}'`); hits++; }
+        }
+        for (const m of i.environment || []) {
+          if (!m) continue;
+          if (ps.error) { unchecked.add(`environment (${ps.error})`); continue; }
+          if (ctx.platform !== 'linux') { unchecked.add(`environment (${ctx.platform === 'macos' ? "macOS doesn't show process environments" : 'this platform shows no process environments'})`); continue; }
+          const hit = ps.list.find(x => x.env && x.env.includes(m));
+          if (hit) { out.alert(`${i.name}: process environment matching '${m}' (pid ${hit.pid})`); hits++; }
+        }
         for (const f of i.site_packages_files || []) {
           if (!f) continue;
           detail(ctx, `${i.name}: site-packages`);
           // 9: how deep Python nests site-packages under these roots (installs/python/<ver>/lib/python3.x/site-packages/…)
-          const found = (await ctx.run('find', [...roots, '-maxdepth', '9', '-path', `*/site-packages/${f}`, '-not', '-path', '*/node_modules/*'])).stdout.split('\n').filter(Boolean).slice(0, 3);
+          // site-packages, or dist-packages where Debian and Ubuntu put a system Python's packages
+          const found = (await ctx.run('find', [...roots, '-maxdepth', '9', '(', '-path', `*/site-packages/${f}`, '-o', '-path', `*/dist-packages/${f}`, ')', '-not', '-path', '*/node_modules/*'])).stdout.split('\n').filter(Boolean).slice(0, 3);
           if (found.length) { out.alert(`${i.name}: ${found.join(', ')}`); hits++; }
         }
         for (const d of i.docker_digests || []) if (d && digests.includes(d)) { out.alert(`${i.name}: docker image with digest ${d}`); hits++; }
-        if (!hits) out.clean(`${i.name} (${i._source})`);
+        if (!hits && unchecked.size) out.note(`${i.name} (${i._source}): not fully checked: ${[...unchecked].join('; ')}`);
+        else if (!hits) out.clean(`${i.name} (${i._source})`);
       }
     },
   },
   {
-    // Known vulnerabilities (D65, lib/vulns.js): what's installed against the [[advisory_feed]] feeds. High, critical,
+    // Known vulnerabilities (D69, lib/vulns.js): what's installed against the [[advisory_feed]] feeds. High, critical,
     // unrated and known-exploited findings are actions; the rest are listed. A package inside a tool is fixed by that
     // tool's next release, so a tool's serious ones make one action. A feed that couldn't be read is said, never clean
     id: 'vulns', name: 'Known vulnerabilities', platforms: ALL,
@@ -358,8 +445,8 @@ const CHECKS = [
         out.action(`vuln: ${tool}: ${ids.length} serious advisor${ids.length === 1 ? 'y' : 'ies'} in ${pkgs} package(s) inside it (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? ` and ${ids.length - 3} more` : ''}); ${when} (steward sc vulns --verbose lists them)${owner}${iso ? `; exploited or critical with no fix: ${iso}` : ''}`,
           { fix: iso || 'update the tool that bundles it, when a release carries the fix', name: tool, note: `${ids.length} in ${pkgs} package(s)` });
       }
-      if (shown.some(f => serious(f) && f.pkg.top && V.fixCommand(f) && !isOwned(f.pkg.tool))) (out.keep || out.line)('steward sc vulns-fix takes every fix named above in one plan (and old installs that carry serious advisories)');
-      for (const c of inv.coverage || []) if (c.failed) out.action(`vuln-feed: ${c.source} ${c.text}`); else (out.keep || out.info)(`coverage: ${c.source === 'elsewhere' ? '' : `${c.source}: `}${c.text}`);
+      if (shown.some(f => serious(f) && f.pkg.top && V.fixCommand(f) && !isOwned(f.pkg.tool))) (out.note || out.line)('steward sc vulns-fix takes every fix named above in one plan (and old installs that carry serious advisories)');
+      for (const c of inv.coverage || []) if (c.failed) out.action(`vuln-feed: ${c.source} ${c.text}`); else (out.note || out.info)(`coverage: ${c.source === 'elsewhere' ? '' : `${c.source}: `}${c.text}`);
       if (inv.uncovered.length && s.list_not_covered) out.info(`not covered (no advisory ecosystem; not the same as clean): ${inv.uncovered.join(', ')}`);
       const nSerious = shown.filter(serious).length;
       const line = `${new Set(inv.packages.map(p => `${p.ecosystem}\0${p.name}\0${p.version}`)).size} package version(s) in ${inv.covered.length} tool(s), checked with ${checked.join(', ') || 'no feed'}: ${nSerious} serious (${s.action_severity} and up${s.exploited_always_action ? ', or exploited' : ''}), ${shown.length - nSerious} other`;
@@ -370,4 +457,4 @@ const CHECKS = [
   },
 ];
 
-module.exports = { CHECKS, ALL, FIX, caskIds, pickCask, verLt, appVersion, appBehind, ageDays, securityException };
+module.exports = { CHECKS, ALL, FIX, caskIds, pickCask, verLt, appVersion, appBehind, ageDays, securityException, processes, pythonRoots, systemBundle, SYSTEM_BUNDLE };

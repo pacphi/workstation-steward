@@ -1,6 +1,6 @@
 # Start here
 
-![Revision 9](https://img.shields.io/badge/Revision-9-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 10](https://img.shields.io/badge/Revision-10-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 This guide is for you, after time away or new to the steward. It says why the repo exists, what it
 looks after, how to start, and what a normal week looks like. For how each part works, follow the links to the area
@@ -123,6 +123,7 @@ release or hybrids out of step first). Then `steward ai drift` for AI tool relea
 | Hybrid | A global npm tool installed outside mise because mise can't build it (`supply-chain/hybrids.toml`) |
 | Onboard / offboard | Writing a project's chosen AI tool files, or taking them out when it has none |
 | Keep-off | Settings the steward never turns on, whatever a tool defaults to (`ai-tooling.toml`) |
+| Coverage | The line that opens the audit's indicators-of-compromise section: what the sweep can and can't see on this machine. "Not fully checked" means it couldn't look, never that it looked and found nothing |
 
 ## Where to read more
 

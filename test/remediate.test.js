@@ -1,4 +1,4 @@
-// Tests for remediation (D66): steward sc vulns-fix (supply-chain/bin/vulns-fix.js) and steward sc isolate
+// Tests for remediation (D70): steward sc vulns-fix (supply-chain/bin/vulns-fix.js) and steward sc isolate
 // (supply-chain/bin/isolate.js), the brief's isolated and isolate-lost detectors, and the vulns check's suggestions.
 // Throwaway folders, canned feeds, a stand-in for every command; nothing touches this machine's mise or config.
 // Run: just test

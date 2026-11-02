@@ -35,7 +35,7 @@ while IFS=$'\t' read -r bin args want_rc want_out; do
   [[ "${on_path}" == "${exe}" ]] || by_design "${on_path}" \
     || warn "${bin}: this shell's PATH resolves ${on_path}; mise resolves ${exe} (new shells are fine)"
   # shellcheck disable=SC2086 # args intentionally word-split
-  out="$(perl -e 'alarm shift; exec @ARGV' 60 "${exe}" ${args} </dev/null 2>&1)" && rc=0 || rc=$?
+  out="$(node "${REPO_ROOT}/lib/timeout.js" 60 "${exe}" ${args} </dev/null 2>&1)" && rc=0 || rc=$?
   if [[ "${rc}" == "${want_rc}" ]] && grep -qE -- "${want_out}" <<<"${out}"; then
     printf '  ok   %-18s %s\n' "${bin}" "$(grep -v '^\s*$' <<<"${out}" | tail -1 | cut -c1-60)"
   else

@@ -5,7 +5,7 @@
 Ask "is anything I have vulnerable?" and get an answer in seconds: the tools the steward installs, and the packages
 inside them, checked against the advisory databases the security industry relies on. Then fix what can be fixed with
 one yes, and switch off what can't, without deleting anything. It also tells you plainly what it could not check, and
-where to look instead. Built (D65, D66).
+where to look instead. Built (D69, D70).
 
 | You want to… | Run | It changes |
 | --- | --- | --- |

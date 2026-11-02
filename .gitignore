@@ -59,3 +59,6 @@ __pycache__/
 /leak-terms.txt
 /archive/
 /owner/
+
+# --- just linux-test: the example toolchain copied into the image build (parity 0.9) ----------------------------
+test/containers/.mise-config.toml

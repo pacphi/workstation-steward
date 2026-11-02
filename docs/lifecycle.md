@@ -238,8 +238,8 @@ said out loud ([`vulnerabilities.md`](vulnerabilities.md)).
 
 - `steward sc vulns`: mise's npm, pipx, cargo and go tools and the packages inside them, Go programs by their module
   lists, Homebrew formulae through `brew vulns`, the npm -g packages and Node; feeds OSV (with malicious-package
-  reports), nodejs.org, CISA KEV, EPSS and endoflife.date; a coverage line per source: *Built (D65).*
-- `steward sc vulns-fix` and `steward sc isolate`, with backups, receipts and a way back: *Built (D66).*
+  reports), nodejs.org, CISA KEV, EPSS and endoflife.date; a coverage line per source: *Built (D69).*
+- `steward sc vulns-fix` and `steward sc isolate`, with backups, receipts and a way back: *Built (D70).*
 - Then, one PR each, in this order: *Planned.*
   1. OpenVEX out (your `advisory_ignore` entries) and in (vendors' VEX documents as a feed);
   2. a CycloneDX inventory (`steward sc sbom`) and SARIF findings;
