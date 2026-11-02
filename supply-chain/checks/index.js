@@ -114,6 +114,21 @@ function fromProc(proc) {
   return { list, error: null };
 }
 
+// SYSTEM_BUNDLE — each Linux family's system CA bundle, the file its TLS libraries read (each checked in its test image,
+// 2026-11-02: Debian 13 and Ubuntu 26.04; Fedora 44; openSUSE Leap 16.0 and Tumbleweed); parity 0.5
+const SYSTEM_BUNDLE = {
+  debian: '/etc/ssl/certs/ca-certificates.crt',
+  rhel: '/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem',
+  suse: '/var/lib/ca-certificates/ca-bundle.pem',
+};
+// systemBundle(ctx) — this machine's system CA bundle: its family's, else the first of the others that exists (Arch, for
+// one, uses Debian's path), else null. ctx.sysroot stands in for / in tests
+function systemBundle(ctx) {
+  const at = p => path.join(ctx.sysroot || '/', p);
+  const tries = [SYSTEM_BUNDLE[ctx.family], ...Object.values(SYSTEM_BUNDLE)].filter(Boolean).map(at);
+  return tries.find(f => { try { return fs.statSync(f).isFile(); } catch { return false; } }) || null;
+}
+
 // pythonRoots(ctx) — the Python folders beyond the tools' own that hold packages: on Linux the system's
 // (/usr/lib/python3*, /usr/local/lib/python3*: Debian's dist-packages among them) and pip --user's
 // (~/.local/lib/python3*); on macOS pip --user's (~/Library/Python/3.*). Only folders that exist. ctx.sysroot: tests
@@ -141,6 +156,7 @@ const FIX = {
   pin: 'review the new key, then update the pin in a config-repo PR (the supply-chain runbook)',
   selfUpdate: name => `turn ${name}'s own updater off`,
   processList: 'by hand: let the audit read the process list (ps on macOS, /proc on Linux), then run it again',
+  trustLinux: 'by hand: remove the root from the system trust store (parity 2.1 adds the command)',
 };
 const tomlGet = async (ctx, file, expr) => { const r = (await ctx.run('yq', ['-p', 'toml', '-oy', '-r', expr, file])); return r.status === 0 ? r.stdout.trim() : ''; };
 
@@ -276,7 +292,7 @@ const CHECKS = [
     },
   },
   {
-    id: 'trust', name: 'Trust stores', platforms: ['macos'], title: () => "Trust stores (distrusted_root: the engine's defaults and yours)",
+    id: 'trust', name: 'Trust stores', platforms: ['macos', 'linux'], title: () => "Trust stores (distrusted_root: the engine's defaults and yours)",
     async run(ctx, out) {
       const pemHas = (file, sha) => {
         let text; try { text = fs.readFileSync(file, 'utf8'); } catch { return false; }
@@ -284,16 +300,25 @@ const CHECKS = [
       };
       const nodeHas = sha => require('tls').rootCertificates.some(p => new X509Certificate(p).fingerprint256.replace(/:/g, '') === sha.toUpperCase());
       const brewPrefix = (await brew.available(ctx)) ? (await brew.prefix(ctx)) : null;
-      for (const r of ctx.policy.distrusted_root || []) {
-        const roots = (await ctx.run('security', ['find-certificate', '-a', '-Z', '-c', r.name, '/System/Library/Keychains/SystemRootCertificates.keychain'])).stdout;
-        if (roots.toLowerCase().includes(`sha-256 hash: ${r.sha256.toLowerCase()}`)) {
-          const settings = (await ctx.run('security', ['dump-trust-settings', '-d'])).stdout;
-          let hit = false, deny = false;
-          for (const l of settings.split('\n')) { if (/^Cert [0-9]+:/.test(l)) hit = l.includes(r.name); if (hit && l.includes('ResultDeny')) deny = true; }
-          if (deny) out.ok(`${r.name} (${r._source}): in macOS system roots, admin trust setting = Deny`);
-          else out.action(`trust: ${r.name} is trusted by macOS; deny it: sudo security add-trusted-cert -d -r deny <pem> (see AGENTS.md)`);
-        } else out.ok(`${r.name} (${r._source}): not in macOS system roots`);
-        if (pemHas('/etc/ssl/cert.pem', r.sha256)) out.info(`${r.name}: still in /etc/ssl/cert.pem (Apple-managed; leaves with a macOS update)`);
+      const distrusted = ctx.policy.distrusted_root || [];
+      // Linux: the family's system bundle (parity 0.5); one that can't be found is said, never taken for "not in"
+      const bundle = ctx.platform === 'linux' ? systemBundle(ctx) : null;
+      if (ctx.platform === 'linux' && !bundle && distrusted.length) out.note(`system CA bundle not found (looked in ${[...new Set(Object.values(SYSTEM_BUNDLE))].join(', ')}); distrusted roots there were not checked`);
+      for (const r of distrusted) {
+        if (ctx.platform === 'macos') {
+          const roots = (await ctx.run('security', ['find-certificate', '-a', '-Z', '-c', r.name, '/System/Library/Keychains/SystemRootCertificates.keychain'])).stdout;
+          if (roots.toLowerCase().includes(`sha-256 hash: ${r.sha256.toLowerCase()}`)) {
+            const settings = (await ctx.run('security', ['dump-trust-settings', '-d'])).stdout;
+            let hit = false, deny = false;
+            for (const l of settings.split('\n')) { if (/^Cert [0-9]+:/.test(l)) hit = l.includes(r.name); if (hit && l.includes('ResultDeny')) deny = true; }
+            if (deny) out.ok(`${r.name} (${r._source}): in macOS system roots, admin trust setting = Deny`);
+            else out.action(`trust: ${r.name} is trusted by macOS; deny it: sudo security add-trusted-cert -d -r deny <pem> (see AGENTS.md)`);
+          } else out.ok(`${r.name} (${r._source}): not in macOS system roots`);
+          if (pemHas('/etc/ssl/cert.pem', r.sha256)) out.info(`${r.name}: still in /etc/ssl/cert.pem (Apple-managed; leaves with a macOS update)`);
+        } else if (bundle) {
+          if (pemHas(bundle, r.sha256)) out.action(`trust: ${r.name} is in the system bundle ${bundle}; distrust it by hand for now (parity 2.1 adds the family's own command)`, { fix: FIX.trustLinux });
+          else out.ok(`${r.name} (${r._source}): not in the system bundle ${bundle}`);
+        }
         if (brewPrefix && pemHas(path.join(brewPrefix, 'etc', 'ca-certificates', 'cert.pem'), r.sha256)) out.action(`trust: ${r.name} in Homebrew ca-certificates: brew upgrade ca-certificates`);
         if (nodeHas(r.sha256)) out.action(`trust: ${r.name} in Node ${process.version}'s bundled roots: steward sc node-patch <fixed version>`);
       }
@@ -361,4 +386,4 @@ const CHECKS = [
   },
 ];
 
-module.exports = { CHECKS, ALL, FIX, caskIds, pickCask, verLt, appVersion, appBehind, ageDays, securityException, processes, pythonRoots };
+module.exports = { CHECKS, ALL, FIX, caskIds, pickCask, verLt, appVersion, appBehind, ageDays, securityException, processes, pythonRoots, systemBundle, SYSTEM_BUNDLE };

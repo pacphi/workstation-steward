@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 8](https://img.shields.io/badge/Revision-8-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 9](https://img.shields.io/badge/Revision-9-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -40,7 +40,7 @@ combination we claim.
 
 | Milestone | What it delivers | Stage | Done |
 | --- | --- | --- | --- |
-| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 5 / 9 |
+| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 6 / 9 |
 | [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Not started | 0 / 10 |
 | [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 6 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
@@ -179,7 +179,7 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 | OS updates | `softwareupdate -l` | part of the system provider | moving nixpkgs is the OS update | ⬜ |
 | Apps and the Electron window | `/Applications`, casks | Flatpak, Snap, AppImage, `/opt` | Nix apps; Flatpak where enabled | ⬜ |
 | App store | `mas` | Flatpak and Snap stand in | ➖ | ⬜ |
-| Trust store: finding distrusted roots | keychain, PEM bundles, Node's roots | PEM bundles and Node's roots (portable today), the system bundle | the system bundle | ⬜ |
+| Trust store: finding distrusted roots | keychain, PEM bundles, Node's roots | the family's system bundle, Linuxbrew's and Node's roots (0.5) | the system bundle | 🟨 |
 | Trust store: denying a root | admin trust setting (by hand) | per family: Debian, Red Hat, SUSE, Arch, Alpine | `security.pki` in the host's config, by a PR | ⬜ |
 | Indicators of compromise | `ps`, Mac paths | procps or busybox `ps`, `/proc`, Linux paths | `/nix/store` paths | ⬜ |
 | `steward doctor` install hints | Homebrew, mise | per package manager | per Nix setup | ⬜ |
@@ -191,7 +191,7 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 before. **Done when:** `steward sc plan` and `steward sc audit` run clean on `ubuntu-latest` with Linuxbrew, and the
 Mac's output before and after is identical.
 
-Stage: Under way (0.1, 0.2, 0.3, 0.4 and 0.9 done).
+Stage: Under way (0.1 to 0.5, and 0.9, done).
 
 - [x] **0.1 Know the platform** (#84, D63). `lib/platform.js` reads `/etc/os-release` (`ID`, `ID_LIKE`, `VERSION_ID`) and returns
   the platform, distribution and family; NixOS by `ID=nixos`. `host.toml` entries take the optional `families` key
@@ -229,8 +229,11 @@ Stage: Under way (0.1, 0.2, 0.3, 0.4 and 0.9 done).
   LiteLLM marker had never been checkable on a Mac (confirmed in the owner's terminal, macOS 27.2); the audit now says
   so. Python packages are also searched in `dist-packages` and the per-user folders on Linux and macOS. Every Linux row
   passes (423 of 424 each; the other is the macOS-only test, skipped).
-- [ ] **0.5 Trust store, the finding half.** The PEM-bundle and Node-roots checks leave the macOS-only trust check, so
-  Linux reports distrusted roots from the start.
+- [x] **0.5 Trust store, the finding half** (#90, D68). The `trust` check runs on Linux too: the family's system CA
+  bundle, then Linuxbrew's and Node's roots. A root still trusted is an action; a bundle that can't be found is a note.
+  The Mac's audit is unchanged. **Found:** run with the engine's defaults in the test images, `emSign ECC Root CA - G3`
+  is still trusted in the Fedora 44 and Tumbleweed images (p11-kit's `trust list` agrees), and not in Debian, Ubuntu or
+  Leap.
 - [ ] **0.6 `steward doctor` per platform.** Each prerequisite says which platforms need it. Today `sw_vers`,
   `security`, `softwareupdate`, `mas` and Homebrew are required everywhere. Install hints come per family. On Linux,
   `libatomic` is a prerequisite: Node 26's arm64 binary needs `libatomic.so.1`, which minimal installs leave out (found
@@ -315,7 +318,8 @@ fully supported providers; then the best-effort ones (owner, 2026-10-31 and 2026
 Stage: Not started.
 
 - [ ] **2.1 Trust store, the denying half, per family:** Debian (`update-ca-certificates`), Red Hat (`update-ca-trust`),
-  SUSE, Arch and Alpine. It needs root, so the steward hands the user the exact command (D-b).
+  SUSE, Arch and Alpine. It needs root, so the steward hands the user the exact command (D-b). First test cases: the
+  Fedora 44 and Tumbleweed images, which still trust `emSign ECC Root CA - G3` (found by 0.5).
 - [ ] **2.2 Apps and the Electron support window** for Flatpak, Snap, AppImage and `/opt`.
 - [ ] **2.3 Vendored Node on Linux:** Linux paths in the engine's `vendored_node` defaults.
 - [ ] **2.4 Browsers kept current on Linux:** Linux names in the engine's `always_current` defaults.
@@ -394,6 +398,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-02 | 9 | 0.5 done: distrusted roots found on Linux (D68); emSign still trusted in the Fedora 44 and Tumbleweed images, the first cases for 2.1 | #90 |
 | 2026-11-02 | 8 | 0.4 done: IOCs on every platform, the environment key, the coverage line, the rule (D67); macOS shows no process environment; 2.6 added for later | #89 |
 | 2026-11-02 | 7 | 0.3 done: the shell on GNU and busybox, no perl, no lsof on Linux (D66); every Linux row passes; jq joins the Linux prerequisites; the Mint image corrected; the RuVector add-on name moves to 0.7 | #88 |
 | 2026-11-02 | 6 | 0.9 done: local container tests (D65), the first Linux baseline, the libatomic finding; end-to-end runs added to each provider's checklist and the release bar | #87 |

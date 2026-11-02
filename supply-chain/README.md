@@ -101,6 +101,21 @@ Sources the steward doesn't install itself are declared as `[[updater]]` entries
 paths, runs `apply`, refuses unless `require_output` appears, stops if the signing key changed, and writes a receipt.
 The schema is in [`examples/supply-chain/host.toml`](../examples/supply-chain/host.toml).
 
+## Distrusted roots
+
+Each `[[distrusted_root]]` (the engine's defaults and yours) is looked for wherever the machine trusts it (D68). On
+macOS: the system keychain and its trust settings, `/etc/ssl/cert.pem`, Homebrew's `ca-certificates` and Node's bundled
+roots. On Linux: the system CA bundle, then Linuxbrew's `ca-certificates` and Node's bundled roots.
+
+| Family | System CA bundle |
+| --- | --- |
+| Debian, Ubuntu, Linux Mint (and Arch) | `/etc/ssl/certs/ca-certificates.crt` |
+| Fedora and the Red Hat family | `/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem` |
+| openSUSE | `/var/lib/ca-certificates/ca-bundle.pem` |
+
+A root still trusted is an action. On Linux you remove it by hand for now; the steward will hand you each family's
+command later (`docs/platforms/parity.md`, 2.1).
+
 ## Indicators of compromise
 
 `steward sc audit` sweeps for each `[[ioc]]` in the engine's defaults and your `host.toml`: `files` that exist,
