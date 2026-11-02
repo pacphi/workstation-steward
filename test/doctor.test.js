@@ -146,3 +146,11 @@ test('doctor --markdown: one table for every platform, with a Platforms column',
   assert.ok(t.some(l => l.startsWith('| supply-chain | security | macos | required |')));
   assert.ok(t.some(l => l.startsWith('| core | git | all | required |')));
 });
+
+test('doctor on Linux: a check-only entry (Linux, libatomic) shows no path; the sh that runs its check is not where it lives', () => {
+  const s = standins('sh', 'ldconfig');
+  const r = doctor(['--area', 'core'], { PATH: `${s.dir}:/usr/bin:/bin`, STEWARD_DOCTOR_AS: 'linux:debian' });
+  const line = r.stdout.split('\n').find(l => /^\s+ok\s+libatomic/.test(l));
+  assert.ok(line, r.stdout);
+  assert.ok(!line.includes('/sh'), line);
+});
