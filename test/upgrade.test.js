@@ -83,7 +83,7 @@ test('plan: takes what is old enough or excepted, holds the rest, and says what 
     'take   mise 2026.10.18 -> 2026.10.19 (3d old)',
   ]);
   assert.deepEqual(p, { packages: [{ source: 'brew-formula', names: ['git', 'openssl@3'] }], tools: ['gh', 'npm:renovate'], updaters: [], miseSelf: '2026.10.19' });
-  assert.deepEqual(sections, ['Homebrew formulae', 'Homebrew casks (self-updating casks are left to their own updaters)', 'mise tools (mise already applies minimum_release_age)', 'Declared updaters ([[updater]]: signed_data, always_current and an unexpired exception skip the gate)', "mise itself (D38: the gate and advisories decide; Homebrew's mise is judged with the formulae)"]);
+  assert.deepEqual(sections, ['Homebrew formulae', 'Homebrew casks (self-updating casks are left to their own updaters)', 'mise tools (mise already applies minimum_release_age)', 'Declared updaters ([[updater]]: a dated one waits out the gate; signed_data, always_current and an unexpired exception skip it)', "mise itself (D38: the gate and advisories decide; Homebrew's mise is judged with the formulae)"]);
 });
 
 test('plan: a declared updater that is behind is taken when its class skips the gate, held when gated; a changed key or an unclear check is skipped (D52)', async () => {
@@ -125,6 +125,24 @@ async function applyWith(p, fails = {}, o = {}) {
   try { code = await apply(p, { script: record, step: record, dry: false, ...o }); } finally { Object.assign(console, keep); }
   return { code, calls, lines: out.join('\n').replace(/\x1b\[[0-9;]*m/g, '').split('\n') };
 }
+test('plan: a dated updater takes the newest version past the gate, holds an early install and names a newer major (D72)', async () => {
+  const t = h => new Date(NOW.getTime() - h * 3600e3).toISOString();
+  const u = (name, extra = {}) => ({ name, class: 'gated', why: 'w', installed: `ver-${name}`, released: { npm: 'p' }, apply: 'a {version}', backup: ['b'], ...extra });
+  const c = ctx({
+    'brew --prefix': '/opt/homebrew\n', 'brew list --formula --versions': '', 'brew list --formula --full-name': '', 'brew list --cask --versions': '', 'mise outdated --bump --json': '{}',
+    'npm view p time --json': JSON.stringify({ '1.0.0': t(300), '1.0.1': t(100), '1.0.2': t(5), '2.0.0': t(200) }), 'bash -c ver-old': '1.0.0', 'bash -c ver-early': '1.0.2', 'bash -c ver-fine': '1.0.1',
+  });
+  c.policy.updater = [u('old'), u('early'), u('fine')];
+  const lines = [];
+  const p = await plan(c, { section: () => {}, line: l => lines.push(l), warn: () => {} });
+  assert.deepEqual(p.updaters, ['old']);
+  assert.deepEqual(lines.filter(l => !l.includes(' mise ')), [
+    'take   old 1.0.0 -> 1.0.1 (gated: past the 3-day wait)',
+    'hold   early (1.0.2 is installed, published 2026-10-27 07:00 UTC: it clears the 3-day wait at 2026-10-30 07:00 UTC)',
+    'skip   fine 1.0.1 -> 2.0.0 (major: yours to take, by hand)',
+  ]);
+});
+
 const PLAN = { packages: [{ source: 'brew-formula', names: ['git'] }], tools: ['npm:renovate', 'github:gastownhall/beads', 'gh'], updaters: [], miseSelf: '' };
 
 test('apply: a failed tool doesn\'t stop the others; the end names it with its way back, and the run exits 1, never "done"', async () => {

@@ -1,10 +1,11 @@
 # Release classes: what may skip the release-age gate
 
-![Revision 3](https://img.shields.io/badge/Revision-3-green) ![Revised 2026-10-29](https://img.shields.io/badge/Revised-2026--10--29-green)
+![Revision 4](https://img.shields.io/badge/Revision-4-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 > [!NOTE]
 > **Built (D52)**, with the weekly upstream watch and the maintainer runbook. The code is `lib/updaters.js`, and the
-> watch is `tools/upstream-watch.js`; the schema by example is in `examples/supply-chain/host.toml`.
+> watch is `tools/upstream-watch.js`; the schema by example is in `examples/supply-chain/host.toml`. **Dated sources
+> (D72)** let a `gated` one be applied too; Claude Code's native build is the first.
 
 The steward holds every new release for the release-age gate (`[policy] min_release_age_days`, 3 days by default) and
 keeps old installs for the soak after a change. Two exceptions exist today, each a special case: `always_current`
@@ -34,8 +35,9 @@ whether it waits for the gate. Updates the steward doesn't install itself (a dat
 | `exception` | none until it expires | an advisory (GHSA, RustSec or OSV) or a written reason, and an expiry date | `[[security_exception]]` |
 
 A declared source has no release date the steward can read, so a `gated` `[[updater]]` that's behind is never applied
-by `steward sc upgrade`: the plan holds it, and you apply it yourself after review. An `exception` past its `expires`
-is `gated` again.
+by `steward sc upgrade`: the plan holds it, and you apply it yourself after review. **A dated one is the exception**
+(below): it says where its release dates are published, so the steward waits out the gate itself and then applies
+it. An `exception` past its `expires` is `gated` again.
 
 `signed_data` is deliberately narrow. Code never qualifies, however it is signed: a signature proves who published it,
 not that the release is good, and the gate is what catches a bad release. Data qualifies because the runtime that reads
@@ -89,13 +91,55 @@ watch = "https://raw.githubusercontent.com/stuinfla/ruvnet-brain/main/kb/forge-u
   the copy back. Copies older than the soak are removed by `steward sc prune`, so a daily source keeps a few, not
   dozens.
 
+## A dated source: gated, and still applied
+
+Some tools install themselves, outside mise and Homebrew, yet publish dated releases and can install an exact
+version. Claude Code's native build is one: `claude install <version>` takes any version, each version is published to
+npm with its time, and Anthropic's release manifest lists every build's sha256. Its own updater takes the newest
+release the day it ships. A **dated** `[[updater]]` hands that choice to the steward:
+
+```toml
+[[updater]]                            # in the engine's host-defaults.toml
+name = "claude-code"
+class = "gated"
+when = "~/.local/share/claude/versions"
+installed = "basename \"$(readlink ~/.local/bin/claude)\""   # prints the version in use (2.1.316)
+released = { npm = "@anthropic-ai/claude-code" }   # or { github = "<owner>/<repo>" }: its releases
+apply = "~/.local/share/claude/versions/{installed} install {version}"
+verify = { url = "https://downloads.claude.ai/claude-code-releases/{version}/manifest.json", json = "platforms.{platform}.checksum", file = "~/.local/share/claude/versions/{version}" }
+backup = ["~/.local/bin/claude", "~/.local/share/claude/versions/{installed}"]
+self_update_off = [
+  { file = "~/.claude.json", key = "autoUpdates", value = false },
+  { file = "~/.claude/settings.json", key = "env.DISABLE_AUTOUPDATER", value = "1" },
+]
+```
+
+- **Which version:** the newest on the installed line that is past the gate (`min_release_age_days`, counted from its
+  publish time). Prereleases are never taken. A newer major, or a 0.x minor, is named and left to you, as for every
+  other tool.
+- **Installed early:** a version younger than the gate (taken by hand, or by the tool's own updater) is held: the audit
+  says when it clears, and nothing is downgraded.
+- **`{version}`, `{installed}`, `{platform}`** are filled in `apply`, `backup` and `verify`. The platform is the vendor's
+  name for this machine: `darwin-arm64`, `linux-x64`, and `-musl` on a Linux without glibc.
+- **`verify`** fetches the vendor's manifest before anything changes (no manifest for that version and platform: nothing
+  is done), and after `apply` compares the installed file's sha256 with it. A mismatch puts back what the apply
+  replaced and fails, with the receipt. It stands in for `require_output`: the bytes are proof, a line of output isn't.
+- **`backup`** may name a link. It is copied as the link it is, so a rollback points the launcher back at the old build,
+  even after the tool's installer has removed that build.
+- **`self_update_off`** may be a list, any one of which holding is enough. `claude install` moves `autoUpdates: false`
+  out of `~/.claude.json` and into `~/.claude/settings.json` as `DISABLE_AUTOUPDATER`, so either one counts.
+- **`check`** isn't needed: the release dates and `installed` answer it.
+
+The release dates and the bytes come from two places (npm and Anthropic's download host), so one of them being wrong
+doesn't decide alone. The receipt records `from`, `to` and the sha256 both ways.
+
 ## Keeping shipped defaults current
 
 A shipped pin is only as good as the maintainer's notice of a change upstream. Four layers:
 
 | Layer | What it catches | When |
 | --- | --- | --- |
-| A schema test (`test/host-defaults.test.js`) | a shipped `[[updater]]` missing `why`, `when`, `require_output` or `backup`, a `signed_data` one without a `pin`, an unknown class | every engine PR |
+| A schema test (`test/host-defaults.test.js`) | a shipped `[[updater]]` missing `why`, `when`, `require_output` (a dated one: `verify`) or `backup`, a `signed_data` one without a `pin`, an unknown class | every engine PR |
 | An upstream watch (`.github/workflows/upstream-watch.yml`, a scheduled GitHub workflow in the engine repo, read-only) | each shipped `pin` with a `watch` URL: fetch it, apply `match`, compare the hash; on a change it opens or updates an issue labelled `owner-decision` | weekly |
 | Field reports | `steward sc audit` on any machine: a pin mismatch says the key changed and the engine's default may be behind | whenever it runs |
 | A maintainer runbook ([`maintainers.md`](maintainers.md#a-shipped-default-changed-upstream)) | confirm the change from the publisher's own release notes or announcement, update the pin in a PR, release; the gate then delays it like any engine change | when either of the two above fires |
@@ -112,7 +156,9 @@ A shipped pin is only as good as the maintainer's notice of a change upstream. F
 
 `always_current = […]` and `[[security_exception]]` keep working as they are: the engine reads them as the
 `always_current` and `exception` classes. The `[[updater]]` table is new; an older engine ignores it (an unknown
-table), so it can't skip a gate it doesn't know about.
+table), so it can't skip a gate it doesn't know about. A dated entry (D72) in your own `host.toml` is left out by an
+engine before D72, with a warning (it has no `check`), and a list of `self_update_off` switches reads there as one that
+isn't off; the shipped `claude-code` default arrives with the engine that reads it.
 
 ## Decided
 
@@ -134,6 +180,13 @@ table), so it can't skip a gate it doesn't know about.
   read-only upstream watch that opens an issue, field reports from the audit, and a maintainer runbook. The watch is
   the engine repo's first scheduled job; it only reads and opens issues.
 
+- **Claude Code is gated by a dated `[[updater]]`** (the owner, 2026-11-02), not by Anthropic's `stable` channel (the
+  vendor's choice of version, with no receipt) and not by moving it into mise (away from the native build Anthropic
+  recommends). Dates come from npm, bytes are checked against Anthropic's manifest, the launcher link and the running
+  build are backed up, either auto-update switch counts, and an early install is held, never downgraded.
+- **The GitHub release source ships with no default yet** (the owner, 2026-11-02). Hermes (a git checkout that follows a
+  branch) and the Cursor agent (its own installer, no public release list found) each need their own review first.
+
 ## Docs that change when it's built
 
 The schema is documented with the code, never ahead of it. The implementation PR updated each of these except the
@@ -151,7 +204,7 @@ scene:
 | `skills/ai-tooling/runbook.md`, Brain | the knowledge base as a declared `signed_data` source |
 | `docs/maintainers.md` | "A shipped default changed upstream": the runbook above (built) |
 | `.github/workflows/` | the weekly, read-only upstream watch, `upstream-watch.yml` (built) |
-| `docs/assets/terminal/steward-supply-chain.json` | an updater line in `steward sc plan`, with the class (*to come*) |
+| `docs/assets/terminal/steward-supply-chain.json` | an updater line in `steward sc plan`, with the class (built with D72: Claude Code's line) |
 
 ## Rejected
 
