@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Layout: a film in nine acts. One dark harbor at dusk is the only world; full-bleed title cards open each act;
+/* Layout: a film in ten acts. One dark harbor at dusk is the only world; full-bleed title cards open each act;
    content sits in a 1180px column with a 16px+ safe gutter. Amber is the accent (sodium harbor light); red and
    green are the ships' sidelights and mean held / cleared, never decoration. */
 :root{
@@ -353,11 +353,29 @@ pre.toml i{color:var(--mist);font-style:normal}
 /* Act III: five rule cards in one row on a wide screen; a stamp is as wide as its word, never stretched */
 @media (min-width:1100px){.rules{grid-template-columns:repeat(5,minmax(0,1fr))}}
 .ship .stamp{justify-self:end;width:max-content}
-/* the gate's "your call" items carry class ask, which Act IX's .ask grid also styles: keep them out of it */
+/* the gate's "your call" items carry class ask, which Act X's .ask grid also styles: keep them out of it */
 .ship .stamp.ask{display:block;margin-top:0;grid-template-columns:none}
 .ship .ship-svg.ask{display:block;margin-top:0}
 
-/* ---- Act IX: the eight ---- */
+/* Act IV: the storm board. It reuses the gate's board; its zones get storm colors, its severity control is four
+   radio buttons, and a tag on the act card says it arrives with the next release (nothing is lit until it ships) */
+.act-no .soon{display:inline-block;margin-left:10px;font-family:var(--f-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--lamp);border:1px solid var(--lamp);border-radius:999px;padding:1px 8px;vertical-align:middle}
+.seg{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.seg legend{width:100%;font-weight:700;margin-bottom:8px;padding:0}
+.seg label{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:4px 14px;border-radius:999px;border:1.5px solid var(--line-2);font-family:var(--f-mono);font-size:12.5px;color:var(--chalk);cursor:pointer}
+.seg input{accent-color:var(--lamp);width:16px;height:16px;margin:0}
+.seg label:has(input:checked){border-color:var(--lamp);color:var(--lamp)}
+.seg label:has(input:focus-visible){outline:2px solid var(--lamp);outline-offset:2px}
+@media (min-width:860px){.storm-harbor{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.zone.warn{border-style:solid;border-color:rgba(242,92,79,.45)}
+.zone.fair{border-style:solid;border-color:rgba(63,212,142,.35)}
+.zone.apart{border-color:rgba(243,179,61,.4)}
+.zone.offmap{border-color:var(--line-2);opacity:.85}
+.stamp.warn{color:var(--port-ink)}.stamp.fair{color:var(--starboard)}.stamp.apart{color:var(--lamp)}.stamp.offmap{color:var(--mist)}
+.ship-svg.offmap{--light:var(--mist)}
+.ship.gone{opacity:0;transform:translateY(8px);transition:opacity .5s,transform .5s}
+
+/* ---- Act X: the eight ---- */
 .eight{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
 .eight li{display:grid;grid-template-columns:minmax(150px,auto) minmax(0,1fr);gap:12px;font-size:14.5px;color:var(--fog);align-items:baseline;border-top:1px dashed var(--line);padding-top:6px}
 .eight li:first-child{border-top:0;padding-top:0}
@@ -451,7 +469,7 @@ pre.toml i{color:var(--mist);font-style:normal}
 .cfg-out .src{color:var(--mist)}
 .cfg-out .src.yours{color:var(--starboard-ink)}
 
-/* ---- Act VIII: horizon ---- */
+/* ---- Act IX: horizon ---- */
 .horizon{position:relative;margin-top:8px;border-radius:20px;overflow:hidden;border:1px solid var(--line-2);background:linear-gradient(180deg,#071B24 0%,#0D3443 54%,#1E464B 57%,#0A2631 59%,#061820 100%)}
 .horizon svg{display:block;width:100%;height:auto}
 .horizon .lh{transition:opacity .3s}
@@ -478,7 +496,7 @@ pre.toml i{color:var(--mist);font-style:normal}
 .feat li .pl{width:20px;height:20px;border-radius:50%;border:1.5px dashed var(--mist);margin-top:2px}
 .feat li .tagp{display:inline-block;font-family:var(--f-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist);border:1px solid var(--line-2);border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:2px}
 
-/* ---- Act IX: start ---- */
+/* ---- Act X: start ---- */
 .steps{counter-reset:s;list-style:none;margin:10px 0 0;padding:0;display:grid;gap:12px}
 .steps li{counter-increment:s;display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;background:var(--hull);border:1px solid var(--line);border-radius:14px;padding:16px}
 .steps li::before{content:counter(s);display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--lamp);color:#1a1200;font:900 20px var(--f-display)}
@@ -554,12 +572,13 @@ pre.block{margin:10px 0 0;background:#04131A;border:1px solid var(--line);border
     <li><a href="#act-1"><em>One October</em><span>I</span></a></li>
     <li><a href="#act-2"><em>Who</em><span>II</span></a></li>
     <li><a href="#act-3"><em>Quarantine</em><span>III</span></a></li>
-    <li><a href="#act-4"><em>The pilot</em><span>IV</span></a></li>
-    <li><a href="#act-5"><em>Four berths</em><span>V</span></a></li>
-    <li><a href="#act-6"><em>Every vessel</em><span>VI</span></a></li>
-    <li><a href="#act-7"><em>The ledger</em><span>VII</span></a></li>
-    <li><a href="#act-8"><em>The horizon</em><span>VIII</span></a></li>
-    <li><a href="#act-9"><em>Cast off</em><span>IX</span></a></li>
+    <li><a href="#act-4"><em>Storms</em><span>IV</span></a></li>
+    <li><a href="#act-5"><em>The pilot</em><span>V</span></a></li>
+    <li><a href="#act-6"><em>Four berths</em><span>VI</span></a></li>
+    <li><a href="#act-7"><em>Every vessel</em><span>VII</span></a></li>
+    <li><a href="#act-8"><em>The ledger</em><span>VIII</span></a></li>
+    <li><a href="#act-9"><em>The horizon</em><span>IX</span></a></li>
+    <li><a href="#act-10"><em>Cast off</em><span>X</span></a></li>
   </ol>
 </nav>
 
@@ -597,13 +616,13 @@ pre.block{margin:10px 0 0;background:#04131A;border:1px solid var(--line);border
   <div id="lantern" aria-hidden="true"></div>
   <div class="wrap">
     <div class="hero-copy">
-      <p class="eyebrow">A film in nine acts · release 0.10.1</p>
+      <p class="eyebrow">A film in ten acts · release 0.10.1</p>
       <h1>Workstation Steward</h1>
       <p class="dek">A harbormaster for everything that lands on your machine, and a pilot when you need one.</p>
       <p class="sub">Your Mac runs hundreds of tools from many sources, and each one updates on its own schedule. The steward is the one place that decides what is allowed in, and when. With its skills installed, open Claude Code and it tells you, once, what needs you; answer in plain words. Nothing changes without your word, and every change can be undone.</p>
       <div class="hero-actions">
         <a class="btn primary" href="#act-1">Start the film</a>
-        <a class="btn" href="#act-9">Skip to the install</a>
+        <a class="btn" href="#act-10">Skip to the install</a>
       </div>
       <ul class="badges" aria-label="At a glance">
         <li>macOS today</li>
@@ -695,7 +714,7 @@ pre.block{margin:10px 0 0;background:#04131A;border:1px solid var(--line);border
       <ul>
         <li>you want updates to happen silently in the background. Nothing changes on its own, on purpose: the only thing that runs unasked is a short look that reads and never writes.</li>
         <li>you want a window to click in. It is a conversation in Claude Code, and eight commands for when you'd rather type.</li>
-        <li>you work on Linux or Windows today. macOS came first; the rest is charted in Act VIII.</li>
+        <li>you work on Linux or Windows today. macOS came first; the rest is charted in Act IX.</li>
       </ul>
     </div>
   </div>
@@ -761,8 +780,65 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
 <!-- ================= ACT IV ================= -->
 <section class="act" id="act-4" aria-labelledby="h-act4">
   <div class="act-card"><div class="glow"></div><div class="wrap">
-    <p class="act-no"><b>IV</b> The pilot</p>
-    <h2 id="h-act4" class="rv">The pilot comes aboard</h2>
+    <p class="act-no"><b>IV</b> Storms <span class="soon">next release</span></p>
+    <h2 id="h-act4" class="rv">Storm warnings</h2>
+    <p class="dek rv" data-d="1">The gate keeps trouble out. Storms find the ships already moored.</p>
+  </div></div>
+  <div class="wrap act-body">
+      <div class="prose rv">
+        <p class="lead">A release can pass the gate clean, and a flaw can be found in it next month. Act I asked which machine had taken which version. Now the harbormaster can answer before you finish asking.</p>
+        <p>The steward listens to three weather services: <strong>OSV</strong>, which carries GitHub's advisory database; <strong>nodejs.org</strong>, for Node's own security releases; and <strong>CISA's list of flaws being exploited right now</strong>. It asks about every tool and about every package inside each tool. On one Mac on 2 November that was about 1,500 package versions in 22 tools, in under ten seconds. You can add a service of your own, but a service only ever sends data. It never runs code.</p>
+        <p>Then it rides the storm out with you: <dfn>repair</dfn> what has a fix, <dfn>scrap</dfn> old hulls nobody sails, <dfn>watch</dfn> what waits on its maker, and <dfn>moor apart</dfn> what can't wait. Each takes your yes. Move the warning line and see who needs you.</p>
+      </div>
+      <div class="gate storm rv" id="storm">
+        <div class="gate-controls">
+          <fieldset class="seg">
+            <legend>Raise a warning at</legend>
+            <label><input type="radio" name="storm-sev" value="1"> Low</label>
+            <label><input type="radio" name="storm-sev" value="2"> Moderate</label>
+            <label><input type="radio" name="storm-sev" value="3" checked> High</label>
+            <label><input type="radio" name="storm-sev" value="4"> Critical</label>
+          </fieldset>
+          <div class="toggles">
+            <label><input type="checkbox" id="tg-kev" checked> A flaw being exploited right now always raises a warning</label>
+            <label><input type="checkbox" id="tg-inside" checked> Check the packages inside each tool, not just the tool</label>
+          </div>
+        </div>
+        <div class="gate-actions">
+          <button class="tbtn primary" id="ride">Ride it out ▸ one yes</button>
+          <button class="tbtn" id="storm-reset">Reset</button>
+          <span class="tally" id="storm-tally" aria-live="polite"></span>
+        </div>
+        <div class="harbor storm-harbor">
+          <div class="zone warn"><h4>Storm warning · needs you <b id="n-warn">0</b></h4><div class="ships" id="z-warn"></div></div>
+          <div class="zone fair"><h4>Fair weather <b id="n-fair">0</b></h4><div class="ships" id="z-fair"></div></div>
+          <div class="zone apart"><h4>Moored apart · switched off, kept <b id="n-apart">0</b></h4><div class="ships" id="z-apart"></div></div>
+          <div class="zone offmap"><h4>Off the weather map · not covered <b id="n-off">0</b></h4><div class="ships" id="z-off"></div></div>
+        </div>
+        <div class="gate-foot">
+          <pre class="toml" aria-label="The policy lines these controls edit"><i># supply-chain/host.toml</i>
+[vulns]
+action_severity = <b id="toml-sev">"high"</b>
+exploited_always_action = <b id="toml-kev">true</b>
+inside_tools = <b id="toml-inside">true</b></pre>
+          <p class="note">Five vessels are from a real run on 2 November 2026, with their real advisories; <em>example-tool</em> and <em>example-cli</em> are examples, there to show a repair and a mooring. Off the map is said out loud: it is not the same as fair weather.</p>
+        </div>
+      </div>
+    <ul class="rules">
+      <li class="rv" data-d="0"><b>Never a false all-clear</b>A weather service that doesn't answer is <em>not checked</em>, and a tool no service covers is <em>not covered</em>. <code>steward sc vulns</code> says both.</li>
+      <li class="rv" data-d="1"><b>Repairs need your yes</b><code>steward sc vulns-fix</code> shows its plan, asks, backs up, writes a receipt and can roll back. A major version is listed for you, never taken in bulk.</li>
+      <li class="rv" data-d="2"><b>Moored apart, not scrapped</b><code>steward sc isolate</code> switches a tool off with mise's own switch and keeps it installed. <code>--undo</code> brings it back.</li>
+      <li class="rv" data-d="3"><b>Every exception written down</b>A warning that doesn't apply here is silenced in <code>host.toml</code> with its reason and an expiry. When it expires, the warning comes back.</li>
+      <li class="rv" data-d="4"><b>Ask the pilot</b>In Claude Code: <em>"Is anything I have vulnerable?"</em> The supply-chain skill runs the check and offers the fix. Anything that changes waits for you.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= ACT V ================= -->
+<section class="act" id="act-5" aria-labelledby="h-act5">
+  <div class="act-card"><div class="glow"></div><div class="wrap">
+    <p class="act-no"><b>V</b> The pilot</p>
+    <h2 id="h-act5" class="rv">The pilot comes aboard</h2>
     <p class="dek rv" data-d="1">The pilot knows the water. The captain keeps command. Every change goes in the log.</p>
   </div></div>
   <div class="wrap act-body">
@@ -849,11 +925,11 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
     </div>
   </div>
 </section>
-<!-- ================= ACT V ================= -->
-<section class="act" id="act-5" aria-labelledby="h-act5">
+<!-- ================= ACT VI ================= -->
+<section class="act" id="act-6" aria-labelledby="h-act6">
   <div class="act-card"><div class="glow"></div><div class="wrap">
-    <p class="act-no"><b>V</b> The map</p>
-    <h2 id="h-act5" class="rv">Four berths</h2>
+    <p class="act-no"><b>VI</b> The map</p>
+    <h2 id="h-act6" class="rv">Four berths</h2>
     <p class="dek rv" data-d="1">A machine has more than one supply chain. Each gets its own berth, its own rules and its own commands.</p>
   </div></div>
   <div class="wrap act-body">
@@ -926,11 +1002,11 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
   </div>
 </section>
 
-<!-- ================= ACT VI ================= -->
-<section class="act" id="act-6" aria-labelledby="h-act6">
+<!-- ================= ACT VII ================= -->
+<section class="act" id="act-7" aria-labelledby="h-act7">
   <div class="act-card"><div class="glow"></div><div class="wrap">
-    <p class="act-no"><b>VI</b> Projects</p>
-    <h2 id="h-act6" class="rv">Every vessel picks its own kit</h2>
+    <p class="act-no"><b>VII</b> Projects</p>
+    <h2 id="h-act7" class="rv">Every vessel picks its own kit</h2>
     <p class="dek rv" data-d="1">Configuration lives in each project. Consistent across projects, if you want it.</p>
   </div></div>
   <div class="wrap act-body">
@@ -966,11 +1042,11 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
   </div>
 </section>
 
-<!-- ================= ACT VII ================= -->
-<section class="act" id="act-7" aria-labelledby="h-act7">
+<!-- ================= ACT VIII ================= -->
+<section class="act" id="act-8" aria-labelledby="h-act8">
   <div class="act-card"><div class="glow"></div><div class="wrap">
-    <p class="act-no"><b>VII</b> Your data</p>
-    <h2 id="h-act7" class="rv">The ledger is yours</h2>
+    <p class="act-no"><b>VIII</b> Your data</p>
+    <h2 id="h-act8" class="rv">The ledger is yours</h2>
     <p class="dek rv" data-d="1">The engine holds none of your data. Your policy is a few plain lines, with defaults you can change.</p>
   </div></div>
   <div class="wrap act-body">
@@ -1003,11 +1079,11 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
   </div>
 </section>
 
-<!-- ================= ACT VIII ================= -->
-<section class="act" id="act-8" aria-labelledby="h-act8">
+<!-- ================= ACT IX ================= -->
+<section class="act" id="act-9" aria-labelledby="h-act9">
   <div class="act-card"><div class="glow"></div><div class="wrap">
-    <p class="act-no"><b>VIII</b> Now and next</p>
-    <h2 id="h-act8" class="rv">The horizon</h2>
+    <p class="act-no"><b>IX</b> Now and next</p>
+    <h2 id="h-act9" class="rv">The horizon</h2>
     <p class="dek rv" data-d="1">What ships today, lit. What is charted next, in outline.</p>
   </div></div>
   <div class="wrap act-body">
@@ -1064,6 +1140,7 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
       <div class="panel next rv" data-d="1">
         <h3><i></i>Charted next</h3>
         <ul class="feat">
+          <li><span class="pl"></span><span><b>Storm warnings:</b> <code>steward sc vulns</code> for known vulnerabilities in your tools and the packages inside them, <code>vulns-fix</code> to repair with one yes, <code>isolate</code> to moor one apart (Act IV). <span class="tagp">built · next release</span></span></li>
           <li><span class="pl"></span><span><b>Linux,</b> one package manager at a time: apt, dnf, zypper, pacman, portage, slackpkg, apk, xbps. <span class="tagp">planned</span></span></li>
           <li><span class="pl"></span><span><b>Windows 11 and WSL:</b> winget, Scoop and Chocolatey. Inside WSL, the Linux providers apply. <span class="tagp">planned</span></span></li>
           <li><span class="pl"></span><span><b>NixOS:</b> a dated update of the flake or channel as a whole, and a roll back to a previous generation. <span class="tagp">planned</span></span></li>
@@ -1076,11 +1153,11 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
   </div>
 </section>
 
-<!-- ================= ACT IX ================= -->
-<section class="act" id="act-9" aria-labelledby="h-act9">
+<!-- ================= ACT X ================= -->
+<section class="act" id="act-10" aria-labelledby="h-act10">
   <div class="act-card"><div class="glow"></div><div class="wrap">
-    <p class="act-no"><b>IX</b> Start</p>
-    <h2 id="h-act9" class="rv">Cast off</h2>
+    <p class="act-no"><b>X</b> Start</p>
+    <h2 id="h-act10" class="rv">Cast off</h2>
     <p class="dek rv" data-d="1">Four steps aboard. Then ask the pilot, or type one of eight.</p>
   </div></div>
   <div class="wrap act-body">
@@ -1375,6 +1452,84 @@ hero.addEventListener('pointermove',e=>{
   $('#tg-browser').addEventListener('change',e=>{ S.browser=e.target.checked; render(true); });
   $('#nextday').addEventListener('click',()=>{ if(S.day<30) S.day++; render(true); });
   $('#gate-reset').addEventListener('click',()=>{ S.gate=3; S.adv=true; S.browser=true; S.day=0; render(true); });
+  render(false);
+})();
+
+/* ---------- Act IV: storm warnings ---------- */
+(function storm(){
+  const root=$('#storm'); if(!root) return;
+  // sev: the worst severity among its advisories (1 low … 4 critical); kind: what riding it out does with it
+  const V=[
+    {id:'gx',name:'gitnexus',sub:'npm tool · 17 advisories in 7 packages inside · worst: proxy-addr, critical',sev:4,inside:true,kind:'watch'},
+    {id:'rf',name:'ruflo',sub:'npm -g · 11 advisories in 4 packages inside · worst: protobufjs, critical',sev:4,inside:true,kind:'pilot'},
+    {id:'np',name:"node's npm",sub:'ships with Node · 6 advisories in 2 packages inside (undici, brace-expansion)',sev:3,inside:true,kind:'node'},
+    {id:'md',name:'markdownlint-cli2',sub:'npm tool · 1 advisory inside · re2js, high',sev:3,inside:true,kind:'watch'},
+    {id:'o1',name:'@northflank/cli 0.13.0',sub:'old copy, unused · 3 advisories inside · undici, high',sev:3,inside:true,kind:'scrap'},
+    {id:'o2',name:'markdownlint-cli2 0.23.3',sub:'old copy, unused · 2 advisories inside · markdown-it, high',sev:3,inside:true,kind:'scrap'},
+    {id:'o3',name:'renovate 44.167.5',sub:'old copy, unused · 1 advisory inside · markdown-it, high',sev:3,inside:true,kind:'scrap'},
+    {id:'e1',name:'example-tool',sub:'example · its own version: 1 advisory, high, fixed in 2.0.3',sev:3,inside:false,kind:'repair'},
+    {id:'e2',name:'example-cli',sub:'example · its own version: exploited now, moderate, no fix yet',sev:2,kev:true,inside:false,kind:'apart'},
+    {id:'gh',name:'gh',sub:'aqua tool · no advisory ecosystem',off:true},
+    {id:'tf',name:'terraform',sub:'aqua tool · no advisory ecosystem',off:true},
+    {id:'uv',name:'uv',sub:'aqua tool · no advisory ecosystem',off:true}
+  ];
+  const SEV=['','low','moderate','high','critical'];
+  const PLAN={repair:'repair · 2.0.3',scrap:'scrap',watch:'watch',node:'next Node',pilot:"pilot's call",apart:'moor apart'};
+  const DONE={repair:'repaired',watch:'watching',node:'next Node',pilot:"pilot's call",apart:'moored apart'};
+  const S={sev:3,kev:true,inside:true,rode:false};
+  const zones={warn:$('#z-warn'),fair:$('#z-fair'),apart:$('#z-apart'),offmap:$('#z-off')};
+  const nodes=new Map(), tally=$('#storm-tally');
+  function status(v){
+    if(v.off) return {z:'offmap',stamp:'not covered'};
+    if(v.inside&&!S.inside) return {z:'fair',stamp:'inside unchecked'};
+    const warn=v.sev>=S.sev||(v.kev&&S.kev);
+    if(!S.rode) return warn?{z:'warn',stamp:PLAN[v.kind]}:{z:'fair',stamp:'below the line'};
+    if(!warn) return {z:'fair',stamp:'below the line'};
+    if(v.kind==='scrap') return {z:'gone'};
+    if(v.kind==='repair') return {z:'fair',stamp:DONE.repair};
+    if(v.kind==='apart') return {z:'apart',stamp:DONE.apart};
+    return {z:'warn',stamp:DONE[v.kind]};
+  }
+  function node(v){
+    if(nodes.has(v.id)) return nodes.get(v.id);
+    const el=document.createElement('div'); el.className='ship';
+    el.innerHTML='<svg class="ship-svg" viewBox="0 0 140 70" aria-hidden="true"><use href="#ship"/></svg><div class="nm"><b></b><span></span></div><span class="stamp"></span>';
+    $('.nm b',el).textContent=v.name; $('.nm span',el).textContent=v.sub;
+    nodes.set(v.id,el); return el;
+  }
+  function render(moved){
+    const n={warn:0,fair:0,apart:0,offmap:0}; let scrapped=0, repaired=0, watching=0;
+    for(const v of V){
+      const st=status(v), el=node(v);
+      if(st.z==='gone'){ scrapped++; if(el.parentElement&&!el.classList.contains('gone')){ el.classList.add('gone'); setTimeout(()=>{ if(el.classList.contains('gone')) el.remove(); },RM?0:520); } continue; }
+      el.classList.remove('gone');
+      n[st.z]++;
+      if(S.rode&&v.kind==='repair'&&st.z==='fair'&&st.stamp===DONE.repair) repaired++;
+      if(S.rode&&st.z==='warn') watching++;
+      const stamp=$('.stamp',el); stamp.textContent=st.stamp; stamp.className='stamp '+st.z;
+      const svg=$('.ship-svg',el); svg.classList.toggle('held',st.z==='warn'); svg.classList.toggle('offmap',st.z==='offmap');
+      if(el.parentElement!==zones[st.z]){
+        zones[st.z].appendChild(el);
+        if(moved&&!RM){ el.classList.remove('sail'); void el.offsetWidth; el.classList.add('sail'); }
+      }
+    }
+    $('#n-warn').textContent=n.warn; $('#n-fair').textContent=n.fair; $('#n-apart').textContent=n.apart; $('#n-off').textContent=n.offmap;
+    $('#toml-sev').textContent='"'+SEV[S.sev]+'"'; $('#toml-kev').textContent=String(S.kev); $('#toml-inside').textContent=String(S.inside);
+    $('#ride').disabled=S.rode;
+    for(const i of root.querySelectorAll('.gate-controls input')) i.disabled=S.rode;
+    tally.innerHTML=S.rode
+      ? '<b>'+repaired+'</b> repaired · <b>'+scrapped+'</b> scrapped · <b>'+n.apart+'</b> moored apart · <b>'+watching+'</b> still watched'
+      : '<b>'+n.warn+'</b> warning'+(n.warn===1?'':'s')+' · <b>'+n.fair+'</b> fair · <b>'+n.offmap+'</b> off the map';
+  }
+  for(const r of root.querySelectorAll('input[name="storm-sev"]')) r.addEventListener('change',e=>{ S.sev=+e.target.value; render(true); });
+  $('#tg-kev').addEventListener('change',e=>{ S.kev=e.target.checked; render(true); });
+  $('#tg-inside').addEventListener('change',e=>{ S.inside=e.target.checked; render(true); });
+  $('#ride').addEventListener('click',()=>{ S.rode=true; render(true); });
+  $('#storm-reset').addEventListener('click',()=>{
+    S.sev=3; S.kev=true; S.inside=true; S.rode=false;
+    for(const r of root.querySelectorAll('input[name="storm-sev"]')) r.checked=(+r.value===3);
+    $('#tg-kev').checked=true; $('#tg-inside').checked=true; render(true);
+  });
   render(false);
 })();
 
