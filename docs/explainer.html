@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Layout: a film in nine acts. One dark harbor at dusk is the only world; full-bleed title cards open each act;
+/* Layout: a film in ten acts. One dark harbor at dusk is the only world; full-bleed title cards open each act;
    content sits in a 1180px column with a 16px+ safe gutter. Amber is the accent (sodium harbor light); red and
    green are the ships' sidelights and mean held / cleared, never decoration. */
 :root{
@@ -40,7 +40,7 @@ a:hover{text-decoration-thickness:2px}
 :focus-visible{outline:3px solid var(--lamp);outline-offset:3px;border-radius:4px}
 button{font:inherit;color:inherit}
 code,kbd{font-family:var(--f-mono);font-size:.88em}
-p code{background:var(--hull);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--chalk);white-space:nowrap}
+p code{background:var(--hull);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--chalk)}
 .wrap{max-width:1180px;margin:0 auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .skip{position:absolute;left:12px;top:-60px;background:var(--lamp);color:#1a1200;padding:10px 16px;border-radius:8px;z-index:100;font-weight:700}
@@ -236,7 +236,7 @@ pre.toml i{color:var(--mist);font-style:normal}
 .rules li b{display:block;font-family:var(--f-display);font-size:19px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--chalk);margin-bottom:4px}
 .flagQ{display:inline-block;width:14px;height:10px;background:var(--q);vertical-align:-1px;margin-right:6px;border:1px solid rgba(0,0,0,.3)}
 
-/* ---- Act IV: terminal, loop, receipt, soak ---- */
+/* ---- Act V: terminal, loop, receipt, soak ---- */
 .deck{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-top:10px}
 @media (min-width:980px){.deck{grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);align-items:start}}
 .term{background:#04131A;border:1px solid var(--line-2);border-radius:14px;overflow:hidden;box-shadow:0 30px 60px -30px rgba(0,0,0,.9);min-width:0}
@@ -300,7 +300,7 @@ pre.toml i{color:var(--mist);font-style:normal}
 .yard .bar.go i{width:100%}
 .yard p{margin:0;font-size:14px;color:var(--fog)}
 
-/* ---- Act IV: the pilot (a Claude Code session), standing orders, the one next step ---- */
+/* ---- Act V: the pilot (a Claude Code session), standing orders, the one next step ---- */
 .pilot-deck{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-top:10px}
 @media (min-width:980px){.pilot-deck{grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);align-items:start}}
 .cc-body{padding:14px 16px 16px;min-height:340px;max-height:520px;overflow:auto;font:13.5px/1.6 var(--f-mono);color:var(--fog);white-space:pre-wrap;word-break:break-word}
@@ -353,18 +353,48 @@ pre.toml i{color:var(--mist);font-style:normal}
 /* Act III: five rule cards in one row on a wide screen; a stamp is as wide as its word, never stretched */
 @media (min-width:1100px){.rules{grid-template-columns:repeat(5,minmax(0,1fr))}}
 .ship .stamp{justify-self:end;width:max-content}
-/* the gate's "your call" items carry class ask, which Act IX's .ask grid also styles: keep them out of it */
+/* the gate's "your call" items carry class ask, which Act X's .ask grid also styles: keep them out of it */
 .ship .stamp.ask{display:block;margin-top:0;grid-template-columns:none}
 .ship .ship-svg.ask{display:block;margin-top:0}
 
-/* ---- Act IX: the eight ---- */
+/* Act IV: the storm board. It reuses the gate's board; its zones get storm colors, its severity control is four
+   radio buttons, and a tag on the act card says it arrives with the next release (nothing is lit until it ships) */
+.act-no .soon{display:inline-block;margin-left:10px;font-family:var(--f-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--lamp);border:1px solid var(--lamp);border-radius:999px;padding:1px 8px;vertical-align:middle}
+.seg{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.seg legend{width:100%;font-weight:700;margin-bottom:8px;padding:0}
+.seg label{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:4px 14px;border-radius:999px;border:1.5px solid var(--line-2);font-family:var(--f-mono);font-size:12.5px;color:var(--chalk);cursor:pointer}
+.seg input{accent-color:var(--lamp);width:16px;height:16px;margin:0}
+.seg label:has(input:checked){border-color:var(--lamp);color:var(--lamp)}
+.seg label:has(input:focus-visible){outline:2px solid var(--lamp);outline-offset:2px}
+@media (min-width:860px){.storm-harbor{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.zone.warn{border-style:solid;border-color:rgba(242,92,79,.45)}
+.zone.fair{border-style:solid;border-color:rgba(63,212,142,.35)}
+.zone.apart{border-color:rgba(243,179,61,.4)}
+.zone.offmap{border-color:var(--line-2);opacity:.85}
+.stamp.warn{color:var(--port-ink)}.stamp.fair{color:var(--starboard)}.stamp.apart{color:var(--lamp)}.stamp.offmap{color:var(--mist)}
+.ship-svg.offmap{--light:var(--mist)}
+.ship.gone{opacity:0;transform:translateY(8px);transition:opacity .5s,transform .5s}
+
+/* Act IV: what the run could read, and the lookout list for what it can't */
+.coverage{margin:16px 0 0;font-size:14.5px;color:var(--fog);line-height:1.6}
+.coverage b{color:var(--chalk)}
+.coverage span{color:var(--mist)}
+.lookout{margin-top:18px;border:1px solid rgba(243,179,61,.35);border-radius:14px;padding:14px 16px;background:rgba(4,19,26,.45);min-width:0}
+.lookout h4{margin:0 0 10px;font-family:var(--f-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--lamp)}
+.lookout ul{list-style:none;margin:0;padding:0;display:grid;gap:10px 22px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:860px){.lookout ul{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.lookout li{font-size:14.5px;color:var(--fog);line-height:1.5;min-width:0}
+.lookout li b{display:block;color:var(--chalk)}
+.lookout .note{margin:12px 0 0}
+
+/* ---- Act X: the eight ---- */
 .eight{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
 .eight li{display:grid;grid-template-columns:minmax(150px,auto) minmax(0,1fr);gap:12px;font-size:14.5px;color:var(--fog);align-items:baseline;border-top:1px dashed var(--line);padding-top:6px}
 .eight li:first-child{border-top:0;padding-top:0}
 .eight code{color:var(--chalk);white-space:nowrap}
 @media (max-width:560px){.eight li{grid-template-columns:minmax(0,1fr);gap:2px}}
 
-/* ---- Act V: harbor map ---- */
+/* ---- Act VI: harbor map ---- */
 .map{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-top:8px}
 @media (min-width:980px){.map{grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);align-items:start}}
 .map svg{width:100%;height:auto;display:block;background:radial-gradient(120% 90% at 50% 100%,#0D3443,var(--ink-well) 70%);border:1px solid var(--line-2);border-radius:18px}
@@ -402,7 +432,7 @@ pre.toml i{color:var(--mist);font-style:normal}
 .banner b em{font-style:normal;color:var(--lamp)}
 .banner p{margin:8px 0 0;color:var(--fog);font-size:15px}
 
-/* ---- Act VI: onboarding board ---- */
+/* ---- Act VII: onboarding board ---- */
 .board{margin-top:10px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
 @media (min-width:980px){.board{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);align-items:start}}
 .registry{display:grid;gap:10px}
@@ -421,7 +451,7 @@ pre.toml i{color:var(--mist);font-style:normal}
 .lineage{margin-top:22px;padding:18px 20px;border-radius:14px;border:1px solid var(--line);background:rgba(4,19,26,.5);font-size:15.5px;color:var(--fog)}
 .lineage b{color:var(--chalk)}
 
-/* ---- Act VII: ledger ---- */
+/* ---- Act VIII: ledger ---- */
 .ledger{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:8px}
 @media (min-width:860px){.ledger{grid-template-columns:1fr 1fr}}
 .ledger .panel h3{display:flex;align-items:center;gap:10px}
@@ -451,7 +481,7 @@ pre.toml i{color:var(--mist);font-style:normal}
 .cfg-out .src{color:var(--mist)}
 .cfg-out .src.yours{color:var(--starboard-ink)}
 
-/* ---- Act VIII: horizon ---- */
+/* ---- Act IX: horizon ---- */
 .horizon{position:relative;margin-top:8px;border-radius:20px;overflow:hidden;border:1px solid var(--line-2);background:linear-gradient(180deg,#071B24 0%,#0D3443 54%,#1E464B 57%,#0A2631 59%,#061820 100%)}
 .horizon svg{display:block;width:100%;height:auto}
 .horizon .lh{transition:opacity .3s}
@@ -478,16 +508,23 @@ pre.toml i{color:var(--mist);font-style:normal}
 .feat li .pl{width:20px;height:20px;border-radius:50%;border:1.5px dashed var(--mist);margin-top:2px}
 .feat li .tagp{display:inline-block;font-family:var(--f-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist);border:1px solid var(--line-2);border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:2px}
 
-/* ---- Act IX: start ---- */
+/* ---- Act X: start ---- */
 .steps{counter-reset:s;list-style:none;margin:10px 0 0;padding:0;display:grid;gap:12px}
 .steps li{counter-increment:s;display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;background:var(--hull);border:1px solid var(--line);border-radius:14px;padding:16px}
 .steps li::before{content:counter(s);display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--lamp);color:#1a1200;font:900 20px var(--f-display)}
 .steps li>div{min-width:0}
 .steps h3{font-size:22px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin:4px 0 8px}
 .steps p{margin:8px 0 0;color:var(--fog);font-size:15px}
-.cmd{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;background:#04131A;border:1px solid var(--line);border-radius:10px;padding:8px 8px 8px 12px;min-width:0}
+/* a command is shown whole: it wraps at spaces, and inside a long word only when it must, with a hanging indent under
+   the "$ " so a wrapped line reads as one command; the Copy button stays at the top */
+.cmd{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start;background:#04131A;border:1px solid var(--line);border-radius:10px;padding:8px 8px 8px 12px;min-width:0}
 .cmd+.cmd{margin-top:6px}
-.cmd code{font:13.5px/1.5 var(--f-mono);color:var(--chalk);overflow-x:auto;white-space:pre;display:block;scrollbar-width:thin}
+/* inline code in running text stays in one piece and moves to the next line whole; only code longer than a whole line
+   wraps inside, so a long command never runs past its card on a phone */
+p code{display:inline-block;max-width:100%;white-space:normal;overflow-wrap:anywhere;vertical-align:bottom}
+.cmd code{font:13.5px/1.5 var(--f-mono);color:var(--chalk);white-space:pre-wrap;overflow-wrap:break-word;display:block;padding:7px 0 7px 2ch;text-indent:-2ch;min-width:0}
+/* on a phone the command takes the card's whole width and Copy sits under it, so a tool and its version stay on one line */
+@media (max-width:560px){.cmd{grid-template-columns:minmax(0,1fr)}.cmd .copy{justify-self:end}.cmd code{font-size:12px}}
 .cmd code::before{content:"$ ";color:var(--lamp)}
 .copy{min-height:34px;padding:4px 12px;border-radius:8px;border:1.5px solid var(--line-2);background:transparent;cursor:pointer;font-family:var(--f-mono);font-size:12px;color:var(--fog);white-space:nowrap}
 .copy:hover{border-color:var(--chalk);color:var(--chalk)}
@@ -554,12 +591,13 @@ pre.block{margin:10px 0 0;background:#04131A;border:1px solid var(--line);border
     <li><a href="#act-1"><em>One October</em><span>I</span></a></li>
     <li><a href="#act-2"><em>Who</em><span>II</span></a></li>
     <li><a href="#act-3"><em>Quarantine</em><span>III</span></a></li>
-    <li><a href="#act-4"><em>The pilot</em><span>IV</span></a></li>
-    <li><a href="#act-5"><em>Four berths</em><span>V</span></a></li>
-    <li><a href="#act-6"><em>Every vessel</em><span>VI</span></a></li>
-    <li><a href="#act-7"><em>The ledger</em><span>VII</span></a></li>
-    <li><a href="#act-8"><em>The horizon</em><span>VIII</span></a></li>
-    <li><a href="#act-9"><em>Cast off</em><span>IX</span></a></li>
+    <li><a href="#act-4"><em>Storms</em><span>IV</span></a></li>
+    <li><a href="#act-5"><em>The pilot</em><span>V</span></a></li>
+    <li><a href="#act-6"><em>Four berths</em><span>VI</span></a></li>
+    <li><a href="#act-7"><em>Every vessel</em><span>VII</span></a></li>
+    <li><a href="#act-8"><em>The ledger</em><span>VIII</span></a></li>
+    <li><a href="#act-9"><em>The horizon</em><span>IX</span></a></li>
+    <li><a href="#act-10"><em>Cast off</em><span>X</span></a></li>
   </ol>
 </nav>
 
@@ -597,13 +635,13 @@ pre.block{margin:10px 0 0;background:#04131A;border:1px solid var(--line);border
   <div id="lantern" aria-hidden="true"></div>
   <div class="wrap">
     <div class="hero-copy">
-      <p class="eyebrow">A film in nine acts · release 0.10.1</p>
+      <p class="eyebrow">A film in ten acts · release 0.10.1</p>
       <h1>Workstation Steward</h1>
       <p class="dek">A harbormaster for everything that lands on your machine, and a pilot when you need one.</p>
       <p class="sub">Your Mac runs hundreds of tools from many sources, and each one updates on its own schedule. The steward is the one place that decides what is allowed in, and when. With its skills installed, open Claude Code and it tells you, once, what needs you; answer in plain words. Nothing changes without your word, and every change can be undone.</p>
       <div class="hero-actions">
         <a class="btn primary" href="#act-1">Start the film</a>
-        <a class="btn" href="#act-9">Skip to the install</a>
+        <a class="btn" href="#act-10">Skip to the install</a>
       </div>
       <ul class="badges" aria-label="At a glance">
         <li>macOS today</li>
@@ -695,7 +733,7 @@ pre.block{margin:10px 0 0;background:#04131A;border:1px solid var(--line);border
       <ul>
         <li>you want updates to happen silently in the background. Nothing changes on its own, on purpose: the only thing that runs unasked is a short look that reads and never writes.</li>
         <li>you want a window to click in. It is a conversation in Claude Code, and eight commands for when you'd rather type.</li>
-        <li>you work on Linux or Windows today. macOS came first; the rest is charted in Act VIII.</li>
+        <li>you work on Linux or Windows today. macOS came first; the rest is charted in Act IX.</li>
       </ul>
     </div>
   </div>
@@ -744,7 +782,8 @@ pre.block{margin:10px 0 0;background:#04131A;border:1px solid var(--line);border
         <div class="gate-foot">
           <pre class="toml" aria-label="The policy line this control edits"><i># steward.toml</i>
 [policy]
-min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</i></pre>
+<i># mise, Homebrew and Renovate all read it</i>
+min_release_age_days = <b id="toml-days">3</b></pre>
           <p class="note">The ages are real ones from recorded sessions. The steward's own release 0.10.1 shows its true age as you read this, because installed through mise it waits out the same gate as every other tool.</p>
         </div>
       </div>
@@ -761,8 +800,79 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
 <!-- ================= ACT IV ================= -->
 <section class="act" id="act-4" aria-labelledby="h-act4">
   <div class="act-card"><div class="glow"></div><div class="wrap">
-    <p class="act-no"><b>IV</b> The pilot</p>
-    <h2 id="h-act4" class="rv">The pilot comes aboard</h2>
+    <p class="act-no"><b>IV</b> Storms <span class="soon">next release</span></p>
+    <h2 id="h-act4" class="rv">Storm warnings</h2>
+    <p class="dek rv" data-d="1">The gate keeps trouble out. Storms find the ships already moored.</p>
+  </div></div>
+  <div class="wrap act-body">
+      <div class="prose rv">
+        <p class="lead">A release can pass the gate clean, and a flaw can be found in it next month. Act I asked which machine had taken which version. Now the harbormaster can answer before you finish asking.</p>
+        <p>It reads each hull's manifest: the packages inside every npm and Python tool, the parts list every Go program carries, and Homebrew's own check of its formulae. Then it asks the weather services the security world relies on: <strong>OSV</strong>, which carries GitHub's advisory database and the reports of packages that are malware; <strong>nodejs.org</strong>; <strong>CISA's list of flaws being exploited right now</strong>; <strong>FIRST's forecast</strong> of which flaws attackers are likely to use next; and <strong>endoflife.date</strong>, for runtimes and macOS versions that no longer get fixes at all. On one Mac on 2 November that was about 3,000 package versions, in under 20 seconds. A service only ever sends data. It never runs code.</p>
+        <p>No forecast covers the whole sea, and the steward says so. It reports how much of each source it could read, names every vessel it can't see, and tells you where to keep a lookout instead.</p>
+        <p>Then it rides the storm out with you: <dfn>repair</dfn> what has a fix, <dfn>scrap</dfn> old hulls nobody sails, <dfn>watch</dfn> what waits on its maker, and <dfn>moor apart</dfn> what can't wait. Each takes your yes. Move the warning line and see who needs you.</p>
+      </div>
+      <div class="gate storm rv" id="storm">
+        <div class="gate-controls">
+          <fieldset class="seg">
+            <legend>Raise a warning at</legend>
+            <label><input type="radio" name="storm-sev" value="1"> Low</label>
+            <label><input type="radio" name="storm-sev" value="2"> Moderate</label>
+            <label><input type="radio" name="storm-sev" value="3" checked> High</label>
+            <label><input type="radio" name="storm-sev" value="4"> Critical</label>
+          </fieldset>
+          <div class="toggles">
+            <label><input type="checkbox" id="tg-kev" checked> A flaw being exploited right now always raises a warning</label>
+            <label><input type="checkbox" id="tg-inside" checked> Check the packages inside each tool, not just the tool</label>
+          </div>
+        </div>
+        <div class="gate-actions">
+          <button class="tbtn primary" id="ride">Ride it out ▸ one yes</button>
+          <button class="tbtn" id="storm-reset">Reset</button>
+          <span class="tally" id="storm-tally" aria-live="polite"></span>
+        </div>
+        <p class="coverage" aria-label="What this Mac's run could read"><b>Read on this Mac:</b> 38 of 66 mise tools · 68 of 92 Homebrew formulae · every npm -g package and Node <span>· <b>Off the map:</b> 28 mise tools, 24 formulae, casks and apps, the App Store, Docker images</span></p>
+        <div class="harbor storm-harbor">
+          <div class="zone warn"><h4>Storm warning · needs you <b id="n-warn">0</b></h4><div class="ships" id="z-warn"></div></div>
+          <div class="zone fair"><h4>Fair weather <b id="n-fair">0</b></h4><div class="ships" id="z-fair"></div></div>
+          <div class="zone apart"><h4>Moored apart · switched off, kept <b id="n-apart">0</b></h4><div class="ships" id="z-apart"></div></div>
+          <div class="zone offmap"><h4>Off the weather map · not covered <b id="n-off">0</b></h4><div class="ships" id="z-off"></div></div>
+        </div>
+        <div class="gate-foot">
+          <pre class="toml" aria-label="The policy lines these controls edit"><i># supply-chain/host.toml</i>
+[vulns]
+action_severity = <b id="toml-sev">"high"</b>
+exploited_always_action = <b id="toml-kev">true</b>
+inside_tools = <b id="toml-inside">true</b></pre>
+          <p class="note">Every vessel but two is from a real run on 2 November 2026, with its real advisories; <em>example-tool</em> and <em>example-cli</em> are examples, there to show a repair and a mooring. Off the map is said out loud: it is not the same as fair weather.</p>
+        </div>
+        <div class="lookout">
+          <h4>Beyond the forecast · keep a lookout</h4>
+          <ul>
+            <li><b>Casks and other apps</b><span>Their own updaters. <code>steward sc audit</code> flags an app behind its vendor's release, or on an Electron too old for fixes.</span></li>
+            <li><b>The App Store and macOS</b><span>Software Update. The audit lists what's waiting, and the forecast warns when your macOS reaches its end of life.</span></li>
+            <li><b>Docker images</b><span>Pin each one by digest; the audit flags floating tags. Scan images with a scanner you choose and run yourself.</span></li>
+            <li><b>Tools with no parts list</b><span>Rust, C and Python programs among the mise tools: watch their GitHub security alerts. The gate still holds each new release.</span></li>
+            <li><b>Formulae Homebrew can't match</b><span><code>brew vulns --list-skipped</code> names them; their upstream project's security page is the source.</span></li>
+            <li><b>A flaw in the news</b><span>Ask the pilot. It reads the primary source, not the posts about it, then checks this Mac.</span></li>
+          </ul>
+          <p class="note">A warning means the flawed version is aboard, not that your work reaches the flaw. Unrated warnings count as serious until someone rates them.</p>
+        </div>
+      </div>
+    <ul class="rules">
+      <li class="rv" data-d="0"><b>Never a false all-clear</b>A service that doesn't answer is <em>not checked</em>; a vessel no source can read is <em>not covered</em>. Each run says how much of each source it read.</li>
+      <li class="rv" data-d="1"><b>Repairs need your yes</b><code>steward sc vulns-fix</code> shows its plan, asks, backs up, writes a receipt and can roll back. A major version is listed for you, never taken in bulk.</li>
+      <li class="rv" data-d="2"><b>Moored apart, not scrapped</b><code>steward sc isolate</code> switches a tool off with mise's own switch and keeps it installed. <code>--undo</code> brings it back.</li>
+      <li class="rv" data-d="3"><b>Every exception written down</b>A warning that doesn't apply here is silenced in <code>host.toml</code> with its reason and an expiry. When it expires, the warning comes back.</li>
+      <li class="rv" data-d="4"><b>Ask the pilot</b>In Claude Code: <em>"Is anything I have vulnerable?"</em> The supply-chain skill runs the check and offers the fix. Anything that changes waits for you.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= ACT V ================= -->
+<section class="act" id="act-5" aria-labelledby="h-act5">
+  <div class="act-card"><div class="glow"></div><div class="wrap">
+    <p class="act-no"><b>V</b> The pilot</p>
+    <h2 id="h-act5" class="rv">The pilot comes aboard</h2>
     <p class="dek rv" data-d="1">The pilot knows the water. The captain keeps command. Every change goes in the log.</p>
   </div></div>
   <div class="wrap act-body">
@@ -849,11 +959,11 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
     </div>
   </div>
 </section>
-<!-- ================= ACT V ================= -->
-<section class="act" id="act-5" aria-labelledby="h-act5">
+<!-- ================= ACT VI ================= -->
+<section class="act" id="act-6" aria-labelledby="h-act6">
   <div class="act-card"><div class="glow"></div><div class="wrap">
-    <p class="act-no"><b>V</b> The map</p>
-    <h2 id="h-act5" class="rv">Four berths</h2>
+    <p class="act-no"><b>VI</b> The map</p>
+    <h2 id="h-act6" class="rv">Four berths</h2>
     <p class="dek rv" data-d="1">A machine has more than one supply chain. Each gets its own berth, its own rules and its own commands.</p>
   </div></div>
   <div class="wrap act-body">
@@ -926,11 +1036,11 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
   </div>
 </section>
 
-<!-- ================= ACT VI ================= -->
-<section class="act" id="act-6" aria-labelledby="h-act6">
+<!-- ================= ACT VII ================= -->
+<section class="act" id="act-7" aria-labelledby="h-act7">
   <div class="act-card"><div class="glow"></div><div class="wrap">
-    <p class="act-no"><b>VI</b> Projects</p>
-    <h2 id="h-act6" class="rv">Every vessel picks its own kit</h2>
+    <p class="act-no"><b>VII</b> Projects</p>
+    <h2 id="h-act7" class="rv">Every vessel picks its own kit</h2>
     <p class="dek rv" data-d="1">Configuration lives in each project. Consistent across projects, if you want it.</p>
   </div></div>
   <div class="wrap act-body">
@@ -966,11 +1076,11 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
   </div>
 </section>
 
-<!-- ================= ACT VII ================= -->
-<section class="act" id="act-7" aria-labelledby="h-act7">
+<!-- ================= ACT VIII ================= -->
+<section class="act" id="act-8" aria-labelledby="h-act8">
   <div class="act-card"><div class="glow"></div><div class="wrap">
-    <p class="act-no"><b>VII</b> Your data</p>
-    <h2 id="h-act7" class="rv">The ledger is yours</h2>
+    <p class="act-no"><b>VIII</b> Your data</p>
+    <h2 id="h-act8" class="rv">The ledger is yours</h2>
     <p class="dek rv" data-d="1">The engine holds none of your data. Your policy is a few plain lines, with defaults you can change.</p>
   </div></div>
   <div class="wrap act-body">
@@ -1003,11 +1113,11 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
   </div>
 </section>
 
-<!-- ================= ACT VIII ================= -->
-<section class="act" id="act-8" aria-labelledby="h-act8">
+<!-- ================= ACT IX ================= -->
+<section class="act" id="act-9" aria-labelledby="h-act9">
   <div class="act-card"><div class="glow"></div><div class="wrap">
-    <p class="act-no"><b>VIII</b> Now and next</p>
-    <h2 id="h-act8" class="rv">The horizon</h2>
+    <p class="act-no"><b>IX</b> Now and next</p>
+    <h2 id="h-act9" class="rv">The horizon</h2>
     <p class="dek rv" data-d="1">What ships today, lit. What is charted next, in outline.</p>
   </div></div>
   <div class="wrap act-body">
@@ -1064,6 +1174,7 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
       <div class="panel next rv" data-d="1">
         <h3><i></i>Charted next</h3>
         <ul class="feat">
+          <li><span class="pl"></span><span><b>Storm warnings:</b> <code>steward sc vulns</code> reads npm and Python tools, Go programs and Homebrew formulae against OSV, CISA's exploited list, FIRST's forecast and endoflife.date; <code>vulns-fix</code> repairs with one yes, <code>isolate</code> moors one apart (Act IV). Next: OpenVEX, a CycloneDX inventory, each Linux source. <span class="tagp">built · next release</span></span></li>
           <li><span class="pl"></span><span><b>Linux,</b> one package manager at a time: apt, dnf, zypper, pacman, portage, slackpkg, apk, xbps. <span class="tagp">planned</span></span></li>
           <li><span class="pl"></span><span><b>Windows 11 and WSL:</b> winget, Scoop and Chocolatey. Inside WSL, the Linux providers apply. <span class="tagp">planned</span></span></li>
           <li><span class="pl"></span><span><b>NixOS:</b> a dated update of the flake or channel as a whole, and a roll back to a previous generation. <span class="tagp">planned</span></span></li>
@@ -1076,11 +1187,11 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
   </div>
 </section>
 
-<!-- ================= ACT IX ================= -->
-<section class="act" id="act-9" aria-labelledby="h-act9">
+<!-- ================= ACT X ================= -->
+<section class="act" id="act-10" aria-labelledby="h-act10">
   <div class="act-card"><div class="glow"></div><div class="wrap">
-    <p class="act-no"><b>IX</b> Start</p>
-    <h2 id="h-act9" class="rv">Cast off</h2>
+    <p class="act-no"><b>X</b> Start</p>
+    <h2 id="h-act10" class="rv">Cast off</h2>
     <p class="dek rv" data-d="1">Four steps aboard. Then ask the pilot, or type one of eight.</p>
   </div></div>
   <div class="wrap act-body">
@@ -1089,10 +1200,12 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
         <ol class="steps">
           <li class="rv"><div>
             <h3>Install through mise</h3>
-            <div class="cmd"><code>mise use -g npm:workstation-steward@0.10.1</code><button class="copy" data-copy="mise use -g npm:workstation-steward@0.10.1">Copy</button></div>
+            <div class="cmd"><code>mise use -g \
+  npm:workstation-steward@0.10.1</code><button class="copy" data-copy="mise use -g npm:workstation-steward@0.10.1">Copy</button></div>
             <p>mise then keeps the steward current under the same release-age gate as your other tools. Needs Node 26 or later. 0.10.1 was the current release when this page was made. Plain <code>npm install -g</code> works too, and <code>npx workstation-steward@0.10.1 version</code> lets you look without installing.</p>
             <p class="note">Until 27 November 2026, mise asks for an approval because the package is less than 30 days old. Use this form instead:</p>
-            <div class="cmd"><code>mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.10.1'</code><button class="copy" data-copy="mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.10.1'">Copy</button></div>
+            <div class="cmd"><code>mise use -g \
+  'npm:workstation-steward[<wbr>allow_low_downloads=true]<wbr>@0.10.1'</code><button class="copy" data-copy="mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.10.1'">Copy</button></div>
           </div></li>
           <li class="rv"><div>
             <h3>Check it</h3>
@@ -1170,7 +1283,7 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
 
 <footer class="credits"><div class="wrap">
   <h2>Credits</h2>
-  <p>Made from the steward's own docs and recorded sessions, October 2026, for release 0.10.1. Where a number appears, it came from one of these.</p>
+  <p>Made from the steward's own docs and recorded sessions, October 2026, for release 0.10.1; Act IV from a recorded run and primary sources of 2 November 2026, for the next release. Where a number appears, it came from one of these.</p>
   <ol>
     <li><a href="https://github.com/pacphi/workstation-steward#readme" rel="noopener">workstation-steward README</a>: why it is different, install, the skills, provenance.</li>
     <li><a href="https://github.com/pacphi/workstation-steward/blob/main/docs/guide.md" rel="noopener">docs/guide.md</a>: why it exists, the four October 2026 events, the rules it lives by.</li>
@@ -1181,6 +1294,9 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
     <li><a href="https://github.com/pacphi/workstation-steward/tree/main/docs/assets" rel="noopener">docs/assets</a>: the recorded sessions the terminals retell (the skills session, upgrade and rollback, projects, review, the briefing).</li>
     <li><a href="https://registry.npmjs.org/workstation-steward" rel="noopener">npm registry</a>: 0.10.1 is the release this page describes, published 2026-10-31 UTC.</li>
     <li>LiteLLM, 21 October 2026: <a href="https://smartscope.blog/en/blog/litellm-1-107-0-malware-incident-verification-commands-2026/" rel="noopener">SmartScope</a>, <a href="https://ai-tldr.dev/releases/litellm-1-107-0-pypi-compromise/" rel="noopener">ai-tldr</a>, <a href="https://techjacksolutions.com/scc-vendor-rollup/litellm-berriai-vulnerability-rollup-2026-10-22/" rel="noopener">TechJack</a>. Third-party write-ups; check the vendor's advisory before acting on timings.</li>
+    <li><a href="https://github.com/pacphi/workstation-steward/blob/main/docs/vulnerabilities.md" rel="noopener">docs/vulnerabilities.md</a>: Act IV's sources and coverage, where to keep a lookout, the limits, and the primary source for each claim. The coverage line and the vessels come from a recorded run on 2 November 2026.</li>
+    <li>The weather services: <a href="https://google.github.io/osv.dev/data/" rel="noopener">OSV's data sources</a> (GitHub's advisory database, the Go and PyPI databases, OpenSSF's malicious-packages reports), <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" rel="noopener">CISA's Known Exploited Vulnerabilities</a>, <a href="https://www.first.org/epss/" rel="noopener">FIRST's EPSS</a> and <a href="https://endoflife.date" rel="noopener">endoflife.date</a>; Homebrew's own check, <a href="https://brew.sh/2026/09/13/homebrew-7.0.0/" rel="noopener">Homebrew 7.0.0</a>.</li>
+    <li>The advisories on the storm board: <a href="https://osv.dev/vulnerability/GHSA-jqcg-44mw-7w3h" rel="noopener">GHSA-jqcg-44mw-7w3h</a> (proxy-addr), <a href="https://osv.dev/vulnerability/GHSA-xq3m-2v4x-88gg" rel="noopener">GHSA-xq3m-2v4x-88gg</a> (protobufjs), <a href="https://osv.dev/vulnerability/GHSA-5cgq-3rg8-m6cv" rel="noopener">GHSA-5cgq-3rg8-m6cv</a> (golang.org/x/crypto), <a href="https://osv.dev/vulnerability/GO-2026-4887" rel="noopener">GO-2026-4887</a> (docker; rated high by its GitHub alias, <a href="https://osv.dev/vulnerability/GHSA-x744-4wpc-v9h2" rel="noopener">GHSA-x744-4wpc-v9h2</a>), <a href="https://osv.dev/vulnerability/GHSA-2m5v-pch6-74hx" rel="noopener">GHSA-2m5v-pch6-74hx</a> (undici), <a href="https://osv.dev/vulnerability/GHSA-gfr2-rv44-r23c" rel="noopener">GHSA-gfr2-rv44-r23c</a> (markdown-it), <a href="https://osv.dev/vulnerability/OSV-2022-608" rel="noopener">OSV-2022-608</a> (jpeg-xl; rated high by Homebrew's <code>brew vulns</code>).</li>
     <li><a href="https://www.etymonline.com/word/quarantine" rel="noopener">Etymonline</a>: quarantine, from the Venetian <em>quaranta giorni</em>.</li>
     <li><a href="https://en.wikipedia.org/wiki/International_Code_of_Signals" rel="noopener">International Code of Signals</a>: the Q flag requests free pratique, permission to enter port. Channel 16 is the marine VHF calling and distress channel, 156.800 MHz. <a href="https://en.wikipedia.org/wiki/Maritime_pilot" rel="noopener">Maritime pilot</a>: a local mariner who boards to guide a ship through dangerous or congested waters; the master keeps command.</li>
     <li>See also: <a href="https://pacphi-workstation-steward-explain.vercel.app/" rel="noopener">workstation-steward, explained</a>, a quieter walkthrough of the same ideas.</li>
@@ -1378,6 +1494,87 @@ hero.addEventListener('pointermove',e=>{
   render(false);
 })();
 
+/* ---------- Act IV: storm warnings ---------- */
+(function storm(){
+  const root=$('#storm'); if(!root) return;
+  // sev: the worst severity among its advisories (1 low … 4 critical); kind: what riding it out does with it
+  const V=[
+    {id:'gx',name:'gitnexus',sub:'npm tool · 17 advisories in 7 packages inside · worst: proxy-addr, critical',sev:4,inside:true,kind:'watch'},
+    {id:'gl',name:'gitleaks',sub:'Go program · 65 advisories in 5 modules inside · worst: golang.org/x/crypto, critical',sev:4,inside:true,kind:'watch'},
+    {id:'rf',name:'ruflo',sub:'npm -g · 11 advisories in 4 packages inside · worst: protobufjs, critical',sev:4,inside:true,kind:'pilot'},
+    {id:'k3',name:'k3d',sub:'Go program · 48 advisories in 9 modules inside · worst: docker, high, more likely exploited than 95% of flaws',sev:3,inside:true,kind:'watch'},
+    {id:'np',name:"node's npm",sub:'ships with Node · 6 advisories in 2 packages inside (undici, brace-expansion)',sev:3,inside:true,kind:'node'},
+    {id:'jx',name:'jpeg-xl',sub:'Homebrew formula · 2 advisories, high · fixed upstream, in no release yet',sev:3,inside:false,kind:'watch'},
+    {id:'o1',name:'@northflank/cli 0.13.0',sub:'old copy, unused · 3 advisories inside · undici, high',sev:3,inside:true,kind:'scrap'},
+    {id:'o2',name:'markdownlint-cli2 0.23.3',sub:'old copy, unused · 2 advisories inside · markdown-it, high',sev:3,inside:true,kind:'scrap'},
+    {id:'o3',name:'renovate 44.167.5',sub:'old copy, unused · 1 advisory inside · markdown-it, high',sev:3,inside:true,kind:'scrap'},
+    {id:'e1',name:'example-tool',sub:'example · its own version: 1 advisory, high, fixed in 2.0.3',sev:3,inside:false,kind:'repair'},
+    {id:'e2',name:'example-cli',sub:'example · its own version: exploited now, moderate, no fix yet',sev:2,kev:true,inside:false,kind:'apart'},
+    {id:'uv',name:'uv',sub:'Rust program · carries no parts list',off:'GitHub alerts'},
+    {id:'cm',name:'cmake',sub:'C++ program · no package ecosystem',off:'GitHub alerts'},
+    {id:'cu',name:'Cursor',sub:'app · not a package',off:'its updater'},
+    {id:'pg',name:'pgvector/pgvector:0.8.7-pg18',sub:'Docker image · not scanned here',off:'pin + scan'}
+  ];
+  const SEV=['','low','moderate','high','critical'];
+  const PLAN={repair:'repair · 2.0.3',scrap:'scrap',watch:'watch',node:'next Node',pilot:"pilot's call",apart:'moor apart'};
+  const DONE={repair:'repaired',watch:'watching',node:'next Node',pilot:"pilot's call",apart:'moored apart'};
+  const S={sev:3,kev:true,inside:true,rode:false};
+  const zones={warn:$('#z-warn'),fair:$('#z-fair'),apart:$('#z-apart'),offmap:$('#z-off')};
+  const nodes=new Map(), tally=$('#storm-tally');
+  function status(v){
+    if(v.off) return {z:'offmap',stamp:v.off};
+    if(v.inside&&!S.inside) return {z:'fair',stamp:'inside unchecked'};
+    const warn=v.sev>=S.sev||(v.kev&&S.kev);
+    if(!S.rode) return warn?{z:'warn',stamp:PLAN[v.kind]}:{z:'fair',stamp:'below the line'};
+    if(!warn) return {z:'fair',stamp:'below the line'};
+    if(v.kind==='scrap') return {z:'gone'};
+    if(v.kind==='repair') return {z:'fair',stamp:DONE.repair};
+    if(v.kind==='apart') return {z:'apart',stamp:DONE.apart};
+    return {z:'warn',stamp:DONE[v.kind]};
+  }
+  function node(v){
+    if(nodes.has(v.id)) return nodes.get(v.id);
+    const el=document.createElement('div'); el.className='ship';
+    el.innerHTML='<svg class="ship-svg" viewBox="0 0 140 70" aria-hidden="true"><use href="#ship"/></svg><div class="nm"><b></b><span></span></div><span class="stamp"></span>';
+    $('.nm b',el).textContent=v.name; $('.nm span',el).textContent=v.sub;
+    nodes.set(v.id,el); return el;
+  }
+  function render(moved){
+    const n={warn:0,fair:0,apart:0,offmap:0}; let scrapped=0, repaired=0, watching=0;
+    for(const v of V){
+      const st=status(v), el=node(v);
+      if(st.z==='gone'){ scrapped++; if(el.parentElement&&!el.classList.contains('gone')){ el.classList.add('gone'); setTimeout(()=>{ if(el.classList.contains('gone')) el.remove(); },RM?0:520); } continue; }
+      el.classList.remove('gone');
+      n[st.z]++;
+      if(S.rode&&v.kind==='repair'&&st.z==='fair'&&st.stamp===DONE.repair) repaired++;
+      if(S.rode&&st.z==='warn') watching++;
+      const stamp=$('.stamp',el); stamp.textContent=st.stamp; stamp.className='stamp '+st.z;
+      const svg=$('.ship-svg',el); svg.classList.toggle('held',st.z==='warn'); svg.classList.toggle('offmap',st.z==='offmap');
+      if(el.parentElement!==zones[st.z]){
+        zones[st.z].appendChild(el);
+        if(moved&&!RM){ el.classList.remove('sail'); void el.offsetWidth; el.classList.add('sail'); }
+      }
+    }
+    $('#n-warn').textContent=n.warn; $('#n-fair').textContent=n.fair; $('#n-apart').textContent=n.apart; $('#n-off').textContent=n.offmap;
+    $('#toml-sev').textContent='"'+SEV[S.sev]+'"'; $('#toml-kev').textContent=String(S.kev); $('#toml-inside').textContent=String(S.inside);
+    $('#ride').disabled=S.rode;
+    for(const i of root.querySelectorAll('.gate-controls input')) i.disabled=S.rode;
+    tally.innerHTML=S.rode
+      ? '<b>'+repaired+'</b> repaired · <b>'+scrapped+'</b> scrapped · <b>'+n.apart+'</b> moored apart · <b>'+watching+'</b> still watched'
+      : '<b>'+n.warn+'</b> warning'+(n.warn===1?'':'s')+' · <b>'+n.fair+'</b> fair · <b>'+n.offmap+'</b> off the map';
+  }
+  for(const r of root.querySelectorAll('input[name="storm-sev"]')) r.addEventListener('change',e=>{ S.sev=+e.target.value; render(true); });
+  $('#tg-kev').addEventListener('change',e=>{ S.kev=e.target.checked; render(true); });
+  $('#tg-inside').addEventListener('change',e=>{ S.inside=e.target.checked; render(true); });
+  $('#ride').addEventListener('click',()=>{ S.rode=true; render(true); });
+  $('#storm-reset').addEventListener('click',()=>{
+    S.sev=3; S.kev=true; S.inside=true; S.rode=false;
+    for(const r of root.querySelectorAll('input[name="storm-sev"]')) r.checked=(+r.value===3);
+    $('#tg-kev').checked=true; $('#tg-inside').checked=true; render(true);
+  });
+  render(false);
+})();
+
 /* ---------- a small terminal engine ---------- */
 function makeTerm(body, buttons){
   let busy=false, pending=null;
@@ -1406,7 +1603,7 @@ function makeTerm(body, buttons){
   return {run,clear,line,isBusy:()=>busy};
 }
 
-/* ---------- Act IV: the pilot comes aboard (a Claude Code session), the log, standing orders ---------- */
+/* ---------- Act V: the pilot comes aboard (a Claude Code session), the log, standing orders ---------- */
 (function pilot(){
   const body=$('#cc-body'), choices=$('#cc-choices'); if(!body||!choices) return;
   const loop=$('#loop'), receipt=$('#receipt'), yard=$('#yard'), yardBar=$('#yard-bar'), yardDays=$('#yard-days'), yardText=$('#yard-text');
@@ -1544,7 +1741,7 @@ function makeTerm(body, buttons){
   orders('safe');
 })();
 
-/* ---------- Act V: the map ---------- */
+/* ---------- Act VI: the map ---------- */
 (function map(){
   const svg=$('#mapsvg'); if(!svg) return;
   const B={
@@ -1567,7 +1764,7 @@ function makeTerm(body, buttons){
   select('sc');
 })();
 
-/* ---------- Act VI: onboarding ---------- */
+/* ---------- Act VII: onboarding ---------- */
 (function onboard(){
   const reg=$('#registry'), body=$('#ob-body'); if(!reg||!body) return;
   const TOOLS=[['aqe','AQE'],['brain','Brain'],['ruflo','Ruflo']];
@@ -1656,7 +1853,7 @@ function makeTerm(body, buttons){
   render();
 })();
 
-/* ---------- Act VII: steward.toml you can click ---------- */
+/* ---------- Act VIII: steward.toml you can click ---------- */
 (function ledger(){
   const box=$('#toml'), cfg=$('#cfg'); if(!box||!cfg) return;
   const K=[
@@ -1667,7 +1864,7 @@ function makeTerm(body, buttons){
     {sec:'profiles',k:'ai_tooling',o:['false','true'],cm:'Ruflo, AgentDB, AQE, Brain, RuVector'},
     {sec:'profiles',k:'projects',o:['false','true'],cm:'discovery, registry, onboarding'},
     {sec:'skills',k:'pr_consolidation',o:['false','true'],cm:'the pr-consolidation skill'},
-    {sec:'autonomy',k:'level',o:['"safe"','"ask"','"maintainer"'],cm:'your standing orders (Act IV)'},
+    {sec:'autonomy',k:'level',o:['"safe"','"ask"','"maintainer"'],cm:'your standing orders (Act V)'},
     {sec:'brief',k:'refresh_hours',o:['6','12','0'],cm:'the read-only look; 0 turns it off'}
   ];
   const idx=K.map(()=>0);
@@ -1677,7 +1874,8 @@ function makeTerm(body, buttons){
     K.forEach((e,i)=>{
       if(e.sec!==sec){ sec=e.sec; html+='\n<span class="sec">['+sec+']</span>\n'; }
       const yours=idx[i]!==0;
-      html+='<span class="k">'+e.k+'</span> = <button type="button" class="v'+(yours?' yours':'')+'" data-i="'+i+'" aria-label="Change '+e.k+'">'+e.o[idx[i]].replace(/</g,'&lt;')+'</button><span class="tag'+(yours?' yours':'')+'">'+(yours?'yours':'default')+'</span> <span class="cm"># '+e.cm+'</span>\n';
+      // a comment goes on its own line, above the setting it describes
+      html+='<span class="cm"># '+e.cm+'</span>\n<span class="k">'+e.k+'</span> = <button type="button" class="v'+(yours?' yours':'')+'" data-i="'+i+'" aria-label="Change '+e.k+'">'+e.o[idx[i]].replace(/</g,'&lt;')+'</button><span class="tag'+(yours?' yours':'')+'">'+(yours?'yours':'default')+'</span>\n';
     });
     box.innerHTML=html;
     $$('.v',box).forEach(b=>b.addEventListener('click',()=>{ const i=+b.dataset.i; idx[i]=(idx[i]+1)%K[i].o.length; render(); }));
