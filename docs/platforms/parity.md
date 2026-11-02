@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 6](https://img.shields.io/badge/Revision-6-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 7](https://img.shields.io/badge/Revision-7-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -40,7 +40,7 @@ combination we claim.
 
 | Milestone | What it delivers | Stage | Done |
 | --- | --- | --- | --- |
-| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 3 / 9 |
+| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 4 / 9 |
 | [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Not started | 0 / 10 |
 | [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 5 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
@@ -191,7 +191,7 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 before. **Done when:** `steward sc plan` and `steward sc audit` run clean on `ubuntu-latest` with Linuxbrew, and the
 Mac's output before and after is identical.
 
-Stage: Under way (0.1, 0.2 and 0.9 done).
+Stage: Under way (0.1, 0.2, 0.3 and 0.9 done).
 
 - [x] **0.1 Know the platform** (#84, D63). `lib/platform.js` reads `/etc/os-release` (`ID`, `ID_LIKE`, `VERSION_ID`) and returns
   the platform, distribution and family; NixOS by `ID=nixos`. `host.toml` entries take the optional `families` key
@@ -205,13 +205,24 @@ Stage: Under way (0.1, 0.2 and 0.9 done).
   report, audit and plan were identical before and after (2026-11-01).
   - [ ] A tidy-up for later: the audit's held line says "eligible in N days" for a formula and not for a cask. Kept so
     the before-and-after proof stayed exact; make them match in a PR of its own.
-- [ ] **0.3 Bash that runs on GNU and busybox.**
-  - The blocker: `mktemp -t steward-quiet` in `lib/lib.sh` fails on GNU, so every script that uses `quiet` or
-    `run_shown` stops on Linux.
-  - APFS clones (`cp -c`) become a helper that uses `cp -a --reflink=auto` on GNU, where `-c` means something else.
-  - `mv -h` becomes `mv -T`; `shasum` falls back to `sha256sum`; BSD date arithmetic moves to Node.
-  - `node-patch` picks Linux tarballs; the RuVector add-on check names the add-on for this platform; offboarding stops
-    needing `lsof`.
+- [x] **0.3 Bash that runs on GNU and busybox** (#88, D66). Five helpers in `lib/lib.sh` (`tmpfile`, `cp_clone`,
+  `mv_onto`, `SHA256`/`SHA1`/`sha256_of`, `node_tarball`) replace 18 BSD-only sites, among them the `mktemp -t` blocker.
+  Node replaces perl (`lib/timeout.js`, `lib/subst.js`; owner, 2026-11-02). Offboarding reads `/proc` on Linux instead
+  of `lsof`. `node-patch` fetches the Linux build. A refresh step with under 50 ms left is no longer started.
+  `test/portable.test.js` guards against the BSD-only forms coming back. Every Linux row passes:
+
+  | Row | Baseline (0.9) | After 0.3 |
+  | --- | --- | --- |
+  | Debian 13 | 386 / 403 | 414 / 415 ✓ |
+  | Ubuntu 26.04 | 387 / 403 | 414 / 415 ✓ |
+  | Fedora 44 | 384 / 403 | 414 / 415 ✓ |
+  | openSUSE Leap 16.0 | 386 / 403 | 414 / 415 ✓ |
+  | openSUSE Tumbleweed | 386 / 403 | 414 / 415 ✓ |
+
+  The one not counted on each row is the macOS-only host report test, skipped there.
+  - [ ] Still open: the RuVector add-on check names `ruvector-core-darwin-arm64` (`supply-chain/bin/addon-check.js`)
+    rather than the add-on for this platform. It runs only with the AI tooling add-on, so no test caught it; it moves
+    with 0.7.
 - [ ] **0.4 Indicators of compromise on Linux.** `ps` per flavor (BSD, procps, busybox), `/proc` where `ps` can't show
   the environment, and Linux paths.
 - [ ] **0.5 Trust store, the finding half.** The PEM-bundle and Node-roots checks leave the macOS-only trust check, so
@@ -219,8 +230,9 @@ Stage: Under way (0.1, 0.2 and 0.9 done).
 - [ ] **0.6 `steward doctor` per platform.** Each prerequisite says which platforms need it. Today `sw_vers`,
   `security`, `softwareupdate`, `mas` and Homebrew are required everywhere. Install hints come per family. On Linux,
   `libatomic` is a prerequisite: Node 26's arm64 binary needs `libatomic.so.1`, which minimal installs leave out (found
-  by 0.9's first run, 2026-11-02).
-- [ ] **0.7 Words.** "This Mac" and macOS-only fix text become platform-aware in the review, the audit, the briefing,
+  by 0.9's first run, 2026-11-02). So is `jq`, which `lock-age` and the release check use (found by 0.3's Linux run).
+- [ ] **0.7 Words, and the RuVector add-on name** (moved from 0.3). `addon-check.js` names the add-on for this OS and
+  CPU. "This Mac" and macOS-only fix text become platform-aware in the review, the audit, the briefing,
   the guards and the package description.
 - [ ] **0.8 Ready to package for Linux, and the first Linux CI row.** Publishing no longer needs macOS, and Tests run on
   `ubuntu-latest` too. `package.json` `os` keeps only `darwin` until [the bar](#the-linux-release-the-bar) is met
@@ -233,7 +245,9 @@ Stage: Under way (0.1, 0.2 and 0.9 done).
   It adds to the CI matrix and never replaces it: every supported distribution still gets its CI job on every PR, and
   its install-check row (owner, 2026-11-01).
   Containers run arm64 on an Apple-silicon Mac (x64 by emulation) and have no systemd, so the NixOS VM stays in CI.
-  Linux Mint has no official image, so its Ubuntu base stands in locally; Mint gets its own CI row. Tumbleweed's row
+  Linux Mint's rows join with the apt provider (owner, 2026-11-02): Docker Hub has `linuxmintd/mint22-amd64` and
+  `linuxmintd/mint22.2-amd64` (amd64 only), to be confirmed as the Mint project's own account first; until then its
+  Ubuntu base stands in locally. (#87 said Mint has no official image; that was wrong.) Tumbleweed's row
   pins a `latest` digest under a recorded gate exception (owner, 2026-11-02; expires 2026-11-05): its dated snapshots
   that pass the gate have no arm64 build.
 
@@ -374,6 +388,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-02 | 7 | 0.3 done: the shell on GNU and busybox, no perl, no lsof on Linux (D66); every Linux row passes; jq joins the Linux prerequisites; the Mint image corrected; the RuVector add-on name moves to 0.7 | #88 |
 | 2026-11-02 | 6 | 0.9 done: local container tests (D65), the first Linux baseline, the libatomic finding; end-to-end runs added to each provider's checklist and the release bar | #87 |
 | 2026-11-01 | 5 | 0.2 done: package sources with one contract, judged in one place (D64) | #86 |
 | 2026-11-01 | 4 | The Linux release bar (R-1 to R-3): apt, dnf and zypper first; 0.8 keeps `os` Mac-only until the bar; T.7 install check from a commit | #84 |

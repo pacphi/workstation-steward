@@ -9,7 +9,7 @@ LABEL org.workstation-steward.test=1
 # Node 26's Linux binaries need libatomic, which minimal images leave out (found by the first run, 2026-11-02)
 RUN zypper -n --gpg-auto-import-keys refresh \
  && zypper -n install --no-recommends \
-      bash git-core python3 util-linux procps ca-certificates curl tar gzip xz findutils shadow libatomic1 \
+      bash git-core python3 util-linux procps ca-certificates curl tar gzip xz findutils shadow libatomic1 diffutils jq \
  && zypper -n clean -a
 COPY install-mise.sh /tmp/install-mise.sh
 RUN sh /tmp/install-mise.sh && rm /tmp/install-mise.sh
