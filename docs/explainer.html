@@ -236,7 +236,7 @@ pre.toml i{color:var(--mist);font-style:normal}
 .rules li b{display:block;font-family:var(--f-display);font-size:19px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--chalk);margin-bottom:4px}
 .flagQ{display:inline-block;width:14px;height:10px;background:var(--q);vertical-align:-1px;margin-right:6px;border:1px solid rgba(0,0,0,.3)}
 
-/* ---- Act IV: terminal, loop, receipt, soak ---- */
+/* ---- Act V: terminal, loop, receipt, soak ---- */
 .deck{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-top:10px}
 @media (min-width:980px){.deck{grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);align-items:start}}
 .term{background:#04131A;border:1px solid var(--line-2);border-radius:14px;overflow:hidden;box-shadow:0 30px 60px -30px rgba(0,0,0,.9);min-width:0}
@@ -300,7 +300,7 @@ pre.toml i{color:var(--mist);font-style:normal}
 .yard .bar.go i{width:100%}
 .yard p{margin:0;font-size:14px;color:var(--fog)}
 
-/* ---- Act IV: the pilot (a Claude Code session), standing orders, the one next step ---- */
+/* ---- Act V: the pilot (a Claude Code session), standing orders, the one next step ---- */
 .pilot-deck{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-top:10px}
 @media (min-width:980px){.pilot-deck{grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);align-items:start}}
 .cc-body{padding:14px 16px 16px;min-height:340px;max-height:520px;overflow:auto;font:13.5px/1.6 var(--f-mono);color:var(--fog);white-space:pre-wrap;word-break:break-word}
@@ -394,7 +394,7 @@ pre.toml i{color:var(--mist);font-style:normal}
 .eight code{color:var(--chalk);white-space:nowrap}
 @media (max-width:560px){.eight li{grid-template-columns:minmax(0,1fr);gap:2px}}
 
-/* ---- Act V: harbor map ---- */
+/* ---- Act VI: harbor map ---- */
 .map{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-top:8px}
 @media (min-width:980px){.map{grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);align-items:start}}
 .map svg{width:100%;height:auto;display:block;background:radial-gradient(120% 90% at 50% 100%,#0D3443,var(--ink-well) 70%);border:1px solid var(--line-2);border-radius:18px}
@@ -432,7 +432,7 @@ pre.toml i{color:var(--mist);font-style:normal}
 .banner b em{font-style:normal;color:var(--lamp)}
 .banner p{margin:8px 0 0;color:var(--fog);font-size:15px}
 
-/* ---- Act VI: onboarding board ---- */
+/* ---- Act VII: onboarding board ---- */
 .board{margin-top:10px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
 @media (min-width:980px){.board{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);align-items:start}}
 .registry{display:grid;gap:10px}
@@ -451,7 +451,7 @@ pre.toml i{color:var(--mist);font-style:normal}
 .lineage{margin-top:22px;padding:18px 20px;border-radius:14px;border:1px solid var(--line);background:rgba(4,19,26,.5);font-size:15.5px;color:var(--fog)}
 .lineage b{color:var(--chalk)}
 
-/* ---- Act VII: ledger ---- */
+/* ---- Act VIII: ledger ---- */
 .ledger{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:8px}
 @media (min-width:860px){.ledger{grid-template-columns:1fr 1fr}}
 .ledger .panel h3{display:flex;align-items:center;gap:10px}
@@ -523,6 +523,8 @@ pre.toml i{color:var(--mist);font-style:normal}
    wraps inside, so a long command never runs past its card on a phone */
 p code{display:inline-block;max-width:100%;white-space:normal;overflow-wrap:anywhere;vertical-align:bottom}
 .cmd code{font:13.5px/1.5 var(--f-mono);color:var(--chalk);white-space:pre-wrap;overflow-wrap:break-word;display:block;padding:7px 0 7px 2ch;text-indent:-2ch;min-width:0}
+/* on a phone the command takes the card's whole width and Copy sits under it, so a tool and its version stay on one line */
+@media (max-width:560px){.cmd{grid-template-columns:minmax(0,1fr)}.cmd .copy{justify-self:end}.cmd code{font-size:12px}}
 .cmd code::before{content:"$ ";color:var(--lamp)}
 .copy{min-height:34px;padding:4px 12px;border-radius:8px;border:1.5px solid var(--line-2);background:transparent;cursor:pointer;font-family:var(--f-mono);font-size:12px;color:var(--fog);white-space:nowrap}
 .copy:hover{border-color:var(--chalk);color:var(--chalk)}
@@ -780,7 +782,8 @@ pre.block{margin:10px 0 0;background:#04131A;border:1px solid var(--line);border
         <div class="gate-foot">
           <pre class="toml" aria-label="The policy line this control edits"><i># steward.toml</i>
 [policy]
-min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</i></pre>
+<i># mise, Homebrew and Renovate all read it</i>
+min_release_age_days = <b id="toml-days">3</b></pre>
           <p class="note">The ages are real ones from recorded sessions. The steward's own release 0.10.1 shows its true age as you read this, because installed through mise it waits out the same gate as every other tool.</p>
         </div>
       </div>
@@ -1197,10 +1200,12 @@ inside_tools = <b id="toml-inside">true</b></pre>
         <ol class="steps">
           <li class="rv"><div>
             <h3>Install through mise</h3>
-            <div class="cmd"><code>mise use -g npm:<wbr>workstation-steward@0.10.1</code><button class="copy" data-copy="mise use -g npm:workstation-steward@0.10.1">Copy</button></div>
+            <div class="cmd"><code>mise use -g \
+  npm:workstation-steward@0.10.1</code><button class="copy" data-copy="mise use -g npm:workstation-steward@0.10.1">Copy</button></div>
             <p>mise then keeps the steward current under the same release-age gate as your other tools. Needs Node 26 or later. 0.10.1 was the current release when this page was made. Plain <code>npm install -g</code> works too, and <code>npx workstation-steward@0.10.1 version</code> lets you look without installing.</p>
             <p class="note">Until 27 November 2026, mise asks for an approval because the package is less than 30 days old. Use this form instead:</p>
-            <div class="cmd"><code>mise use -g 'npm:<wbr>workstation-steward[<wbr>allow_low_downloads=true]@0.10.1'</code><button class="copy" data-copy="mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.10.1'">Copy</button></div>
+            <div class="cmd"><code>mise use -g \
+  'npm:workstation-steward[<wbr>allow_low_downloads=true]<wbr>@0.10.1'</code><button class="copy" data-copy="mise use -g 'npm:workstation-steward[allow_low_downloads=true]@0.10.1'">Copy</button></div>
           </div></li>
           <li class="rv"><div>
             <h3>Check it</h3>
@@ -1598,7 +1603,7 @@ function makeTerm(body, buttons){
   return {run,clear,line,isBusy:()=>busy};
 }
 
-/* ---------- Act IV: the pilot comes aboard (a Claude Code session), the log, standing orders ---------- */
+/* ---------- Act V: the pilot comes aboard (a Claude Code session), the log, standing orders ---------- */
 (function pilot(){
   const body=$('#cc-body'), choices=$('#cc-choices'); if(!body||!choices) return;
   const loop=$('#loop'), receipt=$('#receipt'), yard=$('#yard'), yardBar=$('#yard-bar'), yardDays=$('#yard-days'), yardText=$('#yard-text');
@@ -1736,7 +1741,7 @@ function makeTerm(body, buttons){
   orders('safe');
 })();
 
-/* ---------- Act V: the map ---------- */
+/* ---------- Act VI: the map ---------- */
 (function map(){
   const svg=$('#mapsvg'); if(!svg) return;
   const B={
@@ -1759,7 +1764,7 @@ function makeTerm(body, buttons){
   select('sc');
 })();
 
-/* ---------- Act VI: onboarding ---------- */
+/* ---------- Act VII: onboarding ---------- */
 (function onboard(){
   const reg=$('#registry'), body=$('#ob-body'); if(!reg||!body) return;
   const TOOLS=[['aqe','AQE'],['brain','Brain'],['ruflo','Ruflo']];
@@ -1848,7 +1853,7 @@ function makeTerm(body, buttons){
   render();
 })();
 
-/* ---------- Act VII: steward.toml you can click ---------- */
+/* ---------- Act VIII: steward.toml you can click ---------- */
 (function ledger(){
   const box=$('#toml'), cfg=$('#cfg'); if(!box||!cfg) return;
   const K=[
@@ -1859,7 +1864,7 @@ function makeTerm(body, buttons){
     {sec:'profiles',k:'ai_tooling',o:['false','true'],cm:'Ruflo, AgentDB, AQE, Brain, RuVector'},
     {sec:'profiles',k:'projects',o:['false','true'],cm:'discovery, registry, onboarding'},
     {sec:'skills',k:'pr_consolidation',o:['false','true'],cm:'the pr-consolidation skill'},
-    {sec:'autonomy',k:'level',o:['"safe"','"ask"','"maintainer"'],cm:'your standing orders (Act IV)'},
+    {sec:'autonomy',k:'level',o:['"safe"','"ask"','"maintainer"'],cm:'your standing orders (Act V)'},
     {sec:'brief',k:'refresh_hours',o:['6','12','0'],cm:'the read-only look; 0 turns it off'}
   ];
   const idx=K.map(()=>0);
@@ -1869,7 +1874,8 @@ function makeTerm(body, buttons){
     K.forEach((e,i)=>{
       if(e.sec!==sec){ sec=e.sec; html+='\n<span class="sec">['+sec+']</span>\n'; }
       const yours=idx[i]!==0;
-      html+='<span class="k">'+e.k+'</span> = <button type="button" class="v'+(yours?' yours':'')+'" data-i="'+i+'" aria-label="Change '+e.k+'">'+e.o[idx[i]].replace(/</g,'&lt;')+'</button><span class="tag'+(yours?' yours':'')+'">'+(yours?'yours':'default')+'</span> <span class="cm"># '+e.cm+'</span>\n';
+      // a comment goes on its own line, above the setting it describes
+      html+='<span class="cm"># '+e.cm+'</span>\n<span class="k">'+e.k+'</span> = <button type="button" class="v'+(yours?' yours':'')+'" data-i="'+i+'" aria-label="Change '+e.k+'">'+e.o[idx[i]].replace(/</g,'&lt;')+'</button><span class="tag'+(yours?' yours':'')+'">'+(yours?'yours':'default')+'</span>\n';
     });
     box.innerHTML=html;
     $$('.v',box).forEach(b=>b.addEventListener('click',()=>{ const i=+b.dataset.i; idx[i]=(idx[i]+1)%K[i].o.length; render(); }));
