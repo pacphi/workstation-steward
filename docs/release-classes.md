@@ -103,7 +103,7 @@ release the day it ships. A **dated** `[[updater]]` hands that choice to the ste
 name = "claude-code"
 class = "gated"
 when = "~/.local/share/claude/versions"
-installed = "readlink ~/.local/bin/claude"   # prints the version in use (…/versions/2.1.316)
+installed = "basename \"$(readlink ~/.local/bin/claude)\""   # prints the version in use (2.1.316)
 released = { npm = "@anthropic-ai/claude-code" }   # or { github = "<owner>/<repo>" }: its releases
 apply = "~/.local/share/claude/versions/{installed} install {version}"
 verify = { url = "https://downloads.claude.ai/claude-code-releases/{version}/manifest.json", json = "platforms.{platform}.checksum", file = "~/.local/share/claude/versions/{version}" }
@@ -156,7 +156,9 @@ A shipped pin is only as good as the maintainer's notice of a change upstream. F
 
 `always_current = […]` and `[[security_exception]]` keep working as they are: the engine reads them as the
 `always_current` and `exception` classes. The `[[updater]]` table is new; an older engine ignores it (an unknown
-table), so it can't skip a gate it doesn't know about.
+table), so it can't skip a gate it doesn't know about. A dated entry (D72) in your own `host.toml` is left out by an
+engine before D72, with a warning (it has no `check`), and a list of `self_update_off` switches reads there as one that
+isn't off; the shipped `claude-code` default arrives with the engine that reads it.
 
 ## Decided
 

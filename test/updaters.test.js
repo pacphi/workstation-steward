@@ -195,7 +195,7 @@ echo "installed $1"
   return {
     dir,
     u: {
-      name: `native-${n}`, class: 'gated', why: 'test', installed: `readlink ${dir}/bin/tool`, released: { npm: 'tool' },
+      name: `native-${n}`, class: 'gated', why: 'test', installed: `basename "$(readlink ${dir}/bin/tool)"`, released: { npm: 'tool' },
       apply: `${dir}/install.sh {version}`, backup: [path.join(dir, 'bin', 'tool'), path.join(dir, 'versions', '{installed}')],
       verify: { url: 'https://example.test/{version}/manifest.json', json: 'platforms.{platform}.checksum', file: path.join(dir, 'versions', '{version}') },
     },
@@ -278,6 +278,7 @@ test('apply (dated): a sha256 that is not the vendor\'s puts the link back; no m
   const reads = extra => stub({ [`bash -c ${u.installed}`]: 'versions/2.0.0', 'npm view tool time --json': JSON.stringify(TIMES), ...extra });
   assert.equal(await U.apply(u, { newDir, run: reads({ 'curl -fsSL --max-time 30 https://example.test/2.0.2/manifest.json': manifest('2.0.2', 'something else') }), minDays: 3, now: NOW }), 1);
   assert.match(receiptIn(lastDir()).outcome, /^failed: .*2\.0\.2 hashes to .*not the vendor's .*what it replaced is back$/);
+  assert.equal(receiptIn(lastDir()).restored, true, 'put back already: the brief does not ask for a rollback');
   assert.equal(fs.readlinkSync(path.join(dir, 'bin', 'tool')), path.join(dir, 'versions', '2.0.0'));
   const before = fs.readdirSync(path.join(ROOT, 'state', 'backups')).length;
   assert.equal(await U.apply(u, { newDir, run: reads({}), minDays: 3, now: NOW }), 1, 'no manifest: refused before any copy');

@@ -96,7 +96,7 @@ name = "claude-code"
 class = "gated"
 when = "~/.local/share/claude/versions"   # the native install; an npm or Homebrew one updates through those
 why = "Claude Code's native build installs any exact version (`claude install <version>`) and keeps old ones beside it, but its own updater takes the newest the day it ships. Its releases are dated on npm and each build's sha256 is in Anthropic's manifest, so it waits out the gate like the tools mise installs. Reviewed 2026-11-02 at 2.1.316"
-installed = "readlink ~/.local/bin/claude"   # the link names the version folder: …/versions/2.1.316
+installed = "basename \"$(readlink ~/.local/bin/claude)\""   # the link names the version: …/versions/2.1.316
 released = { npm = "@anthropic-ai/claude-code" }
 apply = "~/.local/share/claude/versions/{installed} install {version}"
 verify = { url = "https://downloads.claude.ai/claude-code-releases/{version}/manifest.json", json = "platforms.{platform}.checksum", file = "~/.local/share/claude/versions/{version}" }
