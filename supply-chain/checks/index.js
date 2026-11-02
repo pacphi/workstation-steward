@@ -13,6 +13,7 @@ const { X509Certificate } = require('crypto');
 const brew = require('../../lib/providers/brew.js');
 const P = require('../../lib/providers/index.js');
 const U = require('../../lib/updaters.js');
+const V = require('../../lib/vulns.js');
 
 const ALL = ['macos', 'linux', 'windows'];
 // ageDays and securityException live with the package sources (lib/providers/index.js); kept here for the checks
@@ -295,6 +296,53 @@ const CHECKS = [
         for (const d of i.docker_digests || []) if (d && digests.includes(d)) { out.alert(`${i.name}: docker image with digest ${d}`); hits++; }
         if (!hits) out.clean(`${i.name} (${i._source})`);
       }
+    },
+  },
+  {
+    // Known vulnerabilities (D65, lib/vulns.js): what's installed against the [[advisory_feed]] feeds. High, critical,
+    // unrated and known-exploited findings are actions; the rest are listed. A package inside a tool is fixed by that
+    // tool's next release, so a tool's serious ones make one action. A feed that couldn't be read is said, never clean
+    id: 'vulns', name: 'Known vulnerabilities', platforms: ALL,
+    title: () => 'Known vulnerabilities (advisory_feed: the engine\'s defaults and yours; read-only; steward sc vulns)',
+    async run(ctx, out) {
+      const feeds = ctx.policy.advisory_feed || [];
+      if (!feeds.length) { out.action('vuln-feed: every advisory_feed is turned off in host.toml, so nothing was checked'); return; }
+      detail(ctx, 'mise ls --json, and the packages inside each tool');
+      const inv = await V.inventory(ctx);
+      const { findings, failed, checked } = await V.lookup(ctx, feeds, inv, t => detail(ctx, t));
+      for (const f of failed) out.action(`vuln-feed: ${f.feed} not checked (${f.error}); what it would have found is missing`, { fix: 'check the network or the feed, then steward sc vulns', name: f.feed, note: 'not checked' });
+      for (const e of ctx.policy.advisory_ignore || []) if (String(e.expires) < ctx.today) out.info(`advisory_ignore ${e.id} (${e.name} ${e.version}) expired ${e.expires}: shown again`);
+      const shown = [];
+      for (const f of findings) {
+        const e = V.ignored(f, ctx.policy.advisory_ignore, ctx.today);
+        if (e) out.info(`ignored until ${e.expires}: ${f.id} in ${f.pkg.name} ${f.pkg.version} (${f.pkg.tool}): ${e.reason}`);
+        else shown.push(f);
+      }
+      const label = f => `${f.id} ${f.severity}${f.kev ? ', known exploited' : ''}`;
+      const fixedText = f => (f.fixed ? `fixed in ${f.fixed}` : 'no fixed release yet');
+      // the tool itself (and Node): one line each, with the command that takes the fix
+      for (const f of shown.filter(f => f.pkg.top)) {
+        const cmd = V.fixCommand(f) || (f.fixed && f.pkg.tool.startsWith('npm -g ') ? 'steward sc install-hybrids (after its version in hybrids.toml)' : '');
+        const text = `vuln: ${f.pkg.tool} ${f.pkg.version}: ${label(f)}, ${fixedText(f)} ${f.url}${cmd ? `: ${cmd}` : ''}`;
+        if (V.serious(f)) out.action(text, { fix: cmd || 'read the advisory: no fixed release yet', name: f.pkg.tool, have: f.pkg.version, want: f.fixed, note: label(f) });
+        else out.info(text);
+      }
+      // packages inside a tool: listed one by one, and a tool's serious ones as one action
+      const inside = shown.filter(f => !f.pkg.top);
+      for (const f of inside) out.info(`${f.pkg.tool}: ${f.pkg.name} ${f.pkg.version} inside it: ${label(f)}, ${fixedText(f)} ${f.url}`);
+      for (const tool of [...new Set(inside.filter(V.serious).map(f => f.pkg.tool))]) {
+        const mine = inside.filter(f => f.pkg.tool === tool && V.serious(f));
+        const ids = [...new Set(mine.map(f => f.id))];
+        const pkgs = new Set(mine.map(f => `${f.pkg.name}@${f.pkg.version}`)).size;
+        out.action(`vuln: ${tool}: ${ids.length} serious advisor${ids.length === 1 ? 'y' : 'ies'} in ${pkgs} package(s) inside it (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? ` and ${ids.length - 3} more` : ''}); update it when a release carries the fixes (steward sc vulns --verbose lists them)`,
+          { fix: 'update the tool that bundles it, when a release carries the fix', name: tool, note: `${ids.length} in ${pkgs} package(s)` });
+      }
+      if (inv.uncovered.length) out.info(`not covered (no advisory ecosystem; not the same as clean): ${inv.uncovered.join(', ')}`);
+      const serious = shown.filter(V.serious).length;
+      const line = `${new Set(inv.packages.map(p => `${p.ecosystem}\0${p.name}\0${p.version}`)).size} package version(s) in ${inv.covered.length} tool(s), checked with ${checked.join(', ') || 'no feed'}: ${serious} serious, ${shown.length - serious} other`;
+      if (shown.length) out.ok(line);
+      else if (!failed.length) out.clean(line);
+      else out.info(line);
     },
   },
 ];

@@ -55,3 +55,25 @@
 # version = "3.6.1"
 # advisory = "https://github.com/advisories/GHSA-xxxx-xxxx-xxxx"
 # expires = "2026-11-03"                   # a week or so: by then the version is past the gate anyway
+
+# Known vulnerabilities (steward sc vulns, D65). The engine's feeds are osv, nodejs and kev (host-defaults.toml); add
+# your own, replace one by name, or turn one off with [off] advisory_feed = ["kev"]. Feeds are data, never code.
+# [[advisory_feed]]
+# name = "ours"
+# kind = "osv-dir"                         # a folder of OSV-format JSON records in this instance
+# path = "supply-chain/advisories"
+#
+# [[advisory_feed]]
+# name = "mirror"
+# kind = "osv-api"                         # a server that speaks OSV's API
+# url = "https://osv.internal.example/v1"
+# ecosystems = ["npm"]                     # optional: only ask it about these
+#
+# An advisory that doesn't apply here: silenced for that package and version until it expires. Every field is
+# required, under the same evidence rule as trust_policy_excludes.
+# [[advisory_ignore]]
+# id = "GHSA-xxxx-xxxx-xxxx"               # or a CVE or other alias of it
+# name = "some-package"
+# version = "1.2.3"
+# reason = "we never call the affected API (link to the evidence)"
+# expires = "2026-12-01"

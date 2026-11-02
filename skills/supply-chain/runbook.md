@@ -125,7 +125,11 @@ those issues for you. It changes nothing.
 
 1. Verify every claim against primary sources: the vendor advisory, GHSA, RustSec, OSV, NVD, CISA KEV and the
    registries. Social posts exaggerate.
-2. Sweep local exposure read-only: `steward sc audit`, plus targeted `find`, `ps` or `docker` checks.
+2. Sweep local exposure read-only: `steward sc vulns` (known vulnerabilities in mise's npm, pipx, cargo and go tools, the
+   packages inside them, the hybrids and Node; `--verbose` lists each one), then `steward sc audit`, plus targeted `find`,
+   `ps` or `docker` checks. An advisory no database carries yet can go in an `osv-dir` feed (host.toml
+   `[[advisory_feed]]`) so later sweeps keep checking; one that doesn't apply here goes in `[[advisory_ignore]]`, with
+   the reason and an expiry.
 3. **A first patched release younger than 3 days:** add a `[[security_exception]]` to
    `supply-chain/host.toml` with the advisory and an expiry, and use `steward sc upgrade-tool` for mise tools.
 4. **Indicators and bad certificates:** add `[[ioc]]` and `[[distrusted_root]]` entries, so later audits keep

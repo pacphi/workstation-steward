@@ -180,6 +180,8 @@ const LONG = [
   ['lib/coarse.js', /^(?!\s*\/\/).*= (onboard|offboard)\(r\.abs\)/, /\bst\.detail\(/, 8],
   ['lib/coarse.js', /^(?!\s*\/\/).*R\.all\(/, /\brs\.detail\(/, 0],
   ['lib/coarse.js', /^(?!\s*\/\/).*nodejs\.org\/dist\/index\.json'/, /\.stage\(/, 1],
+  ['lib/vulns.js', /^(?!\s*\/\/).*\/querybatch`, body|\/vulns\/\$\{encodeURIComponent/, /\bsay\(/, 2],
+  ['supply-chain/checks/index.js', /await V\.(inventory|lookup)\(/, /\bdetail\(ctx, |t => detail\(ctx, t\)/, 1],
 ];
 const GATES = ['g1', 'g2', 'g3g4', 'g5', 'g6', 'g7', 'g8', 'smoke'];
 
