@@ -65,6 +65,7 @@ or with a read-only report, `/steward:supply-chain audit`.
 | Supply chain | "What needs updating on this Mac?" | Audit and plan, sorted into *now*, *waiting for the gate* and *your call*; then a choice |
 | | "Apply the upgrades" | The dry run, your yes, the upgrade, `steward sc verify`, and how to roll back |
 | | "A Node security release is out" | Checks nodejs.org for your Node line; if it's a security release, patches it with `steward sc node-patch` after your yes |
+| | "Is anything I have vulnerable?" | `steward sc vulns`: known vulnerabilities in your mise tools, the packages inside them, the hybrids and Node; exploited ones first, each with its fix or why it waits, and what couldn't be checked |
 | | "Is this advisory a problem here?" (paste the link) | Reads the advisory at its source, sweeps the machine read-only, and answers; any fix is a separate yes |
 | | "Handle this Renovate PR" | Reads its release notes, age and provenance, checks its lock file, and says whether to merge or re-lock first |
 | | "Roll back the last upgrade" | Shows the backup it would restore, then asks |
