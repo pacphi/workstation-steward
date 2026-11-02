@@ -406,3 +406,11 @@ test('Homebrew: a fix named only as an upstream commit is no release; an unrated
   const out = [];
   await audit(c, { only: ['vulns'], write: x => out.push(x) });
 });
+
+test('Go programs: an unpacked release archive\'s own folder is searched (gh_…/bin/gh, darwin-arm64/helm), not dependency trees', () => {
+  const d = path.join(ROOT, 'exec');
+  const big = 'x'.repeat(200000);
+  for (const f of ['gh_2.103.3_macOS_arm64/bin/gh', 'darwin-arm64/helm', 'node_modules/x/bin/no', 'a/b/c/d/too-deep']) { put(path.join(d, f), big); fs.chmodSync(path.join(d, f), 0o755); }
+  put(path.join(d, 'README'), big);
+  assert.deepEqual(SRC.executables(d).map(f => path.relative(d, f)).sort(), ['darwin-arm64/helm', 'gh_2.103.3_macOS_arm64/bin/gh']);
+});
