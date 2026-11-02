@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 11](https://img.shields.io/badge/Revision-11-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 12](https://img.shields.io/badge/Revision-12-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -40,7 +40,7 @@ combination we claim.
 
 | Milestone | What it delivers | Stage | Done |
 | --- | --- | --- | --- |
-| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 7 / 9 |
+| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 8 / 9 |
 | [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Not started | 0 / 10 |
 | [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 6 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
@@ -191,7 +191,7 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 before. **Done when:** `steward sc plan` and `steward sc audit` run clean on `ubuntu-latest` with Linuxbrew, and the
 Mac's output before and after is identical.
 
-Stage: Under way (0.1 to 0.6, and 0.9, done).
+Stage: Under way (0.1 to 0.7, and 0.9, done; 0.8 is left).
 
 - [x] **0.1 Know the platform** (#84, D63). `lib/platform.js` reads `/etc/os-release` (`ID`, `ID_LIKE`, `VERSION_ID`) and returns
   the platform, distribution and family; NixOS by `ID=nixos`. `host.toml` entries take the optional `families` key
@@ -220,7 +220,7 @@ Stage: Under way (0.1 to 0.6, and 0.9, done).
   | openSUSE Tumbleweed | 386 / 403 | 414 / 415 ✓ |
 
   The one not counted on each row is the macOS-only host report test, skipped there.
-  - [ ] Still open: the RuVector add-on check names `ruvector-core-darwin-arm64` (`supply-chain/bin/addon-check.js`)
+  - [x] Done in 0.7 (#PR): the RuVector add-on check names `ruvector-core-darwin-arm64` (`supply-chain/bin/addon-check.js`)
     rather than the add-on for this platform. It runs only with the AI tooling add-on, so no test caught it; it moves
     with 0.7.
 - [x] **0.4 Indicators of compromise on every platform** (#89, D67). Linux lists processes from `/proc` (minimal
@@ -240,9 +240,10 @@ Stage: Under way (0.1 to 0.6, and 0.9, done).
   byte-identical. Since the doctor can't report a missing `libatomic` (Node won't start), `docs/prereqs.md` gives a
   first-run order per family that installs it first. A follow-up (#95): a required mise tool missing from your own
   `mise/config.toml` gets the line to add, by hand, instead of an install that won't stick (owner, 2026-11-02).
-- [ ] **0.7 Words, and the RuVector add-on name** (moved from 0.3). `addon-check.js` names the add-on for this OS and
-  CPU. "This Mac" and macOS-only fix text become platform-aware in the review, the audit, the briefing,
-  the guards and the package description.
+- [x] **0.7 Words, and the RuVector add-on name** (#PR, D72). Messages say "this machine" (owner, 2026-11-02); the
+  audit's "Next:" line and the vulns coverage name only what applies here; the help texts are platform-neutral; the
+  add-on is named for this OS, CPU and C library, with none (not a failure) where RuVector ships none. Found and fixed
+  on the way: a test file that ended early yet passed, and doctor tests that wrote receipts into the real state folder.
 - [ ] **0.8 Ready to package for Linux, and the first Linux CI row.** Publishing no longer needs macOS, and Tests run on
   `ubuntu-latest` too. `package.json` `os` keeps only `darwin` until [the bar](#the-linux-release-the-bar) is met
   (R-3), so a release before then stays Mac-only.
@@ -400,6 +401,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-02 | 12 | 0.7 done: the words, the per-platform lists, the RuVector add-on name (D72); Milestone 0 has only 0.8 left | #PR |
 | 2026-11-02 | 11 | 0.6 follow-up: the doctor names a mise tool missing from your own toolchain | #95 |
 | 2026-11-02 | 10 | 0.6 done: steward doctor per platform (D69); the Linux first-run order | #91 |
 | 2026-11-02 | 9 | 0.5 done: distrusted roots found on Linux (D68); emSign still trusted in the Fedora 44 and Tumbleweed images, the first cases for 2.1 | #90 |
