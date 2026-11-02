@@ -51,6 +51,7 @@ async function plan(ctx, o = {}) {
       if (f.fixed && (!p.node || V.cmpVer(f.fixed, p.node.version) > 0)) p.node = { have: f.pkg.version, version: f.fixed, advisories: [adv(f)] };
       continue;
     }
+    if (V.nodeOwn(tool)) { p.handed.push(`${tool} ${f.pkg.version}: ${f.id}: it ships with Node; a Node release carries the fix`); continue; }
     if (ownedBy(owned, tool)) { p.handed.push(`${tool} ${f.pkg.version}: ${f.id}: AI tooling owns it (the ai-tooling skill)`); continue; }
     if (tool.startsWith('npm -g ')) {
       p.handed.push(`${tool} ${f.pkg.version}: ${f.id}${f.fixed ? `, fixed in ${f.fixed}: set its version in hybrids.toml, then steward sc install-hybrids` : ': no fixed release yet'}`);
@@ -103,7 +104,7 @@ function show(p, write = s => console.log(s)) {
   const ids = a => a.map(x => `${x.id}${x.kev ? ' (exploited)' : ''}`).join(', ');
   write('==> steward sc vulns-fix: the plan');
   for (const f of p.failed) write(`  not checked: ${f.feed} (${f.error}); what it would have found isn't in this plan`);
-  for (const u of p.upgrades) write(`  upgrade  ${u.tool} ${u.have} -> ${u.version}  (${ids(u.advisories)}; skips the release-age gate)`);
+  for (const u of p.upgrades) write(`  upgrade  ${u.tool} ${u.have} -> ${u.version}${V.isMajor(u.have, u.version) ? ' (MAJOR)' : ''}  (${ids(u.advisories)}; skips the release-age gate)`);
   for (const e of p.exceptions) write(`  record   host.toml security_exception ${e.name} ${e.version}, ${e.advisory}, expires ${e.expires}`);
   for (const c of p.cleanup) write(`  remove   ${c.tool}@${c.version} (unused: ${ids(c.advisories)})`);
   if (p.node) write(`  next     steward sc node-patch ${p.node.version}  (Node ${p.node.have}; ${ids(p.node.advisories)}; it reinstalls the hybrids and asks its own yes)`);

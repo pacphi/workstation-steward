@@ -125,5 +125,5 @@ exception_days = 7                # how long that security_exception lasts (1 to
 cleanup = true                    # vulns-fix also removes unused old installs that carry serious advisories
 cleanup_skip_soak = "serious"     # serious: that cleanup doesn't wait out the soak (those copies only); never: it waits
 isolate_suggest = true            # suggest steward sc isolate for a known-exploited finding, or a critical one with no fix
-isolate_never = ["node"]          # tools never isolated
+isolate_never = ["node", "npm", "corepack"]   # tools never isolated
 isolate_ai_owned = false          # whether isolate may switch off a tool AI tooling owns (its projects' launchers break)

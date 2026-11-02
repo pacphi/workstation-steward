@@ -329,7 +329,7 @@ const CHECKS = [
       const fixedText = f => (f.fixed ? `fixed in ${f.fixed}` : 'no fixed release yet');
       // the tool itself (and Node): one line each, with the command that takes the fix
       for (const f of shown.filter(f => f.pkg.top)) {
-        const owner = isOwned(f.pkg.tool) ? '; AI tooling owns it (the ai-tooling skill)' : '';
+        const owner = V.nodeOwn(f.pkg.tool) ? '; it ships with Node: a Node release carries the fix (steward sc plan)' : isOwned(f.pkg.tool) ? '; AI tooling owns it (the ai-tooling skill)' : '';
         const cmd = owner ? '' : V.fixCommand(f) || (f.fixed && f.pkg.tool.startsWith('npm -g ') ? 'steward sc install-hybrids (after its version in hybrids.toml)' : '') || isolate(f.pkg.tool, [f]);
         const text = `vuln: ${f.pkg.tool} ${f.pkg.version}: ${label(f)}, ${fixedText(f)} ${f.url}${owner}${cmd ? `: ${cmd}` : ''}`;
         if (serious(f)) out.action(text, { fix: cmd || 'read the advisory: no fixed release yet', name: f.pkg.tool, have: f.pkg.version, want: f.fixed, note: label(f) });
@@ -343,8 +343,9 @@ const CHECKS = [
         const ids = [...new Set(mine.map(f => f.id))];
         const pkgs = new Set(mine.map(f => `${f.pkg.name}@${f.pkg.version}`)).size;
         const owner = isOwned(tool) ? '; AI tooling owns it (the ai-tooling skill)' : '';
-        const iso = owner ? '' : isolate(tool, mine);
-        out.action(`vuln: ${tool}: ${ids.length} serious advisor${ids.length === 1 ? 'y' : 'ies'} in ${pkgs} package(s) inside it (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? ` and ${ids.length - 3} more` : ''}); update it when a release carries the fixes (steward sc vulns --verbose lists them)${owner}${iso ? `; exploited or critical with no fix: ${iso}` : ''}`,
+        const iso = owner || V.nodeOwn(tool) ? '' : isolate(tool, mine);
+        const when = V.nodeOwn(tool) ? 'it ships with Node: a Node release carries the fixes (steward sc plan)' : 'update it when a release carries the fixes';
+        out.action(`vuln: ${tool}: ${ids.length} serious advisor${ids.length === 1 ? 'y' : 'ies'} in ${pkgs} package(s) inside it (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? ` and ${ids.length - 3} more` : ''}); ${when} (steward sc vulns --verbose lists them)${owner}${iso ? `; exploited or critical with no fix: ${iso}` : ''}`,
           { fix: iso || 'update the tool that bundles it, when a release carries the fix', name: tool, note: `${ids.length} in ${pkgs} package(s)` });
       }
       if (shown.some(f => serious(f) && f.pkg.top && V.fixCommand(f) && !isOwned(f.pkg.tool))) out.line('steward sc vulns-fix takes every fix named above in one plan (and old installs that carry serious advisories)');

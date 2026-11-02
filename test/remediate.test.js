@@ -221,3 +221,44 @@ test('exceptionText: TOML that parses, one table per entry', () => {
   const j = JSON.parse(spawnSync('yq', ['-p', 'toml', '-o', 'json', '.', f], { encoding: 'utf8' }).stdout);
   assert.equal(j.security_exception[0].name, 'npm:a"b');
 });
+
+test('Node\'s own npm is named as Node\'s: never isolated, handed to a Node release; a pipx tool\'s packages are read', async () => {
+  const m = machine('node-own');
+  put(path.join(m.node, 'lib', 'node_modules', 'npm', 'package.json'), { name: 'npm', version: '12.2.1' });
+  put(path.join(m.node, 'lib', 'node_modules', 'npm', 'node_modules', 'undici', 'package.json'), { name: 'undici', version: '6.28.0' });
+  const venv = path.join(m.dir, 'installs', 'pipx-black', '24.1.0', 'lib', 'python3.13', 'site-packages');
+  for (const d of ['black-24.1.0.dist-info', 'python_multipart-0.0.5.dist-info', 'click-8.1.7.dist-info']) fs.mkdirSync(path.join(venv, d), { recursive: true });
+  m.ls['pipx:black'] = [{ version: '24.1.0', install_path: path.join(m.dir, 'installs', 'pipx-black', '24.1.0'), installed: true, active: true }];
+  REC.push(rec('GHSA-undici', 'npm', 'undici', [{ introduced: '0' }, { fixed: '6.29.1' }], 'HIGH'), rec('PYSEC-mp', 'PyPI', 'python-multipart', [{ introduced: '0' }, { fixed: '0.0.7' }], 'HIGH'));
+  try {
+    const inv = await V.inventory(ctx(m));
+    assert.ok(inv.packages.some(p => p.tool === "node's npm" && p.name === 'undici'));
+    assert.ok(inv.packages.some(p => p.tool === 'pipx:black' && p.name === 'python-multipart' && p.version === '0.0.5' && !p.top));
+    assert.ok(inv.packages.some(p => p.tool === 'pipx:black' && p.name === 'black' && p.top));
+    const out = [];
+    await audit(ctx(m), { only: ['vulns'], write: s => out.push(s.replace(/\x1b\[[0-9;]*m/g, '')) });
+    const text = out.join('\n');
+    assert.match(text, /ACTION vuln: node's npm: 1 serious advisory in 1 package\(s\) inside it \(GHSA-undici\); it ships with Node: a Node release carries the fixes/);
+    assert.match(text, /ACTION vuln: pipx:black: 1 serious advisory in 1 package\(s\) inside it \(PYSEC-mp\)/);
+    assert.match(I.planIsolate({ tool: 'npm', ls: m.ls, nodeDir: m.node, s: V.SETTINGS, owned: [], config: '', state: { tools: {} }, reason: 'x', advisories: [] }).why, /isolate_never/);
+    assert.deepEqual(V.SETTINGS.isolate_never, ['node', 'npm', 'corepack']);
+  } finally { REC.splice(-2); }
+});
+
+test('vulns-fix marks a fix across a major, or a 0.x minor, as MAJOR in its plan', () => {
+  assert.equal(V.isMajor('2.0.0', '3.0.1'), true);
+  assert.equal(V.isMajor('0.4.9', '0.5.0'), true);
+  assert.equal(V.isMajor('2.0.0', '2.9.0'), false);
+  assert.equal(V.isMajor('0.4.1', '0.4.9'), false);
+  const out = [];
+  F.show({ upgrades: [{ tool: 'npm:x', have: '0.4.1', version: '0.5.0', advisories: [{ id: 'GHSA-1' }] }], exceptions: [], cleanup: [], held: [], handed: [], failed: [], node: null }, s => out.push(s));
+  assert.match(out.join('\n'), /upgrade {2}npm:x 0\.4\.1 -> 0\.5\.0 \(MAJOR\)/);
+});
+
+test('brief: a hybrid whose command links are back has lost its isolation', () => {
+  const f = { isolated: { 'npm -g hybridy': { kind: 'hybrid', at: '2026-11-01T10:00:00Z', reason: 'r', moved: [{ from: '/x/bin/hybridy' }] } }, isolatedBack: ['npm -g hybridy'], disableTools: [] };
+  const lost = B.DETECTORS.find(d => d.id === 'isolate-lost').check(f);
+  assert.match(lost[0].text, /its command links are back \(an install-hybrids or node-patch reinstalls them\)/);
+  f.isolatedBack = [];
+  assert.deepEqual(B.DETECTORS.find(d => d.id === 'isolate-lost').check(f), []);
+});

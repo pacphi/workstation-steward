@@ -20,9 +20,9 @@ In Claude Code, ask in your own words: the supply-chain skill runs these for you
 | What | How | Coverage |
 | --- | --- | --- |
 | mise's `npm:` tools | the tool's version, and every package in its lockfile (aube, pnpm or npm) | full |
-| mise's `pipx:` tools | the tool's version, and every package in its virtual environment | full |
+| mise's `pipx:` tools | the tool's version, and every package in its virtual environment (its `.dist-info` folders) | full |
 | mise's `cargo:` and `go:` tools | the tool's version (a Go tool by its module path) | the tool only |
-| npm -g hybrids | each hybrid in the active Node, and every package in its `node_modules` | full |
+| npm -g packages | each package in the active Node's `lib/node_modules` (the hybrids, and Node's own npm and corepack, named as Node's), and every package in its `node_modules` | full |
 | Node | a newer security release on your Node line (nodejs.org) | full |
 
 Each package version is asked of every **feed** in `host.toml` `[[advisory_feed]]`. The engine ships three:
@@ -71,7 +71,8 @@ it would need the sandbox testing the hybrids get.
 **`steward sc vulns-fix`** plans, asks, backs up `mise/config.toml`, `mise/mise.lock` and `host.toml`, then:
 
 1. writes a `security_exception` (the advisory, and an expiry `exception_days` away) for each pin;
-2. runs `steward sc upgrade-tool <tool> <version>` for each tool, with the highest fixed version its advisories name;
+2. runs `steward sc upgrade-tool <tool> <version>` for each tool, with the highest fixed version its advisories name
+   (the plan marks a move across a major, or a 0.x minor, as `MAJOR`);
 3. runs `mise uninstall <tool>@<version>` for each unused install that carries a serious advisory. It refuses one a
    launcher config still points into;
 4. runs `steward sc verify`, and writes a receipt.
@@ -86,7 +87,8 @@ what was removed.
   switch: mise ignores the tool even when a config lists it, so it holds through a reshim and `mise install`. Send it
   with `steward config sync`, like any config change;
 - **an npm -g hybrid**: its command links move from the active Node's `bin` to the state folder's
-  `isolated/<name>/bin`.
+  `isolated/<name>/bin`. `steward sc install-hybrids` and `steward sc node-patch` put them back; `steward brief` then
+  says the isolation was lost, and isolating it again moves them aside again.
 
 The reason is the tool's serious findings, or `--why "<reason>"`. `steward brief` lists what's isolated and why, and
 says so if mise stops ignoring one. `--undo <tool>` switches it back on, and `--list` shows what's off.
@@ -101,7 +103,7 @@ Every exception is written down: in your config (Git keeps it), in a receipt, in
 | A fix younger than the release-age gate | `[[security_exception]]` in `host.toml`, written by vulns-fix | A serious advisory's first patched release skips the gate (AGENTS.md, Release age) |
 | An unused install removed before the soak ends | the vulns-fix receipt | Only copies that carry a serious advisory; the soak still holds the rest |
 | Tools AI tooling owns (Ruflo, AgentDB, AQE, Brain, RuVector…) | the output says "AI tooling owns it" | Their upgrades and any switch-off belong to the `ai-tooling` skill: its projects' launchers depend on them |
-| Node and anything in `isolate_never` | refused by `isolate` | Everything depends on Node |
+| Node, its own npm and corepack, and anything in `isolate_never` | refused by `isolate`; a finding in Node's npm says a Node release carries the fix | Everything depends on them, and only a Node release changes them |
 | Packages inside a tool | not changed (rung 4 left out) | Forcing one can break the tool |
 | core, aqua, github, asdf and vfox mise tools | listed as *not covered* | They have no advisory ecosystem a feed can read |
 | Homebrew, apps, the App Store, Docker images | not checked here | No reliable feed; `steward sc audit` covers their updates, Electron age and floating tags |
@@ -129,7 +131,7 @@ Every exception is written down: in your config (Git keeps it), in a receipt, in
 | `cleanup` | `true` | vulns-fix removes unused installs that carry serious advisories |
 | `cleanup_skip_soak` | `"serious"` | `never`: that cleanup waits for the soak like `steward sc prune` |
 | `isolate_suggest` | `true` | Suggest `isolate` for a known-exploited finding, or a critical one with no fix |
-| `isolate_never` | `["node"]` | Tools `isolate` refuses |
+| `isolate_never` | `["node", "npm", "corepack"]` | Tools `isolate` refuses |
 | `isolate_ai_owned` | `false` | Let `isolate` switch off a tool AI tooling owns |
 
 An example, with a feed of your own and a silenced finding, is in
