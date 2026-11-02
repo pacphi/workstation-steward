@@ -375,6 +375,18 @@ pre.toml i{color:var(--mist);font-style:normal}
 .ship-svg.offmap{--light:var(--mist)}
 .ship.gone{opacity:0;transform:translateY(8px);transition:opacity .5s,transform .5s}
 
+/* Act IV: what the run could read, and the lookout list for what it can't */
+.coverage{margin:16px 0 0;font-size:14.5px;color:var(--fog);line-height:1.6}
+.coverage b{color:var(--chalk)}
+.coverage span{color:var(--mist)}
+.lookout{margin-top:18px;border:1px solid rgba(243,179,61,.35);border-radius:14px;padding:14px 16px;background:rgba(4,19,26,.45);min-width:0}
+.lookout h4{margin:0 0 10px;font-family:var(--f-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--lamp)}
+.lookout ul{list-style:none;margin:0;padding:0;display:grid;gap:10px 22px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:860px){.lookout ul{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.lookout li{font-size:14.5px;color:var(--fog);line-height:1.5;min-width:0}
+.lookout li b{display:block;color:var(--chalk)}
+.lookout .note{margin:12px 0 0}
+
 /* ---- Act X: the eight ---- */
 .eight{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
 .eight li{display:grid;grid-template-columns:minmax(150px,auto) minmax(0,1fr);gap:12px;font-size:14.5px;color:var(--fog);align-items:baseline;border-top:1px dashed var(--line);padding-top:6px}
@@ -787,7 +799,8 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
   <div class="wrap act-body">
       <div class="prose rv">
         <p class="lead">A release can pass the gate clean, and a flaw can be found in it next month. Act I asked which machine had taken which version. Now the harbormaster can answer before you finish asking.</p>
-        <p>The steward listens to three weather services: <strong>OSV</strong>, which carries GitHub's advisory database; <strong>nodejs.org</strong>, for Node's own security releases; and <strong>CISA's list of flaws being exploited right now</strong>. It asks about every tool and about every package inside each tool. On one Mac on 2 November that was about 1,500 package versions in 22 tools, in under ten seconds. You can add a service of your own, but a service only ever sends data. It never runs code.</p>
+        <p>It reads each hull's manifest: the packages inside every npm and Python tool, the parts list every Go program carries, and Homebrew's own check of its formulae. Then it asks the weather services the security world relies on: <strong>OSV</strong>, which carries GitHub's advisory database and the reports of packages that are malware; <strong>nodejs.org</strong>; <strong>CISA's list of flaws being exploited right now</strong>; <strong>FIRST's forecast</strong> of which flaws attackers are likely to use next; and <strong>endoflife.date</strong>, for runtimes and macOS versions that no longer get fixes at all. On one Mac on 2 November that was about 3,000 package versions, in under 20 seconds. A service only ever sends data. It never runs code.</p>
+        <p>No forecast covers the whole sea, and the steward says so. It reports how much of each source it could read, names every vessel it can't see, and tells you where to keep a lookout instead.</p>
         <p>Then it rides the storm out with you: <dfn>repair</dfn> what has a fix, <dfn>scrap</dfn> old hulls nobody sails, <dfn>watch</dfn> what waits on its maker, and <dfn>moor apart</dfn> what can't wait. Each takes your yes. Move the warning line and see who needs you.</p>
       </div>
       <div class="gate storm rv" id="storm">
@@ -809,6 +822,7 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
           <button class="tbtn" id="storm-reset">Reset</button>
           <span class="tally" id="storm-tally" aria-live="polite"></span>
         </div>
+        <p class="coverage" aria-label="What this Mac's run could read"><b>Read on this Mac:</b> 38 of 66 mise tools · 68 of 92 Homebrew formulae · every npm -g package and Node <span>· <b>Off the map:</b> 28 mise tools, 24 formulae, casks and apps, the App Store, Docker images</span></p>
         <div class="harbor storm-harbor">
           <div class="zone warn"><h4>Storm warning · needs you <b id="n-warn">0</b></h4><div class="ships" id="z-warn"></div></div>
           <div class="zone fair"><h4>Fair weather <b id="n-fair">0</b></h4><div class="ships" id="z-fair"></div></div>
@@ -821,11 +835,23 @@ min_release_age_days = <b id="toml-days">3</b>   <i># mise, Homebrew, Renovate</
 action_severity = <b id="toml-sev">"high"</b>
 exploited_always_action = <b id="toml-kev">true</b>
 inside_tools = <b id="toml-inside">true</b></pre>
-          <p class="note">Five vessels are from a real run on 2 November 2026, with their real advisories; <em>example-tool</em> and <em>example-cli</em> are examples, there to show a repair and a mooring. Off the map is said out loud: it is not the same as fair weather.</p>
+          <p class="note">Every vessel but two is from a real run on 2 November 2026, with its real advisories; <em>example-tool</em> and <em>example-cli</em> are examples, there to show a repair and a mooring. Off the map is said out loud: it is not the same as fair weather.</p>
+        </div>
+        <div class="lookout">
+          <h4>Beyond the forecast · keep a lookout</h4>
+          <ul>
+            <li><b>Casks and other apps</b><span>Their own updaters. <code>steward sc audit</code> flags an app behind its vendor's release, or on an Electron too old for fixes.</span></li>
+            <li><b>The App Store and macOS</b><span>Software Update. The audit lists what's waiting, and the forecast warns when your macOS reaches its end of life.</span></li>
+            <li><b>Docker images</b><span>Pin each one by digest; the audit flags floating tags. Scan images with a scanner you choose and run yourself.</span></li>
+            <li><b>Tools with no parts list</b><span>Rust, C and Python programs among the mise tools: watch their GitHub security alerts. The gate still holds each new release.</span></li>
+            <li><b>Formulae Homebrew can't match</b><span><code>brew vulns --list-skipped</code> names them; their upstream project's security page is the source.</span></li>
+            <li><b>A flaw in the news</b><span>Ask the pilot. It reads the primary source, not the posts about it, then checks this Mac.</span></li>
+          </ul>
+          <p class="note">A warning means the flawed version is aboard, not that your work reaches the flaw. Unrated warnings count as serious until someone rates them.</p>
         </div>
       </div>
     <ul class="rules">
-      <li class="rv" data-d="0"><b>Never a false all-clear</b>A weather service that doesn't answer is <em>not checked</em>, and a tool no service covers is <em>not covered</em>. <code>steward sc vulns</code> says both.</li>
+      <li class="rv" data-d="0"><b>Never a false all-clear</b>A service that doesn't answer is <em>not checked</em>; a vessel no source can read is <em>not covered</em>. Each run says how much of each source it read.</li>
       <li class="rv" data-d="1"><b>Repairs need your yes</b><code>steward sc vulns-fix</code> shows its plan, asks, backs up, writes a receipt and can roll back. A major version is listed for you, never taken in bulk.</li>
       <li class="rv" data-d="2"><b>Moored apart, not scrapped</b><code>steward sc isolate</code> switches a tool off with mise's own switch and keeps it installed. <code>--undo</code> brings it back.</li>
       <li class="rv" data-d="3"><b>Every exception written down</b>A warning that doesn't apply here is silenced in <code>host.toml</code> with its reason and an expiry. When it expires, the warning comes back.</li>
@@ -1140,7 +1166,7 @@ inside_tools = <b id="toml-inside">true</b></pre>
       <div class="panel next rv" data-d="1">
         <h3><i></i>Charted next</h3>
         <ul class="feat">
-          <li><span class="pl"></span><span><b>Storm warnings:</b> <code>steward sc vulns</code> for known vulnerabilities in your tools and the packages inside them, <code>vulns-fix</code> to repair with one yes, <code>isolate</code> to moor one apart (Act IV). <span class="tagp">built · next release</span></span></li>
+          <li><span class="pl"></span><span><b>Storm warnings:</b> <code>steward sc vulns</code> reads npm and Python tools, Go programs and Homebrew formulae against OSV, CISA's exploited list, FIRST's forecast and endoflife.date; <code>vulns-fix</code> repairs with one yes, <code>isolate</code> moors one apart (Act IV). Next: OpenVEX, a CycloneDX inventory, each Linux source. <span class="tagp">built · next release</span></span></li>
           <li><span class="pl"></span><span><b>Linux,</b> one package manager at a time: apt, dnf, zypper, pacman, portage, slackpkg, apk, xbps. <span class="tagp">planned</span></span></li>
           <li><span class="pl"></span><span><b>Windows 11 and WSL:</b> winget, Scoop and Chocolatey. Inside WSL, the Linux providers apply. <span class="tagp">planned</span></span></li>
           <li><span class="pl"></span><span><b>NixOS:</b> a dated update of the flake or channel as a whole, and a roll back to a previous generation. <span class="tagp">planned</span></span></li>
@@ -1461,17 +1487,20 @@ hero.addEventListener('pointermove',e=>{
   // sev: the worst severity among its advisories (1 low … 4 critical); kind: what riding it out does with it
   const V=[
     {id:'gx',name:'gitnexus',sub:'npm tool · 17 advisories in 7 packages inside · worst: proxy-addr, critical',sev:4,inside:true,kind:'watch'},
+    {id:'gl',name:'gitleaks',sub:'Go program · 65 advisories in 5 modules inside · worst: golang.org/x/crypto, critical',sev:4,inside:true,kind:'watch'},
     {id:'rf',name:'ruflo',sub:'npm -g · 11 advisories in 4 packages inside · worst: protobufjs, critical',sev:4,inside:true,kind:'pilot'},
+    {id:'k3',name:'k3d',sub:'Go program · 48 advisories in 9 modules inside · worst: docker, high, more likely exploited than 95% of flaws',sev:3,inside:true,kind:'watch'},
     {id:'np',name:"node's npm",sub:'ships with Node · 6 advisories in 2 packages inside (undici, brace-expansion)',sev:3,inside:true,kind:'node'},
-    {id:'md',name:'markdownlint-cli2',sub:'npm tool · 1 advisory inside · re2js, high',sev:3,inside:true,kind:'watch'},
+    {id:'jx',name:'jpeg-xl',sub:'Homebrew formula · 2 advisories, high · fixed upstream, in no release yet',sev:3,inside:false,kind:'watch'},
     {id:'o1',name:'@northflank/cli 0.13.0',sub:'old copy, unused · 3 advisories inside · undici, high',sev:3,inside:true,kind:'scrap'},
     {id:'o2',name:'markdownlint-cli2 0.23.3',sub:'old copy, unused · 2 advisories inside · markdown-it, high',sev:3,inside:true,kind:'scrap'},
     {id:'o3',name:'renovate 44.167.5',sub:'old copy, unused · 1 advisory inside · markdown-it, high',sev:3,inside:true,kind:'scrap'},
     {id:'e1',name:'example-tool',sub:'example · its own version: 1 advisory, high, fixed in 2.0.3',sev:3,inside:false,kind:'repair'},
     {id:'e2',name:'example-cli',sub:'example · its own version: exploited now, moderate, no fix yet',sev:2,kev:true,inside:false,kind:'apart'},
-    {id:'gh',name:'gh',sub:'aqua tool · no advisory ecosystem',off:true},
-    {id:'tf',name:'terraform',sub:'aqua tool · no advisory ecosystem',off:true},
-    {id:'uv',name:'uv',sub:'aqua tool · no advisory ecosystem',off:true}
+    {id:'uv',name:'uv',sub:'Rust program · carries no parts list',off:'GitHub alerts'},
+    {id:'cm',name:'cmake',sub:'C++ program · no package ecosystem',off:'GitHub alerts'},
+    {id:'cu',name:'Cursor',sub:'app · not a package',off:'its updater'},
+    {id:'pg',name:'pgvector/pgvector:0.8.7-pg18',sub:'Docker image · not scanned here',off:'pin + scan'}
   ];
   const SEV=['','low','moderate','high','critical'];
   const PLAN={repair:'repair · 2.0.3',scrap:'scrap',watch:'watch',node:'next Node',pilot:"pilot's call",apart:'moor apart'};
@@ -1480,7 +1509,7 @@ hero.addEventListener('pointermove',e=>{
   const zones={warn:$('#z-warn'),fair:$('#z-fair'),apart:$('#z-apart'),offmap:$('#z-off')};
   const nodes=new Map(), tally=$('#storm-tally');
   function status(v){
-    if(v.off) return {z:'offmap',stamp:'not covered'};
+    if(v.off) return {z:'offmap',stamp:v.off};
     if(v.inside&&!S.inside) return {z:'fair',stamp:'inside unchecked'};
     const warn=v.sev>=S.sev||(v.kev&&S.kev);
     if(!S.rode) return warn?{z:'warn',stamp:PLAN[v.kind]}:{z:'fair',stamp:'below the line'};
