@@ -225,7 +225,7 @@ Stage: Under way (0.1, 0.2 and 0.9 done).
 - [ ] **0.8 Ready to package for Linux, and the first Linux CI row.** Publishing no longer needs macOS, and Tests run on
   `ubuntu-latest` too. `package.json` `os` keeps only `darwin` until [the bar](#the-linux-release-the-bar) is met
   (R-3), so a release before then stays Mac-only.
-- [x] **0.9 Test each distribution locally, in containers** (#PR, D65; owner, 2026-11-01). `just linux-test <distro|all>`
+- [x] **0.9 Test each distribution locally, in containers** (#87, D65; owner, 2026-11-01). `just linux-test <distro|all>`
   builds one image per distribution from a base pinned by digest (Renovate keeps it current, behind the gate), with
   bash, git, just and Node 26. It runs `just test` on a read-only copy of the checkout as a non-root user, with no
   network, in a container removed after the run (`--rm`). Results go to a file under the state folder;
@@ -374,7 +374,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-02 | 6 | 0.9 done: local container tests (D65), the first Linux baseline, the libatomic finding; end-to-end runs added to each provider's checklist and the release bar | #PR |
+| 2026-11-02 | 6 | 0.9 done: local container tests (D65), the first Linux baseline, the libatomic finding; end-to-end runs added to each provider's checklist and the release bar | #87 |
 | 2026-11-01 | 5 | 0.2 done: package sources with one contract, judged in one place (D64) | #86 |
 | 2026-11-01 | 4 | The Linux release bar (R-1 to R-3): apt, dnf and zypper first; 0.8 keeps `os` Mac-only until the bar; T.7 install check from a commit | #84 |
 | 2026-11-01 | 3 | 0.1 done: the distribution and family from os-release, and `host.toml`'s `families` key (D63); 0.9 added: local container tests; Milestone 0 under way | #84 |
