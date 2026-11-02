@@ -190,7 +190,10 @@ if (require.main === module) {
     const p = planIsolate({ tool, ls, nodeDir: node && node.install_path, s, owned, config: C.instance('mise/config.toml'), state, reason, advisories });
     if (!p.ok) { console.error(`ERROR not isolated: ${p.why}`); process.exit(1); }
     console.log(`==> isolate ${p.target.tool}: ${reason || advisories.map(a => `${a.id} (${a.severity}${a.kev ? ', exploited' : ''})`).join(', ')}`);
-    if (p.target.kind === 'mise') console.log(`  set [settings] disable_tools = ${JSON.stringify(p.change.disable_tools)} in ${C.tilde(p.change.file)}, then mise reshim (send it with steward config sync)`);
+    if (p.target.kind === 'mise') {
+      console.log(`  set [settings] disable_tools = ${JSON.stringify(p.change.disable_tools)} in ${C.tilde(p.change.file)}`);
+      console.log('  then mise reshim; send the change with steward config sync');
+    }
     else for (const l of p.change.links) console.log(`  move ${C.tilde(l.from)} to ${C.tilde(path.join(stateDir, 'isolated', p.target.name, 'bin'))}`);
     console.log(`  it stays installed; steward sc isolate --undo ${p.target.tool} --apply switches it back on`);
     if (!argv.includes('--apply')) { console.log('\nplan only. Add --apply to do it (asks first).'); return; }
