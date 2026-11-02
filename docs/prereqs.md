@@ -50,30 +50,33 @@ this Mac. The app does the real work on GitHub.
 ## The list
 
 <!-- prereqs:start -->
-| Area | Tool | Need | From | Used for | To install |
-| --- | --- | --- | --- | --- | --- |
-| core | macOS | required | system | The steward audits Homebrew, the App Store and the macOS trust stores; it is macOS only | comes with macOS |
-| core | bash | required | system | Every supply-chain script. The macOS 3.2 is enough and is what they are written for | comes with macOS |
-| core | git | required | system | Project discovery, onboarding, sync, prune and every PR step | `xcode-select --install` |
-| core | curl | required | system | Registry, Homebrew and advisory lookups | comes with macOS |
-| core | mise | required | manual | Installs and pins every tool below; `steward sc` wraps it. The standalone build in ~/.local/bin; `steward sc upgrade-tool mise` updates it (D38) | `curl https://mise.run \| sh` |
-| core | node | required | mise | lib/*.js, drift, onboarding, review, doctor and the tests | `mise install node` |
-| core | yq | required | mise | Reads steward.toml and the policy files (`yq -p toml`) | `mise install yq` |
-| supply-chain | Homebrew | required | manual | `steward sc audit` and `steward sc upgrade` manage formulae and casks | `see https://brew.sh` |
-| supply-chain | npm | required | mise | Installs the npm -g hybrids (Ruflo, AgentDB) with a reviewed script allow-list | `mise install npm` |
-| supply-chain | shasum | required | system | `steward sc node-patch` checks the Node tarball against SHASUMS256 | comes with macOS |
-| supply-chain | security | required | system | `steward sc audit` reads the macOS system roots and admin trust settings | comes with macOS |
-| supply-chain | softwareupdate | required | system | `steward sc audit` lists pending macOS updates | comes with macOS |
-| supply-chain | mas | optional | brew | `steward sc audit` checks the App Store; skipped with a warning when missing | `brew install mas` |
-| supply-chain | Docker | optional | manual | `steward sc audit` checks running images and IOC digests; skipped when Docker is not running | `install Docker Desktop` |
-| fleet | gh | required | mise | Every PR, review, issue and alert read; `steward review` and `steward fleet prune-merged` | `mise install gh` |
-| fleet | gh login | required | manual | GitHub is the source of record for alerts and updates; the weekly review and prune-merged need a logged-in gh | `gh auth login` |
-| fleet | jq | required | brew | The pr-consolidation scripts (lock-age, pr-status, merge-and-close …) parse gh and registry JSON | `brew install jq` |
-| dev | just | optional | mise | Developer tasks only: `just test`, `lint`, `docs`, `links`, `release-worktree`. The steward itself runs as `steward` | `mise install just` |
-| dev | shellcheck | optional | mise | `just lint` and the lock-age script check | `mise install shellcheck` |
-| dev | markdownlint-cli2 | optional | mise | `just docs` Markdown lint | `mise install npm:markdownlint-cli2` |
-| dev | lychee | optional | mise | `just docs` and `just links` link checks | `mise install lychee` |
-| dev | renovate | optional | mise | Checking a renovate.json with `renovate --platform=local` | `mise install npm:renovate` |
+| Area | Tool | Platforms | Need | From | Used for | To install |
+| --- | --- | --- | --- | --- | --- | --- |
+| core | macOS | macos | required | system | Its audit of Homebrew casks, the App Store, macOS updates and the macOS trust stores | comes with macOS |
+| core | Linux | linux | required | system | os-release names the distribution and its family, which pick the package sources, paths and install hints (D63) | comes with the distribution |
+| core | bash | all | required | system | Every supply-chain script. The macOS 3.2 is enough and is what they are written for | comes with the system |
+| core | git | all | required | system | Project discovery, onboarding, sync, prune and every PR step | macos: `xcode-select --install`; debian: `sudo apt-get install git`; rhel: `sudo dnf install git-core`; suse: `sudo zypper install git-core` |
+| core | curl | all | required | system | Registry, Homebrew and advisory lookups | comes with the system |
+| core | mise | all | required | manual | Installs and pins every tool below; `steward sc` wraps it. The standalone build in ~/.local/bin; `steward sc upgrade-tool mise` updates it (D38) | `curl https://mise.run \| sh` |
+| core | node | all | required | mise | lib/*.js, drift, onboarding, review, doctor and the tests | `mise install node` |
+| core | libatomic | linux | required | system | Node 26's Linux builds (x64 and arm64) link libatomic.so.1, which minimal installs leave out | debian: `sudo apt-get install libatomic1`; rhel: `sudo dnf install libatomic`; suse: `sudo zypper install libatomic1` |
+| core | yq | all | required | mise | Reads steward.toml and the policy files (`yq -p toml`) | `mise install yq` |
+| supply-chain | Homebrew | all | macos: required; linux: optional | manual | `steward sc audit` and `steward sc upgrade` manage formulae and casks (formulae only on Linux, as Linuxbrew) | macos: `see https://brew.sh`; linux: `see https://docs.brew.sh/Homebrew-on-Linux` |
+| supply-chain | npm | all | required | mise | Installs the npm -g hybrids (Ruflo, AgentDB) with a reviewed script allow-list | `mise install npm` |
+| supply-chain | shasum | macos | required | system | `steward sc node-patch` checks the Node tarball against SHASUMS256 | comes with macOS |
+| supply-chain | sha256sum | linux | required | system | `steward sc node-patch` checks the Node tarball against SHASUMS256 (in place of shasum) | comes with the distribution |
+| supply-chain | security | macos | required | system | `steward sc audit` reads the macOS system roots and admin trust settings | comes with macOS |
+| supply-chain | softwareupdate | macos | required | system | `steward sc audit` lists pending macOS updates | comes with macOS |
+| supply-chain | mas | macos | optional | brew | `steward sc audit` checks the App Store; skipped with a warning when missing | `brew install mas` |
+| supply-chain | Docker | all | optional | manual | `steward sc audit` checks running images and IOC digests; skipped when Docker is not running | macos: `install Docker Desktop`; linux: `install Docker Engine: https://docs.docker.com/engine/install/` |
+| fleet | gh | all | required | mise | Every PR, review, issue and alert read; `steward review` and `steward fleet prune-merged` | `mise install gh` |
+| fleet | gh login | all | required | manual | GitHub is the source of record for alerts and updates; the weekly review and prune-merged need a logged-in gh | `gh auth login` |
+| fleet | jq | all | required | macos: brew; linux: system | The pr-consolidation scripts (lock-age, pr-status, merge-and-close …) and the release check parse gh and registry JSON | macos: `brew install jq`; debian: `sudo apt-get install jq`; rhel: `sudo dnf install jq`; suse: `sudo zypper install jq` |
+| dev | just | all | optional | mise | Developer tasks only: `just test`, `lint`, `docs`, `links`, `release-worktree`. The steward itself runs as `steward` | `mise install just` |
+| dev | shellcheck | all | optional | mise | `just lint` and the lock-age script check | `mise install shellcheck` |
+| dev | markdownlint-cli2 | all | optional | mise | `just docs` Markdown lint | `mise install npm:markdownlint-cli2` |
+| dev | lychee | all | optional | mise | `just docs` and `just links` link checks | `mise install lychee` |
+| dev | renovate | all | optional | mise | Checking a renovate.json with `renovate --platform=local` | `mise install npm:renovate` |
 <!-- prereqs:end -->
 
 ## What the install step does and does not do

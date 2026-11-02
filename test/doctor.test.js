@@ -14,14 +14,17 @@ const doctor = (args, env = {}, input = '') => spawnSync(process.execPath, [path
 test('prereqs.json: unique names, known areas, needs and sources; installable ones say how', () => {
   const names = DATA.prereqs.map(p => p.name);
   assert.equal(new Set(names).size, names.length);
+  // a value may be per platform or family (parity 0.6): each of its values is checked
+  const vals = v => (v && typeof v === 'object' && !Array.isArray(v) ? Object.values(v) : [v]);
   for (const p of DATA.prereqs) {
     assert.ok(p.area in DATA.areas, `${p.name}: area ${p.area}`);
-    assert.ok(['required', 'optional'].includes(p.need), `${p.name}: need`);
-    assert.ok(['system', 'mise', 'brew', 'manual'].includes(p.source), `${p.name}: source`);
+    for (const n of vals(p.need)) assert.ok(['required', 'optional'].includes(n), `${p.name}: need`);
+    for (const s of vals(p.source)) assert.ok(['system', 'mise', 'brew', 'manual'].includes(s), `${p.name}: source`);
     assert.ok(p.bin && p.why, `${p.name}: bin and why`);
-    if (p.source === 'mise') assert.ok(p.mise, `${p.name}: mise name`);
-    if (p.source === 'brew') assert.ok(p.brew, `${p.name}: brew formula`);
-    if (p.source !== 'system') assert.ok(p.install, `${p.name}: install hint`);
+    if (p.platforms) for (const x of p.platforms) assert.ok(['macos', 'linux'].includes(x), `${p.name}: platform ${x}`);
+    if (vals(p.source).includes('mise')) assert.ok(p.mise, `${p.name}: mise name`);
+    if (vals(p.source).includes('brew')) assert.ok(p.brew, `${p.name}: brew formula`);
+    if (vals(p.source).some(s => s !== 'system')) assert.ok(p.install, `${p.name}: install hint`);
   }
 });
 
@@ -115,7 +118,8 @@ test('doctor on macOS lists exactly the entries it listed before (the Mac is unc
 
 test('doctor on Linux: no macOS-only entries; the OS, libatomic and sha256sum instead; Homebrew optional', () => {
   const s = standins('sh', 'git', 'ldconfig', 'sha256sum');
-  const j = JSON.parse(doctor(['--json'], { PATH: s.dir, STEWARD_DOCTOR_AS: 'linux:debian' }).stdout);
+  // the stand-ins first, then the system's own tools (the libatomic check pipes ldconfig through grep)
+  const j = JSON.parse(doctor(['--json'], { PATH: `${s.dir}:/usr/bin:/bin`, STEWARD_DOCTOR_AS: 'linux:debian' }).stdout);
   const names = j.map(x => x.name);
   for (const m of MAC_ONLY) assert.ok(!names.includes(m), `${m} is macOS only`);
   for (const n of ['Linux', 'libatomic', 'sha256sum']) assert.ok(names.includes(n), n);
