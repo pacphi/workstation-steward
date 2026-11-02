@@ -75,7 +75,8 @@ test('doctor --install: the plan names the mise and brew commands and what is by
   const marker = path.join(fakePath(), 'ran');
   const p = fakePath(); // nothing present
   for (const c of ['mise', 'brew']) fs.writeFileSync(path.join(p, c), `#!/bin/sh\ntouch "${marker}"\n`, { mode: 0o755 });
-  const r = doctor(['--install'], { PATH: p }, 'n\n');
+  // the Mac's plan (Homebrew's jq); Linux's is its own test below
+  const r = doctor(['--install'], { PATH: p, STEWARD_DOCTOR_AS: 'macos' }, 'n\n');
   assert.equal(r.status, 2);
   assert.match(r.stdout, /\$ mise install yq/);
   assert.match(r.stdout, /\$ brew install jq/);
