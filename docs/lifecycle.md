@@ -1,6 +1,6 @@
 # Lifecycle
 
-![Revision 22](https://img.shields.io/badge/Revision-22-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 23](https://img.shields.io/badge/Revision-23-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 How someone installs workstation-steward, sets it up, uses it, and keeps it, their config and their projects safe
 over release after release. It is the contract the code is built to: each part is marked **built** or **planned**.
@@ -248,13 +248,16 @@ said out loud ([`vulnerabilities.md`](vulnerabilities.md)).
 
 ## How releases are tested
 
-- Every PR in the public repo runs the tests and lint on a clean macOS runner against `examples/`. *Built.* Tests
+- Every PR in the public repo runs the tests and lint on a clean macOS runner, and every PR the tests on a clean
+  Ubuntu runner, against `examples/`; one required check, `test`, passes only when both did (D74). *Built.* Tests
   that need the AI tool installs run against small stand-ins there and against the real installs on a machine that has
   them (`test/fixtures.js`). *Built (R5a).*
 - Each config format has a sample config. CI installs the previous release, upgrades it, migrates the sample, and
   runs the tests. The same goes for sample projects onboarded with the previous release and then reconciled.
   *Planned (R5, R6).*
-- Linux and Windows runners join the matrix as their providers land. *Planned.*
+- The Ubuntu job also runs Milestone 0's exit criterion: the audit without Homebrew and with Linuxbrew, and the plan.
+  *Built (D74).* A release is tested on Linux as well as macOS before it publishes. *Built (D74).*
+- More Linux distributions join the matrix as their providers land, then Windows. *Planned.*
 
 ## Two channels
 
