@@ -139,8 +139,11 @@ feeds in `host.toml` `[[advisory_feed]]`: OSV (which carries the GitHub Advisory
    <tool>` (its plan, then `--apply --unattended --yes-to isolate` after a yes). It stays installed; `steward brief`
    lists it until `steward sc isolate --undo <tool> --apply` switches it back on, once a fixed release is taken.
 4. **Node:** `steward sc node-patch <version>` (A same-day Node security release).
-5. **Not checked** (a feed gave no answer) or **not covered** (core, aqua, github, asdf and vfox tools; Homebrew;
-   apps; Docker): say so; neither is clean. For a specific advisory there, use the next section.
+5. **Not checked** (a feed gave no answer) or **not covered** (the coverage lines): say so; neither is clean. Then say
+   where to look: casks and apps, their own updaters and `steward sc audit`; the App Store and macOS, Software Update;
+   Docker images, pin by digest and a scanner the user runs; formulae `brew vulns` skips, `brew vulns --list-skipped`
+   and the upstream project; other tools, their GitHub security advisories. For a specific advisory, use the next
+   section.
 6. **Doesn't apply here** (the affected code is never reached): an `[[advisory_ignore]]` in `host.toml` with the exact
    advisory, package, version, the evidence as its reason, and an expiry, after the user's yes.
 7. **An advisory no database carries yet:** an OSV-format record in an `osv-dir` feed folder of the instance, so

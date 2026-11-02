@@ -47,7 +47,7 @@ arguments are the request itself.
   that takes its fix), then each tool whose packages carry serious ones (its next release fixes them; `--verbose`
   lists them). Link each advisory (osv.dev). Say plainly what was **not checked** (a feed with no answer) and what
   is **not covered** (the coverage lines): neither is clean. Say where to look for what isn't covered
-  (`docs/vulnerabilities.md#where-to-look-instead`). A **malicious package** (`MAL-`) goes first of all. Name a tool AI tooling owns as the `ai-tooling`
+  (the runbook's Known vulnerabilities, step 5). A **malicious package** (`MAL-`) goes first of all. Name a tool AI tooling owns as the `ai-tooling`
   skill's. Lower findings and silenced ones (`advisory_ignore`, with their expiry) go last, in one line each. Then
   offer the next step: `steward sc vulns-fix` (its plan) when a line names a fix or an old install, or
   `steward sc isolate <tool>` when a line suggests it.
