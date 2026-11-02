@@ -8,7 +8,7 @@ ARG MISE_SHA256
 LABEL org.workstation-steward.test=1
 # Node 26's Linux binaries need libatomic, which minimal images leave out (found by the first run, 2026-11-02)
 RUN dnf -y install --setopt=install_weak_deps=False \
-      bash git-core python3 util-linux procps-ng ca-certificates curl tar gzip xz findutils shadow-utils libatomic \
+      bash git-core python3 util-linux procps-ng ca-certificates curl tar gzip xz findutils shadow-utils libatomic util-linux-script diffutils \
  && dnf clean all
 COPY install-mise.sh /tmp/install-mise.sh
 RUN sh /tmp/install-mise.sh && rm /tmp/install-mise.sh

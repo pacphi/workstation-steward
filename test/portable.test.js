@@ -123,15 +123,15 @@ test('offboarding\'s process check on Linux: /proc names Claude Code, Codex and 
   const { running } = require('../lib/offboard.js');
   const proc = path.join(ROOT, 'proc');
   const pid = (n, comm, cwd) => { put(path.join(proc, String(n), 'comm'), `${comm}\n`); fs.symlinkSync(cwd, path.join(proc, String(n), 'cwd')); };
-  pid(101, 'claude', '/home/u/proj');
-  pid(102, 'node', '/home/u/proj/sub');
-  pid(103, 'codex', '/home/u/other');
-  pid(104, 'bash', '/home/u/proj');
-  pid(105, 'node', '/home/u/project-two');
+  pid(101, 'claude', '/srv/work/proj');
+  pid(102, 'node', '/srv/work/proj/sub');
+  pid(103, 'codex', '/srv/work/other');
+  pid(104, 'bash', '/srv/work/proj');
+  pid(105, 'node', '/srv/work/project-two');
   fs.mkdirSync(path.join(proc, 'self'));
   put(path.join(proc, 'uptime'), '1 1\n');
-  assert.deepEqual(running('/home/u/proj', { platform: 'linux', proc }), ['claude (pid 101)', 'node (pid 102)']);
-  assert.deepEqual(running('/home/u/none', { platform: 'linux', proc }), []);
+  assert.deepEqual(running('/srv/work/proj', { platform: 'linux', proc }), ['claude (pid 101)', 'node (pid 102)']);
+  assert.deepEqual(running('/srv/work/none', { platform: 'linux', proc }), []);
 });
 
 test('refresh: a step with less than its minimum time left is marked not run, never started (the Debian baseline race)', async () => {
@@ -140,7 +140,7 @@ test('refresh: a step with less than its minimum time left is marked not run, ne
   let i = 0;
   const now = () => new Date(Date.parse('2026-11-02T00:00:00Z') + t[Math.min(i++, t.length - 1)]);
   let started = 0;
-  const step = name => ({ name, timeout: 1000, when: () => null, fn: async () => { started++; return 'x'; } });
+  const step = name => ({ name, label: name, timeout: 1000, when: () => null, fn: async () => { started++; return 'x'; } });
   const values = { paths: { state: path.join(ROOT, 'refresh-state') }, brief: {}, profiles: {} };
   const c = await RF.refresh({ values, run: async () => ({}), now, cap: 250, steps: [step('a'), step('b')] });
   assert.equal(c.steps.a.ok, true);
@@ -149,6 +149,7 @@ test('refresh: a step with less than its minimum time left is marked not run, ne
 });
 
 // The forms that work on macOS only, and where each now lives instead
+/** @type {[RegExp, string][]} */
 const BSD_ONLY = [
   [/mktemp -t\b/, 'tmpfile'],
   [/\bcp -[A-Za-z]*c[A-Za-z]*\b/, 'cp_clone'],

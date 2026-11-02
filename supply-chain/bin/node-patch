@@ -13,21 +13,20 @@ cur="$(node -p 'process.versions.node')"
 # no class on purpose: a change of major never takes a yes unattended (it exits 4 there)
 [[ "${ver%%.*}" == "${cur%%.*}" ]] || confirm "Major change ${cur} → ${ver}. Continue?" || exit 1
 
-arch="$(uname -m)"; [[ "${arch}" == x86_64 ]] && arch=x64
-tgz="node-v${ver}-darwin-${arch}.tar.gz"
+tgz="$(node_tarball "${ver}")"; dir="${tgz%.tar.gz}"
 tmp="$(mktemp -d)"; trap 'rm -rf "${tmp}"' EXIT
 
 log "verify official tarball against SHASUMS256.txt"
 quiet "download SHASUMS256.txt" curl -fsSL "https://nodejs.org/dist/v${ver}/SHASUMS256.txt" -o "${tmp}/SHASUMS256.txt"
 quiet "download ${tgz}" curl -fsSL "https://nodejs.org/dist/v${ver}/${tgz}" -o "${tmp}/${tgz}"
-(cd "${tmp}" && grep " ${tgz}\$" SHASUMS256.txt | shasum -a 256 -c -) || die "tarball checksum mismatch"
-tar -xzf "${tmp}/${tgz}" -C "${tmp}" "node-v${ver}-darwin-${arch}/bin/node"
+(cd "${tmp}" && grep " ${tgz}\$" SHASUMS256.txt | "${SHA256[@]}" -c -) || die "tarball checksum mismatch"
+tar -xzf "${tmp}/${tgz}" -C "${tmp}" "${dir}/bin/node"
 
 backup="$(backup_config)"; log "config backup: ${backup/#${HOME}/~}"
 run mise install "node@${ver}"
 if [[ "${DRY_RUN}" != "1" ]]; then
-  a="$(shasum -a 256 "${tmp}/node-v${ver}-darwin-${arch}/bin/node" | cut -d' ' -f1)"
-  b="$(shasum -a 256 "${STEWARD_PATHS_MISE_DATA_DIR}/installs/node/${ver}/bin/node" | cut -d' ' -f1)"
+  a="$(sha256_of "${tmp}/${dir}/bin/node")"
+  b="$(sha256_of "${STEWARD_PATHS_MISE_DATA_DIR}/installs/node/${ver}/bin/node")"
   [[ "${a}" == "${b}" ]] || die "installed node differs from official tarball (${a} vs ${b})"
   log "installed bin/node is byte-identical to the official build"
 fi
