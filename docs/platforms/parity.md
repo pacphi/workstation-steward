@@ -205,7 +205,7 @@ Stage: Under way (0.1, 0.2, 0.3 and 0.9 done).
   report, audit and plan were identical before and after (2026-11-01).
   - [ ] A tidy-up for later: the audit's held line says "eligible in N days" for a formula and not for a cask. Kept so
     the before-and-after proof stayed exact; make them match in a PR of its own.
-- [x] **0.3 Bash that runs on GNU and busybox** (#PR, D66). Five helpers in `lib/lib.sh` (`tmpfile`, `cp_clone`,
+- [x] **0.3 Bash that runs on GNU and busybox** (#88, D66). Five helpers in `lib/lib.sh` (`tmpfile`, `cp_clone`,
   `mv_onto`, `SHA256`/`SHA1`/`sha256_of`, `node_tarball`) replace 18 BSD-only sites, among them the `mktemp -t` blocker.
   Node replaces perl (`lib/timeout.js`, `lib/subst.js`; owner, 2026-11-02). Offboarding reads `/proc` on Linux instead
   of `lsof`. `node-patch` fetches the Linux build. A refresh step with under 50 ms left is no longer started.
@@ -388,7 +388,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-02 | 7 | 0.3 done: the shell on GNU and busybox, no perl, no lsof on Linux (D66); every Linux row passes; jq joins the Linux prerequisites; the Mint image corrected; the RuVector add-on name moves to 0.7 | #PR |
+| 2026-11-02 | 7 | 0.3 done: the shell on GNU and busybox, no perl, no lsof on Linux (D66); every Linux row passes; jq joins the Linux prerequisites; the Mint image corrected; the RuVector add-on name moves to 0.7 | #88 |
 | 2026-11-02 | 6 | 0.9 done: local container tests (D65), the first Linux baseline, the libatomic finding; end-to-end runs added to each provider's checklist and the release bar | #87 |
 | 2026-11-01 | 5 | 0.2 done: package sources with one contract, judged in one place (D64) | #86 |
 | 2026-11-01 | 4 | The Linux release bar (R-1 to R-3): apt, dnf and zypper first; 0.8 keeps `os` Mac-only until the bar; T.7 install check from a commit | #84 |
