@@ -14,14 +14,17 @@ const doctor = (args, env = {}, input = '') => spawnSync(process.execPath, [path
 test('prereqs.json: unique names, known areas, needs and sources; installable ones say how', () => {
   const names = DATA.prereqs.map(p => p.name);
   assert.equal(new Set(names).size, names.length);
+  // a value may be per platform or family (parity 0.6): each of its values is checked
+  const vals = v => (v && typeof v === 'object' && !Array.isArray(v) ? Object.values(v) : [v]);
   for (const p of DATA.prereqs) {
     assert.ok(p.area in DATA.areas, `${p.name}: area ${p.area}`);
-    assert.ok(['required', 'optional'].includes(p.need), `${p.name}: need`);
-    assert.ok(['system', 'mise', 'brew', 'manual'].includes(p.source), `${p.name}: source`);
+    for (const n of vals(p.need)) assert.ok(['required', 'optional'].includes(n), `${p.name}: need`);
+    for (const s of vals(p.source)) assert.ok(['system', 'mise', 'brew', 'manual'].includes(s), `${p.name}: source`);
     assert.ok(p.bin && p.why, `${p.name}: bin and why`);
-    if (p.source === 'mise') assert.ok(p.mise, `${p.name}: mise name`);
-    if (p.source === 'brew') assert.ok(p.brew, `${p.name}: brew formula`);
-    if (p.source !== 'system') assert.ok(p.install, `${p.name}: install hint`);
+    if (p.platforms) for (const x of p.platforms) assert.ok(['macos', 'linux'].includes(x), `${p.name}: platform ${x}`);
+    if (vals(p.source).includes('mise')) assert.ok(p.mise, `${p.name}: mise name`);
+    if (vals(p.source).includes('brew')) assert.ok(p.brew, `${p.name}: brew formula`);
+    if (vals(p.source).some(s => s !== 'system')) assert.ok(p.install, `${p.name}: install hint`);
   }
 });
 
@@ -72,10 +75,12 @@ test('doctor --install: the plan names the mise and brew commands and what is by
   const marker = path.join(fakePath(), 'ran');
   const p = fakePath(); // nothing present
   for (const c of ['mise', 'brew']) fs.writeFileSync(path.join(p, c), `#!/bin/sh\ntouch "${marker}"\n`, { mode: 0o755 });
-  const r = doctor(['--install'], { PATH: p }, 'n\n');
+  // the Mac's plan; Linux's is its own test below. jq comes from mise everywhere (the owner, 2026-11-02)
+  const r = doctor(['--install'], { PATH: p, STEWARD_DOCTOR_AS: 'macos' }, 'n\n');
   assert.equal(r.status, 2);
   assert.match(r.stdout, /\$ mise install yq/);
-  assert.match(r.stdout, /\$ brew install jq/);
+  assert.match(r.stdout, /\$ mise install jq/);
+  assert.doesNotMatch(r.stdout, /brew install jq/);
   assert.match(r.stdout, /by hand: git: xcode-select --install/);
   assert.equal(fs.existsSync(marker), false, 'nothing may run on "n"');
 });
@@ -93,4 +98,62 @@ test('doctor --install: "y" installs, rechecks and writes a receipt that starts 
   const rc = JSON.parse(fs.readFileSync(path.join(bk, dir, 'receipt.json'), 'utf8'));
   assert.equal(rc.kind, 'doctor-install');
   assert.ok(rc.installed.length >= 1 && rc.installed.every(x => x.ok));
+});
+
+// --- per platform (parity 0.6, D69) ---------------------------------------------------------------------------------
+// as(platform) — the doctor run as that platform and family (STEWARD_DOCTOR_AS, for tests), in a PATH of stand-ins:
+// each records its call in calls.log, and ldconfig lists libatomic when asked to
+function standins(...cmds) {
+  const d = fakePath(...cmds);
+  for (const c of cmds) fs.writeFileSync(path.join(d, c), `#!/bin/sh\necho "${c} $*" >> "${d}/calls.log"\necho "fake 1.2.3"\n`, { mode: 0o755 });
+  if (cmds.includes('ldconfig')) fs.writeFileSync(path.join(d, 'ldconfig'), '#!/bin/sh\necho "\tlibatomic.so.1 (libc6,AArch64) => /usr/lib/aarch64-linux-gnu/libatomic.so.1"\n', { mode: 0o755 });
+  return { dir: d, calls: () => { try { return fs.readFileSync(path.join(d, 'calls.log'), 'utf8'); } catch { return ''; } } };
+}
+const MAC_ONLY = ['macOS', 'shasum', 'security', 'softwareupdate', 'mas'];
+
+test('doctor on macOS lists exactly the entries it listed before (the Mac is unchanged)', () => {
+  const j = JSON.parse(doctor(['--json'], { STEWARD_DOCTOR_AS: 'macos' }).stdout);
+  assert.deepEqual(j.map(x => x.name), ['macOS', 'bash', 'git', 'curl', 'mise', 'node', 'just', 'yq', 'Homebrew', 'npm', 'shasum', 'security', 'softwareupdate', 'mas', 'Docker',
+    'gh', 'gh login', 'jq', 'shellcheck', 'markdownlint-cli2', 'lychee', 'renovate']);
+  assert.equal(j.find(x => x.name === 'Homebrew').need, 'required');
+});
+
+test('doctor on Linux: no macOS-only entries; the OS, libatomic and sha256sum instead; Homebrew optional', () => {
+  const s = standins('sh', 'git', 'ldconfig', 'sha256sum');
+  // the stand-ins first, then the system's own tools (the libatomic check pipes ldconfig through grep)
+  const j = JSON.parse(doctor(['--json'], { PATH: `${s.dir}:/usr/bin:/bin`, STEWARD_DOCTOR_AS: 'linux:debian' }).stdout);
+  const names = j.map(x => x.name);
+  for (const m of MAC_ONLY) assert.ok(!names.includes(m), `${m} is macOS only`);
+  for (const n of ['Linux', 'libatomic', 'sha256sum']) assert.ok(names.includes(n), n);
+  assert.equal(j.find(x => x.name === 'libatomic').ok, true, 'ldconfig -p lists it');
+  assert.equal(j.find(x => x.name === 'libatomic').need, 'required');
+  assert.equal(j.find(x => x.name === 'Homebrew').need, 'optional');
+});
+
+test('doctor --install on Linux: a missing libatomic is a by-hand sudo step with the family\'s command; jq comes from mise; sudo is never run', () => {
+  for (const [family, atomic] of [['debian', 'sudo apt-get install libatomic1'], ['rhel', 'sudo dnf install libatomic'], ['suse', 'sudo zypper install libatomic1']]) {
+    const s = standins('sh', 'git', 'sudo', 'mise', 'brew');
+    const r = doctor(['--install'], { PATH: s.dir, STEWARD_DOCTOR_AS: `linux:${family}` }, 'y\n');
+    assert.match(r.stdout, new RegExp(`MISSING +libatomic +required, from system: ${atomic}`), r.stdout);
+    assert.ok(r.stdout.includes(`  by hand: libatomic: ${atomic}`), r.stdout);
+    assert.match(r.stdout, /\$ mise install jq/, 'jq from mise, no sudo');
+    assert.ok(!r.stdout.includes('by hand: jq'), r.stdout);
+    assert.ok(!/^sudo /m.test(s.calls()), `sudo ran: ${s.calls()}`);
+  }
+});
+
+test('doctor --markdown: one table for every platform, with a Platforms column', () => {
+  const t = doctor(['--markdown']).stdout.split('\n');
+  assert.equal(t[0], '| Area | Tool | Platforms | Need | From | Used for | To install |');
+  assert.ok(t.some(l => l.startsWith('| core | libatomic | linux | required |')), t.join('\n'));
+  assert.ok(t.some(l => l.startsWith('| supply-chain | security | macos | required |')));
+  assert.ok(t.some(l => l.startsWith('| core | git | all | required |')));
+});
+
+test('doctor on Linux: a check-only entry (Linux, libatomic) shows no path; the sh that runs its check is not where it lives', () => {
+  const s = standins('sh', 'ldconfig');
+  const r = doctor(['--area', 'core'], { PATH: `${s.dir}:/usr/bin:/bin`, STEWARD_DOCTOR_AS: 'linux:debian' });
+  const line = r.stdout.split('\n').find(l => /^\s+ok\s+libatomic/.test(l));
+  assert.ok(line, r.stdout);
+  assert.ok(!line.includes('/sh'), line);
 });

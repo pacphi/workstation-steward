@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 9](https://img.shields.io/badge/Revision-9-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 10](https://img.shields.io/badge/Revision-10-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -40,7 +40,7 @@ combination we claim.
 
 | Milestone | What it delivers | Stage | Done |
 | --- | --- | --- | --- |
-| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 6 / 9 |
+| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 7 / 9 |
 | [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Not started | 0 / 10 |
 | [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 6 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
@@ -182,7 +182,7 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 | Trust store: finding distrusted roots | keychain, PEM bundles, Node's roots | the family's system bundle, Linuxbrew's and Node's roots (0.5) | the system bundle | 🟨 |
 | Trust store: denying a root | admin trust setting (by hand) | per family: Debian, Red Hat, SUSE, Arch, Alpine | `security.pki` in the host's config, by a PR | ⬜ |
 | Indicators of compromise | `ps`, Mac paths | procps or busybox `ps`, `/proc`, Linux paths | `/nix/store` paths | ⬜ |
-| `steward doctor` install hints | Homebrew, mise | per package manager | per Nix setup | ⬜ |
+| `steward doctor` install hints | Homebrew, mise | per family: apt, dnf, zypper (0.6) | per Nix setup | 🟨 |
 | Fleet, projects, AI tooling | ✅ | already portable (git, gh, XDG paths), apart from the qualify scripts fixed in Milestone 0 | as Linux | ⬜ |
 
 ## Milestone 0: a portable engine
@@ -191,7 +191,7 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 before. **Done when:** `steward sc plan` and `steward sc audit` run clean on `ubuntu-latest` with Linuxbrew, and the
 Mac's output before and after is identical.
 
-Stage: Under way (0.1 to 0.5, and 0.9, done).
+Stage: Under way (0.1 to 0.6, and 0.9, done).
 
 - [x] **0.1 Know the platform** (#84, D63). `lib/platform.js` reads `/etc/os-release` (`ID`, `ID_LIKE`, `VERSION_ID`) and returns
   the platform, distribution and family; NixOS by `ID=nixos`. `host.toml` entries take the optional `families` key
@@ -234,10 +234,11 @@ Stage: Under way (0.1 to 0.5, and 0.9, done).
   The Mac's audit is unchanged. **Found:** run with the engine's defaults in the test images, `emSign ECC Root CA - G3`
   is still trusted in the Fedora 44 and Tumbleweed images (p11-kit's `trust list` agrees), and not in Debian, Ubuntu or
   Leap.
-- [ ] **0.6 `steward doctor` per platform.** Each prerequisite says which platforms need it. Today `sw_vers`,
-  `security`, `softwareupdate`, `mas` and Homebrew are required everywhere. Install hints come per family. On Linux,
-  `libatomic` is a prerequisite: Node 26's arm64 binary needs `libatomic.so.1`, which minimal installs leave out (found
-  by 0.9's first run, 2026-11-02). So is `jq`, which `lock-age` and the release check use (found by 0.3's Linux run).
+- [x] **0.6 `steward doctor` per platform** (#91, D69). Prerequisites say where they apply, and their hints come per
+  family; the doctor never runs `sudo`. Linux adds `Linux`, `libatomic` (Node 26's x64 and arm64 builds both need it)
+  and `sha256sum`; `jq` comes from mise on every platform, as `yq` and `gh` do (owner, 2026-11-02). The Mac's `steward doctor` is
+  byte-identical. Since the doctor can't report a missing `libatomic` (Node won't start), `docs/prereqs.md` gives a
+  first-run order per family that installs it first.
 - [ ] **0.7 Words, and the RuVector add-on name** (moved from 0.3). `addon-check.js` names the add-on for this OS and
   CPU. "This Mac" and macOS-only fix text become platform-aware in the review, the audit, the briefing,
   the guards and the package description.
@@ -398,6 +399,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-02 | 10 | 0.6 done: steward doctor per platform (D69); the Linux first-run order | #91 |
 | 2026-11-02 | 9 | 0.5 done: distrusted roots found on Linux (D68); emSign still trusted in the Fedora 44 and Tumbleweed images, the first cases for 2.1 | #90 |
 | 2026-11-02 | 8 | 0.4 done: IOCs on every platform, the environment key, the coverage line, the rule (D67); macOS shows no process environment; 2.6 added for later | #89 |
 | 2026-11-02 | 7 | 0.3 done: the shell on GNU and busybox, no perl, no lsof on Linux (D66); every Linux row passes; jq joins the Linux prerequisites; the Mint image corrected; the RuVector add-on name moves to 0.7 | #88 |

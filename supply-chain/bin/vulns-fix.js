@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// steward sc vulns-fix (D70): take the fixes `steward sc vulns` names, in one plan. Writes only after a plan and a yes.
+// steward sc vulns-fix (D71): take the fixes `steward sc vulns` names, in one plan. Writes only after a plan and a yes.
 //   - a mise tool whose own version has a serious advisory and a fixed release: steward sc upgrade-tool <tool> <fixed>,
 //     an exact pin that skips the release-age gate; each is recorded as a host.toml security_exception with the
 //     advisory and an expiry ([vulns] fix_skip_gate = "serious", exception_days). With fix_skip_gate = "never" it waits
