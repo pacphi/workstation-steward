@@ -234,7 +234,7 @@ Stage: Under way (0.1 to 0.6, and 0.9, done).
   The Mac's audit is unchanged. **Found:** run with the engine's defaults in the test images, `emSign ECC Root CA - G3`
   is still trusted in the Fedora 44 and Tumbleweed images (p11-kit's `trust list` agrees), and not in Debian, Ubuntu or
   Leap.
-- [x] **0.6 `steward doctor` per platform** (#PR, D69). Prerequisites say where they apply, and their hints come per
+- [x] **0.6 `steward doctor` per platform** (#91, D69). Prerequisites say where they apply, and their hints come per
   family; the doctor never runs `sudo`. Linux adds `Linux`, `libatomic` (Node 26's x64 and arm64 builds both need it)
   and `sha256sum`; `jq` comes from the family's package (owner, 2026-11-02). The Mac's `steward doctor` is
   byte-identical. Since the doctor can't report a missing `libatomic` (Node won't start), `docs/prereqs.md` gives a
@@ -399,7 +399,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-02 | 10 | 0.6 done: steward doctor per platform (D69); the Linux first-run order | #PR |
+| 2026-11-02 | 10 | 0.6 done: steward doctor per platform (D69); the Linux first-run order | #91 |
 | 2026-11-02 | 9 | 0.5 done: distrusted roots found on Linux (D68); emSign still trusted in the Fedora 44 and Tumbleweed images, the first cases for 2.1 | #90 |
 | 2026-11-02 | 8 | 0.4 done: IOCs on every platform, the environment key, the coverage line, the rule (D67); macOS shows no process environment; 2.6 added for later | #89 |
 | 2026-11-02 | 7 | 0.3 done: the shell on GNU and busybox, no perl, no lsof on Linux (D66); every Linux row passes; jq joins the Linux prerequisites; the Mint image corrected; the RuVector add-on name moves to 0.7 | #88 |
