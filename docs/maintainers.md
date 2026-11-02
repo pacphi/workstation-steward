@@ -1,6 +1,6 @@
 # Releasing workstation-steward
 
-![Revision 8](https://img.shields.io/badge/Revision-8-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 9](https://img.shields.io/badge/Revision-9-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 How a release happens, and the one-time npm setup behind it (D46 in [`architecture.md`](architecture.md#decisions)),
 plus what to do when the weekly upstream watch finds that a shipped default changed (D52), and how to check that no
@@ -23,6 +23,7 @@ repository; users install releases as [`../README.md`](../README.md) describes.
 - [A pre-push leak check for your clone](#a-pre-push-leak-check-for-your-clone)
 - [A shipped default changed upstream](#a-shipped-default-changed-upstream)
 - [Checking that nothing looks hung](#checking-that-nothing-looks-hung)
+- [Testing on Linux locally](#testing-on-linux-locally)
 
 ## How a release happens
 
@@ -357,3 +358,29 @@ When it finds one, wrap the step: `quiet` (Bash, output shown only on failure), 
 the command's full output, as for `npm install -g`), a stage or `detail` from `lib/progress.js` (Node), or `mark()` in
 the AQE gates. Then add the step to the list in `test/progress.test.js`, which fails when a known long step loses its
 wrapper.
+
+## Testing on Linux locally
+
+See a change on Linux before you push it (D65). Each row of `test/containers/matrix.json` is a distribution: Debian,
+Ubuntu, Fedora, openSUSE Leap and Tumbleweed. `just linux-test` builds its image once (later runs reuse it) and runs
+the test suite in a throwaway container with no network. You need Docker: OrbStack or Docker Desktop.
+
+```sh
+just linux-test                  # every row; the same as `just linux-test all`
+just linux-test debian fedora    # some rows
+just linux-test leap --x64       # the x64 image, under emulation on an Apple-silicon Mac (slower)
+just linux-clean                 # remove what the runs made: lists it, then asks
+just linux-clean --cache         # the same, then the shared build cache (asks again)
+```
+
+What you see: each row's build and test stages with a live timer, then one line per row. The exit code is 0 only when
+every row passed. Each row's full output is in `~/.local/state/workstation-steward/linux-test/<row>-<time>.txt`, and
+the last summary is in `latest.txt` beside it.
+
+> [!NOTE]
+> Everything these runs create carries the label `org.workstation-steward.test`, and `just linux-clean` lists and
+> removes only labelled containers, images, volumes and networks. Your other containers and images are never touched.
+> The build cache is shared by every project on that Docker, so it goes only with `--cache`, after its own yes.
+
+The runs add to the CI matrix; they never replace it. A row whose image is pinned under a release-age gate exception
+says so at the start, and says EXPIRED once the exception's date has passed: move the row to an image past the gate.
