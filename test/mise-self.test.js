@@ -77,7 +77,8 @@ test('--plan without Homebrew on the machine: a plan line, not a crash', () => {
   fs.writeFileSync(path.join(bin, 'gh'), '#!/bin/sh\necho "[]"\n', { mode: 0o755 });
   const yq = spawnSync('/bin/sh', ['-c', 'command -v yq'], { encoding: 'utf8' }).stdout.trim();
   const PATH = [bin, path.dirname(process.execPath), path.dirname(fs.realpathSync(yq)), '/usr/bin', '/bin'].join(':');
-  assert.equal(spawnSync('/bin/sh', ['-c', 'command -v brew'], { encoding: 'utf8', env: { PATH } }).status, 1, 'no brew on this PATH');
+  // not found: 1 from bash or zsh, 127 from dash (Debian's and Ubuntu's /bin/sh)
+  assert.notEqual(spawnSync('/bin/sh', ['-c', 'command -v brew'], { encoding: 'utf8', env: { PATH } }).status, 0, 'no brew on this PATH');
   const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'supply-chain', 'bin', 'mise-self.js'), '--plan'], { encoding: 'utf8', env: { PATH, HOME: os.homedir(), STEWARD_INSTANCE: path.join(__dirname, '..', 'examples') } });
   assert.equal(r.status, 0, r.stderr);
   assert.doesNotMatch(r.stderr, /TypeError/);
