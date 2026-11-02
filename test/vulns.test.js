@@ -339,8 +339,8 @@ test('inventory: a core tool that is a Go program is covered by its modules; Hom
   assert.ok(!inv.uncovered.includes('gh') && inv.uncovered.includes('aqua:cli/cli'));
   assert.equal(inv.os, '27.2');
   assert.deepEqual(inv.installs.map(i => i.tool).sort(), ['aqua:cli/cli', 'gh', 'node', 'npm:cooltool'], 'the install list, not mise\'s own');
-  assert.match(inv.coverage.find(x => x.source === 'mise').text, /^3 of 4 tools: 2 by package ecosystem, 1 by the modules their Go programs list; 1 not covered$/);
-  assert.match(inv.coverage.find(x => x.source === 'Homebrew').text, /^9 of 10 formulae \(1 skipped: .*\); casks not covered$/);
+  assert.match(inv.coverage.find(x => x.source === 'mise').text, /^3 of 4 tools read \(2 by package, 1 Go programs by their modules\); 1 not covered$/);
+  assert.match(inv.coverage.find(x => x.source === 'Homebrew').text, /^9 of 10 formulae read \(1 skipped: brew vulns --list-skipped\); casks not covered$/);
   const { findings } = await V.lookup(c, FEEDS, inv);
   const h = findings.find(f => f.id === 'GHSA-heif');
   assert.equal(h.pkg.tool, 'brew libheif');
@@ -413,4 +413,16 @@ test('Go programs: an unpacked release archive\'s own folder is searched (gh_…
   for (const f of ['gh_2.103.3_macOS_arm64/bin/gh', 'darwin-arm64/helm', 'node_modules/x/bin/no', 'a/b/c/d/too-deep']) { put(path.join(d, f), big); fs.chmodSync(path.join(d, f), 0o755); }
   put(path.join(d, 'README'), big);
   assert.deepEqual(SRC.executables(d).map(f => path.relative(d, f)).sort(), ['darwin-arm64/helm', 'gh_2.103.3_macOS_arm64/bin/gh']);
+});
+
+test('the terminal view names the command that ran, and always shows the coverage lines (never folded away)', async () => {
+  const m = machine('tty');
+  const { ui: makeUi } = require('../lib/ui.js');
+  const lines = [];
+  const u = makeUi({ tty: true, out: { isTTY: true, columns: 110, write: x => { lines.push(String(x)); return true; } }, env: { LANG: 'en_US.UTF-8', NO_COLOR: '1' } });
+  await audit(ctx(m), { only: ['vulns'], ui: u, command: 'steward sc vulns' });
+  const text = lines.join('\n');
+  assert.match(text, /steward sc vulns/);
+  assert.match(text, /1 check\b/);
+  assert.match(text, /coverage: mise: \d+ of \d+ tools read/);
 });
