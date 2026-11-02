@@ -51,6 +51,9 @@ async function plan(ctx, o = {}) {
       if (f.fixed && (!p.node || V.cmpVer(f.fixed, p.node.version) > 0)) p.node = { have: f.pkg.version, version: f.fixed, advisories: [adv(f)] };
       continue;
     }
+    if (f.pkg.ecosystem === 'Homebrew') { p.handed.push(`${tool} ${f.pkg.version}: ${f.id}${f.fixed ? `, fixed in ${f.fixed}: a security_exception of kind formula, then steward sc upgrade` : f.upstream ? ': fixed upstream, in no release yet' : ': no fixed release yet'}`); continue; }
+    if (f.pkg.ecosystem === 'eol') { p.handed.push(`${tool} ${f.pkg.version}: past its end of life (${f.id}): move to a supported release${f.supported && f.supported.length ? ` (${f.supported.join(', ')})` : ''}; a major is deliberate`); continue; }
+    if (f.pkg.via === 'go build info' && !V.fixCommand(f)) { p.held.push(`${tool} ${f.pkg.version}: ${f.id}${f.fixed ? `, fixed in ${f.fixed}` : ''}: its next release carries the fix (steward sc plan)`); continue; }
     if (V.nodeOwn(tool)) { p.handed.push(`${tool} ${f.pkg.version}: ${f.id}: it ships with Node; a Node release carries the fix`); continue; }
     if (ownedBy(owned, tool)) { p.handed.push(`${tool} ${f.pkg.version}: ${f.id}: AI tooling owns it (the ai-tooling skill)`); continue; }
     if (tool.startsWith('npm -g ')) {
