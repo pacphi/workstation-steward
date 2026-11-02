@@ -39,8 +39,10 @@ const bash = (script, env) => spawnSync('bash', ['-c', `source ${JSON.stringify(
 // onTTY(script, env) — the same in a pseudo-terminal (script(1)): {status, out}, stdout and stderr as one terminal shows them
 function onTTY(script, env) {
   const cmd = `source ${JSON.stringify(path.join(REPO, 'lib', 'lib.sh'))}; ${script}`;
-  const args = process.platform === 'darwin' ? ['-q', '/dev/null', 'bash', '-c', cmd] : ['-qec', `bash -c ${JSON.stringify(cmd)}`, '/dev/null'];
-  const r = spawnSync('script', args, { encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'] });
+  // util-linux script runs -c through a shell: the command goes in an environment variable, so that shell can't expand
+  // what's in it ($? would be its own status; the first Linux run, parity 0.3)
+  const args = process.platform === 'darwin' ? ['-q', '/dev/null', 'bash', '-c', cmd] : ['-qec', 'bash -c "$STEWARD_TTY_CMD"', '/dev/null'];
+  const r = spawnSync('script', args, { encoding: 'utf8', env: { ...(env || process.env), STEWARD_TTY_CMD: cmd }, stdio: ['ignore', 'pipe', 'pipe'] });
   return { status: r.status, raw: r.stdout, out: strip(`${r.stdout}${r.stderr}`).replace(/\r/g, '\n') };
 }
 
