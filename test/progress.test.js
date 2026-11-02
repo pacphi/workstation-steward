@@ -215,3 +215,12 @@ test('tools/progress-gaps.js runs read-only by default: writing commands only un
   assert.equal(G.args([]).cmds, G.DEFAULTS);
   assert.throws(() => G.args(['--gap', 'x']), /--gap/);
 });
+
+test('progress: a stage that failed ends with ✗ and its summary, never ✓ (parity 0.9: a failed image build showed ✓)', () => {
+  const js = `const { progress } = require(${JSON.stringify(path.join(REPO, 'lib', 'progress.js'))}); const pg = progress(2); pg.stage('build').fail('FAILED (exit 1)'); pg.stage('tests').done('ok');`;
+  const r = spawnSync(process.execPath, ['-e', js], { encoding: 'utf8', env: { ...process.env, NO_PROGRESS: '' } });
+  assert.equal(r.status, 0, r.stderr);
+  const lines = r.stderr.split('\n').filter(Boolean);
+  assert.match(lines[1], /^✗ \[1\/2\] build: FAILED \(exit 1\) \(\d+s\)$/);
+  assert.match(lines[3], /^✓ \[2\/2\] tests: ok \(\d+s\)$/);
+});

@@ -1,13 +1,14 @@
 # The rhel family's test image (Fedora), for just linux-test (tools/linux-test.js, parity 0.9).
 # BASE is a row's image from matrix.json (tag@sha256). Network is used here, at build time only.
-ARG BASE
+ARG BASE=scratch
 FROM ${BASE}
 ARG MISE_VERSION
 ARG MISE_ARCH
 ARG MISE_SHA256
 LABEL org.workstation-steward.test=1
+# Node 26's Linux binaries need libatomic, which minimal images leave out (found by the first run, 2026-11-02)
 RUN dnf -y install --setopt=install_weak_deps=False \
-      bash git-core python3 util-linux procps-ng ca-certificates curl tar gzip xz findutils shadow-utils \
+      bash git-core python3 util-linux procps-ng ca-certificates curl tar gzip xz findutils shadow-utils libatomic \
  && dnf clean all
 COPY install-mise.sh /tmp/install-mise.sh
 RUN sh /tmp/install-mise.sh && rm /tmp/install-mise.sh

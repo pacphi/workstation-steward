@@ -143,3 +143,13 @@ test('counts and summary: per row, and the exit code is 0 only when every row pa
     'leap        ✓ 392/392 pass · 5s · /l/leap.txt',
   ]);
 });
+
+test('images: docker images\' JSON carries no labels, so ours are listed by a label filter and marked (the first real run listed none)', () => {
+  assert.deepEqual(L.IMAGES, ['images', '--filter', `label=${L.LABEL}=1`, '--format', '{{json .}}']);
+  // what `docker images --format '{{json .}}'` really prints: no Labels field
+  const raw = j({ ID: '30216ad76d89', Repository: 'steward-test/debian', Tag: '74af6771a2ed', Size: '1.17GB' });
+  assert.deepEqual(L.cleanPlan({ images: raw }).images, [], 'unmarked, nothing matches: the bug');
+  const marked = L.markOurs(raw);
+  assert.deepEqual(L.cleanPlan({ images: marked, containers: '', volumes: '', networks: '' }).images.map(i => i.ID), ['30216ad76d89']);
+  assert.deepEqual(L.staleTags(L.markOurs([raw, j({ ID: 'x', Repository: 'steward-test/debian', Tag: 'old' })].join('\n')), 'debian', '74af6771a2ed'), ['steward-test/debian:old']);
+});

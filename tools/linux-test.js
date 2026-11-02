@@ -62,6 +62,11 @@ const jsonLines = text => String(text || '').split('\n').filter(l => l.trim()).m
 // ours(o) — whether a docker object carries LABEL (its Labels is "k=v,k2=v2")
 const ours = o => String(o.Labels || '').split(',').some(kv => kv.split('=')[0] === LABEL);
 
+// IMAGES — how our images are listed: `docker images` prints no labels in its JSON (ps, volume ls and network ls do), so
+// a label filter picks ours and markOurs() records that on each line
+const IMAGES = ['images', '--filter', `label=${LABEL}=1`, '--format', '{{json .}}'];
+const markOurs = text => jsonLines(text).map(o => JSON.stringify({ ...o, Labels: `${LABEL}=1` })).join('\n');
+
 // cleanPlan({containers, images, volumes, networks}) — the labelled ones of each, from `docker … --format '{{json .}}'`
 const cleanPlan = t => ({ containers: jsonLines(t.containers).filter(ours), images: jsonLines(t.images).filter(ours), volumes: jsonLines(t.volumes).filter(ours), networks: jsonLines(t.networks).filter(ours) });
 
@@ -133,8 +138,8 @@ async function ask(q) {
 const stateDir = () => path.join(process.env.XDG_STATE_HOME || path.join(os.homedir(), '.local', 'state'), 'workstation-steward', 'linux-test');
 const stamp = () => new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
 const tilde = p => p.replace(os.homedir(), '~');
-const LS = { containers: ['ps', '-a'], images: ['images'], volumes: ['volume', 'ls'], networks: ['network', 'ls'] };
-const listAll = async () => Object.fromEntries(await Promise.all(Object.entries(LS).map(async ([k, a]) => [k, (await docker([...a, '--format', '{{json .}}'])).stdout])));
+const LS = { containers: ['ps', '-a', '--format', '{{json .}}'], images: IMAGES, volumes: ['volume', 'ls', '--format', '{{json .}}'], networks: ['network', 'ls', '--format', '{{json .}}'] };
+const listAll = async () => Object.fromEntries(await Promise.all(Object.entries(LS).map(async ([k, a]) => [k, k === 'images' ? markOurs((await docker(a)).stdout) : (await docker(a)).stdout])));
 
 async function run(argv) {
   const { progress } = require('../lib/progress.js');
@@ -174,10 +179,10 @@ async function run(argv) {
     else {
       fs.writeFileSync(log, `# docker build for ${row.id} (${row.image})\n`);
       const b = await stream(buildArgs(row, { tag, mise: m.mise, context: REPO, x64 }), st, log);
-      if (b.status !== 0) { st.done(`FAILED (exit ${b.status})`); results.push({ id: row.id, status: 'build-failed', secs: secs(), log: tilde(log) }); pg.stage(`${row.id}: tests`).done('skipped: no image'); continue; }
+      if (b.status !== 0) { st.fail(`FAILED (exit ${b.status})`); results.push({ id: row.id, status: 'build-failed', secs: secs(), log: tilde(log) }); pg.stage(`${row.id}: tests`).done('skipped: no image'); continue; }
       st.done('built');
       if (!keep) {
-        const old = staleTags((await docker(['images', '--format', '{{json .}}'])).stdout, row.id, tag.split(':')[1]);
+        const old = staleTags(markOurs((await docker(IMAGES)).stdout), row.id, tag.split(':')[1]);
         if (old.length) await docker(['image', 'rm', ...old]);
         await docker(['image', 'prune', '-f', '--filter', `label=${LABEL}=1`]);
       }
@@ -192,7 +197,8 @@ async function run(argv) {
     process.removeListener('SIGINT', bye); process.removeListener('SIGTERM', bye);
     const c = counts(r.stdout);
     const status = !c ? 'no-summary' : c.fail === 0 && r.status === 0 ? 'pass' : 'fail';
-    st.done(c ? `${c.pass}/${c.total} pass` : `no test summary (exit ${r.status})`);
+    if (status === 'pass') st.done(`${c.pass}/${c.total} pass`);
+    else st.fail(c ? `${c.pass}/${c.total} pass, ${c.fail} fail` : `no test summary (exit ${r.status})`);
     results.push({ id: row.id, status, ...(c || {}), secs: secs(), log: tilde(log) });
   }
   const s = summary(results);
@@ -219,7 +225,7 @@ async function clean(argv) {
   return 0;
 }
 
-module.exports = { LABEL, loadMatrix, validate, imageTag, buildArgs, runArgs, cleanPlan, cleanCommands, staleTags, onInterrupt, counts, summary };
+module.exports = { LABEL, IMAGES, markOurs, loadMatrix, validate, imageTag, buildArgs, runArgs, cleanPlan, cleanCommands, staleTags, onInterrupt, counts, summary };
 
 if (require.main === module) {
   const [cmd, ...rest] = process.argv.slice(2);
