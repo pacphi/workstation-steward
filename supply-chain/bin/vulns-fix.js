@@ -28,8 +28,8 @@ const read = f => { try { return fs.readFileSync(f, 'utf8'); } catch { return nu
 const addDays = (day, n) => { const d = new Date(`${day}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const ownedBy = (owned, tool) => owned.includes(tool) || owned.includes(tool.replace(/^npm -g /, ''));
 const adv = f => ({ id: f.id, url: f.url, severity: f.severity, kev: f.kev });
-// few(ids) — up to three advisory ids, then how many more: a plan line fits a terminal
-const few = ids => { const u = [...new Set(ids)]; return u.length > 3 ? `${u.slice(0, 3).join(', ')} and ${u.length - 3} more` : u.join(', '); };
+// few(ids) — up to two advisory ids, then how many more: a plan line fits a terminal
+const few = ids => { const u = [...new Set(ids)]; return u.length > 2 ? `${u.slice(0, 2).join(', ')} and ${u.length - 2} more` : u.join(', '); };
 
 // plan(ctx, {soakRunning}) — {upgrades, node, cleanup, exceptions, held, handed, failed}: what --apply would do and why
 // the rest waits. ctx: as the audit's (run, policy, today, say?, aiOwned?, pinned?(dirs) → Promise of the Set of those
