@@ -196,11 +196,11 @@ test('updaters: behind is an action when its class skips the gate and held when 
   assert.ok(none.out.includes('  none active here'));
 });
 
-test('platforms: on Linux the macOS-only checks are skipped; Homebrew formulae still run where brew is', async () => {
+test('platforms: on Linux the macOS-only checks are skipped, trust is not; Homebrew formulae still run where brew is', async () => {
   const c = ctx({ ...BREW, 'brew list --formula --versions': '', 'brew list --formula --full-name': '' }, { platform: 'linux' });
   const w = lines();
   const r = (await audit(c, { only: ['brew-formulae', 'brew-casks', 'apps', 'app-store', 'macos', 'trust'], write: w.write }));
-  assert.deepEqual(r.skipped.sort(), ['app-store', 'apps', 'brew-casks', 'macos', 'trust']);
+  assert.deepEqual(r.skipped.sort(), ['app-store', 'apps', 'brew-casks', 'macos'], 'trust runs on Linux too (parity 0.5)');
   assert.ok(w.out.some(l => l.startsWith('==> Homebrew formulae')));
   const none = ctx({}, { platform: 'linux' });
   const w2 = lines();
