@@ -238,7 +238,7 @@ Stage: Under way (0.1 to 0.6, and 0.9, done).
   family; the doctor never runs `sudo`. Linux adds `Linux`, `libatomic` (Node 26's x64 and arm64 builds both need it)
   and `sha256sum`; `jq` comes from mise on every platform, as `yq` and `gh` do (owner, 2026-11-02). The Mac's `steward doctor` is
   byte-identical. Since the doctor can't report a missing `libatomic` (Node won't start), `docs/prereqs.md` gives a
-  first-run order per family that installs it first. A follow-up (#PR): a required mise tool missing from your own
+  first-run order per family that installs it first. A follow-up (#95): a required mise tool missing from your own
   `mise/config.toml` gets the line to add, by hand, instead of an install that won't stick (owner, 2026-11-02).
 - [ ] **0.7 Words, and the RuVector add-on name** (moved from 0.3). `addon-check.js` names the add-on for this OS and
   CPU. "This Mac" and macOS-only fix text become platform-aware in the review, the audit, the briefing,
@@ -400,7 +400,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-02 | 11 | 0.6 follow-up: the doctor names a mise tool missing from your own toolchain | #PR |
+| 2026-11-02 | 11 | 0.6 follow-up: the doctor names a mise tool missing from your own toolchain | #95 |
 | 2026-11-02 | 10 | 0.6 done: steward doctor per platform (D69); the Linux first-run order | #91 |
 | 2026-11-02 | 9 | 0.5 done: distrusted roots found on Linux (D68); emSign still trusted in the Fedora 44 and Tumbleweed images, the first cases for 2.1 | #90 |
 | 2026-11-02 | 8 | 0.4 done: IOCs on every platform, the environment key, the coverage line, the rule (D67); macOS shows no process environment; 2.6 added for later | #89 |
