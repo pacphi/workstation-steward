@@ -110,7 +110,7 @@ nothing already installed changes.
 It never runs the Xcode tools, Homebrew itself, Docker or `gh auth login`. Those are listed for you to do by hand.
 
 A mise tool reaches your `PATH` only through your own `mise/config.toml`. If a required one is missing and its line
-isn't there (a config made before the tool joined the examples, as `jq` did in 0.11.0), the doctor shows the line to
+isn't there (a config made before the tool joined the examples, as `jq` did), the doctor shows the line to
 add, such as `add jq = "latest" to ~/.config/workstation-steward/mise/config.toml, then mise install jq`, and lists it
 for you to do by hand. It never edits your config.
 
