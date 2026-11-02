@@ -308,8 +308,10 @@ const CHECKS = [
       const feeds = ctx.policy.advisory_feed || [];
       if (!feeds.length) { out.action('vuln-feed: every advisory_feed is turned off in host.toml, so nothing was checked'); return; }
       detail(ctx, 'mise ls --json, and the packages inside each tool');
-      const inv = await V.inventory(ctx);
-      const { findings, failed, checked } = await V.lookup(ctx, feeds, inv, t => detail(ctx, t));
+      const s = ctx.policy.vulns || V.SETTINGS;
+      const inv = await V.inventory(ctx, s);
+      const { findings, failed, checked } = await V.lookup(ctx, feeds, inv, t => detail(ctx, t), s);
+      const serious = f => V.serious(f, s);
       for (const f of failed) out.action(`vuln-feed: ${f.feed} not checked (${f.error}); what it would have found is missing`, { fix: 'check the network or the feed, then steward sc vulns', name: f.feed, note: 'not checked' });
       for (const e of ctx.policy.advisory_ignore || []) if (String(e.expires) < ctx.today) out.info(`advisory_ignore ${e.id} (${e.name} ${e.version}) expired ${e.expires}: shown again`);
       const shown = [];
@@ -324,22 +326,22 @@ const CHECKS = [
       for (const f of shown.filter(f => f.pkg.top)) {
         const cmd = V.fixCommand(f) || (f.fixed && f.pkg.tool.startsWith('npm -g ') ? 'steward sc install-hybrids (after its version in hybrids.toml)' : '');
         const text = `vuln: ${f.pkg.tool} ${f.pkg.version}: ${label(f)}, ${fixedText(f)} ${f.url}${cmd ? `: ${cmd}` : ''}`;
-        if (V.serious(f)) out.action(text, { fix: cmd || 'read the advisory: no fixed release yet', name: f.pkg.tool, have: f.pkg.version, want: f.fixed, note: label(f) });
+        if (serious(f)) out.action(text, { fix: cmd || 'read the advisory: no fixed release yet', name: f.pkg.tool, have: f.pkg.version, want: f.fixed, note: label(f) });
         else out.info(text);
       }
       // packages inside a tool: listed one by one, and a tool's serious ones as one action
       const inside = shown.filter(f => !f.pkg.top);
       for (const f of inside) out.info(`${f.pkg.tool}: ${f.pkg.name} ${f.pkg.version} inside it: ${label(f)}, ${fixedText(f)} ${f.url}`);
-      for (const tool of [...new Set(inside.filter(V.serious).map(f => f.pkg.tool))]) {
-        const mine = inside.filter(f => f.pkg.tool === tool && V.serious(f));
+      for (const tool of [...new Set(inside.filter(serious).map(f => f.pkg.tool))]) {
+        const mine = inside.filter(f => f.pkg.tool === tool && serious(f));
         const ids = [...new Set(mine.map(f => f.id))];
         const pkgs = new Set(mine.map(f => `${f.pkg.name}@${f.pkg.version}`)).size;
         out.action(`vuln: ${tool}: ${ids.length} serious advisor${ids.length === 1 ? 'y' : 'ies'} in ${pkgs} package(s) inside it (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? ` and ${ids.length - 3} more` : ''}); update it when a release carries the fixes (steward sc vulns --verbose lists them)`,
           { fix: 'update the tool that bundles it, when a release carries the fix', name: tool, note: `${ids.length} in ${pkgs} package(s)` });
       }
-      if (inv.uncovered.length) out.info(`not covered (no advisory ecosystem; not the same as clean): ${inv.uncovered.join(', ')}`);
-      const serious = shown.filter(V.serious).length;
-      const line = `${new Set(inv.packages.map(p => `${p.ecosystem}\0${p.name}\0${p.version}`)).size} package version(s) in ${inv.covered.length} tool(s), checked with ${checked.join(', ') || 'no feed'}: ${serious} serious, ${shown.length - serious} other`;
+      if (inv.uncovered.length && s.list_not_covered) out.info(`not covered (no advisory ecosystem; not the same as clean): ${inv.uncovered.join(', ')}`);
+      const nSerious = shown.filter(serious).length;
+      const line = `${new Set(inv.packages.map(p => `${p.ecosystem}\0${p.name}\0${p.version}`)).size} package version(s) in ${inv.covered.length} tool(s), checked with ${checked.join(', ') || 'no feed'}: ${nSerious} serious (${s.action_severity} and up${s.exploited_always_action ? ', or exploited' : ''}), ${shown.length - nSerious} other`;
       if (shown.length) out.ok(line);
       else if (!failed.length) out.clean(line);
       else out.info(line);

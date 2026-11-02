@@ -106,3 +106,15 @@ url = "https://nodejs.org/dist/index.json"
 name = "kev"
 kind = "kev"
 url = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+
+# How `steward sc vulns` judges and looks (D65). Your host.toml's [vulns] overrides any of these, key by key.
+[vulns]
+action_severity = "high"          # a finding at or above this is an action (review and brief list it): low, moderate, high, critical
+unrated = "high"                  # the severity a finding nobody rated counts as
+exploited_always_action = true    # a finding in CISA's KEV catalog is an action whatever its severity
+inside_tools = true               # also check the packages inside an npm or pipx tool and inside each hybrid
+hybrids = true                    # check the npm -g hybrids in the active Node
+list_not_covered = true           # list the tools no feed can check (not covered is not clean)
+batch_size = 500                  # queries per OSV querybatch request (1 to 1000)
+parallel = 8                      # advisory records fetched at once (1 to 32)
+timeout_seconds = 60              # each request to a feed (5 to 600)

@@ -257,3 +257,39 @@ test('the review lifts a fix command with a mise tool key in it, and gives the o
   assert.match(items[1].how, /update the tool when a release carries the fix/);
   assert.match(items[2].how, /check the network or the feed/);
 });
+
+test('[vulns] settings: defaults, overrides key by key, and a wrong kind or unknown key keeps the default', () => {
+  assert.deepEqual(V.settings({}).values, V.SETTINGS);
+  const { values, problems } = V.settings({ action_severity: 'critical', parallel: 99, inside_tools: 'yes', colour: 'blue', unrated: 'moderate' });
+  assert.equal(values.action_severity, 'critical');
+  assert.equal(values.unrated, 'moderate');
+  assert.equal(values.parallel, V.SETTINGS.parallel);
+  assert.equal(values.inside_tools, true);
+  assert.deepEqual(problems, ['parallel must be a whole number from 1 to 32', 'inside_tools must be true or false', 'unknown key colour (action_severity, unrated, exploited_always_action, inside_tools, hybrids, list_not_covered, batch_size, parallel, timeout_seconds)']);
+  const { policy, warnings } = H.merge({ vulns: { action_severity: 'high', batch_size: 500 } }, { vulns: { action_severity: 'moderate', batch_size: 0 } }, 'macos', null);
+  assert.equal(policy.vulns.action_severity, 'moderate');
+  assert.equal(policy.vulns.batch_size, 500);
+  assert.ok(warnings.includes('[vulns] batch_size must be a whole number from 1 to 1000; the default is kept'), warnings.join('\n'));
+});
+
+test('[vulns] settings change what is an action and what is looked at', async () => {
+  const m = machine('settings');
+  const base = ctx(m);
+  const policy = s => ({ advisory_feed: FEEDS, advisory_ignore: [], vulns: V.settings(s).values });
+  // moderate and up, KEV not special, unrated as low: the low finding stays info, the critical inside is still an action
+  let text = (await plain(ctx(m, {}, { policy: policy({ action_severity: 'critical', exploited_always_action: false }) }))).out.join('\n');
+  assert.doesNotMatch(text, /ACTION vuln: npm:cooltool 2\.0\.0/, 'high is below critical');
+  assert.match(text, /ACTION vuln: npm -g hybridy: 1 serious advisory/, 'the inside one is critical');
+  assert.match(text, /serious \(critical and up\)/);
+  // only the tools themselves: nothing inside is looked at, so only the tool's own advisory is found
+  text = (await plain(ctx(m, {}, { policy: policy({ inside_tools: false, hybrids: false, list_not_covered: false }) }))).out.join('\n');
+  assert.match(text, /ACTION vuln: npm:cooltool 2\.0\.0: GHSA-aaaa/);
+  assert.doesNotMatch(text, /leftish|hybridy|not covered/);
+  // the request timeout reaches curl
+  await plain(ctx(m, {}, { policy: policy({ timeout_seconds: 9 }) }));
+  assert.ok(base.seen.length === 0);
+  const c = ctx(m, {}, { policy: policy({ timeout_seconds: 9, batch_size: 1 }) });
+  await plain(c);
+  assert.ok(c.seen.some(x => x.startsWith('curl -fsS -m 9 ')));
+  assert.ok(c.seen.filter(x => x.endsWith('/querybatch')).length >= 3, 'one package version per request');
+});
