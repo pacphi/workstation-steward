@@ -1,6 +1,6 @@
 # Prerequisites
 
-![Revision 6](https://img.shields.io/badge/Revision-6-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 7](https://img.shields.io/badge/Revision-7-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 Everything this repo needs on the machine, and where each piece comes from, on macOS and on Linux. The list lives in
 [`lib/prereqs.json`](../lib/prereqs.json); the table below is printed from it, and a test keeps the two equal.
@@ -108,6 +108,11 @@ a receipt (`doctor-install-<time>/receipt.json` under the state folder's `backup
 nothing already installed changes.
 
 It never runs the Xcode tools, Homebrew itself, Docker or `gh auth login`. Those are listed for you to do by hand.
+
+A mise tool reaches your `PATH` only through your own `mise/config.toml`. If a required one is missing and its line
+isn't there (a config made before the tool joined the examples, as `jq` did), the doctor shows the line to
+add, such as `add jq = "latest" to ~/.config/workstation-steward/mise/config.toml, then mise install jq`, and lists it
+for you to do by hand. It never edits your config.
 
 ## Not covered here
 

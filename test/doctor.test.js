@@ -157,3 +157,34 @@ test('doctor on Linux: a check-only entry (Linux, libatomic) shows no path; the 
   assert.ok(line, r.stdout);
   assert.ok(!line.includes('/sh'), line);
 });
+
+// --- a mise tool missing from the user's own toolchain (a config made before the tool joined examples/) ---------
+// instanceWith(lines) — a throwaway instance whose mise/config.toml holds those tool lines
+function instanceWith(lines) {
+  const d = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'steward-doctor-inst-')));
+  fs.writeFileSync(path.join(d, 'steward.toml'), 'schema = 1\n');
+  fs.mkdirSync(path.join(d, 'mise'));
+  fs.writeFileSync(path.join(d, 'mise', 'config.toml'), `[tools]\n${lines.join('\n')}\n`);
+  return d;
+}
+
+test('doctor: a missing mise tool that isn\'t in your mise/config.toml names the line to add; --install lists it by hand', () => {
+  const inst = instanceWith(['node = "26"', 'yq = "latest"']);
+  const s = standins('git', 'mise', 'brew');
+  const env = { PATH: s.dir, STEWARD_INSTANCE: inst, STEWARD_DOCTOR_AS: 'macos' };
+  const cfg = path.join(inst, 'mise', 'config.toml');
+  const r = doctor(['--area', 'fleet'], env);
+  assert.match(r.stdout, new RegExp(`MISSING +jq +required, from mise: add jq = "latest" to ${cfg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}, then mise install jq`), r.stdout);
+  const i = doctor(['--install', '--area', 'fleet'], env, 'y\n');
+  assert.ok(i.stdout.includes(`  by hand: jq: add jq = "latest" to ${cfg}, then mise install jq`), i.stdout);
+  assert.ok(!i.stdout.includes('$ mise install jq'), 'no mise install that would not stick');
+  assert.ok(!/^mise install jq/m.test(s.calls()), s.calls());
+});
+
+test('doctor: a missing mise tool that is in your mise/config.toml installs as before', () => {
+  const inst = instanceWith(['node = "26"', 'jq = "latest"']);
+  const s = standins('git', 'mise', 'brew');
+  const i = doctor(['--install', '--area', 'fleet'], { PATH: s.dir, STEWARD_INSTANCE: inst, STEWARD_DOCTOR_AS: 'macos' }, 'n\n');
+  assert.match(i.stdout, /\$ mise install jq/);
+  assert.ok(!i.stdout.includes('by hand: jq'));
+});

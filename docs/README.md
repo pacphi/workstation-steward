@@ -1,6 +1,6 @@
 # Docs index
 
-![Revision 24](https://img.shields.io/badge/Revision-24-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 26](https://img.shields.io/badge/Revision-26-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 Every public doc, by kind. Each doc shows its revision and revision date in badges under the title. The number changes only when the
 content does; moving a file or fixing a link doesn't count. The rules are in
@@ -15,17 +15,17 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | [`briefing.md`](briefing.md) | 9, 2026-10-31 | `steward brief`: what needs you now as one next step with its command, read from disk without the network; the background refresh that looks at GitHub, npm and your projects (D57); the Claude Code session-start hook, once and then quiet (D48); the checks (detectors), their order, the output, and how to add one; the work list, who does each step and your `[autonomy]` level, `--unattended` (D58); the fix runner, `steward fix` (D59); a bundled command left unfinished (D61); an animated example |
 | [`vulnerabilities.md`](vulnerabilities.md) | 1, 2026-11-02 | Known vulnerabilities (D70, D71): each source and its coverage (mise, Go programs, Homebrew's `brew vulns`, npm -g, Node, end of life), the feeds (OSV with malicious packages, nodejs.org, KEV, EPSS, endoflife.date), how a finding is judged, where to look for what isn't covered, what `vulns-fix` and `isolate` do, limitations, every exception, the `[vulns]` settings, how to add a source or a feed, and what's planned |
 | [`config-repo.md`](config-repo.md) | 7, 2026-10-31 | Keeping your config in a private Git repo: setting it up, Renovate, a second Mac, staying in step, and what the steward tells you about it |
-| [`prereqs.md`](prereqs.md) | 6, 2026-11-02 | Everything the steward needs on the machine, the order to install it on a new Mac, the services on GitHub (Renovate), and `steward doctor` (which shows your config and add-ons first) |
+| [`prereqs.md`](prereqs.md) | 7, 2026-11-02 | Everything the steward needs on the machine, the order to install it on a new Mac, the services on GitHub (Renovate), and `steward doctor` (which shows your config and add-ons first) |
 
 ## Design
 
 | Doc | Rev | What it is |
 | --- | --- | --- |
 | [`lifecycle.md`](lifecycle.md) | 22, 2026-11-02 | Install, set up, use, upgrade, migrate the config, keep old command names, reconcile projects, add tools, roll back, and the two channels (a worktree or npm for the release): the promises across releases, day to day (the briefing, the review and the gate, who takes each step, `steward fix`, the bundled commands), each marked built or planned (D40, D41) |
-| [`platforms/parity.md`](platforms/parity.md) | 10, 2026-11-02 | Planned: Linux and NixOS parity as a plan and a progress ledger. Why it matters, where it stands, the decisions (D-a to D-g, all made), the bar for the first Linux release (apt, dnf and zypper), the supported distributions and their minimum versions, each capability per platform, the milestones with a checkbox per item, the CI matrix and install checks, and the facts still to verify; every PR in this work updates it |
+| [`platforms/parity.md`](platforms/parity.md) | 11, 2026-11-02 | Planned: Linux and NixOS parity as a plan and a progress ledger. Why it matters, where it stands, the decisions (D-a to D-g, all made), the bar for the first Linux release (apt, dnf and zypper), the supported distributions and their minimum versions, each capability per platform, the milestones with a checkbox per item, the CI matrix and install checks, and the facts still to verify; every PR in this work updates it |
 | [`release-classes.md`](release-classes.md) | 3, 2026-10-29 | Built (D52): what may skip the release-age gate, as one release class per update source, update sources declared in `host.toml`, and the weekly upstream watch on shipped key pins |
 | [`maintainers.md`](maintainers.md) | 9, 2026-11-02 | Publishing the explainer site (on demand); releasing: the release PR, Conventional Commit titles, the one-time npm setup (placeholder and Trusted Publishing), the publish guard, a pre-push leak check (D46); the maintainer skill (D53); what to do when the upstream watch finds a shipped default changed (D52); checking that no command looks hung (`just progress-gaps`); testing on Linux locally in containers (`just linux-test`, D65); trying the session hook before a release (`just try-hook`); Renovate on the engine repo |
-| [`architecture.md`](architecture.md) | 57, 2026-11-02 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D71 |
+| [`architecture.md`](architecture.md) | 58, 2026-11-02 | The four areas, how they meet, the engine and the instance (`steward.toml`), project onboarding, layout, the docs rules, and every decision D1–D71 |
 
 ## Living docs by area
 
