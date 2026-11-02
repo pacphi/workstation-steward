@@ -104,13 +104,15 @@ async function plan(ctx, out) {
     else { p.tools.push(name); out.line(`take   ${name} ${have} -> ${want}`); }
   }
 
-  out.section('Declared updaters', 'Declared updaters ([[updater]]: signed_data, always_current and an unexpired exception skip the gate)');
+  out.section('Declared updaters', 'Declared updaters ([[updater]]: a dated one waits out the gate; signed_data, always_current and an unexpired exception skip it)');
   for (const u of U.active(ctx.policy)) {
     const cls = U.classOf(u, ctx.today);
     if (!U.pinState(u).ok) { out.line(`skip   ${u.name} (its signing key changed: steward sc audit)`); continue; }
-    const c = await U.check(u, ctx.run);
-    if (c.state === 'current') continue;
-    if (c.state === 'unknown') out.line(`skip   ${u.name} (its check couldn't tell: exit ${c.status})`);
+    const c = await U.check(u, ctx.run, { minDays: cls === 'gated' ? ctx.cfg.policy.min_release_age_days : 0, now: ctx.now });
+    if (c.state === 'current') { if (c.major) out.line(`skip   ${u.name} ${c.installed} -> ${c.major} (major: yours to take, by hand)`); continue; }
+    if (c.state === 'young') out.line(`hold   ${u.name} (${c.out})`);
+    else if (c.state === 'unknown') out.line(`skip   ${u.name} (its check couldn't tell: ${U.dated(u) ? c.out : `exit ${c.status}`})`);
+    else if (cls === 'gated' && U.dated(u)) { p.updaters.push(u.name); out.line(`take   ${u.name} ${c.installed} -> ${c.target} (gated: past the ${ctx.cfg.policy.min_release_age_days}-day wait)`); }
     else if (cls === 'gated') out.line(`hold   ${u.name} (gated: a declared source has no release date; apply it yourself after review)`);
     else { p.updaters.push(u.name); out.line(`take   ${u.name} (${cls}: ${U.SKIPS[cls]})`); }
   }
