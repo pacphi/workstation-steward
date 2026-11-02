@@ -71,8 +71,9 @@ it would need the sandbox testing the hybrids get.
 **`steward sc vulns-fix`** plans, asks, backs up `mise/config.toml`, `mise/mise.lock` and `host.toml`, then:
 
 1. writes a `security_exception` (the advisory, and an expiry `exception_days` away) for each pin;
-2. runs `steward sc upgrade-tool <tool> <version>` for each tool, with the highest fixed version its advisories name
-   (the plan marks a move across a major, or a 0.x minor, as `MAJOR`);
+2. runs `steward sc upgrade-tool <tool> <version>` for each tool, with the highest fixed version its advisories name.
+   A fix across a major, or a 0.x minor, is listed for you instead, with that command: majors are deliberate
+   (`fix_majors`);
 3. runs `mise uninstall <tool>@<version>` for each unused install that carries a serious advisory. It refuses one a
    launcher config still points into;
 4. runs `steward sc verify`, and writes a receipt.
@@ -100,6 +101,7 @@ Every exception is written down: in your config (Git keeps it), in a receipt, in
 | Exception | Where it's recorded | Why |
 | --- | --- | --- |
 | A finding that doesn't apply to you | `[[advisory_ignore]]` in `host.toml`: advisory, package, version, reason, expiry (all required) | The affected code is never reached. When it expires, the finding comes back. Same evidence rule as `trust_policy_excludes` |
+| A fix across a major version | listed under *yours* in the vulns-fix plan, with its command | Majors are deliberate (AGENTS.md); `fix_majors = "take"` changes it |
 | A fix younger than the release-age gate | `[[security_exception]]` in `host.toml`, written by vulns-fix | A serious advisory's first patched release skips the gate (AGENTS.md, Release age) |
 | An unused install removed before the soak ends | the vulns-fix receipt | Only copies that carry a serious advisory; the soak still holds the rest |
 | Tools AI tooling owns (Ruflo, AgentDB, AQE, Brain, RuVector…) | the output says "AI tooling owns it" | Their upgrades and any switch-off belong to the `ai-tooling` skill: its projects' launchers depend on them |
@@ -128,6 +130,7 @@ Every exception is written down: in your config (Git keeps it), in a receipt, in
 | `timeout_seconds` | `60` | Each request to a feed (5–600) |
 | `fix_skip_gate` | `"serious"` | `never`: vulns-fix doesn't pin past the gate; `steward sc upgrade` takes the fix once it clears |
 | `exception_days` | `7` | How long a vulns-fix `security_exception` lasts (1–30) |
+| `fix_majors` | `"list"` | `take`: vulns-fix's one yes covers a fix across a major (or a 0.x minor) too, marked `MAJOR` in the plan |
 | `cleanup` | `true` | vulns-fix removes unused installs that carry serious advisories |
 | `cleanup_skip_soak` | `"serious"` | `never`: that cleanup waits for the soak like `steward sc prune` |
 | `isolate_suggest` | `true` | Suggest `isolate` for a known-exploited finding, or a critical one with no fix |

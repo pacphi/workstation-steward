@@ -262,3 +262,18 @@ test('brief: a hybrid whose command links are back has lost its isolation', () =
   f.isolatedBack = [];
   assert.deepEqual(B.DETECTORS.find(d => d.id === 'isolate-lost').check(f), []);
 });
+
+test('vulns-fix hands a major fix over with its command unless [vulns] fix_majors = "take"', async () => {
+  const m = machine('majors');
+  REC.push(rec('GHSA-major', 'npm', 'nofix', [{ introduced: '0' }, { fixed: '2.0.0' }], 'HIGH'));
+  try {
+    let p = await F.plan(ctx(m));
+    assert.ok(!p.upgrades.some(u => u.tool === 'npm:nofix'));
+    assert.ok(!p.exceptions.some(e => e.name === 'npm:nofix'), 'no exception for what it does not take');
+    assert.ok(p.handed.some(h => h === 'npm:nofix 1.0.0 -> 2.0.0 is a major (GHSA-major): read its release notes, then steward sc upgrade-tool npm:nofix 2.0.0'), p.handed.join('\n'));
+    p = await F.plan(withVulns(m, { fix_majors: 'take' }));
+    assert.ok(p.upgrades.some(u => u.tool === 'npm:nofix' && u.version === '2.0.0'));
+    const out = []; F.show(p, x => out.push(x));
+    assert.match(out.join('\n'), /upgrade {2}npm:nofix 1\.0\.0 -> 2\.0\.0 \(MAJOR\)/);
+  } finally { REC.pop(); }
+});

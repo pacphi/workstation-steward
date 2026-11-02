@@ -68,7 +68,11 @@ async function plan(ctx, o = {}) {
     u.advisories.push(adv(f));
     byTool.set(tool, u);
   }
-  p.upgrades = [...byTool.values()];
+  // a fix across a major (or a 0.x minor) is deliberate: handed over with its command unless [vulns] fix_majors = "take"
+  for (const u of byTool.values()) {
+    if (s.fix_majors === 'take' || !V.isMajor(u.have, u.version)) p.upgrades.push(u);
+    else p.handed.push(`${u.tool} ${u.have} -> ${u.version} is a major (${u.advisories.map(a => a.id).join(', ')}): read its release notes, then steward sc upgrade-tool ${u.tool} ${u.version}`);
+  }
   p.exceptions = p.upgrades.map(u => ({ kind: 'mise', name: u.tool, version: u.version, advisory: u.advisories[0].url, expires: addDays(ctx.today, s.exception_days) }));
 
   if (s.cleanup) {

@@ -122,6 +122,7 @@ timeout_seconds = 60              # each request to a feed (5 to 600)
 fix_skip_gate = "serious"         # serious: vulns-fix pins a serious finding's fixed release though it's younger than the gate,
                                   # recording a security_exception; never: it waits for steward sc upgrade
 exception_days = 7                # how long that security_exception lasts (1 to 30)
+fix_majors = "list"               # list: a fix across a major (or a 0.x minor) is handed to you with its command; take: one yes covers it
 cleanup = true                    # vulns-fix also removes unused old installs that carry serious advisories
 cleanup_skip_soak = "serious"     # serious: that cleanup doesn't wait out the soak (those copies only); never: it waits
 isolate_suggest = true            # suggest steward sc isolate for a known-exploited finding, or a critical one with no fix
