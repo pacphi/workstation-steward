@@ -277,3 +277,24 @@ test('vulns-fix hands a major fix over with its command unless [vulns] fix_major
     assert.match(out.join('\n'), /upgrade {2}npm:nofix 1\.0\.0 -> 2\.0\.0 \(MAJOR\)/);
   } finally { REC.pop(); }
 });
+
+test('remediation of the new sources: a malicious package is urgent; Homebrew and end-of-life findings are handed over; a Go tool is pinned only when versions agree', async () => {
+  assert.equal(V.urgent({ malicious: true, severity: 'critical', fixed: '9.9.9' }), true);
+  const brew = { pkg: { ecosystem: 'Homebrew', name: 'tidy', version: '5.8.0', tool: 'brew tidy', top: true }, fixed: '5.8.1' };
+  assert.equal(V.fixCommand(brew), '');
+  const go = { pkg: { ecosystem: 'Go', name: 'github.com/cli/cli/v2', version: '2.83.0', tool: 'gh', top: true, via: 'go build info', toolVersion: '2.83.0' }, fixed: '2.83.1' };
+  assert.equal(V.fixCommand(go), 'steward sc upgrade-tool gh 2.83.1');
+  assert.equal(V.fixCommand({ ...go, pkg: { ...go.pkg, toolVersion: '1.37.2' } }), '', 'a module version that is not the tool\'s');
+  const m = machine('tie');
+  const c = ctx(m);
+  const base = c.run;
+  c.run = async (cmd, args = []) => {
+    const k = [cmd, ...args].join(' ');
+    if (k === 'brew --version') return { status: 0, stdout: 'Homebrew 7.0.12' };
+    if (k === 'brew vulns --json') return { status: 1, stdout: JSON.stringify({ findings: [{ formula: 'tidy', version: '5.8.0', vulnerabilities: [{ id: 'CVE-2026-0009', severity: 'HIGH', fixed_versions: ['5.8.1'] }] }], skipped_formulae: [], checked: 1 }) };
+    return base(cmd, args);
+  };
+  const p = await F.plan(c);
+  assert.ok(p.handed.some(h => h === 'brew tidy 5.8.0: CVE-2026-0009, fixed in 5.8.1: a security_exception of kind formula, then steward sc upgrade'), p.handed.join('\n'));
+  assert.ok(!p.upgrades.some(u => u.tool.startsWith('brew ')));
+});

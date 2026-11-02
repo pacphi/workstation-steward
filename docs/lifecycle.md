@@ -1,6 +1,6 @@
 # Lifecycle
 
-![Revision 21](https://img.shields.io/badge/Revision-21-green) ![Revised 2026-11-01](https://img.shields.io/badge/Revised-2026--11--01-green)
+![Revision 22](https://img.shields.io/badge/Revision-22-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 How someone installs workstation-steward, sets it up, uses it, and keeps it, their config and their projects safe
 over release after release. It is the contract the code is built to: each part is marked **built** or **planned**.
@@ -20,6 +20,7 @@ The decisions behind it are D39 and D40 in [`architecture.md`](architecture.md#d
 - [Onboarded projects across releases](#onboarded-projects-across-releases)
 - [Adding tools](#adding-tools)
 - [Platforms](#platforms)
+- [Known vulnerabilities](#known-vulnerabilities)
 - [How releases are tested](#how-releases-are-tested)
 - [Two channels](#two-channels)
   - [Where the release comes from](#where-the-release-comes-from)
@@ -229,6 +230,21 @@ The work for Linux and NixOS, and how far it has got, is tracked in [`platforms/
   2. **NixOS** ([nixos.org](https://nixos.org/)): declarative, so its provider plans a dated update of the flake or
      channel as a whole rather than one package at a time, and rolls back to a previous generation;
   3. **Windows 11 and WSL**: winget, Scoop and Chocolatey; inside WSL, the Linux providers apply.
+
+## Known vulnerabilities
+
+What the steward installs, checked against the advisory databases the industry relies on, with what it couldn't check
+said out loud ([`vulnerabilities.md`](vulnerabilities.md)).
+
+- `steward sc vulns`: mise's npm, pipx, cargo and go tools and the packages inside them, Go programs by their module
+  lists, Homebrew formulae through `brew vulns`, the npm -g packages and Node; feeds OSV (with malicious-package
+  reports), nodejs.org, CISA KEV, EPSS and endoflife.date; a coverage line per source: *Built (D65).*
+- `steward sc vulns-fix` and `steward sc isolate`, with backups, receipts and a way back: *Built (D66).*
+- Then, one PR each, in this order: *Planned.*
+  1. OpenVEX out (your `advisory_ignore` entries) and in (vendors' VEX documents as a feed);
+  2. a CycloneDX inventory (`steward sc sbom`) and SARIF findings;
+  3. a provenance check before vulns-fix takes a fix past the release-age gate;
+  4. each Linux source with its distribution's OSV ecosystem, as the providers land ([Platforms](#platforms)).
 
 ## How releases are tested
 

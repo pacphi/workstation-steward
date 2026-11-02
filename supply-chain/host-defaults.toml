@@ -92,6 +92,8 @@ watch = "https://raw.githubusercontent.com/stuinfla/ruvnet-brain/main/kb/forge-u
 #   osv-dir  path = a folder in your instance of OSV-format JSON records (advisories no database carries yet)
 #   nodejs   nodejs.org's release index: a newer security release on the active Node line
 #   kev      CISA's Known Exploited Vulnerabilities catalog: marks a finding whose CVE is being exploited
+#   epss     FIRST's EPSS scores: ranks the findings by how likely each is to be exploited in the next 30 days
+#   eol      endoflife.date: a runtime (node, python, postgres, go, java…) or macOS past its end of life
 [[advisory_feed]]
 name = "osv"
 kind = "osv-api"
@@ -107,6 +109,16 @@ name = "kev"
 kind = "kev"
 url = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 
+[[advisory_feed]]
+name = "epss"
+kind = "epss"                     # FIRST's Exploit Prediction Scoring System: ranks findings by the chance of exploitation
+url = "https://api.first.org/data/v1/epss"
+
+[[advisory_feed]]
+name = "endoflife"
+kind = "eol"                      # endoflife.date: a runtime, database or macOS past its end of life gets no fixes
+url = "https://endoflife.date/api"
+
 # How `steward sc vulns` judges and looks (D65). Your host.toml's [vulns] overrides any of these, key by key.
 [vulns]
 action_severity = "high"          # a finding at or above this is an action (review and brief list it): low, moderate, high, critical
@@ -118,6 +130,10 @@ list_not_covered = true           # list the tools no feed can check (not covere
 batch_size = 500                  # queries per OSV querybatch request (1 to 1000)
 parallel = 8                      # advisory records fetched at once (1 to 32)
 timeout_seconds = 60              # each request to a feed (5 to 600)
+go_binaries = true                # read the module list Go programs carry (mise's core, aqua and github tools)
+homebrew = true                   # Homebrew's own brew vulns for its formulae (Homebrew 7 or later)
+eol_severity = "high"             # the severity of a runtime or macOS past its end of life
+epss_action_percentile = 0        # 1-100: an EPSS percentile at or above this makes a finding an action; 0: ranking only
 # remediation: steward sc vulns-fix and steward sc isolate (D66)
 fix_skip_gate = "serious"         # serious: vulns-fix pins a serious finding's fixed release though it's younger than the gate,
                                   # recording a security_exception; never: it waits for steward sc upgrade
