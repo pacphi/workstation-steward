@@ -137,3 +137,13 @@ go_binaries = true                # read the module list Go programs carry (mise
 homebrew = true                   # Homebrew's own brew vulns for its formulae (Homebrew 7 or later)
 eol_severity = "high"             # the severity of a runtime or macOS past its end of life
 epss_action_percentile = 0        # 1-100: an EPSS percentile at or above this makes a finding an action; 0: ranking only
+# remediation: steward sc vulns-fix and steward sc isolate (D71)
+fix_skip_gate = "serious"         # serious: vulns-fix pins a serious finding's fixed release though it's younger than the gate,
+                                  # recording a security_exception; never: it waits for steward sc upgrade
+exception_days = 7                # how long that security_exception lasts (1 to 30)
+fix_majors = "list"               # list: a fix across a major (or a 0.x minor) is handed to you with its command; take: one yes covers it
+cleanup = true                    # vulns-fix also removes unused old installs that carry serious advisories
+cleanup_skip_soak = "serious"     # serious: that cleanup doesn't wait out the soak (those copies only); never: it waits
+isolate_suggest = true            # suggest steward sc isolate for a known-exploited finding, or a critical one with no fix
+isolate_never = ["node", "npm", "corepack"]   # tools never isolated
+isolate_ai_owned = false          # whether isolate may switch off a tool AI tooling owns (its projects' launchers break)

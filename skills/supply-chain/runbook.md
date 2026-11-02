@@ -1,6 +1,6 @@
 # Supply chain runbook
 
-![Revision 10](https://img.shields.io/badge/Revision-10-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 11](https://img.shields.io/badge/Revision-11-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 Procedures for the supply-chain area: mise, the npm -g hybrids, Homebrew, apps, the App Store, macOS, trust
 stores, Docker and IOCs. The rules behind them are in [`../../AGENTS.md`](../../AGENTS.md) (Toolchain, Release
@@ -129,19 +129,26 @@ finds) checks mise's npm, pipx, cargo and go tools, the packages inside them, th
 feeds in `host.toml` `[[advisory_feed]]`: OSV (which carries the GitHub Advisory Database), nodejs.org and CISA KEV.
 
 1. Run it and read the ACTION lines first. A **known-exploited** finding comes before everything else.
-2. **The tool itself is affected:** its line names the fix, `steward sc upgrade-tool <tool> <version>`, an exact pin
-   that skips the release-age gate. Show the dry run, then take it after a yes. Record the advisory as a
-   `[[security_exception]]` with an expiry when the fixed release is younger than the gate.
+2. **The tool itself is affected, or an unused old install is:** `steward sc vulns-fix` plans every such fix at once
+   (exact pins past the gate, each recorded as a `security_exception`; removal of the unused installs). Show its plan,
+   then after a yes run `steward sc vulns-fix --apply --unattended --yes-to vulns-fix`. It verifies at the end;
+   `--rollback <receipt>` undoes it. One tool alone: `steward sc upgrade-tool <tool> <version>`.
 3. **Packages inside a tool:** that tool's next release carries the fix. Check whether one already does
    (`steward sc plan`); otherwise it waits, and the line stays on the work list until it's gone. A tool AI tooling
-   owns goes to the `ai-tooling` skill.
+   owns goes to the `ai-tooling` skill. **Known-exploited, or critical with no fix:** offer `steward sc isolate
+   <tool>` (its plan, then `--apply --unattended --yes-to isolate` after a yes). It stays installed; `steward brief`
+   lists it until `steward sc isolate --undo <tool> --apply` switches it back on, once a fixed release is taken.
 4. **Node:** `steward sc node-patch <version>` (A same-day Node security release).
-5. **Not checked** (a feed gave no answer) or **not covered** (core, aqua, github, asdf and vfox tools; Homebrew;
-   apps; Docker): say so; neither is clean. For a specific advisory there, use the next section.
+5. **Not checked** (a feed gave no answer) or **not covered** (the coverage lines): say so; neither is clean. Then say
+   where to look: casks and apps, their own updaters and `steward sc audit`; the App Store and macOS, Software Update;
+   Docker images, pin by digest and a scanner the user runs; formulae `brew vulns` skips, `brew vulns --list-skipped`
+   and the upstream project; other tools, their GitHub security advisories. For a specific advisory, use the next
+   section.
 6. **Doesn't apply here** (the affected code is never reached): an `[[advisory_ignore]]` in `host.toml` with the exact
    advisory, package, version, the evidence as its reason, and an expiry, after the user's yes.
 7. **An advisory no database carries yet:** an OSV-format record in an `osv-dir` feed folder of the instance, so
-   every later sweep checks it. `[vulns]` in `host.toml` changes what counts as an action and what is looked at.
+   every later sweep checks it. `[vulns]` in `host.toml` changes what counts as an action, what is looked at, and
+   how vulns-fix and isolate behave ([`docs/vulnerabilities.md`](../../docs/vulnerabilities.md#settings)).
 
 ## A new advisory or incident report
 
