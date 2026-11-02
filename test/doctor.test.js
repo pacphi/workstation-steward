@@ -9,7 +9,8 @@ const { spawnSync, execFileSync } = require('child_process');
 
 const REPO = path.join(__dirname, '..');
 const DATA = JSON.parse(fs.readFileSync(path.join(REPO, 'lib', 'prereqs.json'), 'utf8'));
-const doctor = (args, env = {}, input = '') => spawnSync(process.execPath, [path.join(REPO, 'lib', 'doctor.js'), ...args], { encoding: 'utf8', input, env: { ...process.env, NO_PROGRESS: '1', NO_COLOR: '1', ...env } });
+// every run gets its own state folder unless a test names one, so --install's receipt never lands in the real one
+const doctor = (args, env = {}, input = '') => spawnSync(process.execPath, [path.join(REPO, 'lib', 'doctor.js'), ...args], { encoding: 'utf8', input, env: { ...process.env, NO_PROGRESS: '1', NO_COLOR: '1', XDG_STATE_HOME: fs.mkdtempSync(path.join(os.tmpdir(), 'steward-doctor-state-')), ...env } });
 
 test('prereqs.json: unique names, known areas, needs and sources; installable ones say how', () => {
   const names = DATA.prereqs.map(p => p.name);
@@ -187,4 +188,12 @@ test('doctor: a missing mise tool that is in your mise/config.toml installs as b
   const i = doctor(['--install', '--area', 'fleet'], { PATH: s.dir, STEWARD_INSTANCE: inst, STEWARD_DOCTOR_AS: 'macos' }, 'n\n');
   assert.match(i.stdout, /\$ mise install jq/);
   assert.ok(!i.stdout.includes('by hand: jq'));
+});
+
+test('doctor tests never write to the real state folder: --install\'s receipt lands in the test\'s own XDG_STATE_HOME', () => {
+  const before = (() => { try { return fs.readdirSync(path.join(os.homedir(), '.local', 'state', 'workstation-steward', 'backups')).filter(n => n.startsWith('doctor-install-')).length; } catch { return 0; } })();
+  const s = standins('git', 'mise', 'brew');
+  doctor(['--install', '--area', 'core'], { PATH: s.dir, STEWARD_DOCTOR_AS: 'macos' }, 'y\n');
+  const after = (() => { try { return fs.readdirSync(path.join(os.homedir(), '.local', 'state', 'workstation-steward', 'backups')).filter(n => n.startsWith('doctor-install-')).length; } catch { return 0; } })();
+  assert.equal(after, before, 'a doctor-install receipt was written to the real state folder (40 leaked before this test existed)');
 });

@@ -2,7 +2,7 @@
 // lock-check.js [mise.lock] — every platform entry's download URL must name its tool's locked version. Renovate's
 // hosted bot (Linux) can bump a tool's `version` in mise.lock and leave some or all platforms' URLs and checksums on
 // the previous release (2026-10-26: aws, flyctl, powershell, snyk, uv); mise then installs the old files under the
-// new version's name. Fix a failure on the Mac: `mise lock --global <tool>…`. Exit 1 on any mismatch.
+// new version's name. Fix a failure on your machine: `mise lock --global <tool>…`. Exit 1 on any mismatch.
 // Skipped: entries whose URLs name a build number rather than the version (the Android SDK).
 const fs = require('fs');
 const file = process.argv[2] || require('../../lib/config.js').instance('mise/mise.lock');
@@ -21,5 +21,5 @@ for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
   }
 }
 for (const b of bad) console.log(`  STALE ${b}`);
-console.log(bad.length ? `${bad.length} platform URL(s) don't name their locked version: run \`mise lock --global <tool>\` on the Mac` : 'mise.lock: every platform URL names its locked version');
+console.log(bad.length ? `${bad.length} platform URL(s) don't name their locked version: run \`mise lock --global <tool>\` on your machine` : 'mise.lock: every platform URL names its locked version');
 process.exitCode = bad.length ? 1 : 0;

@@ -174,8 +174,8 @@ test('send: the plan says which local files are new and which are deleted, so a 
   fs.writeFileSync(path.join(f.inst, 'mise', 'config.toml.bak-1'), 'a backup\n');
   const r = sync(f.inst);
   assert.equal(r.status, 0, r.stderr);
-  assert.match(r.stdout, /notes\.md +deleted on this Mac/);
-  assert.match(r.stdout, /mise\/config\.toml\.bak-1 +new on this Mac/);
+  assert.match(r.stdout, /notes\.md +deleted on this machine/);
+  assert.match(r.stdout, /mise\/config\.toml\.bak-1 +new on this machine/);
 });
 
 test('send: the plan lists every local file with the steward command behind it; nothing changes', () => {
@@ -190,13 +190,13 @@ test('send: the plan lists every local file with the steward command behind it; 
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /send +2 file\(s\) as a PR to o\/cfg\d+, on a new steward\/sync-<time> branch:/);
   assert.match(r.stdout, /mise\/mise\.lock +steward sc upgrade gh@2\.103\.2/);
-  assert.match(r.stdout, /supply-chain\/host\.toml +an edit on this Mac/);
-  assert.match(r.stdout, /this Mac stays on that branch until you merge the PR/);
+  assert.match(r.stdout, /supply-chain\/host\.toml +an edit on this machine/);
+  assert.match(r.stdout, /this machine stays on that branch until you merge the PR/);
   assert.equal(f.branch(), 'main');
   assert.equal(prs().length, 0);
 });
 
-test('send --apply: everything local goes on a new branch with a PR; main matches GitHub; this Mac stays on the branch', () => {
+test('send --apply: everything local goes on a new branch with a PR; main matches GitHub; this machine stays on the branch', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.inst, 'notes.md'), 'committed here\n'); git(f.inst, 'commit', '-qam', 'docs: a local commit');
   fs.writeFileSync(path.join(f.inst, 'supply-chain', 'host.toml'), 'always_current = ["x"]\n');
@@ -210,7 +210,7 @@ test('send --apply: everything local goes on a new branch with a PR; main matche
   const [pr] = prs().slice(-1);
   assert.equal(pr.base, 'main'); assert.equal(pr.state, 'OPEN');
   assert.match(pr.title, /^chore\(config\): changes from /);
-  assert.match(pr.body, /`supply-chain\/host\.toml` \| an edit on this Mac/);
+  assert.match(pr.body, /`supply-chain\/host\.toml` \| an edit on this machine/);
   assert.match(pr.body, /`new\.toml`/);
   assert.match(pr.body, /- \w{7} docs: a local commit/);
   assert.equal(git(f.inst, 'show', `${pr.head}:new.toml`), 'x = 1');
@@ -256,7 +256,7 @@ test('send: after the merge, sync switches back to main, fast-forwards and delet
   assert.match(r.stdout, /==> steward check/);
 });
 
-test('send --rollback: closes the open PR and puts this Mac back exactly as before; a closed PR says how', () => {
+test('send --rollback: closes the open PR and puts this machine back exactly as before; a closed PR says how', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.inst, 'notes.md'), 'committed\n'); git(f.inst, 'commit', '-qam', 'local commit');
   const origHead = f.head();
@@ -277,7 +277,7 @@ test('send --rollback: closes the open PR and puts this Mac back exactly as befo
   fs.writeFileSync(path.join(f.inst, 'notes.md'), 'again\n');
   sync(f.inst, ['--apply'], 'y\n');
   setPr(prs().slice(-1)[0].number, { state: 'CLOSED' });
-  assert.match(sync(f.inst).stderr, /was closed without merging\. To put this Mac back as before the send: steward config sync --rollback/);
+  assert.match(sync(f.inst).stderr, /was closed without merging\. To put this machine back as before the send: steward config sync --rollback/);
 });
 
 test('send needs a GitHub remote and a gh login; pulling needs neither', () => {
