@@ -1,0 +1,417 @@
+{
+ "name": "steward-vulns",
+ "title": "workstation-steward: known vulnerabilities, the fixes it can take, and a tool switched off",
+ "desc": "An illustrative session, looping, in three scenes; the commands and output are real, from one Mac on 2 November 2026, trimmed where a line says \"more\". steward sc vulns checks mise's tools, the packages inside them, Go programs by their module lists, Homebrew formulae through brew vulns, the npm -g packages and Node, and lists one row per tool with serious advisories: Homebrew formulae with no fixed release, and tools whose packages carry advisories that their next release fixes, Ruflo and Node's own npm among them. Three coverage lines say what it read: 38 of 66 mise tools, 68 of 92 Homebrew formulae, and that apps, the App Store, macOS updates and Docker images are not covered here. steward sc vulns-fix plans the fixes it can take: removing old, unused installs that carry serious advisories, while Homebrew formulae with no fixed release wait; plan only, it changes nothing. steward sc isolate plans switching gitnexus off with mise's own disable_tools setting, keeping it installed, with the command that switches it back on.",
+ "window": "steward — zsh",
+ "still": 0,
+ "scenes": [
+  [
+   {
+    "cmd": "steward sc vulns"
+   },
+   {
+    "segs": [
+     [
+      "steward sc vulns",
+      "fg",
+      true
+     ],
+     [
+      "                                                                               ",
+      "fg"
+     ],
+     [
+      "macos · 1 check",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "Known vulnerabilities     32 actions                                                                ",
+      "fg"
+     ],
+     [
+      "25.1s",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "brew espeak-ng             1.52.0         CVE-2023-49992 unknown, EPSS 35th percentile",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "brew jpeg-xl               0.12.0         OSV-2022-608 high",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "gitleaks                                  65 in 5 package(s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "npm -g ruflo                              11 in 4 package(s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "npm:gitnexus                              17 in 7 package(s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "k3d                                       42 in 9 package(s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "kubectl                                   9 in 3 package(s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "⚠",
+      "hold",
+      true
+     ],
+     [
+      "  ",
+      "fg"
+     ],
+     [
+      "node's npm                                6 in 2 package(s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "      … 24 more",
+    "color": "dim"
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "·",
+      "dim",
+      true
+     ],
+     [
+      " ",
+      "fg"
+     ],
+     [
+      "coverage: mise: 38 of 66 tools read (18 by package, 20 Go programs by their modules); 28 not covered",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "·",
+      "dim",
+      true
+     ],
+     [
+      " ",
+      "fg"
+     ],
+     [
+      "coverage: Homebrew: 68 of 92 formulae read (24 skipped: brew vulns --list-skipped); casks not covered",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "      ",
+      "fg"
+     ],
+     [
+      "·",
+      "dim",
+      true
+     ],
+     [
+      " ",
+      "fg"
+     ],
+     [
+      "coverage: apps, App Store, macOS updates, Docker images: not covered here (see steward sc audit)",
+      "dim"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "Summary",
+      "fg",
+      true
+     ],
+     [
+      "                                                                      32 action(s) · 0 alert(s) · 25.1s",
+      "dim"
+     ]
+    ]
+   }
+  ],
+  [
+   {
+    "cmd": "steward sc vulns-fix"
+   },
+   {
+    "segs": [
+     [
+      "",
+      "fg"
+     ],
+     [
+      "✓",
+      "ok",
+      true
+     ],
+     [
+      " ",
+      "fg"
+     ],
+     [
+      "[1/1] known vulnerabilities: installed and unused: 0 upgrade(s), 17 removal(s) (41s)",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "segs": [
+     [
+      "==>",
+      "blue",
+      true
+     ],
+     [
+      " steward sc vulns-fix: the plan",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  remove   gh@2.102.0 (unused: GO-2026-6603, GO-2026-6612 and 15 more)",
+    "color": "fg"
+   },
+   {
+    "out": "  remove   kubectl@1.37.1 (unused: GO-2026-6603, GO-2026-6612 and 16 more)",
+    "color": "fg"
+   },
+   {
+    "out": "  remove   terraform@1.16.6 (unused: GO-2026-6603, GO-2026-6612 and 12 more)",
+    "color": "fg"
+   },
+   {
+    "out": "  remove   npm:markdownlint-cli2@0.23.3 (unused: GHSA-r7fv-28h4-cvq7, GHSA-gfr2-rv44-r23c)",
+    "color": "fg"
+   },
+   {
+    "out": "  … 13 more",
+    "color": "dim"
+   },
+   {
+    "out": "  waits    brew espeak-ng 1.52.0: CVE-2023-49992, CVE-2023-49993 and 10 more: fixed upstream, unreleased",
+    "color": "fg"
+   },
+   {
+    "out": "  waits    brew jpeg-xl 0.12.0: OSV-2022-608, OSV-2022-725: no fixed release yet",
+    "color": "fg"
+   },
+   {
+    "out": "  waits    brew libssh2 1.11.1: OSV-2025-433: no fixed release yet",
+    "color": "fg"
+   },
+   {
+    "out": "  … 3 more",
+    "color": "dim"
+   },
+   {
+    "out": "plan only. Add --apply to do it (asks first).",
+    "color": "dim"
+   }
+  ],
+  [
+   {
+    "cmd": "steward sc isolate npm:gitnexus --why \"17 advisories inside, one critical; waits for a release\""
+   },
+   {
+    "segs": [
+     [
+      "==>",
+      "blue",
+      true
+     ],
+     [
+      " isolate npm:gitnexus: 17 advisories inside, one critical; waits for a release",
+      "fg"
+     ]
+    ]
+   },
+   {
+    "out": "  set [settings] disable_tools = [\"npm:gitnexus\"] in ~/.config/workstation-steward/mise/config.toml",
+    "color": "fg"
+   },
+   {
+    "out": "  then mise reshim; send the change with steward config sync",
+    "color": "dim"
+   },
+   {
+    "out": "  it stays installed; steward sc isolate --undo npm:gitnexus --apply switches it back on",
+    "color": "dim"
+   },
+   {
+    "out": "plan only. Add --apply to do it (asks first).",
+    "color": "dim"
+   }
+  ]
+ ]
+}
