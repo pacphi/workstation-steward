@@ -7,6 +7,7 @@ node = "26"
 npm = "latest"                             # the npm -g hybrids install with it (supply-chain/hybrids.toml)
 just = "latest"
 yq = "latest"
+jq = "latest"                              # the fleet and maintainer scripts (from mise on every platform, D69)
 gh = "latest"
 shellcheck = "latest"
 lychee = "latest"

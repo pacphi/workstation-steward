@@ -57,7 +57,7 @@
 # advisory = "https://github.com/advisories/GHSA-xxxx-xxxx-xxxx"
 # expires = "2026-11-03"                   # a week or so: by then the version is past the gate anyway
 
-# Known vulnerabilities (steward sc vulns, D69). The engine's feeds are osv, nodejs and kev (host-defaults.toml); add
+# Known vulnerabilities (steward sc vulns, D70). The engine's feeds are osv, nodejs and kev (host-defaults.toml); add
 # your own, replace one by name, or turn one off with [off] advisory_feed = ["kev"]. Feeds are data, never code.
 # [[advisory_feed]]
 # name = "ours"

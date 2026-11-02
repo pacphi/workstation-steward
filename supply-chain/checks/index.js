@@ -386,7 +386,7 @@ const CHECKS = [
     },
   },
   {
-    // Known vulnerabilities (D69, lib/vulns.js): what's installed against the [[advisory_feed]] feeds. High, critical,
+    // Known vulnerabilities (D70, lib/vulns.js): what's installed against the [[advisory_feed]] feeds. High, critical,
     // unrated and known-exploited findings are actions; the rest are listed. A package inside a tool is fixed by that
     // tool's next release, so a tool's serious ones make one action. A feed that couldn't be read is said, never clean
     id: 'vulns', name: 'Known vulnerabilities', platforms: ALL,

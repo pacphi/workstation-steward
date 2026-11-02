@@ -1,4 +1,4 @@
-// Tests for known vulnerabilities (lib/vulns.js, the audit's vulns check, steward sc vulns; D69): the inventory from
+// Tests for known vulnerabilities (lib/vulns.js, the audit's vulns check, steward sc vulns; D70): the inventory from
 // canned `mise ls --json` and throwaway install folders, every feed kind against canned answers, severity, the ignore
 // list, and how the review lifts the findings. No network: every fetch goes through ctx.run.
 // Run: just test
