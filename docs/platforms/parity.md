@@ -229,7 +229,7 @@ Stage: Under way (0.1 to 0.5, and 0.9, done).
   LiteLLM marker had never been checkable on a Mac (confirmed in the owner's terminal, macOS 27.2); the audit now says
   so. Python packages are also searched in `dist-packages` and the per-user folders on Linux and macOS. Every Linux row
   passes (423 of 424 each; the other is the macOS-only test, skipped).
-- [x] **0.5 Trust store, the finding half** (#PR, D68). The `trust` check runs on Linux too: the family's system CA
+- [x] **0.5 Trust store, the finding half** (#90, D68). The `trust` check runs on Linux too: the family's system CA
   bundle, then Linuxbrew's and Node's roots. A root still trusted is an action; a bundle that can't be found is a note.
   The Mac's audit is unchanged. **Found:** run with the engine's defaults in the test images, `emSign ECC Root CA - G3`
   is still trusted in the Fedora 44 and Tumbleweed images (p11-kit's `trust list` agrees), and not in Debian, Ubuntu or
@@ -398,7 +398,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-02 | 9 | 0.5 done: distrusted roots found on Linux (D68); emSign still trusted in the Fedora 44 and Tumbleweed images, the first cases for 2.1 | #PR |
+| 2026-11-02 | 9 | 0.5 done: distrusted roots found on Linux (D68); emSign still trusted in the Fedora 44 and Tumbleweed images, the first cases for 2.1 | #90 |
 | 2026-11-02 | 8 | 0.4 done: IOCs on every platform, the environment key, the coverage line, the rule (D67); macOS shows no process environment; 2.6 added for later | #89 |
 | 2026-11-02 | 7 | 0.3 done: the shell on GNU and busybox, no perl, no lsof on Linux (D66); every Linux row passes; jq joins the Linux prerequisites; the Mint image corrected; the RuVector add-on name moves to 0.7 | #88 |
 | 2026-11-02 | 6 | 0.9 done: local container tests (D65), the first Linux baseline, the libatomic finding; end-to-end runs added to each provider's checklist and the release bar | #87 |
