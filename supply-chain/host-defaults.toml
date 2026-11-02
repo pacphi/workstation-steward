@@ -87,7 +87,7 @@ match = "-----BEGIN PUBLIC KEY-----[\\s\\S]*?-----END PUBLIC KEY-----"
 sha256 = "ee12cea9da10accad46fe3a562fb392a54870576347ee99d87425d428709f103"
 watch = "https://raw.githubusercontent.com/stuinfla/ruvnet-brain/main/kb/forge-update.mjs"   # the maintainer's weekly watch
 
-# Where `steward sc vulns` (and the audit's vulns check) reads known vulnerabilities from (D69). Data, never code: each
+# Where `steward sc vulns` (and the audit's vulns check) reads known vulnerabilities from (D70). Data, never code: each
 # feed is a kind the engine knows how to read. Your host.toml adds one (an OSV mirror, or a folder of your own OSV
 # records), replaces one of these by name, or turns one off with [off] advisory_feed = ["kev"].
 #   osv-api  a server that speaks OSV's API; api.osv.dev carries the GitHub Advisory Database for npm, PyPI,
@@ -122,7 +122,7 @@ name = "endoflife"
 kind = "eol"                      # endoflife.date: a runtime, database or macOS past its end of life gets no fixes
 url = "https://endoflife.date/api"
 
-# How `steward sc vulns` judges and looks (D69). Your host.toml's [vulns] overrides any of these, key by key.
+# How `steward sc vulns` judges and looks (D70). Your host.toml's [vulns] overrides any of these, key by key.
 [vulns]
 action_severity = "high"          # a finding at or above this is an action (review and brief list it): low, moderate, high, critical
 unrated = "high"                  # the severity a finding nobody rated counts as
@@ -137,7 +137,7 @@ go_binaries = true                # read the module list Go programs carry (mise
 homebrew = true                   # Homebrew's own brew vulns for its formulae (Homebrew 7 or later)
 eol_severity = "high"             # the severity of a runtime or macOS past its end of life
 epss_action_percentile = 0        # 1-100: an EPSS percentile at or above this makes a finding an action; 0: ranking only
-# remediation: steward sc vulns-fix and steward sc isolate (D70)
+# remediation: steward sc vulns-fix and steward sc isolate (D71)
 fix_skip_gate = "serious"         # serious: vulns-fix pins a serious finding's fixed release though it's younger than the gate,
                                   # recording a security_exception; never: it waits for steward sc upgrade
 exception_days = 7                # how long that security_exception lasts (1 to 30)
