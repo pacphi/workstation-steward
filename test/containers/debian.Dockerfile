@@ -9,7 +9,7 @@ LABEL org.workstation-steward.test=1
 # Node 26's Linux binaries need libatomic, which minimal images leave out (found by the first run, 2026-11-02)
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      bash git python3 util-linux procps ca-certificates curl tar gzip xz-utils findutils passwd libatomic1 jq \
+      bash git python3 util-linux procps ca-certificates curl tar gzip xz-utils findutils passwd libatomic1 \
  && rm -rf /var/lib/apt/lists/*
 COPY install-mise.sh /tmp/install-mise.sh
 RUN sh /tmp/install-mise.sh && rm /tmp/install-mise.sh

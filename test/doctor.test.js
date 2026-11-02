@@ -75,11 +75,12 @@ test('doctor --install: the plan names the mise and brew commands and what is by
   const marker = path.join(fakePath(), 'ran');
   const p = fakePath(); // nothing present
   for (const c of ['mise', 'brew']) fs.writeFileSync(path.join(p, c), `#!/bin/sh\ntouch "${marker}"\n`, { mode: 0o755 });
-  // the Mac's plan (Homebrew's jq); Linux's is its own test below
+  // the Mac's plan; Linux's is its own test below. jq comes from mise everywhere (the owner, 2026-11-02)
   const r = doctor(['--install'], { PATH: p, STEWARD_DOCTOR_AS: 'macos' }, 'n\n');
   assert.equal(r.status, 2);
   assert.match(r.stdout, /\$ mise install yq/);
-  assert.match(r.stdout, /\$ brew install jq/);
+  assert.match(r.stdout, /\$ mise install jq/);
+  assert.doesNotMatch(r.stdout, /brew install jq/);
   assert.match(r.stdout, /by hand: git: xcode-select --install/);
   assert.equal(fs.existsSync(marker), false, 'nothing may run on "n"');
 });
@@ -129,13 +130,14 @@ test('doctor on Linux: no macOS-only entries; the OS, libatomic and sha256sum in
   assert.equal(j.find(x => x.name === 'Homebrew').need, 'optional');
 });
 
-test('doctor --install on Linux: a missing libatomic or jq is a by-hand sudo step with the family\'s command; sudo is never run', () => {
-  for (const [family, atomic, jq] of [['debian', 'sudo apt-get install libatomic1', 'sudo apt-get install jq'], ['rhel', 'sudo dnf install libatomic', 'sudo dnf install jq'], ['suse', 'sudo zypper install libatomic1', 'sudo zypper install jq']]) {
+test('doctor --install on Linux: a missing libatomic is a by-hand sudo step with the family\'s command; jq comes from mise; sudo is never run', () => {
+  for (const [family, atomic] of [['debian', 'sudo apt-get install libatomic1'], ['rhel', 'sudo dnf install libatomic'], ['suse', 'sudo zypper install libatomic1']]) {
     const s = standins('sh', 'git', 'sudo', 'mise', 'brew');
     const r = doctor(['--install'], { PATH: s.dir, STEWARD_DOCTOR_AS: `linux:${family}` }, 'y\n');
     assert.match(r.stdout, new RegExp(`MISSING +libatomic +required, from system: ${atomic}`), r.stdout);
     assert.ok(r.stdout.includes(`  by hand: libatomic: ${atomic}`), r.stdout);
-    assert.ok(r.stdout.includes(`  by hand: jq: ${jq}`), r.stdout);
+    assert.match(r.stdout, /\$ mise install jq/, 'jq from mise, no sudo');
+    assert.ok(!r.stdout.includes('by hand: jq'), r.stdout);
     assert.ok(!/^sudo /m.test(s.calls()), `sudo ran: ${s.calls()}`);
   }
 });

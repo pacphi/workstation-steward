@@ -28,9 +28,9 @@ Each step needs the one before it.
 3. `git clone` this repo, then `node bin/steward.js sc link`: point `~/.config/mise/` at this repo's `mise/config.toml`
    and `mise.lock`. Once `just` is installed (step 4), `just release-worktree <tag>` puts `steward` and `steward-dev` on
    your PATH (D41).
-4. `mise install`: installs every tool pinned in `mise/config.toml`: `node`, `just`, `yq`, `gh`, `shellcheck`, `lychee`,
-   `npm` and the rest.
-5. `brew install jq mas`. The fleet scripts need `jq`, and `mas` is optional. Docker Desktop is optional.
+4. `mise install`: installs every tool pinned in `mise/config.toml`: `node`, `just`, `yq`, `jq`, `gh`, `shellcheck`,
+   `lychee`, `npm` and the rest.
+5. `brew install mas`, which is optional, as is Docker Desktop.
 6. `gh auth login`, then `steward doctor`.
 
 ## The order on Linux
@@ -40,12 +40,12 @@ for running the engine from a clone. Install the system packages first, in one l
 
 | Family | One line |
 | --- | --- |
-| Debian, Ubuntu, Linux Mint | `sudo apt-get install git curl ca-certificates libatomic1 jq` |
-| Fedora | `sudo dnf install git-core curl ca-certificates libatomic jq` |
-| openSUSE | `sudo zypper install git-core curl ca-certificates libatomic1 jq` |
+| Debian, Ubuntu, Linux Mint | `sudo apt-get install git curl ca-certificates libatomic1` |
+| Fedora | `sudo dnf install git-core curl ca-certificates libatomic` |
+| openSUSE | `sudo zypper install git-core curl ca-certificates libatomic1` |
 
 > [!IMPORTANT]
-> Install `libatomic` before `mise install`. Node 26's Linux builds need it, and `steward doctor` can't tell you it's
+> Install `libatomic` before `mise install`, which brings `jq` with the rest of the toolchain. Node 26's Linux builds need it, and `steward doctor` can't tell you it's
 > missing, because Node won't start without it. Without it, `mise install` stops with:
 > `node: error while loading shared libraries: libatomic.so.1: cannot open shared object file: No such file or directory`
 
@@ -91,7 +91,7 @@ this Mac. The app does the real work on GitHub.
 | supply-chain | Docker | all | optional | manual | `steward sc audit` checks running images and IOC digests; skipped when Docker is not running | macos: `install Docker Desktop`; linux: `install Docker Engine: https://docs.docker.com/engine/install/` |
 | fleet | gh | all | required | mise | Every PR, review, issue and alert read; `steward review` and `steward fleet prune-merged` | `mise install gh` |
 | fleet | gh login | all | required | manual | GitHub is the source of record for alerts and updates; the weekly review and prune-merged need a logged-in gh | `gh auth login` |
-| fleet | jq | all | required | macos: brew; linux: system | The pr-consolidation scripts (lock-age, pr-status, merge-and-close …) and the release check parse gh and registry JSON | macos: `brew install jq`; debian: `sudo apt-get install jq`; rhel: `sudo dnf install jq`; suse: `sudo zypper install jq` |
+| fleet | jq | all | required | mise | The pr-consolidation scripts (lock-age, pr-status, merge-and-close …) and the release check parse gh and registry JSON. From mise on every platform, as yq and gh are | `mise install jq` |
 | dev | just | all | optional | mise | Developer tasks only: `just test`, `lint`, `docs`, `links`, `release-worktree`. The steward itself runs as `steward` | `mise install just` |
 | dev | shellcheck | all | optional | mise | `just lint` and the lock-age script check | `mise install shellcheck` |
 | dev | markdownlint-cli2 | all | optional | mise | `just docs` Markdown lint | `mise install npm:markdownlint-cli2` |
@@ -113,5 +113,3 @@ It never runs the Xcode tools, Homebrew itself, Docker or `gh auth login`. Those
 
 - **The npm -g hybrids** (Ruflo, AgentDB): `steward sc verify` checks them, and `steward sc install-hybrids` installs them.
 - **Per-project tools:** each project's own toolchain is its own repo's concern. See the repo's `AGENTS.md`.
-- **`jq`** comes from Homebrew today, not mise. Moving it into `mise/config.toml` would put it under the same pin and
-  release-age gate as the rest. That is a separate decision.

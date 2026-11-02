@@ -236,7 +236,7 @@ Stage: Under way (0.1 to 0.6, and 0.9, done).
   Leap.
 - [x] **0.6 `steward doctor` per platform** (#91, D69). Prerequisites say where they apply, and their hints come per
   family; the doctor never runs `sudo`. Linux adds `Linux`, `libatomic` (Node 26's x64 and arm64 builds both need it)
-  and `sha256sum`; `jq` comes from the family's package (owner, 2026-11-02). The Mac's `steward doctor` is
+  and `sha256sum`; `jq` comes from mise on every platform, as `yq` and `gh` do (owner, 2026-11-02). The Mac's `steward doctor` is
   byte-identical. Since the doctor can't report a missing `libatomic` (Node won't start), `docs/prereqs.md` gives a
   first-run order per family that installs it first.
 - [ ] **0.7 Words, and the RuVector add-on name** (moved from 0.3). `addon-check.js` names the add-on for this OS and
