@@ -309,9 +309,14 @@ const CHECKS = [
       if (!feeds.length) { out.action('vuln-feed: every advisory_feed is turned off in host.toml, so nothing was checked'); return; }
       detail(ctx, 'mise ls --json, and the packages inside each tool');
       const s = ctx.policy.vulns || V.SETTINGS;
-      const inv = await V.inventory(ctx, s);
+      const inv = await V.inventory(ctx, s, { say: t => detail(ctx, t) });
       const { findings, failed, checked } = await V.lookup(ctx, feeds, inv, t => detail(ctx, t), s);
       const serious = f => V.serious(f, s);
+      // the tools AI tooling owns: their fixes and any isolation are the ai-tooling skill's
+      const owned = ctx.aiOwned || (ctx.cfg.profiles && ctx.cfg.profiles.ai_tooling ? V.aiOwned(require('../../lib/config.js').policy('ai-tooling/ai-tooling.toml')) : []);
+      const isOwned = tool => owned.includes(tool) || owned.includes(tool.replace(/^npm -g /, ''));
+      // isolate(tool, list) — the isolate command when a finding in list is urgent and the tool may be isolated, else ''
+      const isolate = (tool, list) => (s.isolate_suggest && list.some(V.urgent) && !V.isolatable(tool, s, owned) ? `steward sc isolate ${tool}` : '');
       for (const f of failed) out.action(`vuln-feed: ${f.feed} not checked (${f.error}); what it would have found is missing`, { fix: 'check the network or the feed, then steward sc vulns', name: f.feed, note: 'not checked' });
       for (const e of ctx.policy.advisory_ignore || []) if (String(e.expires) < ctx.today) out.info(`advisory_ignore ${e.id} (${e.name} ${e.version}) expired ${e.expires}: shown again`);
       const shown = [];
@@ -324,8 +329,9 @@ const CHECKS = [
       const fixedText = f => (f.fixed ? `fixed in ${f.fixed}` : 'no fixed release yet');
       // the tool itself (and Node): one line each, with the command that takes the fix
       for (const f of shown.filter(f => f.pkg.top)) {
-        const cmd = V.fixCommand(f) || (f.fixed && f.pkg.tool.startsWith('npm -g ') ? 'steward sc install-hybrids (after its version in hybrids.toml)' : '');
-        const text = `vuln: ${f.pkg.tool} ${f.pkg.version}: ${label(f)}, ${fixedText(f)} ${f.url}${cmd ? `: ${cmd}` : ''}`;
+        const owner = isOwned(f.pkg.tool) ? '; AI tooling owns it (the ai-tooling skill)' : '';
+        const cmd = owner ? '' : V.fixCommand(f) || (f.fixed && f.pkg.tool.startsWith('npm -g ') ? 'steward sc install-hybrids (after its version in hybrids.toml)' : '') || isolate(f.pkg.tool, [f]);
+        const text = `vuln: ${f.pkg.tool} ${f.pkg.version}: ${label(f)}, ${fixedText(f)} ${f.url}${owner}${cmd ? `: ${cmd}` : ''}`;
         if (serious(f)) out.action(text, { fix: cmd || 'read the advisory: no fixed release yet', name: f.pkg.tool, have: f.pkg.version, want: f.fixed, note: label(f) });
         else out.info(text);
       }
@@ -336,9 +342,12 @@ const CHECKS = [
         const mine = inside.filter(f => f.pkg.tool === tool && serious(f));
         const ids = [...new Set(mine.map(f => f.id))];
         const pkgs = new Set(mine.map(f => `${f.pkg.name}@${f.pkg.version}`)).size;
-        out.action(`vuln: ${tool}: ${ids.length} serious advisor${ids.length === 1 ? 'y' : 'ies'} in ${pkgs} package(s) inside it (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? ` and ${ids.length - 3} more` : ''}); update it when a release carries the fixes (steward sc vulns --verbose lists them)`,
-          { fix: 'update the tool that bundles it, when a release carries the fix', name: tool, note: `${ids.length} in ${pkgs} package(s)` });
+        const owner = isOwned(tool) ? '; AI tooling owns it (the ai-tooling skill)' : '';
+        const iso = owner ? '' : isolate(tool, mine);
+        out.action(`vuln: ${tool}: ${ids.length} serious advisor${ids.length === 1 ? 'y' : 'ies'} in ${pkgs} package(s) inside it (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? ` and ${ids.length - 3} more` : ''}); update it when a release carries the fixes (steward sc vulns --verbose lists them)${owner}${iso ? `; exploited or critical with no fix: ${iso}` : ''}`,
+          { fix: iso || 'update the tool that bundles it, when a release carries the fix', name: tool, note: `${ids.length} in ${pkgs} package(s)` });
       }
+      if (shown.some(f => serious(f) && f.pkg.top && V.fixCommand(f) && !isOwned(f.pkg.tool))) out.line('steward sc vulns-fix takes every fix named above in one plan (and old installs that carry serious advisories)');
       if (inv.uncovered.length && s.list_not_covered) out.info(`not covered (no advisory ecosystem; not the same as clean): ${inv.uncovered.join(', ')}`);
       const nSerious = shown.filter(serious).length;
       const line = `${new Set(inv.packages.map(p => `${p.ecosystem}\0${p.name}\0${p.version}`)).size} package version(s) in ${inv.covered.length} tool(s), checked with ${checked.join(', ') || 'no feed'}: ${nSerious} serious (${s.action_severity} and up${s.exploited_always_action ? ', or exploited' : ''}), ${shown.length - nSerious} other`;

@@ -265,7 +265,8 @@ test('[vulns] settings: defaults, overrides key by key, and a wrong kind or unkn
   assert.equal(values.unrated, 'moderate');
   assert.equal(values.parallel, V.SETTINGS.parallel);
   assert.equal(values.inside_tools, true);
-  assert.deepEqual(problems, ['parallel must be a whole number from 1 to 32', 'inside_tools must be true or false', 'unknown key colour (action_severity, unrated, exploited_always_action, inside_tools, hybrids, list_not_covered, batch_size, parallel, timeout_seconds)']);
+  assert.deepEqual(problems.slice(0, 2), ['parallel must be a whole number from 1 to 32', 'inside_tools must be true or false']);
+  assert.match(problems[2], /^unknown key colour \(action_severity, unrated, .*isolate_ai_owned\)$/);
   const { policy, warnings } = H.merge({ vulns: { action_severity: 'high', batch_size: 500 } }, { vulns: { action_severity: 'moderate', batch_size: 0 } }, 'macos', null);
   assert.equal(policy.vulns.action_severity, 'moderate');
   assert.equal(policy.vulns.batch_size, 500);

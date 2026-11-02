@@ -182,6 +182,8 @@ const LONG = [
   ['lib/coarse.js', /^(?!\s*\/\/).*nodejs\.org\/dist\/index\.json'/, /\.stage\(/, 1],
   ['lib/vulns.js', /^(?!\s*\/\/).*\/querybatch`, body|\/vulns\/\$\{encodeURIComponent/, /\bsay\(/, 2],
   ['supply-chain/checks/index.js', /await V\.(inventory|lookup)\(/, /\bdetail\(ctx, |t => detail\(ctx, t\)/, 1],
+  ['supply-chain/bin/vulns-fix.js', /await ctx\.pinned\(|await V\.inventory\(ctx, s, \{ inactive/, /\bsay\(/, 1],
+  ['lib/vulns.js', /^(?!\s*\/\/).*\b(npmTree|sitePackages|walkNodeModules)\(i\.install_path|walkNodeModules\(dir\)\] : \[\]\)/, /o\.say\(|setImmediate/, 12],
 ];
 const GATES = ['g1', 'g2', 'g3g4', 'g5', 'g6', 'g7', 'g8', 'smoke'];
 

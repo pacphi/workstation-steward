@@ -118,3 +118,12 @@ list_not_covered = true           # list the tools no feed can check (not covere
 batch_size = 500                  # queries per OSV querybatch request (1 to 1000)
 parallel = 8                      # advisory records fetched at once (1 to 32)
 timeout_seconds = 60              # each request to a feed (5 to 600)
+# remediation: steward sc vulns-fix and steward sc isolate (D66)
+fix_skip_gate = "serious"         # serious: vulns-fix pins a serious finding's fixed release though it's younger than the gate,
+                                  # recording a security_exception; never: it waits for steward sc upgrade
+exception_days = 7                # how long that security_exception lasts (1 to 30)
+cleanup = true                    # vulns-fix also removes unused old installs that carry serious advisories
+cleanup_skip_soak = "serious"     # serious: that cleanup doesn't wait out the soak (those copies only); never: it waits
+isolate_suggest = true            # suggest steward sc isolate for a known-exploited finding, or a critical one with no fix
+isolate_never = ["node"]          # tools never isolated
+isolate_ai_owned = false          # whether isolate may switch off a tool AI tooling owns (its projects' launchers break)
