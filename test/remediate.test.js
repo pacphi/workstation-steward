@@ -296,5 +296,8 @@ test('remediation of the new sources: a malicious package is urgent; Homebrew an
   };
   const p = await F.plan(c);
   assert.ok(p.handed.some(h => h === 'brew tidy 5.8.0: CVE-2026-0009, fixed in 5.8.1: a security_exception of kind formula, then steward sc upgrade'), p.handed.join('\n'));
+  const out = [];
+  F.show({ ...p, cleanup: [{ tool: 't', version: '1', advisories: ['A', 'B', 'C', 'D', 'E'].map(id => ({ id })) }] }, x => out.push(x));
+  assert.ok(out.includes('  remove   t@1 (unused: A, B, C and 2 more)'), out.join('\n'));
   assert.ok(!p.upgrades.some(u => u.tool.startsWith('brew ')));
 });

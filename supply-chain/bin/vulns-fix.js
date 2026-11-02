@@ -28,6 +28,8 @@ const read = f => { try { return fs.readFileSync(f, 'utf8'); } catch { return nu
 const addDays = (day, n) => { const d = new Date(`${day}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const ownedBy = (owned, tool) => owned.includes(tool) || owned.includes(tool.replace(/^npm -g /, ''));
 const adv = f => ({ id: f.id, url: f.url, severity: f.severity, kev: f.kev });
+// few(ids) — up to three advisory ids, then how many more: a plan line fits a terminal
+const few = ids => { const u = [...new Set(ids)]; return u.length > 3 ? `${u.slice(0, 3).join(', ')} and ${u.length - 3} more` : u.join(', '); };
 
 // plan(ctx, {soakRunning}) — {upgrades, node, cleanup, exceptions, held, handed, failed}: what --apply would do and why
 // the rest waits. ctx: as the audit's (run, policy, today, say?, aiOwned?, pinned?(dirs) → Promise of the Set of those
@@ -43,7 +45,7 @@ async function plan(ctx, o = {}) {
 
   const look = await V.lookup(ctx, feeds, await V.inventory(ctx, s, { say }), say, s);
   p.failed.push(...look.failed);
-  const byTool = new Map();
+  const byTool = new Map(), brew = new Map();
   for (const f of live(look.findings)) {
     const tool = f.pkg.tool;
     if (!f.pkg.top) continue;   // inside a tool: that tool's next release (steward sc vulns lists them)
@@ -51,7 +53,8 @@ async function plan(ctx, o = {}) {
       if (f.fixed && (!p.node || V.cmpVer(f.fixed, p.node.version) > 0)) p.node = { have: f.pkg.version, version: f.fixed, advisories: [adv(f)] };
       continue;
     }
-    if (f.pkg.ecosystem === 'Homebrew') { p.handed.push(`${tool} ${f.pkg.version}: ${f.id}${f.fixed ? `, fixed in ${f.fixed}: a security_exception of kind formula, then steward sc upgrade` : f.upstream ? ': fixed upstream, in no release yet' : ': no fixed release yet'}`); continue; }
+    // a Homebrew formula: one line per formula, after the loop
+    if (f.pkg.ecosystem === 'Homebrew') { const b = brew.get(tool) || { tool, version: f.pkg.version, list: [] }; b.list.push(f); brew.set(tool, b); continue; }
     if (f.pkg.ecosystem === 'eol') { p.handed.push(`${tool} ${f.pkg.version}: past its end of life (${f.id}): move to a supported release${f.supported && f.supported.length ? ` (${f.supported.join(', ')})` : ''}; a major is deliberate`); continue; }
     if (f.pkg.via === 'go build info' && !V.fixCommand(f)) { p.held.push(`${tool} ${f.pkg.version}: ${f.id}${f.fixed ? `, fixed in ${f.fixed}` : ''}: its next release carries the fix (steward sc plan)`); continue; }
     if (V.nodeOwn(tool)) { p.handed.push(`${tool} ${f.pkg.version}: ${f.id}: it ships with Node; a Node release carries the fix`); continue; }
@@ -70,6 +73,12 @@ async function plan(ctx, o = {}) {
     if (V.cmpVer(f.fixed, u.version) > 0) u.version = f.fixed;
     u.advisories.push(adv(f));
     byTool.set(tool, u);
+  }
+  for (const b of brew.values()) {
+    const fixed = b.list.map(x => x.fixed).filter(Boolean).sort(V.cmpVer).pop();
+    const what = `${b.tool} ${b.version}: ${few(b.list.map(x => x.id))}`;
+    if (fixed) p.handed.push(`${what}, fixed in ${fixed}: a security_exception of kind formula, then steward sc upgrade`);
+    else p.held.push(`${what}: ${b.list.some(x => x.upstream) ? 'fixed upstream, in no release yet' : 'no fixed release yet'}`);
   }
   // a fix across a major (or a 0.x minor) is deliberate: handed over with its command unless [vulns] fix_majors = "take"
   for (const u of byTool.values()) {
@@ -108,7 +117,7 @@ async function plan(ctx, o = {}) {
 
 // show(p, write) — the plan as lines
 function show(p, write = s => console.log(s)) {
-  const ids = a => a.map(x => `${x.id}${x.kev ? ' (exploited)' : ''}`).join(', ');
+  const ids = a => few(a.map(x => `${x.id}${x.kev ? ' (exploited)' : ''}`));
   write('==> steward sc vulns-fix: the plan');
   for (const f of p.failed) write(`  not checked: ${f.feed} (${f.error}); what it would have found isn't in this plan`);
   for (const u of p.upgrades) write(`  upgrade  ${u.tool} ${u.have} -> ${u.version}${V.isMajor(u.have, u.version) ? ' (MAJOR)' : ''}  (${ids(u.advisories)}; skips the release-age gate)`);
