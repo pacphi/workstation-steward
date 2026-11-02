@@ -180,6 +180,7 @@ const LONG = [
   ['lib/coarse.js', /^(?!\s*\/\/).*= (onboard|offboard)\(r\.abs\)/, /\bst\.detail\(/, 8],
   ['lib/coarse.js', /^(?!\s*\/\/).*R\.all\(/, /\brs\.detail\(/, 0],
   ['lib/coarse.js', /^(?!\s*\/\/).*nodejs\.org\/dist\/index\.json'/, /\.stage\(/, 1],
+  ['tools/linux-test.js', /^(?!\s*\/\/)(?!.*\bfunction\b).*\b(buildArgs\(row, \{ tag|runArgs\(\{ tag)/, /\bstream\(.*, st, log\)/, 0],
 ];
 const GATES = ['g1', 'g2', 'g3g4', 'g5', 'g6', 'g7', 'g8', 'smoke'];
 
@@ -213,4 +214,13 @@ test('tools/progress-gaps.js runs read-only by default: writing commands only un
   assert.throws(() => G.args(['steward sc status']), /after --/);
   assert.equal(G.args([]).cmds, G.DEFAULTS);
   assert.throws(() => G.args(['--gap', 'x']), /--gap/);
+});
+
+test('progress: a stage that failed ends with ✗ and its summary, never ✓ (parity 0.9: a failed image build showed ✓)', () => {
+  const js = `const { progress } = require(${JSON.stringify(path.join(REPO, 'lib', 'progress.js'))}); const pg = progress(2); pg.stage('build').fail('FAILED (exit 1)'); pg.stage('tests').done('ok');`;
+  const r = spawnSync(process.execPath, ['-e', js], { encoding: 'utf8', env: { ...process.env, NO_PROGRESS: '' } });
+  assert.equal(r.status, 0, r.stderr);
+  const lines = r.stderr.split('\n').filter(Boolean);
+  assert.match(lines[1], /^✗ \[1\/2\] build: FAILED \(exit 1\) \(\d+s\)$/);
+  assert.match(lines[3], /^✓ \[2\/2\] tests: ok \(\d+s\)$/);
 });

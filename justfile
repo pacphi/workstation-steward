@@ -114,5 +114,14 @@ progress-gaps *args:
     node tools/progress-gaps.js {{args}}
 
 # Run every test: the merge rules and writers, then onboarding and offboarding end to end on throwaway repos
+# Linux: run the tests in a throwaway container per distribution, no network (test/containers/matrix.json; parity 0.9).
+# Rows: debian, ubuntu, fedora, leap, tumbleweed, or all. Logs: ~/.local/state/workstation-steward/linux-test/
+linux-test *args:
+    node tools/linux-test.js run {{args}}
+
+# Remove what linux-test made: only labelled containers, images, volumes and networks (asks first); --cache: the build cache too
+linux-clean *args:
+    node tools/linux-test.js clean {{args}}
+
 test:
     node --test test/

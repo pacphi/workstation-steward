@@ -1,0 +1,24 @@
+{
+  "about": "The Linux rows for local container tests (just linux-test, tools/linux-test.js) and, later, the CI matrix (parity T.1). One row per distribution the Linux release needs (R-1), its newest release for now (owner, 2026-11-01); each provider PR adds the oldest supported release (D-c). Every image is pinned by tag and digest; Renovate updates them behind the release-age gate. mise is the version the CI workflows pin, checked by its release's sha256.",
+  "rows": [
+    { "id": "debian", "family": "debian", "role": "newest", "image": "debian:13@sha256:2dc419c6d7fe3dad0a2f9fd469c34cc90b0f9ba642d8fde837fe3d7d34a0e7f1" },
+    { "id": "ubuntu", "family": "debian", "role": "newest", "image": "ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c" },
+    { "id": "fedora", "family": "rhel", "role": "newest", "image": "fedora:44@sha256:43b29f65a41eb9c35e1cd5323e3bdf3b655c2357a9f4f1ff2f9c2798e5045d80" },
+    { "id": "leap", "family": "suse", "role": "newest", "image": "opensuse/leap:16.0@sha256:952857883a24c24a64c8bc67d7d1a8f9d4800ad4fbe075fc4566ff9af706cb8b" },
+    {
+      "id": "tumbleweed", "family": "suse", "role": "rolling", "image": "opensuse/tumbleweed:latest@sha256:0afa1776a6caada91802c6866df7b09edabe248876baf79a1a99918b377ca08c",
+      "gate_exception": {
+        "why": "Tumbleweed's only multi-arch image is latest, rebuilt daily; its dated snapshots that pass the gate have no arm64 build. This digest was pushed 2026-11-01T12:16Z and clears the 3-day gate on its own on 2026-11-04.",
+        "decided": "owner, 2026-11-02",
+        "expires": "2026-11-05"
+      }
+    }
+  ],
+  "mise": {
+    "version": "2026.10.21",
+    "sha256": {
+      "arm64": "1c05e4d4baaf1b4a9bf929e9c39b3512deb937c8d4c1bd52927499624018834f",
+      "x64": "f56cc56b462eaae60aa7a33dffd24f641847b52e098b69e4a5064c4b8bbe03cb"
+    }
+  }
+}

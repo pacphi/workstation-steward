@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "The engine repo's own dependencies: GitHub Actions, pinned by commit SHA with a version comment, the example toolchain (examples/mise/config.toml), and the dev-only type definitions in tools/types/package.json (@types/node, D45), under the same rules users get (renovate/steward.json). package.json has no dependencies. A config repo extends renovate/steward.json at a release tag instead of this file. (In a checkout that is also an instance, the root renovate.json wins and this file is not read.)",
+  "description": "The engine repo's own dependencies: GitHub Actions, pinned by commit SHA with a version comment, the example toolchain (examples/mise/config.toml), the Linux test images (test/containers/matrix.json, parity 0.9), and the dev-only type definitions in tools/types/package.json (@types/node, D45), under the same rules users get (renovate/steward.json). package.json has no dependencies. A config repo extends renovate/steward.json at a release tag instead of this file. (In a checkout that is also an instance, the root renovate.json wins and this file is not read.)",
   "extends": [
     "config:recommended",
     "helpers:pinGitHubActionDigests",
@@ -9,7 +9,8 @@
   "enabledManagers": [
     "github-actions",
     "mise",
-    "npm"
+    "npm",
+    "custom.regex"
   ],
   "packageRules": [
     {
@@ -21,6 +22,34 @@
         "ci"
       ],
       "groupName": null
+    },
+    {
+      "description": "Linux test images: digest updates only, within the tag (a new distribution release is added deliberately, per D-c)",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchFileNames": [
+        "test/containers/matrix.json"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor",
+        "patch"
+      ],
+      "enabled": false
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "The Linux test images in test/containers/matrix.json: each is pinned by tag and digest; a new digest (or tag) waits out the same 3-day gate (parity 0.9)",
+      "managerFilePatterns": [
+        "/^test/containers/matrix\\.json$/"
+      ],
+      "matchStrings": [
+        "\"image\": \"(?<depName>[a-z0-9./-]+):(?<currentValue>[\\w.-]+)@(?<currentDigest>sha256:[0-9a-f]{64})\""
+      ],
+      "datasourceTemplate": "docker"
     }
   ]
 }

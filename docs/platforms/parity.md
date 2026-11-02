@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 5](https://img.shields.io/badge/Revision-5-green) ![Revised 2026-11-01](https://img.shields.io/badge/Revised-2026--11--01-green)
+![Revision 6](https://img.shields.io/badge/Revision-6-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -40,12 +40,12 @@ combination we claim.
 
 | Milestone | What it delivers | Stage | Done |
 | --- | --- | --- | --- |
-| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 2 / 9 |
+| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 3 / 9 |
 | [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Not started | 0 / 10 |
 | [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 5 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
 | [Testing](#testing-the-ci-matrix-and-install-checks) | A CI row and an install-check row for every combination we claim | Not started | 0 / 7 |
-| [The Linux release](#the-linux-release-the-bar) | 0.11.0: Milestone 0, apt, dnf and zypper at full parity | Not started | 0 / 7 |
+| [The Linux release](#the-linux-release-the-bar) | 0.11.0: Milestone 0, apt, dnf and zypper at full parity | Not started | 0 / 8 |
 | [Decisions](#decisions) | The choices the work depends on | All made | 12 / 12 |
 
 ## How to use this ledger
@@ -125,6 +125,7 @@ ticked.
 - [ ] **CI green** on the oldest and newest supported release of Debian, Ubuntu, Linux Mint, Fedora, openSUSE Leap
   and Tumbleweed.
 - [ ] **Install check, worktree mode,** from the release commit on every one of those rows (T.7).
+- [ ] **End-to-end runs** (`--e2e`) pass for apt, dnf and zypper.
 - [ ] **Say it:** `package.json` `os` adds `linux`, and the README and [`../lifecycle.md`](../lifecycle.md#platforms)
   say the steward runs on Linux with apt, dnf and zypper.
 - [ ] **Release,** then the install check in npm mode on every row before the release is announced. A failure there is
@@ -190,7 +191,7 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 before. **Done when:** `steward sc plan` and `steward sc audit` run clean on `ubuntu-latest` with Linuxbrew, and the
 Mac's output before and after is identical.
 
-Stage: Under way (0.1 and 0.2 done).
+Stage: Under way (0.1, 0.2 and 0.9 done).
 
 - [x] **0.1 Know the platform** (#84, D63). `lib/platform.js` reads `/etc/os-release` (`ID`, `ID_LIKE`, `VERSION_ID`) and returns
   the platform, distribution and family; NixOS by `ID=nixos`. `host.toml` entries take the optional `families` key
@@ -216,13 +217,15 @@ Stage: Under way (0.1 and 0.2 done).
 - [ ] **0.5 Trust store, the finding half.** The PEM-bundle and Node-roots checks leave the macOS-only trust check, so
   Linux reports distrusted roots from the start.
 - [ ] **0.6 `steward doctor` per platform.** Each prerequisite says which platforms need it. Today `sw_vers`,
-  `security`, `softwareupdate`, `mas` and Homebrew are required everywhere. Install hints come per family.
+  `security`, `softwareupdate`, `mas` and Homebrew are required everywhere. Install hints come per family. On Linux,
+  `libatomic` is a prerequisite: Node 26's arm64 binary needs `libatomic.so.1`, which minimal installs leave out (found
+  by 0.9's first run, 2026-11-02).
 - [ ] **0.7 Words.** "This Mac" and macOS-only fix text become platform-aware in the review, the audit, the briefing,
   the guards and the package description.
 - [ ] **0.8 Ready to package for Linux, and the first Linux CI row.** Publishing no longer needs macOS, and Tests run on
   `ubuntu-latest` too. `package.json` `os` keeps only `darwin` until [the bar](#the-linux-release-the-bar) is met
   (R-3), so a release before then stays Mac-only.
-- [ ] **0.9 Test each distribution locally, in containers** (owner, 2026-11-01). `just linux-test <distro|all>`
+- [x] **0.9 Test each distribution locally, in containers** (#87, D65; owner, 2026-11-01). `just linux-test <distro|all>`
   builds one image per distribution from a base pinned by digest (Renovate keeps it current, behind the gate), with
   bash, git, just and Node 26. It runs `just test` on a read-only copy of the checkout as a non-root user, with no
   network, in a container removed after the run (`--rm`). Results go to a file under the state folder;
@@ -230,7 +233,24 @@ Stage: Under way (0.1 and 0.2 done).
   It adds to the CI matrix and never replaces it: every supported distribution still gets its CI job on every PR, and
   its install-check row (owner, 2026-11-01).
   Containers run arm64 on an Apple-silicon Mac (x64 by emulation) and have no systemd, so the NixOS VM stays in CI.
-  Built right after 0.2.
+  Linux Mint has no official image, so its Ubuntu base stands in locally; Mint gets its own CI row. Tumbleweed's row
+  pins a `latest` digest under a recorded gate exception (owner, 2026-11-02; expires 2026-11-05): its dated snapshots
+  that pass the gate have no arm64 build.
+
+**The first Linux baseline** (`just linux-test all`, 2026-11-02, arm64): the work list for 0.3 to 0.8.
+
+| Row | Pass | Fail |
+| --- | --- | --- |
+| Debian 13 | 386 / 403 | 16 |
+| Ubuntu 26.04 | 387 / 403 | 15 |
+| Fedora 44 | 384 / 403 | 18 |
+| openSUSE Leap 16.0 | 386 / 403 | 16 |
+| openSUSE Tumbleweed | 386 / 403 | 16 |
+
+- On every row (15): mostly `mktemp -t` in `lib/lib.sh`, through `quiet` and `run_shown`: verify, `upgrade-tool`,
+  `install-hybrids`, lock-age and the release check. Offboarding needs `lsof`. All are 0.3.
+- On some rows (4): the declared-updater apply (Fedora, Leap, Tumbleweed); the AQE gates' `mark()` and a `run_shown`
+  dry run (Fedora); the refresh time cap (Debian, perhaps timing). 0.3 looks into each.
 
 ## Milestone 1: Linux, one package manager at a time
 
@@ -251,6 +271,10 @@ fully supported providers; then the best-effort ones (owner, 2026-10-31 and 2026
 - `steward doctor` install hints;
 - a CI row for the oldest and newest supported release;
 - an install-check row;
+- an end-to-end run in a container, `just linux-test <id> --e2e` (owner, 2026-11-02): network on, older packages
+  seeded, then `steward sc plan` (its takes and holds checked against the real repo dates), `steward sc upgrade` with
+  the test playing the user for the root hand-off (D-b), verify, and rollback where the manager has one. Run before
+  the provider is ticked, not on every PR;
 - docs and a D-row.
 
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
@@ -340,6 +364,7 @@ in the PR that relies on it.
 - [ ] `dnf history undo` on dnf5; the pacman cache and snapper as ways back.
 - [ ] How each family denies a root: `update-ca-certificates`, `update-ca-trust`, p11-kit's blocklist.
 - [ ] The oldest glibc Node 26's Linux binaries need, and mise's.
+- [x] Node 26's Linux arm64 binary needs `libatomic.so.1` (seen on all five rows of 0.9's first run, 2026-11-02).
 - [ ] Node 26 on Alpine: official tarballs have no musl build, and Alpine's package may be older than 26.
 - [ ] mise on NixOS: in nixpkgs; the tools it downloads need `nix-ld`.
 - [ ] GitHub's arm64 Linux runners for public repos, and `/dev/kvm` on `ubuntu-latest`.
@@ -349,6 +374,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-02 | 6 | 0.9 done: local container tests (D65), the first Linux baseline, the libatomic finding; end-to-end runs added to each provider's checklist and the release bar | #87 |
 | 2026-11-01 | 5 | 0.2 done: package sources with one contract, judged in one place (D64) | #86 |
 | 2026-11-01 | 4 | The Linux release bar (R-1 to R-3): apt, dnf and zypper first; 0.8 keeps `os` Mac-only until the bar; T.7 install check from a commit | #84 |
 | 2026-11-01 | 3 | 0.1 done: the distribution and family from os-release, and `host.toml`'s `families` key (D63); 0.9 added: local container tests; Milestone 0 under way | #84 |
