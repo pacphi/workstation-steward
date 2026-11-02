@@ -13,7 +13,8 @@
 # source = "https://…"
 # files = ["/tmp/marker"]
 # site_packages_files = []
-# processes = ["bad-process"]
+# processes = ["bad-process"]          # a word in a process's command line
+# environment = ["BAD_MARKER"]         # a variable in a process's environment (Linux; macOS shows none, D67)
 # docker_digests = []
 
 # Turn defaults off, by name or value (the audit flags one that matches no default, likely a typo).

@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 7](https://img.shields.io/badge/Revision-7-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 8](https://img.shields.io/badge/Revision-8-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -40,9 +40,9 @@ combination we claim.
 
 | Milestone | What it delivers | Stage | Done |
 | --- | --- | --- | --- |
-| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 4 / 9 |
+| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 5 / 9 |
 | [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Not started | 0 / 10 |
-| [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 5 |
+| [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 6 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
 | [Testing](#testing-the-ci-matrix-and-install-checks) | A CI row and an install-check row for every combination we claim | Not started | 0 / 7 |
 | [The Linux release](#the-linux-release-the-bar) | 0.11.0: Milestone 0, apt, dnf and zypper at full parity | Not started | 0 / 8 |
@@ -191,7 +191,7 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 before. **Done when:** `steward sc plan` and `steward sc audit` run clean on `ubuntu-latest` with Linuxbrew, and the
 Mac's output before and after is identical.
 
-Stage: Under way (0.1, 0.2, 0.3 and 0.9 done).
+Stage: Under way (0.1, 0.2, 0.3, 0.4 and 0.9 done).
 
 - [x] **0.1 Know the platform** (#84, D63). `lib/platform.js` reads `/etc/os-release` (`ID`, `ID_LIKE`, `VERSION_ID`) and returns
   the platform, distribution and family; NixOS by `ID=nixos`. `host.toml` entries take the optional `families` key
@@ -223,8 +223,12 @@ Stage: Under way (0.1, 0.2, 0.3 and 0.9 done).
   - [ ] Still open: the RuVector add-on check names `ruvector-core-darwin-arm64` (`supply-chain/bin/addon-check.js`)
     rather than the add-on for this platform. It runs only with the AI tooling add-on, so no test caught it; it moves
     with 0.7.
-- [ ] **0.4 Indicators of compromise on Linux.** `ps` per flavor (BSD, procps, busybox), `/proc` where `ps` can't show
-  the environment, and Linux paths.
+- [x] **0.4 Indicators of compromise on every platform** (#PR, D67). Linux lists processes from `/proc` (minimal
+  installs have no `ps`); IOCs gain an `environment` list apart from `processes`; the sweep opens with a coverage line;
+  "couldn't look" is never "clean" (owner, 2026-11-02). Found on the way: **macOS shows no process environment**, so the
+  LiteLLM marker had never been checkable on a Mac (confirmed in the owner's terminal, macOS 27.2); the audit now says
+  so. Python packages are also searched in `dist-packages` and the per-user folders on Linux and macOS. Every Linux row
+  passes (423 of 424 each; the other is the macOS-only test, skipped).
 - [ ] **0.5 Trust store, the finding half.** The PEM-bundle and Node-roots checks leave the macOS-only trust check, so
   Linux reports distrusted roots from the start.
 - [ ] **0.6 `steward doctor` per platform.** Each prerequisite says which platforms need it. Today `sw_vers`,
@@ -316,6 +320,8 @@ Stage: Not started.
 - [ ] **2.3 Vendored Node on Linux:** Linux paths in the engine's `vendored_node` defaults.
 - [ ] **2.4 Browsers kept current on Linux:** Linux names in the engine's `always_current` defaults.
 - [ ] **2.5 Indicators of compromise:** Linux locations added to the engine's defaults as advisories name them.
+- [ ] **2.6 An optional endpoint source, later** (owner, 2026-11-02): for what `ps` can't see on macOS (process
+  environments), an opt-in source such as osquery, installed and gated like any other tool. Nothing built yet.
 
 ## Milestone 3: NixOS
 
@@ -388,6 +394,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-02 | 8 | 0.4 done: IOCs on every platform, the environment key, the coverage line, the rule (D67); macOS shows no process environment; 2.6 added for later | #PR |
 | 2026-11-02 | 7 | 0.3 done: the shell on GNU and busybox, no perl, no lsof on Linux (D66); every Linux row passes; jq joins the Linux prerequisites; the Mint image corrected; the RuVector add-on name moves to 0.7 | #88 |
 | 2026-11-02 | 6 | 0.9 done: local container tests (D65), the first Linux baseline, the libatomic finding; end-to-end runs added to each provider's checklist and the release bar | #87 |
 | 2026-11-01 | 5 | 0.2 done: package sources with one contract, judged in one place (D64) | #86 |
