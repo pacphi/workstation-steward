@@ -16,6 +16,11 @@ where to look instead. Built (D65, D66).
 In Claude Code, ask in your own words: the supply-chain skill runs these for you (*"Is anything I have vulnerable?"*,
 *"Any known CVEs in my tools?"*), and asks before anything that writes.
 
+The session below is illustrative: the commands and output are real, from one Mac on 2 November 2026, trimmed where a
+line says "more".
+
+![steward sc vulns lists one row per tool with serious advisories (Homebrew formulae with no fixed release; gitleaks, Ruflo, gitnexus, k3d, kubectl and Node's own npm, whose packages carry advisories their next release fixes), then three coverage lines: 38 of 66 mise tools read, 68 of 92 Homebrew formulae read, and apps, the App Store, macOS updates and Docker images not covered here. steward sc vulns-fix plans removing old, unused installs that carry serious advisories, while Homebrew formulae with no fixed release wait; plan only. steward sc isolate plans switching gitnexus off with mise's disable_tools setting, keeping it installed, with the command that switches it back on](assets/steward-vulns.svg)
+
 ## What it checks
 
 Each source says what is installed, as a [Package-URL](https://github.com/Ecma-TC54/ECMA-427/) (ECMA-427), and how
