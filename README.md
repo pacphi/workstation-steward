@@ -216,8 +216,9 @@ sessions to watch: an advisory check, setting up a new repo, and the AI tooling.
 
 | Doc | What it covers |
 | --- | --- |
-| [The film](https://pacphi.github.io/workstation-steward/) | The whole story in nine interactive acts: the gate, the pilot that comes aboard in Claude Code, the berths, and how to start ([`docs/explainer.html`](docs/explainer.html)) |
+| [The film](https://pacphi.github.io/workstation-steward/) | The whole story in ten interactive acts: the gate, the storm warnings, the pilot that comes aboard in Claude Code, the berths, and how to start ([`docs/explainer.html`](docs/explainer.html)) |
 | [`docs/guide.md`](docs/guide.md) | Why the steward exists, the first run, and a normal week |
+| [`docs/vulnerabilities.md`](docs/vulnerabilities.md) | Known vulnerabilities in what you install: what's checked, the fixes it takes with one yes, switching a tool off, and every exception |
 | [`docs/briefing.md`](docs/briefing.md) | `steward brief`: the one next step, what it checks, and how to add a check |
 | [`docs/lifecycle.md`](docs/lifecycle.md) | Install, upgrade, config formats, rollback, the two channels, and the promises behind them |
 | [`docs/architecture.md`](docs/architecture.md) | How it's built, and every design decision with its reason |

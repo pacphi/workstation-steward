@@ -46,8 +46,11 @@ arguments are the request itself.
 - **`vulns`:** known-exploited findings first, then the other ACTION lines: a tool's own advisory (with the command
   that takes its fix), then each tool whose packages carry serious ones (its next release fixes them; `--verbose`
   lists them). Link each advisory (osv.dev). Say plainly what was **not checked** (a feed with no answer) and what
-  is **not covered** (tools no feed can check): neither is clean. Name a tool AI tooling owns as the `ai-tooling`
-  skill's. Lower findings and silenced ones (`advisory_ignore`, with their expiry) go last, in one line each.
+  is **not covered** (the coverage lines): neither is clean. Say where to look for what isn't covered
+  (the runbook's Known vulnerabilities, step 5). A **malicious package** (`MAL-`) goes first of all. Name a tool AI tooling owns as the `ai-tooling`
+  skill's. Lower findings and silenced ones (`advisory_ignore`, with their expiry) go last, in one line each. Then
+  offer the next step: `steward sc vulns-fix` (its plan) when a line names a fix or an old install, or
+  `steward sc isolate <tool>` when a line suggests it.
 
 End with the next step the user might want, and don't take it without their yes.
 
@@ -56,7 +59,7 @@ End with the next step the user might want, and don't take it without their yes.
 | Step | Approval |
 | --- | --- |
 | Read-only commands: `audit`, `plan` (its old name `status` still works), `verify`, `vulns`, `DRY_RUN=1 …` | Not needed. Run them freely and report what they show. |
-| Changing commands: `upgrade`, `upgrade-tool`, `node-patch`, `install-hybrids`, `retire-hybrid`, `prune`, `rollback`, `link` | Show the dry run and get the user's yes for *that* step. An approval covers one step, not the next. Each asks its own [y/N], which gets no answer from your shell: after the user's yes, run `sc upgrade`, `node-patch`, `install-hybrids` or `prune` with `--unattended --yes-to <its class>` (`steward help <command>` names it); hand the others to the user's terminal. |
+| Changing commands: `upgrade`, `upgrade-tool`, `node-patch`, `install-hybrids`, `retire-hybrid`, `prune`, `rollback`, `link`, `vulns-fix`, `isolate` | Show the dry run (for `vulns-fix` and `isolate`, the run without `--apply`) and get the user's yes for *that* step. An approval covers one step, not the next. Each asks its own [y/N], which gets no answer from your shell: after the user's yes, run `sc upgrade`, `node-patch`, `install-hybrids`, `prune`, `vulns-fix --apply` or `isolate … --apply` with `--unattended --yes-to <its class>` (`steward help <command>` names it); hand the others to the user's terminal. |
 | `steward upgrade`: a Node security release (`sc node-patch`) or hybrids out of step (`sc install-hybrids`) when there is one, then `sc upgrade`, with one yes | Show `DRY_RUN=1 steward upgrade` (every part's plan) and ask once. After the user's yes: `steward upgrade --unattended --yes-to upgrade`, adding `--yes-to node-patch` or `--yes-to install-hybrids` only when the plan shows that part. |
 | Commit, push, PR, merge | Ask first. Merging uses the full 40-character head SHA. |
 | Policy edits (`host.toml` exceptions, IOCs, distrusted roots, trust excludes, `advisory_ignore`, `advisory_feed`, `[vulns]`) | Show the entry and its primary-source evidence, then ask. |

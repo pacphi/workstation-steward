@@ -399,6 +399,11 @@ const CHECKS = [
       const inv = await V.inventory(ctx, s, { say: t => detail(ctx, t) });
       const { findings, failed, checked } = await V.lookup(ctx, feeds, inv, t => detail(ctx, t), s);
       const serious = f => V.serious(f, s);
+      // the tools AI tooling owns: their fixes and any isolation are the ai-tooling skill's
+      const owned = ctx.aiOwned || (ctx.cfg.profiles && ctx.cfg.profiles.ai_tooling ? V.aiOwned(require('../../lib/config.js').policy('ai-tooling/ai-tooling.toml')) : []);
+      const isOwned = tool => owned.includes(tool) || owned.includes(tool.replace(/^npm -g /, ''));
+      // isolate(tool, list) — the isolate command when a finding in list is urgent and the tool may be isolated, else ''
+      const isolate = (tool, list) => (s.isolate_suggest && list.some(V.urgent) && !V.isolatable(tool, s, owned) ? `steward sc isolate ${tool}` : '');
       for (const f of failed) out.action(`vuln-feed: ${f.feed} not checked (${f.error}); what it would have found is missing`, { fix: 'check the network or the feed, then steward sc vulns', name: f.feed, note: 'not checked' });
       for (const e of ctx.policy.advisory_ignore || []) if (String(e.expires) < ctx.today) out.info(`advisory_ignore ${e.id} (${e.name} ${e.version}) expired ${e.expires}: shown again`);
       const shown = [];
@@ -420,9 +425,10 @@ const CHECKS = [
         const f = mine[0];
         const fixed = mine.map(x => x.fixed).filter(Boolean).sort(V.cmpVer).pop() || '';
         const g = { ...f, fixed, upstream: !fixed && mine.some(x => x.upstream) };
-        const cmd = how(g);
+        const owner = V.nodeOwn(tool) ? '; it ships with Node: a Node release carries the fix (steward sc plan)' : isOwned(tool) ? '; AI tooling owns it (the ai-tooling skill)' : '';
+        const cmd = owner ? '' : how(g) || isolate(tool, mine);
         const more = mine.length > 1 ? ` and ${mine.length - 1} more (${mine.slice(1, 4).map(x => x.id).join(', ')}${mine.length > 4 ? ', …' : ''})` : '';
-        const text = `vuln: ${tool} ${f.pkg.version}: ${label(f)}${more}, ${fixedText(g)} ${f.url}${cmd ? `: ${cmd}` : ''}`;
+        const text = `vuln: ${tool} ${f.pkg.version}: ${label(f)}${more}, ${fixedText(g)} ${f.url}${owner}${cmd ? `: ${cmd}` : ''}`;
         if (mine.some(serious)) out.action(text, { fix: cmd || (f.pkg.ecosystem === 'eol' ? 'move to a supported release (a major is deliberate)' : 'read the advisory: no fixed release yet'), name: tool, have: f.pkg.version, want: fixed, note: label(f) });
         else out.info(text);
       }
@@ -433,9 +439,13 @@ const CHECKS = [
         const mine = inside.filter(f => f.pkg.tool === tool && serious(f));
         const ids = [...new Set(mine.map(f => f.id))];
         const pkgs = new Set(mine.map(f => `${f.pkg.name}@${f.pkg.version}`)).size;
-        out.action(`vuln: ${tool}: ${ids.length} serious advisor${ids.length === 1 ? 'y' : 'ies'} in ${pkgs} package(s) inside it (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? ` and ${ids.length - 3} more` : ''}); update it when a release carries the fixes (steward sc vulns --verbose lists them)`,
-          { fix: 'update the tool that bundles it, when a release carries the fix', name: tool, note: `${ids.length} in ${pkgs} package(s)` });
+        const owner = isOwned(tool) ? '; AI tooling owns it (the ai-tooling skill)' : '';
+        const iso = owner || V.nodeOwn(tool) ? '' : isolate(tool, mine);
+        const when = V.nodeOwn(tool) ? 'it ships with Node: a Node release carries the fixes (steward sc plan)' : 'update it when a release carries the fixes';
+        out.action(`vuln: ${tool}: ${ids.length} serious advisor${ids.length === 1 ? 'y' : 'ies'} in ${pkgs} package(s) inside it (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? ` and ${ids.length - 3} more` : ''}); ${when} (steward sc vulns --verbose lists them)${owner}${iso ? `; exploited or critical with no fix: ${iso}` : ''}`,
+          { fix: iso || 'update the tool that bundles it, when a release carries the fix', name: tool, note: `${ids.length} in ${pkgs} package(s)` });
       }
+      if (shown.some(f => serious(f) && f.pkg.top && V.fixCommand(f) && !isOwned(f.pkg.tool))) (out.note || out.line)('steward sc vulns-fix takes every fix named above in one plan (and old installs that carry serious advisories)');
       for (const c of inv.coverage || []) if (c.failed) out.action(`vuln-feed: ${c.source} ${c.text}`); else (out.note || out.info)(`coverage: ${c.source === 'elsewhere' ? '' : `${c.source}: `}${c.text}`);
       if (inv.uncovered.length && s.list_not_covered) out.info(`not covered (no advisory ecosystem; not the same as clean): ${inv.uncovered.join(', ')}`);
       const nSerious = shown.filter(serious).length;

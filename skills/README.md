@@ -66,6 +66,8 @@ or with a read-only report, `/steward:supply-chain audit`.
 | | "Apply the upgrades" | The dry run, your yes, the upgrade, `steward sc verify`, and how to roll back |
 | | "A Node security release is out" | Checks nodejs.org for your Node line; if it's a security release, patches it with `steward sc node-patch` after your yes |
 | | "Is anything I have vulnerable?" | `steward sc vulns`: known vulnerabilities in your mise tools, the packages inside them, the hybrids and Node; exploited ones first, each with its fix or why it waits, and what couldn't be checked |
+| | "Fix the vulnerabilities" | `steward sc vulns-fix`'s plan (exact upgrades past the gate, each recorded; unused vulnerable installs removed), your yes, then verify |
+| | "Switch off gitnexus until it's fixed" | `steward sc isolate`'s plan, your yes; it stays installed, and the briefing lists it until you switch it back on |
 | | "Is this advisory a problem here?" (paste the link) | Reads the advisory at its source, sweeps the machine read-only, and answers; any fix is a separate yes |
 | | "Handle this Renovate PR" | Reads its release notes, age and provenance, checks its lock file, and says whether to merge or re-lock first |
 | | "Roll back the last upgrade" | Shows the backup it would restore, then asks |

@@ -47,6 +47,10 @@ Procedures: [`../skills/supply-chain/runbook.md`](../skills/supply-chain/runbook
 ```sh
 steward sc audit                              # read-only: Homebrew, apps, App Store, macOS, trust stores, Docker, IOCs
 steward sc audit --verbose                    # the same, with the lines each check folds away on a terminal
+steward sc vulns                              # read-only: known vulnerabilities in mise's npm/pipx/cargo/go tools, the
+                                              # packages inside them, the hybrids and Node (docs/vulnerabilities.md)
+steward sc vulns-fix                          # plan the fixes; --apply takes them (asks, backs up, receipt; --rollback)
+steward sc isolate npm:some-tool              # plan switching a tool off without removing it; --apply; --undo, --list
 steward sc verify                             # read-only: every CLI, native addons, npm doctor
 steward sc plan                               # read-only: what `upgrade` would take, what's held and why, then Node
                                               # security releases, hybrids, vendored Node (it took over sc status)
