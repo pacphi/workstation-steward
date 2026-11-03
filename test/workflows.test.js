@@ -109,3 +109,54 @@ test('test.yml: the container jobs run linux-test.js on the example toolchain\'s
     assert.equal(j.env && j.env.MISE_GLOBAL_CONFIG_FILE, '${{ github.workspace }}/examples/mise/config.toml', `${id}: the example toolchain`);
   }
 });
+
+// The install check as a matrix, from a ref (parity 1d, T.4 and T.7; owner, 2026-11-03): the macOS runner and one container
+// per row of test/containers/matrix.json, each running tools/install-check.sh; worktree mode from any commit before the
+// release (R-2), npm mode for a released version. The tooling comes from the workflow's own commit, the thing installed
+// from the ref or the tag, since an older tag has neither the script nor the list.
+test('install-check.yml: a ref or a version, exactly one', () => {
+  const w = wf('install-check.yml');
+  const i = w.on.workflow_dispatch.inputs;
+  for (const k of ['ref', 'version']) assert.equal(i[k].required, false, `${k} is optional: one of the two`);
+  assert.ok(i.claude_code && i.release_age_days, 'the other inputs stay');
+  const steps = w.jobs.rows.steps.map(s => s.run || '').join('\n');
+  assert.match(steps, /exactly one of ref and version/, 'the rows job refuses neither or both');
+});
+
+test('install-check.yml: every job checks out the tooling (this commit) and the subject (the ref, or the tag), with history', () => {
+  const w = wf('install-check.yml');
+  for (const id of ['rows', 'macos', 'linux']) {
+    const co = w.jobs[id].steps.filter(s => /^actions\/checkout@/.test(s.uses || ''));
+    const tooling = co.find(s => s.with && s.with.path === 'tooling');
+    const subject = co.find(s => s.with && s.with.path === 'subject');
+    assert.ok(tooling && !tooling.with.ref, `${id}: tooling/ at the workflow's own commit`);
+    assert.ok(subject, `${id}: subject/`);
+    assert.equal(subject.with.ref, "${{ inputs.ref || format('refs/tags/v{0}', inputs.version) }}", `${id}: the ref, else the tag`);
+    assert.equal(subject.with['fetch-depth'], 0, `${id}: tags and origin/main, for the version line and "on main"`);
+  }
+});
+
+test('install-check.yml: the Mac runs the script; each matrix.json row runs it in its container, from the same list as the tests', () => {
+  const w = wf('install-check.yml');
+  assert.equal(w.jobs.install, undefined, 'the one macOS job became the matrix');
+  const rows = w.jobs.rows;
+  assert.equal(rows['runs-on'], 'ubuntu-latest');
+  assert.match(rows.steps.map(s => s.run || '').join('\n'), /node tooling\/tools\/linux-test\.js ci/, 'rows from matrix.json (T.1)');
+  const mac = w.jobs.macos;
+  assert.equal(mac['runs-on'], 'macos-latest');
+  assert.match(mac.steps.map(s => s.run || '').join('\n'), /bash tooling\/tools\/install-check\.sh "?\$\{\{ github\.workspace \}\}\/subject"?/);
+  const lin = w.jobs.linux;
+  assert.equal(lin['runs-on'], 'ubuntu-latest');
+  assert.equal(lin.needs, 'rows');
+  assert.equal(lin.strategy['fail-fast'], false, 'one row failing never cancels the others');
+  assert.equal(lin.strategy.matrix.row, '${{ fromJSON(needs.rows.outputs.rows) }}');
+  assert.match(lin.steps.map(s => s.run || '').join('\n'), /node tooling\/tools\/linux-test\.js run "\$\{\{ matrix\.row \}\}" --install-check/);
+  for (const id of ['rows', 'linux']) {
+    const steps = w.jobs[id].steps;
+    const m = steps.findIndex(s => /jdx\/mise-action/.test(s.uses || ''));
+    const n = steps.findIndex(s => /^mise install node$/.test((s.run || '').trim()));
+    const l = steps.findIndex(s => /linux-test\.js/.test(s.run || ''));
+    assert.ok(m >= 0 && n > m && l > n, `${id}: linux-test.js on the example toolchain's Node, as in test.yml`);
+    assert.equal(w.jobs[id].env && w.jobs[id].env.MISE_GLOBAL_CONFIG_FILE, '${{ github.workspace }}/tooling/examples/mise/config.toml', `${id}: the tooling's example toolchain`);
+  }
+});
