@@ -1,6 +1,6 @@
 # AI tooling runbook
 
-![Revision 21](https://img.shields.io/badge/Revision-21-green) ![Revised 2026-10-31](https://img.shields.io/badge/Revised-2026--10--31-green)
+![Revision 22](https://img.shields.io/badge/Revision-22-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
 
 Procedures for the AI-tooling area: Ruflo and AgentDB, AQE, RuvNet Brain, RuVector, the shared launchers and
 the guards. The policy is `ai-tooling/ai-tooling.toml` in your instance ([an example](../../examples/ai-tooling/ai-tooling.toml)). Why it looks
@@ -156,6 +156,44 @@ Brain has three parts, each updated its own way (D52, [`release-classes.md`](../
   and a receipt, and refuses a fallback source or a changed signing key. An agent runs only the read-only audit and
   plan. An old updater can fail on a newer bundle: if `apply` fails, update the runtime first (it's gated), then try
   again. `steward sc rollback <receipt>` puts the old `kb/` back.
+
+### A new Brain release, by hand
+
+Until tool packs make this two commands ([`tool-packs.md`](../../docs/ai-tooling/tool-packs.md), #105), follow these
+steps one at a time, each with the owner's yes. They come from qualifying 4.7.28 on 2026-11-03.
+
+1. **Read-only checks.** The release is at least 3 days old (`registry.npmjs.org/ruvnet-brain`). The newest
+   `corpus-sha256-…` release names it as its "Shipped runtime". `gh api repos/stuinfla/ruvnet-brain/compare/v<X>...main`
+   is `identical`, because the Claude plugin installs from `main`, not the tag.
+2. **Sandbox.** Seed a sandbox `HOME` with APFS clones (`cp -c`) of the install state:
+   - from `~/.cache/ruvnet-brain`: `active.json`, `versions`, `install-state.json`, `host-convergence.json`,
+     `knowledge-signature.json`, `kb` **and `.auto-update-pref`**;
+   - the Brain plugin's records under `~/.claude/plugins`;
+   - `~/.claude/settings.json`, `~/.claude/model-router` and `~/.codex/config.toml`.
+
+   Never copy the learned records, the `*.jsonl` logs or any store. Rewrite real-`HOME` paths in the copied JSON. Set
+   all the redirects (`HOME`, `XDG_*`, `MISE_*`, `npm_config_cache`, `CLAUDE_CONFIG_DIR`), then install the CLI with
+   `--ignore-scripts`. Run the installer with `--version v<X> --no-nightly-prompt --no-telemetry --no-stack
+   --no-enhance --no-statusline`, then check:
+   - the knowledge base's stamp moved (`kb/SOURCE.json` `brainVersion`);
+   - the spine shows the new version as staged (`update-apply.mjs --doctor`);
+   - no Brain process is still running from the sandbox;
+   - the real `HOME`'s Brain files are unchanged (a fingerprint before and after).
+3. **The pin.** Tick `npm:ruvnet-brain` on the config repo's Renovate dashboard, merge its PR, then run
+   `steward config sync`.
+4. **The real run.** It runs in the owner's terminal, after a backup of the same files and a receipt. Before it, read
+   `~/.claude/model-router/node_modules`: the installer upgrades packages there, and each must be past the gate.
+5. **After it.** Remove the user-level `[mcp_servers.ruvnet-brain]` block from `~/.codex/config.toml` (D55), then let
+   `steward sc upgrade` take the newer knowledge base (`brain-kb`).
+
+Four traps:
+
+| Trap | What happens | Guard |
+| --- | --- | --- |
+| Side packages | The installer upgrades packages in `~/.claude/model-router`, such as `@claude-flow/aidefence`, with no age gate | Check their publish times first, and wait if any is younger than the gate |
+| Background update | Brain's SessionStart runs `ruvnet-brain@latest --update` unless `~/.cache/ruvnet-brain/.auto-update-pref` says `no` or `RUVNET_AUTO_UPDATE=off` | Keep the file. Copy it into every sandbox, or the sandbox starts that update |
+| No terminal | Without a terminal the installer takes every option's default and doesn't ask | Run the real install in a terminal, or accept the defaults the sandbox showed |
+| Two stamps | The knowledge base's stamp moves at install; the spine is only staged and moves at the next hook or MCP call | Check both, and expect the spine to lag |
 
 ## Hook timeouts in milliseconds
 
