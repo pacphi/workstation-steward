@@ -71,7 +71,8 @@ steward sc trust-review pkg@1.2.3             # evidence check before adding a t
 steward sc soak                               # is a soak running (prune waits), and which receipts started it
 steward sc prune                              # after the soak: remove versions no config needs, and updater copies older than the soak (asks first)
 steward sc rollback                           # restore the newest config/lock backup
-steward sc rollback <receipt>                 # put back what a declared updater's apply replaced
+steward sc rollback <receipt>                 # put back what a declared updater's apply replaced, or a root upgrade's packages
+steward sc upgrade --resume                   # finish an apt upgrade that was handed over (no terminal): checks, then the receipt
 steward sc link                               # re-link ~/.config/mise to ../mise
 ```
 

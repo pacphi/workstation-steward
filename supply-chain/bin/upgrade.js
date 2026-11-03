@@ -2,8 +2,10 @@
 // Upgrade what can be upgraded from the CLI, within host.toml's policy (R5c, D43): `steward sc upgrade`, and with
 // DRY_RUN=1 `steward sc plan`. The plan comes from the providers (lib/providers/):
 //   - each package source that applies here and is installed (lib/providers/index.js, parity 0.2: Homebrew formulae
-//     and non-self-updating casks today), for versions at least the release-age gate (steward.toml [policy]) old, or
-//     that match an unexpired host.toml security_exception; a source that needs root is listed for the user (D-b);
+//     and non-self-updating casks; apt), for versions at least the release-age gate (steward.toml [policy]) old, or
+//     that match an unexpired host.toml security_exception (or come from apt's security pocket); a source that needs
+//     root goes through lib/roothandoff.js: sudo at your terminal, else handed over and finished by --resume (D-b
+//     revised, parity 1b);
 //   - mise tools (mise holds them to minimum_release_age; majors are skipped and listed; Node goes through node-patch;
 //     AI tooling's own tools follow its qualification);
 //   - declared updaters ([[updater]], D52) that are behind and whose class may skip the gate (lib/updaters.js);
@@ -16,6 +18,7 @@
 // `steward sc audit` lists those. Off a terminal it prints what the Bash upgrade printed, line for line (compared on
 // the owner's Mac before the switch, R5c PR 3); on a terminal the planning shows as steps (lib/ui.js).
 // Usage: upgrade.js [--plain]     (DRY_RUN=1: the plan and its commands only; nothing changes)
+//        upgrade.js --resume      (finish a root upgrade that was handed over: lib/roothandoff.js)
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
@@ -26,6 +29,7 @@ const mise = require('../../lib/providers/mise.js');
 const { ui: makeUi } = require('../../lib/ui.js');
 const { context } = require('./audit.js');
 const U = require('../../lib/updaters.js');
+const RH = require('../../lib/roothandoff.js');
 
 const SC = path.join(__dirname, '..');
 const DRY = process.env.DRY_RUN === '1';
@@ -63,9 +67,6 @@ function crossesMajor(current, target) {
   return c !== t && /^[0-9]/.test(current);
 }
 
-// ROOT — why a source that needs root is listed, never run (D-b: the hand-off comes with the apt provider)
-const ROOT = "needs root; the steward doesn't run sudo yet (D-b, comes with the apt provider)";
-
 // refreshSteps(ctx) — the metadata refresh of each source that applies, is installed and needs no root (brew update)
 async function refreshSteps(ctx) {
   const steps = [];
@@ -74,25 +75,27 @@ async function refreshSteps(ctx) {
 }
 
 // plan(ctx, out) — {packages: [{source, names}], tools, updaters, miseSelf}: what applying would take. out.section(name, title) starts a
-// part; out.line(text) is one of its lines (take, hold, skip, manual, ai)
+// part; out.line(text) is one of its lines (take, hold, skip, manual, ai). A source that needs root also gets items:
+// [{name, have, want, why}], what its receipt records and its pinned command takes
 async function plan(ctx, out) {
   const p = { packages: [], tools: [], updaters: [], miseSelf: '' };
   for (const s of P.sources(ctx)) {
     out.section(s.name, s.title);
     if (!(await s.available(ctx))) { out.line(`${s.provider} not found: skipped`); continue; }
-    const names = [];
+    const names = [], items = [];
     for (const it of await s.outdated(ctx)) {
       if (it.auto) continue;
       const j = await P.judge(ctx, s, it);
       const what = `${it.name} ${it.have} -> ${it.want}`;
       const old = `${j.age}d old${j.from ? `, ${j.from}` : ''}`;
       if (j.verdict === 'hold') { out.line(`hold   ${what} (${old})`); continue; }
-      if (s.needsRoot) { const c = s.upgradeCmd([it.name]); out.line(`manual ${s.provider}: ${ROOT}: sudo ${[c.cmd, ...c.args].join(' ')}`); continue; }
+      const why = j.exception ? `security exception: ${j.exception}` : j.pocket ? `security pocket: ${j.pocket}` : old;
       names.push(it.name);
-      out.line(`take   ${what} (${j.exception ? `security exception: ${j.exception}` : old})`);
+      items.push({ name: it.name, have: it.have, want: it.want, why: j.exception || j.pocket ? why : `gate: ${old}` });
+      out.line(`take   ${what} (${why})`);
     }
     for (const l of await s.manual(ctx)) out.line(s.manualText('plan', l));
-    if (names.length) p.packages.push({ source: s.id, names });
+    if (names.length) p.packages.push(s.needsRoot ? { source: s.id, names, items } : { source: s.id, names });
   }
 
   out.section('mise tools', 'mise tools (mise already applies minimum_release_age)');
@@ -140,6 +143,7 @@ async function main() {
   const u = process.argv.includes('--plain') ? null : makeUi();
   const tty = Boolean(u && u.tty);
   const ctx = context();
+  if (process.argv.includes('--resume')) return RH.resume(ctx);
   // Refresh each source's own metadata (brew update), so its upgrade sees the versions the plan judged
   for (const r of await refreshSteps(ctx)) await step(r.cmd, r.args);
 
@@ -176,7 +180,7 @@ async function main() {
   if (!(await ask('Apply this plan?'))) { console.error('\x1b[1;31mERROR\x1b[0m aborted'); return 1; }
 
   const paths = ctx.cfg.paths;
-  return apply(p, { backups: path.join(paths.mise_config_dir, 'backups'), stateBackups: path.join(paths.state, 'backups') });
+  return apply(p, { backups: path.join(paths.mise_config_dir, 'backups'), stateBackups: path.join(paths.state, 'backups'), ctx });
 }
 
 const err = s => console.error(`\x1b[1;31mERROR\x1b[0m ${s}`);
@@ -185,21 +189,31 @@ const err = s => console.error(`\x1b[1;31mERROR\x1b[0m ${s}`);
 // failed step doesn't stop the others: each tool, formula batch, updater and mise itself is its own change, with its
 // own backup. o.backups: where upgrade-tool's config backups land, o.stateBackups: the state folder's backups (for the
 // rollback hints); o.script and o.step: the runners (tests pass stand-ins); o.sources: the package sources (tests);
-// o.dry: DRY_RUN
+// o.dry: DRY_RUN; o.ctx: the context a root hand-off reads with; o.tty: whether sudo can ask here (default: a terminal,
+// not --unattended); o.sudo: the sudo runner (tests). A root step handed over doesn't stop the others; the run then
+// ends "waiting on you", exit 4
 async function apply(p, o = {}) {
   const run = o.script || script, show = o.step || step, dry = o.dry === undefined ? DRY : o.dry;
   // the scripts leave verification to the single run at the end (they still verify when run on their own)
   const deferred = { ...process.env, STEWARD_DEFER_VERIFY: '1' };
   /** @type {{what: string, code: number, back: string}[]} */
   const failed = [];
+  let handed = 0;
   const fail = (what, code, back) => { failed.push({ what, code, back }); err(`${what} failed (exit ${code}); the other steps still run, and the end lists it`); };
 
-  // each source's upgrade, with its own way back; a source this engine doesn't know, or one that needs root, is refused
+  // each source's upgrade, with its own way back; a source this engine doesn't know is refused; one that needs root goes
+  // through the hand-off (sudo at a terminal after the yes already given, else the line handed over)
   const list = o.sources || P.ALL;
-  for (const { source, names } of p.packages || []) {
+  for (const { source, names, items } of p.packages || []) {
     const s = P.byId(source, list);
     if (!s) { fail(`${source}: no such package source`, 1, 'none needed: nothing ran for it'); continue; }
-    if (s.needsRoot) { fail(`${s.provider}: ${ROOT}`, 1, 'none needed: nothing ran for it'); continue; }
+    if (s.needsRoot) {
+      log(`${s.provider}: ${(items || []).length} package(s), through sudo`);
+      const c = await RH.upgrade(o.ctx || context(), s, items || [], { tty: o.tty === undefined ? RH.terminal() : o.tty, spawn: o.sudo, dry });
+      if (c === 4) handed++;
+      else if (c) fail(`${s.provider} upgrade`, c, s.back);
+      continue;
+    }
     const u = s.upgradeCmd(names);
     const c = await show(u.cmd, u.args);
     if (c) fail([u.cmd, ...u.args].join(' '), c, s.back);
@@ -238,6 +252,7 @@ async function apply(p, o = {}) {
     return 1;
   }
   if (!verified) return 1;
+  if (handed) { log(`waiting on you: run the sudo line above at a terminal, then ${'steward sc upgrade --resume'} checks it and finishes the receipt`); return 4; }
   if (!dry) log('done. Remaining manual items: steward sc audit');
   return 0;
 }

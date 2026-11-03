@@ -240,14 +240,11 @@ test('plan: a source that isn\'t installed says so and is skipped, and is not re
   assert.deepEqual(await refreshSteps(c), [{ cmd: 'fake', args: ['refresh'] }], 'only the installed source refreshes');
 });
 
-test('plan: a source that needs root is listed as manual with its exact command, never planned (D-b, parity 0.2)', async () => {
+test('plan: a source that needs root is planned like any other, each item with its versions and why (D-b revised, parity 1b)', async () => {
   const { p, lines } = await planOf([fake({ needsRoot: true })]);
-  assert.deepEqual(lines.slice(0, 2), [
-    "manual fake: needs root; the steward doesn't run sudo yet (D-b, comes with the apt provider): sudo fake upgrade a",
-    'hold   b 1 -> 2 (1d old)',
-  ]);
-  assert.deepEqual(p.packages, []);
-  assert.deepEqual(await refreshSteps({ ...ctx(NO_MISE), sources: [fake({ needsRoot: true })] }), [], 'nor refreshed');
+  assert.deepEqual(lines.slice(0, 2), ['take   a 1 -> 2 (5d old)', 'hold   b 1 -> 2 (1d old)']);
+  assert.deepEqual(p.packages, [{ source: 'fake', names: ['a'], items: [{ name: 'a', have: '1', want: '2', why: 'gate: 5d old' }] }]);
+  assert.deepEqual(await refreshSteps({ ...ctx(NO_MISE), sources: [fake({ needsRoot: true })] }), [], 'its system refresh is still never run');
 });
 
 test('apply: a source\'s upgrade runs its own command; a failure lists its way back (parity 0.2)', async () => {
@@ -262,12 +259,38 @@ test('apply: a source\'s upgrade runs its own command; a failure lists its way b
   assert.match(bad.lines[i + 1], /way back: fake way back/);
 });
 
-test('apply: a plan naming a source that needs root, or one it doesn\'t know, is refused, and nothing runs for it (parity 0.2)', async () => {
-  const r = await applyWith({ packages: [{ source: 'fake', names: ['a'] }, { source: 'nope', names: ['z'] }], tools: [], updaters: [], miseSelf: '' }, {}, { sources: [fake({ needsRoot: true })] });
+test('apply: a plan naming a source it doesn\'t know is refused, and nothing runs for it (parity 0.2)', async () => {
+  const r = await applyWith({ packages: [{ source: 'nope', names: ['z'] }], tools: [], updaters: [], miseSelf: '' }, {}, { sources: [fake()] });
   assert.equal(r.code, 1);
-  assert.ok(!r.calls.some(c => c.name === 'fake'), 'no upgrade ran');
-  assert.ok(r.lines.some(l => l.includes("✗ fake: needs root; the steward doesn't run sudo yet (D-b, comes with the apt provider) (exit 1)")), r.lines.join('\n'));
   assert.ok(r.lines.some(l => l.includes('✗ nope: no such package source (exit 1)')), r.lines.join('\n'));
+});
+
+// root(o) — the fake source needing root, with what dpkg-like reads say (installed) and the repos offer
+const root = (installed, o = {}) => fake({ needsRoot: true, installed: async (_c, names) => Object.fromEntries(names.filter(n => installed[n]).map(n => [n, installed[n]])),
+  offered: async () => ['2', '1'], rollbackCmd: items => ({ cmd: 'fake', args: ['downgrade', ...items.map(i => `${i.name}=${i.to}`)] }),
+  upgradeCmd: items => ({ cmd: 'fake', args: ['upgrade', ...items.map(i => `${i.name}=${i.want}`)] }), ...o });
+const ROOT_PLAN = { packages: [{ source: 'fake', names: ['a'], items: [{ name: 'a', have: '1', want: '2', why: 'gate: 5d old' }] }], tools: ['gh'], updaters: [], miseSelf: '' };
+const rootCtx = () => ({ now: NOW, cfg: { paths: { state: fs.mkdtempSync(path.join(ROOT, 'root-state-')) } }, run: async () => ({ status: 1, stdout: '' }) });
+
+test('apply: a source that needs root goes through sudo at a terminal, pinned, and the other steps still run (D-b revised, parity 1b)', async () => {
+  const installed = { a: '1' }, sudo = [];
+  const spawn = async (cmd, args) => { sudo.push([cmd, ...args]); installed.a = '2'; return 0; };
+  const r = await applyWith(ROOT_PLAN, {}, { sources: [root(installed)], ctx: rootCtx(), tty: true, sudo: spawn });
+  assert.equal(r.code, 0, r.lines.join('\n'));
+  assert.deepEqual(sudo, [['sudo', 'fake', 'upgrade', 'a=2']]);
+  assert.ok(r.calls.some(c => c.name.endsWith('upgrade-tool')), 'the mise tool still ran');
+  assert.equal(r.calls.filter(c => c.name.endsWith('verify')).length, 1);
+});
+
+test('apply: without a terminal a root step is handed over; the rest still run; the run ends "waiting on you", exit 4 (parity 1b)', async () => {
+  const sudo = [];
+  const r = await applyWith(ROOT_PLAN, {}, { sources: [root({ a: '1' })], ctx: rootCtx(), tty: false, sudo: async (...a) => { sudo.push(a); return 0; } });
+  assert.equal(r.code, 4, r.lines.join('\n'));
+  assert.deepEqual(sudo, []);
+  assert.ok(r.calls.some(c => c.name.endsWith('upgrade-tool')), 'the mise tool still ran');
+  assert.ok(r.lines.some(l => l.includes('sudo fake upgrade a=2')), r.lines.join('\n'));
+  assert.ok(r.lines.some(l => /waiting on you/.test(l) && l.includes('steward sc upgrade --resume')), r.lines.join('\n'));
+  assert.ok(!r.lines.some(l => /done\./.test(l)));
 });
 
 test.after(() => fs.rmSync(ROOT, { recursive: true, force: true }));

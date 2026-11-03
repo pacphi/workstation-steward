@@ -81,6 +81,16 @@ test('receipt-unfinished: an onboard that stopped midway names its rollback; und
   none(facts({ backups: [bk('onboard-demo-app', r, 90), bk('onboard-demo-app', { ...r, at: ago(30).toISOString(), complete: true }, 30)] }), 'receipt-unfinished');
 });
 
+test('receipt-unfinished: a root upgrade handed over and not yet run names the line, then --resume (parity 1b)', () => {
+  const r = { kind: 'root-upgrade', source: 'apt', complete: false, outcome: 'waiting-on-you', command: 'sudo apt-get install --only-upgrade tzdata=2026f-0+deb13u1', items: [{ name: 'tzdata' }] };
+  const x = one(facts({ backups: [bk('apt-upgrade', r)] }), 'receipt-unfinished');
+  assert.equal(x.text, 'an apt upgrade is waiting on you: sudo apt-get install --only-upgrade tzdata=2026f-0+deb13u1');
+  assert.equal(x.cmd, 'steward sc upgrade --resume');
+  assert.equal(x.skill, 'supply-chain');
+  assert.match(x.why, /run the sudo line yourself.*then.*--resume/);
+  none(facts({ backups: [bk('apt-upgrade', { ...r, complete: true, outcome: 'done' })] }), 'receipt-unfinished');
+});
+
 test('receipt-unfinished: a config sync is never sent to --rollback (it refuses an unfinished one); a refused carry is finished', () => {
   const r = { kind: 'config-sync', at: ago(60).toISOString(), engine: '0.9.0', repo: INST, branch: 'main', upstream: 'origin/main', before: 'a'.repeat(40), after: null, commits: [], files: [], carried: null, complete: false };
   const x = one(facts({ backups: [bk('config-sync', r)] }), 'receipt-unfinished');

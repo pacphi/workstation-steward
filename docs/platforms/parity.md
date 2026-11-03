@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 14](https://img.shields.io/badge/Revision-14-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
+![Revision 15](https://img.shields.io/badge/Revision-15-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -84,10 +84,13 @@ A box is ticked only when its check ran and passed. Something left undone stays 
   until it has been in the repo at least the gate's days. *Dated snapshot* for pacman, xbps, portage and Nix: the whole
   system moves to a repo snapshot at least the gate's days old, because these managers don't support taking one package
   and holding another. The snapshot code is built once for Arch and reused for NixOS.
-- [x] **D-b. Root steps are handed to the user** (owner, 2026-10-31). The steward plans, and backs up what it can as
-  the user. Then it prints one exact `sudo` command for the user to run in their own terminal (`actor: human`). After
-  that it checks the result and writes the receipt. It never runs `sudo` itself, and it never runs under `sudo`, so
-  receipts and backups stay the user's.
+- [x] **D-b. Root steps: sudo at your terminal, else handed to you** (owner, 2026-10-31; revised 2026-11-03). The
+  steward plans, and records what is installed, as you. At a terminal, after the plan's yes, it runs the one exact
+  `sudo` command as a child on your terminal: you type your password into sudo's own prompt, and the steward never
+  sees or keeps it. With no terminal (a pipe, an agent, `--unattended`) it hands you that command instead, keeps a
+  waiting receipt, exits 4 ("waiting on you"), and `steward sc upgrade --resume` checks and finishes it; the briefing
+  names a hand-off still waiting. Either way it then checks the result and writes the receipt. It never runs under
+  `sudo`, so receipts and backups stay yours. (Before the revision, every root step was handed over.)
 - [x] **D-c. Minimum versions: n-3, capped** (owner, 2026-10-31). Each distribution's newest release and the three
   before it, but never a release its vendor no longer gives security fixes. Ubuntu counts its LTS releases only.
   Rolling releases are current only. NixOS counts its stable channels, plus unstable.
@@ -200,8 +203,8 @@ Stage: Done (2026-11-02). Its exit criterion passes in CI on every PR (D74).
   files for every row of the platforms table, and two that only `ID_LIKE` places.
 - [x] **0.2 One contract for package sources** (#86, D64). Each package manager and kind is a source
   (`lib/providers/index.js`), and `judge()` makes the take-or-hold call for the audit and the plan alike. The plan loops
-  over the sources that apply and are installed; a source that needs root is listed for the user and refused by
-  `apply` until the apt provider brings the hand-off (owner, 2026-11-01). mise keeps its own path. Proof: the Mac's host
+  over the sources that apply and are installed; a source that needs root was listed for the user and refused by
+  `apply` until the apt provider brought the hand-off (owner, 2026-11-01; done in 1b, D76). mise keeps its own path. Proof: the Mac's host
   report, audit and plan were identical before and after (2026-11-01).
   - [ ] A tidy-up for later: the audit's held line says "eligible in N days" for a formula and not for a cask. Kept so
     the before-and-after proof stayed exact; make them match in a PR of its own.
@@ -308,9 +311,19 @@ fully supported providers; then the best-effort ones (owner, 2026-10-31 and 2026
 Release, Updates or Security); both answered for real. Mint's own repo has no dated source, so a version there is dated
 by the first-seen clock (owner, 2026-11-03). apt is built in three PRs, 1a to 1c (owner, 2026-11-03).
 
+**apt's upgrade (1b, D76):** each package is pinned to the version the plan judged (`tzdata=2026f-0+deb13u1`), through
+D-b's hand-off (`lib/roothandoff.js`, shared with dnf and zypper). Root first refreshes the system's own package lists
+(`sudo apt-get update`), because they can be older than the steward's copy; the first real run in the Debian container
+failed safely without it (`Version '2026f-0+deb13u1' for 'tzdata' was not found`), so the owner chose the refresh
+(2026-11-03). A version from a security pocket (`trixie-security`, `noble-security`) is taken at once and says so
+(owner, 2026-11-03). The receipt keeps before, after and why; the way back offers only versions the repos still have
+(`apt-cache madison` from the steward's lists), and `steward sc rollback <receipt>` puts them back the same way.
+Proven in the Debian 13 container, 2026-11-03: a real `tzdata` upgrade at a terminal, its rollback, and a hand-off
+finished by `--resume`.
+
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
 | --- | --- | --- | --- | --- |
-| 🟨 apt | Debian, Ubuntu, Linux Mint (the Linux release) | per package | Under way: 1a read-only done (#101, D75); 1b the upgrade with the sudo hand-off; 1c the rows and the real-repo run | #101 |
+| 🟨 apt | Debian, Ubuntu, Linux Mint (the Linux release) | per package | Under way: 1a read-only done (#101, D75); 1b the upgrade with the sudo hand-off done (D76); 1c the rows and the real-repo run | #101 |
 | ⬜ dnf | Fedora (the Linux release) | per package | Not started | |
 | ⬜ zypper | openSUSE Leap, Tumbleweed (the Linux release) | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ Flatpak | any | per package | Not started | |
@@ -328,7 +341,7 @@ by the first-seen clock (owner, 2026-11-03). apt is built in three PRs, 1a to 1c
 Stage: Not started.
 
 - [ ] **2.1 Trust store, the denying half, per family:** Debian (`update-ca-certificates`), Red Hat (`update-ca-trust`),
-  SUSE, Arch and Alpine. It needs root, so the steward hands the user the exact command (D-b). First test cases: the
+  SUSE, Arch and Alpine. It needs root, so it goes through D-b's hand-off (sudo at your terminal, else handed over). First test cases: the
   Fedora 44 and Tumbleweed images, which still trust `emSign ECC Root CA - G3` (found by 0.5).
 - [ ] **2.2 Apps and the Electron support window** for Flatpak, Snap, AppImage and `/opt`.
 - [ ] **2.3 Vendored Node on Linux:** Linux paths in the engine's `vendored_node` defaults.
