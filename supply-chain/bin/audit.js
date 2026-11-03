@@ -100,7 +100,8 @@ async function audit(ctx, o = {}) {
   const nChecks = todo.filter(c => c.platforms.includes(ctx.platform)).length;
   if (u) u.header(command, `${PL.label({ platform: ctx.platform, distro: ctx.distro || null, version: ctx.version || null })} · ${nChecks} check${nChecks === 1 ? '' : 's'}`);
   for (const c of todo) {
-    if (!c.platforms.includes(ctx.platform)) { skipped.push(c.id); continue; }
+    // a check for some Linux families only (apt: the Debian family) is skipped on the others, as one for another platform is
+    if (!c.platforms.includes(ctx.platform) || (c.families && !c.families.includes(ctx.family))) { skipped.push(c.id); continue; }
     // this check's lines: printed as they come (plain), or kept and printed under its row (ui): its other lines, then
     // its findings in columns
     const mine = { actions: 0, alerts: 0, held: 0, lines: [], notes: [], findings: [] };

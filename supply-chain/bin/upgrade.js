@@ -85,10 +85,11 @@ async function plan(ctx, out) {
       if (it.auto) continue;
       const j = await P.judge(ctx, s, it);
       const what = `${it.name} ${it.have} -> ${it.want}`;
-      if (j.verdict === 'hold') { out.line(`hold   ${what} (${j.age}d old)`); continue; }
+      const old = `${j.age}d old${j.from ? `, ${j.from}` : ''}`;
+      if (j.verdict === 'hold') { out.line(`hold   ${what} (${old})`); continue; }
       if (s.needsRoot) { const c = s.upgradeCmd([it.name]); out.line(`manual ${s.provider}: ${ROOT}: sudo ${[c.cmd, ...c.args].join(' ')}`); continue; }
       names.push(it.name);
-      out.line(`take   ${what} (${j.exception ? `security exception: ${j.exception}` : `${j.age}d old`})`);
+      out.line(`take   ${what} (${j.exception ? `security exception: ${j.exception}` : old})`);
     }
     for (const l of await s.manual(ctx)) out.line(s.manualText('plan', l));
     if (names.length) p.packages.push({ source: s.id, names });

@@ -88,6 +88,20 @@ package in it the same way: taken once it is at least the release-age gate's day
 that needs root is listed with its exact `sudo` command for you to run; the steward never runs `sudo` itself (D-b).
 mise is not a source: it applies the gate itself.
 
+### apt (Debian, Ubuntu, Linux Mint)
+
+The steward keeps its own copy of the package lists, refreshed as you, without `sudo`, in its state folder; the system's
+apt state is never touched (D75). Each new version is dated by the earliest day it was publicly available:
+
+| Where | Dated by |
+| --- | --- |
+| Debian | snapshot.debian.org: when the version first appeared in `debian` or `debian-security` |
+| Ubuntu, and Mint's Ubuntu-built packages | Launchpad: its earliest publication in Release, Updates or Security (never Proposed) |
+| Anything else (Mint's own repo, a PPA) | the first time this machine saw it, kept in `<state>/apt/first-seen.json` |
+
+The plan and the audit say which ("4d old, snapshot"). Upgrading needs root, so each update past the gate is listed
+with its exact `sudo apt-get install --only-upgrade …` line for you to run; the steward never runs `sudo`.
+
 ## What may skip the gate
 
 Every update source has one **release class** (D52, [`release-classes.md`](../docs/release-classes.md)), and only

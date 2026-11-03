@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 13](https://img.shields.io/badge/Revision-13-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 14](https://img.shields.io/badge/Revision-14-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -41,7 +41,7 @@ combination we claim.
 | Milestone | What it delivers | Stage | Done |
 | --- | --- | --- | --- |
 | [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Done | 9 / 9 |
-| [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Not started | 0 / 10 |
+| [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Under way | 0 / 10 |
 | [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 6 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
 | [Testing](#testing-the-ci-matrix-and-install-checks) | A CI row and an install-check row for every combination we claim | Under way | 1 / 7 |
@@ -303,9 +303,14 @@ fully supported providers; then the best-effort ones (owner, 2026-10-31 and 2026
   the provider is ticked, not on every PR;
 - docs and a D-row.
 
+**apt's step 0** (2026-11-03): Debian is dated by snapshot.debian.org (a version's first sighting in `debian` or
+`debian-security`), Ubuntu and Mint's Ubuntu base by Launchpad (`getPublishedBinaries`, the earliest publication in
+Release, Updates or Security); both answered for real. Mint's own repo has no dated source, so a version there is dated
+by the first-seen clock (owner, 2026-11-03). apt is built in three PRs, 1a to 1c (owner, 2026-11-03).
+
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
 | --- | --- | --- | --- | --- |
-| ⬜ apt | Debian, Ubuntu, Linux Mint (the Linux release) | per package | Not started | |
+| 🟨 apt | Debian, Ubuntu, Linux Mint (the Linux release) | per package | Under way: 1a read-only done (#101, D75); 1b the upgrade with the sudo hand-off; 1c the rows and the real-repo run | #101 |
 | ⬜ dnf | Fedora (the Linux release) | per package | Not started | |
 | ⬜ zypper | openSUSE Leap, Tumbleweed (the Linux release) | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ Flatpak | any | per package | Not started | |
@@ -403,6 +408,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-03 | 14 | apt 1a done: the read-only source, its dates from snapshot.debian.org, Launchpad or the first-seen clock (D75) | #101 |
 | 2026-11-02 | 13 | 0.8 done, Milestone 0 complete: the tests on Linux in CI behind one required check, the exit criterion green (D74); T.2 done | #100 |
 | 2026-11-02 | 12 | 0.7 done: the words, the per-platform lists, the RuVector add-on name (D73); Milestone 0 has only 0.8 left | #97 |
 | 2026-11-02 | 11 | 0.6 follow-up: the doctor names a mise tool missing from your own toolchain | #95 |

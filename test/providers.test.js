@@ -19,7 +19,7 @@ const HOOKS = ['available', 'refresh', 'outdated', 'releaseDate', 'manual', 'upg
 
 test('the Homebrew sources keep the contract, with today\'s titles, ids and way back', () => {
   const [formula, cask] = P.ALL;
-  for (const s of P.ALL) {
+  for (const s of [formula, cask]) {
     for (const f of FIELDS) assert.ok(f in s, `${s.id}: ${f}`);
     for (const h of HOOKS) assert.equal(typeof s[h], 'function', `${s.id}: ${h}`);
     assert.equal(s.gateMode, 'per-package');
@@ -40,10 +40,10 @@ test('the Homebrew sources keep the contract, with today\'s titles, ids and way 
 
 test('sources: macOS gets formulae and casks; Linux formulae only; families narrow a source; ctx.sources stands in', () => {
   assert.deepEqual(P.sources(ctx()).map(s => s.id), ['brew-formula', 'brew-cask']);
-  assert.deepEqual(P.sources(ctx({ platform: 'linux', family: 'debian' })).map(s => s.id), ['brew-formula']);
+  assert.deepEqual(P.sources(ctx({ platform: 'linux', family: 'debian' })).map(s => s.id), ['brew-formula', 'apt'], 'apt on the Debian family (parity 1a)');
   const apt = { id: 'fake-apt', platforms: ['linux'], families: ['debian'] };
   const all = [...P.ALL, apt];
-  assert.deepEqual(P.sources(ctx({ platform: 'linux', family: 'debian', sources: all })).map(s => s.id), ['brew-formula', 'fake-apt']);
+  assert.deepEqual(P.sources(ctx({ platform: 'linux', family: 'debian', sources: all })).map(s => s.id), ['brew-formula', 'apt', 'fake-apt']);
   assert.deepEqual(P.sources(ctx({ platform: 'linux', family: 'rhel', sources: all })).map(s => s.id), ['brew-formula']);
   assert.equal(P.byId('brew-cask').title.startsWith('Homebrew casks'), true);
   assert.equal(P.byId('nope'), null);
