@@ -20,7 +20,7 @@ const terms = path.join(ROOT, 'terms.txt');
 fs.writeFileSync(terms, '# private\nsecret-project\n');
 
 test('leak-check: a clean tree passes; each kind of leak is found with file and line', () => {
-  const clean = tree('clean', { 'README.md': '# ok\nSee /Users/x/.cache and /Users/runner/work.\nThe secret-projector skill.\n', 'examples/projects/registry.toml': '# empty\n' });
+  const clean = tree('clean', { 'README.md': '# ok\nSee /Users/x/.cache and /Users/runner/work, and Linuxbrew in /home/linuxbrew/.linuxbrew.\nThe secret-projector skill.\n', 'examples/projects/registry.toml': '# empty\n' });
   const ok = run('leak-check.js', [clean, '--terms', terms]);
   assert.equal(ok.status, 0, ok.stdout);
   assert.match(ok.stdout, /clean/);

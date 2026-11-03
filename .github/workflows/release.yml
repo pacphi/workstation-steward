@@ -43,7 +43,7 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-  test:
+  test-macos:
     needs: release-please
     # a release just created, or an existing one named by hand
     if: ${{ !cancelled() && (needs.release-please.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch') }}
@@ -82,9 +82,31 @@ jobs:
       - run: just test
       - run: just lint
 
+  # the release is tested on Linux as well (parity 0.8); publish waits for both
+  test-linux:
+    needs: release-please
+    if: ${{ !cancelled() && (needs.release-please.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    env:
+      STEWARD_INSTANCE: ${{ github.workspace }}/examples
+      MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
+      NO_PROGRESS: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.tag || needs.release-please.outputs.tag_name }}
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        with:
+          version: 2026.10.21
+          install: false
+      - run: mise install
+      - run: npm ci --ignore-scripts --prefix tools/types
+      - run: just test
+      - run: just lint
+
   publish:
-    needs: [release-please, test]
-    if: ${{ !cancelled() && needs.test.result == 'success' }}
+    needs: [release-please, test-macos, test-linux]
+    if: ${{ !cancelled() && needs.test-macos.result == 'success' && needs.test-linux.result == 'success' }}
     runs-on: macos-latest   # the package is macOS-only (os: darwin)
     environment: npm
     permissions:
@@ -95,12 +117,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.test.outputs.sha }}   # exactly the commit the test job tested
+          ref: ${{ needs.test-macos.outputs.sha }}   # exactly the commit the test jobs tested
           fetch-depth: 0    # the guard checks that HEAD is exactly the release tag
       - name: The tag still points at the tested commit
         env:
-          TAG: ${{ needs.test.outputs.tag }}
-          SHA: ${{ needs.test.outputs.sha }}
+          TAG: ${{ needs.test-macos.outputs.tag }}
+          SHA: ${{ needs.test-macos.outputs.sha }}
         run: |
           [ "$(git rev-parse "refs/tags/${TAG}^{commit}")" = "$SHA" ] || { echo "$TAG moved after it was tested"; exit 1; }
       - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4

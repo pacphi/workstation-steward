@@ -9,7 +9,8 @@
 //           and user names.
 //           Default: leak-terms.txt in the instance ($STEWARD_INSTANCE, …), so the list itself is never public.
 // Checks: no instance or private files (steward.toml, the policy files, archive/, owner/), no registry with entries,
-// no home paths (/Users/<name>, /home/<name>; /Users/x and the CI runner's are allowed), and no private term.
+// no home paths (/Users/<name>, /home/<name>; /Users/x, the CI runner's and Linuxbrew's /home/linuxbrew are allowed), and no
+// private term.
 // Exit 0 clean, 1 something found (each with file:line), 2 a usage or setup error.
 const fs = require('fs');
 const os = require('os');
@@ -58,7 +59,7 @@ const hits = [];
 const PRIVATE = /^(archive\/|owner\/|steward\.toml$|renovate\.json$|mise\/|supply-chain\/(host|hybrids)\.toml$|supply-chain\/verify\.tsv$|supply-chain\/vendor\/|ai-tooling\/ai-tooling\.toml$|projects\/registry\.toml$|leak-terms\.txt$)/;
 for (const f of files) if (PRIVATE.test(f)) hits.push(`${f}: a private or instance file`);
 
-const HOME_PATH = /\/(?:Users|home)\/(?!x\/|x\b|runner\b|<)[a-z][a-z0-9._-]*/g;
+const HOME_PATH = /\/(?:Users|home)\/(?!x\/|x\b|runner\b|linuxbrew\b|<)[a-z][a-z0-9._-]*/g;
 // a term counts as a whole name, not inside a longer word: `acme-app` matches `org/acme-app` and `acme-app-2`, not
 // `acme-application` (a public vendor name can contain a private term)
 const termRe = terms.length ? new RegExp(`(?<![A-Za-z0-9])(?:${terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})(?![A-Za-z0-9])`, 'gi') : null;

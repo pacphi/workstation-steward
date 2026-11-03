@@ -1,6 +1,6 @@
 # Releasing workstation-steward
 
-![Revision 9](https://img.shields.io/badge/Revision-9-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 10](https://img.shields.io/badge/Revision-10-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 How a release happens, and the one-time npm setup behind it (D46 in [`architecture.md`](architecture.md#decisions)),
 plus what to do when the weekly upstream watch finds that a shipped default changed (D52), and how to check that no
@@ -384,3 +384,10 @@ the last summary is in `latest.txt` beside it.
 
 The runs add to the CI matrix; they never replace it. A row whose image is pinned under a release-age gate exception
 says so at the start, and says EXPIRED once the exception's date has passed: move the row to an image past the gate.
+
+### In CI
+
+Every PR runs `test-macos` and `test-linux` (Ubuntu), and one check named `test` that passes only when both did. `main`
+requires `test`, so adding an OS job never means changing branch protection: add it under `test`'s `needs` in
+`.github/workflows/test.yml` (D74). `test-linux` also runs Milestone 0's exit criterion, the audit without Homebrew and
+with Linuxbrew, and puts the output in the job's summary.

@@ -51,10 +51,14 @@ log "Vendored Node runtimes (patch by updating the app)"
 # The list lives in host.toml (vendored_node, vendored_node_dirs): it's data about this machine's apps.
 while IFS= read -r f; do
   f="${f/#\~/${HOME}}"
-  [[ -x "${f}" ]] && printf '  %-10s %s\n' "$("${f}" --version 2>/dev/null)" "${f/#${HOME}/~}"
+  # an app that isn't on this machine is skipped (an && list here would leave the loop failing under set -e)
+  if [[ -x "${f}" ]]; then printf '  %-10s %s\n' "$("${f}" --version 2>/dev/null)" "${f/#${HOME}/~}"; fi
 done < <(host_json | yq -p json -r '.vendored_node[]?')
 while IFS= read -r d; do
-  find "${d/#\~/${HOME}}" -maxdepth 2 -name node -type f 2>/dev/null | while read -r f; do
+  d="${d/#\~/${HOME}}"
+  # a folder that doesn't exist here (find would exit 1, and pipefail fail the step: parity 0.8) is skipped
+  [[ -d "${d}" ]] || continue
+  find "${d}" -maxdepth 2 -name node -type f 2>/dev/null | while read -r f; do
     printf '  %-10s %s\n' "$("${f}" --version 2>/dev/null)" "${f/#${HOME}/~}"
   done
 done < <(host_json | yq -p json -r '.vendored_node_dirs[]?')

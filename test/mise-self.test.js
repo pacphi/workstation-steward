@@ -64,3 +64,23 @@ test('choose: an advisory fixed at or below the gated release adds nothing', () 
   assert.equal(p.target, '2026.10.18');
   assert.doesNotMatch(p.reason, /GHSA-old/);
 });
+
+// --plan on a machine without Homebrew (most Linux machines): "not a Homebrew mise", never a crash. Found by running the
+// audit in a Linux container (parity 0.8): spawnSync of a missing brew gives stdout null, and .trim() threw.
+test('--plan without Homebrew on the machine: a plan line, not a crash', () => {
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+  const { spawnSync } = require('child_process');
+  const bin = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'steward-mise-self-')));
+  fs.writeFileSync(path.join(bin, 'mise'), '#!/bin/sh\necho "2026.10.21 linux-arm64 (2026-10-27)"\n', { mode: 0o755 });
+  fs.writeFileSync(path.join(bin, 'gh'), '#!/bin/sh\necho "[]"\n', { mode: 0o755 });
+  const yq = spawnSync('/bin/sh', ['-c', 'command -v yq'], { encoding: 'utf8' }).stdout.trim();
+  const PATH = [bin, path.dirname(process.execPath), path.dirname(fs.realpathSync(yq)), '/usr/bin', '/bin'].join(':');
+  // not found: 1 from bash or zsh, 127 from dash (Debian's and Ubuntu's /bin/sh)
+  assert.notEqual(spawnSync('/bin/sh', ['-c', 'command -v brew'], { encoding: 'utf8', env: { PATH } }).status, 0, 'no brew on this PATH');
+  const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'supply-chain', 'bin', 'mise-self.js'), '--plan'], { encoding: 'utf8', env: { PATH, HOME: os.homedir(), STEWARD_INSTANCE: path.join(__dirname, '..', 'examples') } });
+  assert.equal(r.status, 0, r.stderr);
+  assert.doesNotMatch(r.stderr, /TypeError/);
+  assert.match(r.stdout, /^\w+\t2026\.10\.21\t/, r.stdout);
+});

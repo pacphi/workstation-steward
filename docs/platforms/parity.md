@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 12](https://img.shields.io/badge/Revision-12-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 13](https://img.shields.io/badge/Revision-13-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -40,12 +40,12 @@ combination we claim.
 
 | Milestone | What it delivers | Stage | Done |
 | --- | --- | --- | --- |
-| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Under way | 8 / 9 |
+| [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Done | 9 / 9 |
 | [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Not started | 0 / 10 |
 | [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 6 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
-| [Testing](#testing-the-ci-matrix-and-install-checks) | A CI row and an install-check row for every combination we claim | Not started | 0 / 7 |
-| [The Linux release](#the-linux-release-the-bar) | 0.11.0: Milestone 0, apt, dnf and zypper at full parity | Not started | 0 / 8 |
+| [Testing](#testing-the-ci-matrix-and-install-checks) | A CI row and an install-check row for every combination we claim | Under way | 1 / 7 |
+| [The Linux release](#the-linux-release-the-bar) | 0.11.0: Milestone 0, apt, dnf and zypper at full parity | Under way | 1 / 8 |
 | [Decisions](#decisions) | The choices the work depends on | All made | 12 / 12 |
 
 ## How to use this ledger
@@ -118,7 +118,7 @@ and zypper**. That release is 0.11.0; after it, each further package manager shi
 then, release-please's release PR stays open and gathers every change; the owner merges it only when every box below is
 ticked.
 
-- [ ] **Milestone 0 done** (0.1 to 0.9).
+- [x] **Milestone 0 done** (0.1 to 0.9; #100).
 - [ ] **apt, dnf and zypper done:** each provider's checklist in [Milestone 1](#milestone-1-linux-one-package-manager-at-a-time).
 - [ ] **Their apps and trust items:** 2.1 for the Debian, Red Hat and SUSE families; 2.2 to 2.4 on their
   distributions.
@@ -126,7 +126,7 @@ ticked.
   and Tumbleweed.
 - [ ] **Install check, worktree mode,** from the release commit on every one of those rows (T.7).
 - [ ] **End-to-end runs** (`--e2e`) pass for apt, dnf and zypper.
-- [ ] **Say it:** `package.json` `os` adds `linux`, and the README and [`../lifecycle.md`](../lifecycle.md#platforms)
+- [ ] **Say it:** `package.json` `os` adds `linux`, the publish job moves to `ubuntu-latest`, and the README and [`../lifecycle.md`](../lifecycle.md#platforms)
   say the steward runs on Linux with apt, dnf and zypper.
 - [ ] **Release,** then the install check in npm mode on every row before the release is announced. A failure there is
   fixed in 0.11.1.
@@ -191,7 +191,7 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 before. **Done when:** `steward sc plan` and `steward sc audit` run clean on `ubuntu-latest` with Linuxbrew, and the
 Mac's output before and after is identical.
 
-Stage: Under way (0.1 to 0.7, and 0.9, done; 0.8 is left).
+Stage: Done (2026-11-02). Its exit criterion passes in CI on every PR (D74).
 
 - [x] **0.1 Know the platform** (#84, D63). `lib/platform.js` reads `/etc/os-release` (`ID`, `ID_LIKE`, `VERSION_ID`) and returns
   the platform, distribution and family; NixOS by `ID=nixos`. `host.toml` entries take the optional `families` key
@@ -244,9 +244,11 @@ Stage: Under way (0.1 to 0.7, and 0.9, done; 0.8 is left).
   audit's "Next:" line and the vulns coverage name only what applies here; the help texts are platform-neutral; the
   add-on is named for this OS, CPU and C library, with none (not a failure) where RuVector ships none. Found and fixed
   on the way: a test file that ended early yet passed, and doctor tests that wrote receipts into the real state folder.
-- [ ] **0.8 Ready to package for Linux, and the first Linux CI row.** Publishing no longer needs macOS, and Tests run on
-  `ubuntu-latest` too. `package.json` `os` keeps only `darwin` until [the bar](#the-linux-release-the-bar) is met
-  (R-3), so a release before then stays Mac-only.
+- [x] **0.8 The first Linux CI row** (#100, D74). `test-linux` runs on every PR beside `test-macos`, and one required
+  check, `test`, passes only when both did (owner, 2026-11-02). It checks Milestone 0's exit criterion: the audit
+  without Homebrew and with Linuxbrew, and the plan, on Ubuntu. A release is tested on Linux too. Found and fixed on
+  the way: a crash without Homebrew and a step that failed without an app folder. Publishing moves to Linux, and
+  `package.json` `os` gains `linux`, only at the release step (R-3; owner, 2026-11-02).
 - [x] **0.9 Test each distribution locally, in containers** (#87, D65; owner, 2026-11-01). `just linux-test <distro|all>`
   builds one image per distribution from a base pinned by digest (Renovate keeps it current, behind the gate), with
   bash, git, just and Node 26. It runs `just test` on a read-only copy of the checkout as a non-root user, with no
@@ -368,7 +370,7 @@ Stage: Not started. Comes after Linux and before Windows (D-e).
 | Not supported | ➖ | any cell not above, listed in [`../lifecycle.md`](../lifecycle.md#platforms) |
 
 - [ ] **T.1** One generated list feeds both matrices, so a new provider adds its rows in one place.
-- [ ] **T.2** Tests on `ubuntu-latest` (x64) with Linuxbrew and mise (Milestone 0).
+- [x] **T.2** (#100) Tests on `ubuntu-latest` (x64) with Linuxbrew and mise (Milestone 0).
 - [ ] **T.3** Tests on arm64 Linux.
 - [ ] **T.4** The install check as a matrix, with a Linux row.
 - [ ] **T.5** Container rows join with each provider (Milestone 1).
@@ -401,6 +403,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-02 | 13 | 0.8 done, Milestone 0 complete: the tests on Linux in CI behind one required check, the exit criterion green (D74); T.2 done | #100 |
 | 2026-11-02 | 12 | 0.7 done: the words, the per-platform lists, the RuVector add-on name (D73); Milestone 0 has only 0.8 left | #97 |
 | 2026-11-02 | 11 | 0.6 follow-up: the doctor names a mise tool missing from your own toolchain | #95 |
 | 2026-11-02 | 10 | 0.6 done: steward doctor per platform (D69); the Linux first-run order | #91 |
