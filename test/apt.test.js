@@ -82,7 +82,7 @@ function ctx(distro, answers = {}, extra = {}) {
   };
   const state = path.join(ROOT, `state-${Math.random().toString(36).slice(2)}`);
   return { run, calls, now: NOW, today: '2026-11-03', platform: 'linux', family: 'debian', sysroot: sys, cache: path.join(state, 'cache'),
-    cfg: { policy: { min_release_age_days: 3 }, paths: { state } }, policy: { security_exception: [] }, home: ROOT, ...extra };
+    cfg: { policy: { min_release_age_days: 3 }, profiles: { ai_tooling: false }, paths: { state } }, policy: { security_exception: [] }, home: ROOT, ...extra };
 }
 const SNAP = 'https://snapshot.debian.org/mr/binary/';
 const LP = 'https://api.launchpad.net/1.0/ubuntu/+archive/primary?ws.op=getPublishedBinaries';

@@ -13,6 +13,7 @@ const path = require('path');
 const { X509Certificate } = require('crypto');
 const brew = require('../../lib/providers/brew.js');
 const P = require('../../lib/providers/index.js');
+const apt = require('../../lib/providers/apt.js');
 const U = require('../../lib/updaters.js');
 const V = require('../../lib/vulns.js');
 
@@ -80,9 +81,10 @@ const packages = id => async (ctx, out) => {
     const { name, have, want } = it;
     const j = await P.judge(ctx, s, it), age = j.age;
     const facts = { fix: FIX.upgrade, name, have, want, age };
+    const from = j.from ? `, ${j.from}` : '';
     if (j.exception) out.action(`${s.tag}: ${name} ${have} -> ${want} (security exception: ${j.exception})`, { ...facts, note: `security exception: ${j.exception}` });
-    else if (j.verdict === 'take') out.action(`${s.tag}: ${name} ${have} -> ${want} (${age}d old)`, facts);
-    else out.held(`${name} ${have} -> ${want} (${age}d old${s.heldEta ? `; eligible in ${min - age}d` : ''})`, { ...facts, note: `eligible in ${min - age}d` });
+    else if (j.verdict === 'take') out.action(`${s.tag}: ${name} ${have} -> ${want} (${age}d old${from})`, facts);
+    else out.held(`${name} ${have} -> ${want} (${age}d old${from}${s.heldEta ? `; eligible in ${min - age}d` : ''})`, { ...facts, note: `eligible in ${min - age}d` });
   }
   for (const l of await s.manual(ctx)) out.line(s.manualText('audit', l));
 };
@@ -227,6 +229,11 @@ const CHECKS = [
     id: 'brew-formulae', name: 'Homebrew formulae', platforms: brew.platforms, provider: brew,
     title: ctx => `Homebrew formulae (live API; eligible = at least ${minAge(ctx)}d in homebrew-core, or a host.toml security exception)`,
     run: packages('brew-formula'),
+  },
+  {
+    id: 'apt', name: 'apt packages', platforms: ['linux'], families: ['debian'], provider: apt.source,
+    title: ctx => `apt packages (dated by snapshot.debian.org or Launchpad, else first seen here; eligible = at least ${minAge(ctx)}d)`,
+    run: packages('apt'),
   },
   {
     id: 'brew-casks', name: 'Homebrew casks', platforms: ['macos'], provider: brew, title: () => 'Homebrew casks (casks that update themselves are judged by their app bundle below)',
