@@ -60,7 +60,7 @@ test('release.yml: the release is tested on Linux as well, and publish waits for
 test('test.yml: one job named test passes only when every OS job did, so main\'s required check stays test (the owner\'s idea, 2026-11-02)', () => {
   const g = wf('test.yml').jobs.test;
   assert.ok(g, 'a gate job named test');
-  assert.deepEqual([].concat(g.needs).sort(), ['test-linux', 'test-macos']);
+  assert.deepEqual([].concat(g.needs).sort(), ['rows', 'test-containers', 'test-linux', 'test-macos'], 'the container rows are part of the required check, and so is reading them: a broken matrix.json would skip them, and skipped counts (parity 1c)');
   assert.equal(g.if, '${{ always() }}', 'it runs even when a job it needs failed, and then fails itself');
   assert.equal(g['runs-on'], 'ubuntu-latest');
   const run = g.steps.map(s => s.run || '').join('\n');
@@ -72,4 +72,40 @@ test('test.yml: one job named test passes only when every OS job did, so main\'s
   assert.notEqual(gate('success failure'), 0);
   assert.notEqual(gate('cancelled success'), 0);
   assert.notEqual(gate('skipped skipped'), 0, 'at least one must have passed');
+});
+
+test('test.yml: every row of test/containers/matrix.json runs in CI, from that one list, as just linux-test runs it (parity 1c, T.1)', () => {
+  const t = wf('test.yml');
+  const rows = t.jobs.rows;
+  assert.ok(rows, 'a rows job');
+  assert.equal(rows['runs-on'], 'ubuntu-latest');
+  const step = rows.steps.find(s => /linux-test\.js ci/.test(s.run || ''));
+  assert.ok(step && step.id, 'it reads the rows with node tools/linux-test.js ci, in a step with an id');
+  assert.match(String(rows.outputs && rows.outputs.rows), new RegExp(`steps\\.${step.id}\\.outputs\\.rows`));
+  const c = t.jobs['test-containers'];
+  assert.ok(c, 'a test-containers job');
+  assert.equal(c['runs-on'], 'ubuntu-latest');
+  assert.equal(c.needs, 'rows');
+  assert.equal(c.strategy['fail-fast'], false, 'one row failing never cancels the others');
+  assert.equal(c.strategy.matrix.row, '${{ fromJSON(needs.rows.outputs.rows) }}');
+  const run = c.steps.map(s => s.run || '').join('\n');
+  assert.match(run, /node tools\/linux-test\.js run "?\$\{\{ matrix\.row \}\}"?/, 'the same tool and path as on a Mac');
+  assert.equal(c.if, undefined, 'the private copy too: Linux minutes are cheap');
+});
+
+test('test.yml: the container jobs run linux-test.js on the example toolchain\'s Node (26), not the runner\'s own', () => {
+  const t = wf('test.yml');
+  const mise = t.jobs['test-linux'].steps.find(s => /jdx\/mise-action/.test(s.uses || ''));
+  for (const id of ['rows', 'test-containers']) {
+    const j = t.jobs[id];
+    const steps = j.steps;
+    const m = steps.findIndex(s => s.uses === mise.uses);
+    assert.ok(m >= 0, `${id}: the same pinned mise-action as test-linux`);
+    assert.equal(steps[m].with.version, mise.with.version, `${id}: the same mise`);
+    assert.equal(steps[m].with.install, false, `${id}: the action installs nothing itself`);
+    const n = steps.findIndex(s => /^mise install node$/.test((s.run || '').trim()));
+    const l = steps.findIndex(s => /linux-test\.js/.test(s.run || ''));
+    assert.ok(n > m && l > n, `${id}: Node from the example toolchain, before linux-test.js runs`);
+    assert.equal(j.env && j.env.MISE_GLOBAL_CONFIG_FILE, '${{ github.workspace }}/examples/mise/config.toml', `${id}: the example toolchain`);
+  }
 });

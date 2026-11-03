@@ -1,12 +1,126 @@
 {
-  "about": "The Linux rows for local container tests (just linux-test, tools/linux-test.js) and, later, the CI matrix (parity T.1). One row per distribution the Linux release needs (R-1), its newest release for now (owner, 2026-11-01); each provider PR adds the oldest supported release (D-c). Every image is pinned by tag and digest; Renovate updates them behind the release-age gate. mise is the version the CI workflows pin, checked by its release's sha256.",
+  "about": "The Linux rows for container tests, local (just linux-test, tools/linux-test.js) and CI (test.yml's test-containers, from `linux-test.js ci`: one list for both, parity T.1). Each distribution the Linux release needs (R-1), its oldest and newest supported release (D-c; parity 1c added apt's), named <distro>-<version>; `just linux-test <distro>` runs all of one distribution's rows. supported_until is the release's end of free security support, with its source (date null, with why, when none is published); past it linux-test and CI warn: drop the row. arch lists the CPUs the image has (Mint's: amd64 only). Every image is pinned by tag and digest; Renovate updates them behind the release-age gate. mise is the version the CI workflows pin, checked by its release's sha256.",
   "rows": [
-    { "id": "debian", "family": "debian", "role": "newest", "image": "debian:13@sha256:2dc419c6d7fe3dad0a2f9fd469c34cc90b0f9ba642d8fde837fe3d7d34a0e7f1" },
-    { "id": "ubuntu", "family": "debian", "role": "newest", "image": "ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c" },
-    { "id": "fedora", "family": "rhel", "role": "newest", "image": "fedora:44@sha256:43b29f65a41eb9c35e1cd5323e3bdf3b655c2357a9f4f1ff2f9c2798e5045d80" },
-    { "id": "leap", "family": "suse", "role": "newest", "image": "opensuse/leap:16.0@sha256:952857883a24c24a64c8bc67d7d1a8f9d4800ad4fbe075fc4566ff9af706cb8b" },
     {
-      "id": "tumbleweed", "family": "suse", "role": "rolling", "image": "opensuse/tumbleweed:latest@sha256:0afa1776a6caada91802c6866df7b09edabe248876baf79a1a99918b377ca08c",
+      "id": "debian-12",
+      "distro": "debian",
+      "family": "debian",
+      "role": "oldest",
+      "image": "debian:12@sha256:d74df7598108a173a621eda4d58a2adbf850b2d9a9d81bc2cca1a6c21174a880",
+      "supported_until": {
+        "date": "2028-06-30",
+        "source": "distro-info-data debian.csv (Debian LTS end, owner 2026-11-03: the distribution's own free security support counts)"
+      }
+    },
+    {
+      "id": "debian-13",
+      "distro": "debian",
+      "family": "debian",
+      "role": "newest",
+      "image": "debian:13@sha256:2dc419c6d7fe3dad0a2f9fd469c34cc90b0f9ba642d8fde837fe3d7d34a0e7f1",
+      "supported_until": {
+        "date": "2030-06-30",
+        "source": "distro-info-data debian.csv (Debian LTS end, owner 2026-11-03: the distribution's own free security support counts)"
+      }
+    },
+    {
+      "id": "ubuntu-22.04",
+      "distro": "ubuntu",
+      "family": "debian",
+      "role": "oldest",
+      "image": "ubuntu:22.04@sha256:076e7bf82319619f28dd0aa9c02ab34b055ad37100395b4f49a2ffba04fb5e11",
+      "supported_until": {
+        "date": "2027-06-01",
+        "source": "distro-info-data ubuntu.csv (end of standard support; ESM is paid and doesn't count, owner 2026-11-03)"
+      }
+    },
+    {
+      "id": "ubuntu-26.04",
+      "distro": "ubuntu",
+      "family": "debian",
+      "role": "newest",
+      "image": "ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c",
+      "supported_until": {
+        "date": "2031-05-29",
+        "source": "distro-info-data ubuntu.csv (end of standard support; ESM is paid and doesn't count, owner 2026-11-03)"
+      }
+    },
+    {
+      "id": "mint-21.3",
+      "distro": "mint",
+      "family": "debian",
+      "role": "oldest",
+      "arch": [
+        "amd64"
+      ],
+      "image": "linuxmintd/mint21.3-amd64:latest@sha256:c21780951eb8b1a626078d06e761047d21b3479aa242c11569e141581f012d11",
+      "supported_until": {
+        "date": "2027-04-30",
+        "source": "linuxmint.com/download_all.php: supported until April 2027 (the month's end taken)"
+      }
+    },
+    {
+      "id": "mint-22.3",
+      "distro": "mint",
+      "family": "debian",
+      "role": "newest",
+      "arch": [
+        "amd64"
+      ],
+      "image": "linuxmintd/mint22.3-amd64:latest@sha256:304bbf7ec2a61252962c5210467d231a141661490e8962f52fd4df7688370369",
+      "supported_until": {
+        "date": "2029-04-30",
+        "source": "linuxmint.com/download_all.php: supported until April 2029 (the month's end taken)"
+      },
+      "extra": [
+        "base-files=13ubuntu10mint22.3.0"
+      ],
+      "extra_why": "Mint's image ships Ubuntu's base-files 13ubuntu10.5, which dpkg ranks above Mint's 13ubuntu10mint22.3.0, so its os-release says Ubuntu; this puts Mint's back, as a fresh install has it (owner, 2026-11-03)"
+    },
+    {
+      "id": "lmde-7",
+      "distro": "lmde",
+      "family": "debian",
+      "role": "newest",
+      "arch": [
+        "amd64"
+      ],
+      "image": "linuxmintd/lmde7-amd64:latest@sha256:c9a7c5c147487db008a46f3b646e6a01fac64c6596490931496486c0f66f0232",
+      "supported_until": {
+        "date": null,
+        "why": "Mint's release page gives no end date, only 'Long term support release (LTS)' (2026-11-03)",
+        "source": "linuxmint.com/download_all.php"
+      }
+    },
+    {
+      "id": "fedora-44",
+      "distro": "fedora",
+      "family": "rhel",
+      "role": "newest",
+      "image": "fedora:44@sha256:43b29f65a41eb9c35e1cd5323e3bdf3b655c2357a9f4f1ff2f9c2798e5045d80",
+      "supported_until": {
+        "date": "2027-06-02",
+        "source": "bodhi.fedoraproject.org/releases/F44 (eol)"
+      }
+    },
+    {
+      "id": "leap-16.0",
+      "distro": "leap",
+      "family": "suse",
+      "role": "newest",
+      "image": "opensuse/leap:16.0@sha256:952857883a24c24a64c8bc67d7d1a8f9d4800ad4fbe075fc4566ff9af706cb8b",
+      "supported_until": {
+        "date": null,
+        "why": "get.opensuse.org/leap/16.0 says 24 months of support but no end date; en.opensuse.org/Lifetime refuses scripted reads (2026-11-03)",
+        "source": "get.opensuse.org/leap/16.0"
+      }
+    },
+    {
+      "id": "tumbleweed",
+      "distro": "tumbleweed",
+      "family": "suse",
+      "role": "rolling",
+      "image": "opensuse/tumbleweed:latest@sha256:0afa1776a6caada91802c6866df7b09edabe248876baf79a1a99918b377ca08c",
       "gate_exception": {
         "why": "Tumbleweed's only multi-arch image is latest, rebuilt daily; its dated snapshots that pass the gate have no arm64 build. This digest was pushed 2026-11-01T12:16Z and clears the 3-day gate on its own on 2026-11-04.",
         "decided": "owner, 2026-11-02",

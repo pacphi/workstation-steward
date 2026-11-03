@@ -13,30 +13,84 @@ const { FAMILIES } = require('../lib/platform.js');
 const REPO = path.join(__dirname, '..');
 const MATRIX = path.join(REPO, 'test', 'containers', 'matrix.json');
 
-test('matrix.json: the newest of each distribution the Linux release needs, each pinned by tag and digest', () => {
+test('matrix.json: the oldest and newest of each distribution the Linux release needs (parity 1c, D-c), each pinned by tag and digest', () => {
   const m = L.loadMatrix(MATRIX);
   assert.deepEqual(L.validate(m), []);
-  assert.deepEqual(m.rows.map(r => r.id), ['debian', 'ubuntu', 'fedora', 'leap', 'tumbleweed']);
+  assert.deepEqual(m.rows.map(r => r.id), ['debian-12', 'debian-13', 'ubuntu-22.04', 'ubuntu-26.04', 'mint-21.3', 'mint-22.3', 'lmde-7', 'fedora-44', 'leap-16.0', 'tumbleweed']);
   for (const r of m.rows) {
     assert.ok(FAMILIES.includes(r.family), `${r.id}: family`);
     assert.match(r.image, /^[a-z0-9./-]+(:[\w.-]+)?@sha256:[0-9a-f]{64}$/, `${r.id}: image names a digest`);
     assert.ok(fs.existsSync(path.join(REPO, 'test', 'containers', `${r.family}.Dockerfile`)), `${r.id}: its Dockerfile`);
+    assert.ok(r.id === r.distro || r.id.startsWith(`${r.distro}-`), `${r.id}: named <distro>-<version>`);
   }
+  // the support caps (owner, 2026-11-03): the distribution's own free security support, Debian LTS included
+  const until = Object.fromEntries(m.rows.map(r => [r.id, r.supported_until && r.supported_until.date]));
+  assert.equal(until['debian-12'], '2028-06-30');
+  assert.equal(until['ubuntu-22.04'], '2027-06-01');
+  assert.equal(until['mint-21.3'], '2027-04-30');
+  assert.equal(until['mint-22.3'], '2029-04-30');
+  // Mint publishes amd64 images only; Mint 22.3's image ships Ubuntu's base-files, so its row puts Mint's back
+  for (const id of ['mint-21.3', 'mint-22.3', 'lmde-7']) assert.deepEqual(m.rows.find(r => r.id === id).arch, ['amd64'], `${id}: amd64 only`);
+  assert.deepEqual(m.rows.find(r => r.id === 'mint-22.3').extra, ['base-files=13ubuntu10mint22.3.0']);
   assert.match(m.mise.sha256.arm64, /^[0-9a-f]{64}$/);
   assert.match(m.mise.sha256.x64, /^[0-9a-f]{64}$/);
 });
+
+const GOOD = { id: 'debian-13', distro: 'debian', family: 'debian', role: 'newest', image: `debian:13@sha256:${'a'.repeat(64)}`, supported_until: { date: '2030-06-30', source: 's' } };
+const PIN = { version: '1', sha256: { arm64: 'a'.repeat(64), x64: 'b'.repeat(64) } };
 
 test('validate: names what is wrong with a row or the mise pin', () => {
   const bad = { rows: [{ id: 'x', family: 'debain', image: 'debian:13' }], mise: { version: '', sha256: { arm64: 'zz' } } };
   assert.deepEqual(L.validate(bad), [
     'x: family must be one of debian, rhel, suse, arch, alpine, void, gentoo, slackware, nixos (not debain)',
     'x: image must name a digest (image:tag@sha256:<64 hex>)',
+    'x: distro is missing, and the id must be <distro> or <distro>-<version>',
+    'x: role must be one of oldest, newest, rolling',
+    'x: supported_until needs a date (YYYY-MM-DD, or null with why) and its source',
     'mise: version is missing',
     'mise: sha256.arm64 must be 64 hex characters',
     'mise: sha256.x64 must be 64 hex characters',
   ]);
-  const exc = { rows: [{ id: 'tw', family: 'suse', image: `opensuse/tumbleweed:latest@sha256:${'a'.repeat(64)}`, gate_exception: { why: 'w', decided: 'owner' } }], mise: { version: '1', sha256: { arm64: 'a'.repeat(64), x64: 'b'.repeat(64) } } };
-  assert.deepEqual(L.validate(exc), ['tw: gate_exception needs why, decided and expires (YYYY-MM-DD)'], 'an exception to the release-age gate says why, who and until when');
+  const exc = { rows: [{ id: 'tw', distro: 'tw', family: 'suse', role: 'rolling', image: `opensuse/tumbleweed:latest@sha256:${'a'.repeat(64)}`, gate_exception: { why: 'w', decided: 'owner' } }], mise: PIN };
+  assert.deepEqual(L.validate(exc), ['tw: gate_exception needs why, decided and expires (YYYY-MM-DD)'], 'an exception to the release-age gate says why, who and until when; a rolling row has no end date');
+  assert.deepEqual(L.validate({ rows: [GOOD], mise: PIN }), []);
+  assert.deepEqual(L.validate({ rows: [{ ...GOOD, supported_until: { date: null, why: 'not published', source: 's' } }], mise: PIN }), [], 'no published end date: null, with why');
+  assert.deepEqual(L.validate({ rows: [{ ...GOOD, arch: ['amd64', 'sparc'] }], mise: PIN }), ['debian-13: arch must list amd64 and/or arm64']);
+  assert.deepEqual(L.validate({ rows: [{ ...GOOD, extra: ['base-files'] }], mise: PIN }), ['debian-13: extra must list package=version pins']);
+  assert.deepEqual(L.validate({ rows: [GOOD, { ...GOOD }], mise: PIN }), ['debian-13: the id is used twice']);
+});
+
+test('select: a row by id, a distribution\'s rows by its name, or all; anything else is named', () => {
+  const rows = [{ id: 'debian-12', distro: 'debian' }, { id: 'debian-13', distro: 'debian' }, { id: 'ubuntu-26.04', distro: 'ubuntu' }];
+  assert.deepEqual(L.select(rows, []).rows.map(r => r.id), ['debian-12', 'debian-13', 'ubuntu-26.04']);
+  assert.deepEqual(L.select(rows, ['all']).rows.length, 3);
+  assert.deepEqual(L.select(rows, ['debian']).rows.map(r => r.id), ['debian-12', 'debian-13'], 'just linux-test debian runs both');
+  assert.deepEqual(L.select(rows, ['debian-12', 'ubuntu']).rows.map(r => r.id), ['debian-12', 'ubuntu-26.04']);
+  assert.deepEqual(L.select(rows, ['debain']).unknown, ['debain']);
+});
+
+test('rowX64: a row whose images are amd64 only runs as amd64 on an arm64 Mac too', () => {
+  assert.equal(L.rowX64({ arch: ['amd64'] }, false), true);
+  assert.equal(L.rowX64({}, false), false);
+  assert.equal(L.rowX64({}, true), true);
+  assert.equal(L.rowX64({ arch: ['amd64', 'arm64'] }, false), false);
+});
+
+test('notes: a row past its support end, and a gate exception past its expiry, are said loudly; nothing fails', () => {
+  const rows = [{ ...GOOD, id: 'ubuntu-22.04', supported_until: { date: '2027-06-01', source: 's' } }, GOOD,
+    { id: 'tw', role: 'rolling', gate_exception: { why: 'w', decided: 'owner, 2026-11-02', expires: '2026-11-05' } }];
+  assert.deepEqual(L.notes(rows, '2026-11-03'), ['note: tw runs under a release-age gate exception (owner, 2026-11-02; expires 2026-11-05)']);
+  assert.deepEqual(L.notes(rows, '2027-06-02'), [
+    'PAST SUPPORT: ubuntu-22.04 was supported until 2027-06-01 (s): drop the row',
+    'note: tw runs under a release-age gate exception (owner, 2026-11-02; expires 2026-11-05): EXPIRED, move it to an image past the gate',
+  ]);
+});
+
+test('ci: every row\'s id for the CI matrix, and each note as a GitHub warning (parity T.1)', () => {
+  const m = { rows: [GOOD, { ...GOOD, id: 'ubuntu-22.04', distro: 'ubuntu', supported_until: { date: '2027-06-01', source: 's' } }], mise: PIN };
+  assert.deepEqual(L.ci(m, '2026-11-03'), { rows: ['debian-13', 'ubuntu-22.04'], warnings: [] });
+  assert.deepEqual(L.ci(m, '2027-06-02').warnings, ['::warning title=linux-test::PAST SUPPORT: ubuntu-22.04 was supported until 2027-06-01 (s): drop the row']);
+  assert.deepEqual(L.ci(L.loadMatrix(MATRIX), '2026-11-03').rows, L.loadMatrix(MATRIX).rows.map(r => r.id), 'all rows (owner, 2026-11-03)');
 });
 
 test('the mise in the images is the mise the CI workflows pin', () => {
@@ -70,6 +124,47 @@ test('buildArgs: the label, the base, mise with its checksum for this CPU, the f
   assert.ok(x.includes('MISE_ARCH=x64') && x.includes(`MISE_SHA256=${'c'.repeat(64)}`));
 });
 
+test('buildArgs: a row\'s extra pins go to the build (Mint 22.3 takes back Mint\'s own base-files)', () => {
+  const a = L.buildArgs({ ...ROW, extra: ['base-files=13ubuntu10mint22.3.0'] }, { tag: 't', mise: MISE, context: '/ctx' });
+  assert.ok(a.includes('EXTRA=base-files=13ubuntu10mint22.3.0'), a.join(' '));
+  assert.ok(!L.buildArgs(ROW, { tag: 't', mise: MISE, context: '/ctx' }).some(x => x.startsWith('EXTRA=')), 'none without');
+  const df = fs.readFileSync(path.join(REPO, 'test', 'containers', 'debian.Dockerfile'), 'utf8');
+  assert.match(df, /^ARG EXTRA/m);
+  assert.match(df, /--allow-downgrades/, 'a pin older than what the image has (Ubuntu\'s base-files) is put back on purpose');
+});
+
+test('e2e: apt\'s family runs it; the others say it comes with their provider (parity 1c)', () => {
+  assert.equal(L.e2eRefusal({ id: 'debian-13', family: 'debian' }), null);
+  assert.match(L.e2eRefusal({ id: 'fedora-44', family: 'rhel' }), /fedora-44: --e2e comes with the rhel family's provider/);
+});
+
+test('e2eArgs: network on, writable, started as root (for sudo and the seed), the checkout read-only, labelled, removed after', () => {
+  const a = L.e2eArgs({ tag: 'steward-test/debian-13:abc', name: 'steward-e2e-debian-13-1', checkout: '/src/ws', x64: true });
+  const has = (...xs) => { const i = a.indexOf(xs[0]); return i >= 0 && xs.every((x, k) => a[i + k] === x); };
+  assert.equal(a[0], 'run');
+  assert.ok(has('--rm') && has('--label', `${L.LABEL}=1`) && has('--name', 'steward-e2e-debian-13-1'));
+  assert.ok(!a.includes('none') && !a.includes('--read-only'), 'the real repos need the network');
+  assert.ok(has('--user', 'root'));
+  assert.ok(has('-v', '/src/ws:/src:ro'));
+  assert.ok(has('--platform', 'linux/amd64'));
+  assert.ok(a.includes('/src/test/containers/e2e/apt.sh'), 'the e2e script, from the read-only checkout');
+  for (const f of ['apt.sh', 'drive.js']) assert.ok(fs.existsSync(path.join(REPO, 'test', 'containers', 'e2e', f)), f);
+});
+
+test('drive: answers a prompt only once its text has been seen (readline swallows answers sent early, 1b)', () => {
+  const D = require('./containers/e2e/drive.js');
+  const r = D.responder([{ expect: 'Apply these upgrades? [y/N]', send: 'y' }, { expect: 'Do you want to continue? [Y/n]', send: 'y' }]);
+  assert.deepEqual(r('plan…\n'), []);
+  assert.deepEqual(r('Apply these upg'), [], 'half a prompt is not a prompt');
+  assert.deepEqual(r('rades? [y/N] '), ['y\n']);
+  assert.deepEqual(r('Do you want to continue? [Y/n] '), ['y\n']);
+  assert.deepEqual(r('more output'), []);
+  assert.equal(r.pending(), 0, 'every answer was given');
+  const early = D.responder([{ expect: 'B?', send: 'b' }]);
+  assert.deepEqual(early('A? '), []);
+  assert.equal(early.pending(), 1, 'a prompt that never came is named');
+});
+
 test('runArgs: removed after the run, no network, read-only, non-root, the checkout read-only, work on tmpfs, labelled and named', () => {
   const a = L.runArgs({ tag: 'steward-test/debian:abc', name: 'steward-test-debian-20261101T120000', checkout: '/src/ws' });
   const has = (...xs) => { const i = a.indexOf(xs[0]); return i >= 0 && xs.every((x, k) => a[i + k] === x); };
@@ -85,6 +180,16 @@ test('runArgs: removed after the run, no network, read-only, non-root, the check
   assert.ok(has('-e', 'STEWARD_TEST_FIXTURES=1'));
   assert.equal(a.filter(x => x === '-v').length, 1, 'one mount only: the checkout');
   assert.ok(a.includes('steward-test/debian:abc'));
+});
+
+test('emulated: a row run as amd64 on an arm64 host is emulated, and its tests are told so (looser timing limits; owner, 2026-11-03)', () => {
+  assert.equal(L.emulated({ arch: ['amd64'] }, false, 'arm64'), true, 'Mint on an Apple-silicon Mac');
+  assert.equal(L.emulated({}, true, 'arm64'), true, '--x64 on an Apple-silicon Mac');
+  assert.equal(L.emulated({ arch: ['amd64'] }, true, 'x64'), false, 'Mint on CI: native');
+  assert.equal(L.emulated({}, false, 'arm64'), false, 'Debian on a Mac: native');
+  const on = L.runArgs({ tag: 't', name: 'n', checkout: '/c', x64: true, emulated: true });
+  assert.ok(on.join(' ').includes('-e STEWARD_TEST_EMULATED=1'), on.join(' '));
+  assert.ok(!L.runArgs({ tag: 't', name: 'n', checkout: '/c' }).includes('STEWARD_TEST_EMULATED=1'), 'only when emulated');
 });
 
 // docker's `--format '{{json .}}'` lines: Labels is "k=v,k2=v2"

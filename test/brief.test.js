@@ -8,6 +8,11 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync, execFileSync } = require('child_process');
+// The briefing answers in under a second (D57). A container row run emulated (amd64 on an Apple-silicon Mac:
+// tools/linux-test.js sets STEWARD_TEST_EMULATED=1) gets 3 s instead; CI runs those rows natively at 1 s (owner, 2026-11-03)
+const EMULATED = process.env.STEWARD_TEST_EMULATED === '1';
+const LIMIT_MS = EMULATED ? 3000 : 1000;
+if (EMULATED) console.log('# emulated: the briefing\'s time limits are 3 s here, not 1 s');
 
 const REPO = path.join(__dirname, '..');
 const ROOT = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'steward-brief-')));
@@ -475,7 +480,7 @@ test('a run touches no network and takes under a second: a stub gh, npm, curl an
   console.log(`# steward brief took ${ms.toFixed(0)} ms`);
   assert.equal(r.status, 0, r.stderr);
   assert.ok(!fs.existsSync(marker), `called: ${fs.existsSync(marker) && fs.readFileSync(marker, 'utf8')}`);
-  assert.ok(ms < 1000, `${ms} ms`);
+  assert.ok(ms < LIMIT_MS, `${ms} ms (limit ${LIMIT_MS} ms${EMULATED ? ', emulated' : ''})`);
   const lines = r.stdout.trim().split('\n');
   assert.ok(lines.length <= 3, r.stdout);
   assert.equal(lines[1], 'next: steward config sync, then steward sc install-hybrids');
@@ -657,7 +662,7 @@ test('hook, as Claude Code runs it: JSON out, the stamp written once (0600), qui
     assert.match(out.hookSpecificOutput.additionalContext, /"cmd":"steward config sync/);
     assert.match(out.hookSpecificOutput.additionalContext, /add one short line that starts "Steward:"/);
     assert.match(out.hookSpecificOutput.additionalContext, /^<steward-brief v="1">/);
-    assert.ok(first.ms < 1000, `${first.ms} ms`);
+    assert.ok(first.ms < LIMIT_MS, `${first.ms} ms (limit ${LIMIT_MS} ms${EMULATED ? ', emulated' : ''})`);
     const stamp = JSON.parse(fs.readFileSync(stampF, 'utf8'));
     assert.equal(stamp.session_id, 'sess-1');
     assert.equal(fs.statSync(stampF).mode & 0o777, 0o600);

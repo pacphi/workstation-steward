@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 15](https://img.shields.io/badge/Revision-15-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
+![Revision 16](https://img.shields.io/badge/Revision-16-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -44,7 +44,7 @@ combination we claim.
 | [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Under way | 0 / 10 |
 | [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 6 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
-| [Testing](#testing-the-ci-matrix-and-install-checks) | A CI row and an install-check row for every combination we claim | Under way | 1 / 7 |
+| [Testing](#testing-the-ci-matrix-and-install-checks) | A CI row and an install-check row for every combination we claim | Under way | 3 / 7 |
 | [The Linux release](#the-linux-release-the-bar) | 0.11.0: Milestone 0, apt, dnf and zypper at full parity | Under way | 1 / 8 |
 | [Decisions](#decisions) | The choices the work depends on | All made | 12 / 12 |
 
@@ -153,11 +153,35 @@ When a release leaves the rule, it drops in the steward's next minor release. `s
 isn't supported. Each provider PR checks the actual version numbers against the vendor's lifecycle page, cites it,
 and writes them into this table.
 
+**What counts as security support** (owner, 2026-11-03): the distribution's own free support from its own archive.
+Debian LTS counts (it ships through `security.debian.org`); Ubuntu ESM and Debian ELTS don't, because they are paid
+and need credentials. Linux Mint counts n-3 by series (21, 22), each on its Ubuntu LTS base; LMDE, Mint's Debian
+edition, is on Mint's line too. The apt numbers, from distro-info-data's `debian.csv` and `ubuntu.csv` and
+[Mint's release page](https://www.linuxmint.com/download_all.php), checked 2026-11-03:
+
+| Release | Role | Free security support until |
+| --- | --- | --- |
+| Debian 12 | oldest | 2028-06-30 (LTS) |
+| Debian 13 | newest | 2030-06-30 (LTS) |
+| Ubuntu 22.04 | oldest | 2027-06-01 |
+| Ubuntu 26.04 | newest | 2031-05-29 |
+| Linux Mint 21.3 | oldest | April 2027 |
+| Linux Mint 22.3 | newest | April 2029 |
+| LMDE 7 | newest | not published: Mint's page says only "Long term support release (LTS)" |
+
+Ubuntu 24.04 and Mint 22 to 22.2 fall between oldest and newest, so they are inside the range. Each row in
+`test/containers/matrix.json` carries its end date and source; once a date passes, `just linux-test` and CI warn
+"PAST SUPPORT: drop the row", and nothing goes red (owner, 2026-11-03).
+
+**glibc** (measured 2026-11-03 in the oldest rows' images): Ubuntu 22.04 and Mint 21.3 have glibc 2.35, Debian 12
+has 2.36. Node 26.13.0's Linux build needs 2.28 and mise 2026.10.21 needs 2.18 (the newest `GLIBC_` symbol version
+each binary asks for), so neither raises the floor.
+
 | Distribution | Package manager | Kind | Minimum version | Support | Provider |
 | --- | --- | --- | --- | --- | --- |
-| Debian | apt | fixed releases | n-3, capped (numbers in the apt PR) | Full | ⬜ |
-| Ubuntu | apt | fixed releases | n-3 of the LTS releases, capped (numbers in the apt PR) | Full | ⬜ |
-| Linux Mint | apt | fixed releases | n-3, capped, on a supported Ubuntu LTS base | Full | ⬜ |
+| Debian | apt | fixed releases | 12 (Debian LTS to 2028-06-30) to 13 | Full | 🟨 |
+| Ubuntu | apt | fixed releases | 22.04 (standard support to 2027-06-01) to 26.04 | Full | 🟨 |
+| Linux Mint | apt | fixed releases | 21.3 (to April 2027) to 22.3, by series; LMDE 7 | Full | 🟨 |
 | Fedora | dnf | fixed releases | n-3, capped (in practice the vendor supports two) | Full | ⬜ |
 | openSUSE Leap | zypper | fixed releases | n-3, capped | Full | ⬜ |
 | openSUSE Tumbleweed | zypper | rolling | current | Full | ⬜ |
@@ -260,9 +284,8 @@ Stage: Done (2026-11-02). Its exit criterion passes in CI on every PR (D74).
   It adds to the CI matrix and never replaces it: every supported distribution still gets its CI job on every PR, and
   its install-check row (owner, 2026-11-01).
   Containers run arm64 on an Apple-silicon Mac (x64 by emulation) and have no systemd, so the NixOS VM stays in CI.
-  Linux Mint's rows join with the apt provider (owner, 2026-11-02): Docker Hub has `linuxmintd/mint22-amd64` and
-  `linuxmintd/mint22.2-amd64` (amd64 only), to be confirmed as the Mint project's own account first; until then its
-  Ubuntu base stands in locally. (#87 said Mint has no official image; that was wrong.) Tumbleweed's row
+  Linux Mint's rows joined with the apt provider (1c, #103): `linuxmintd` is the Mint project's own account, the one
+  its CI pushes to, and its images are amd64 only. (#87 said Mint has no official image; that was wrong.) Tumbleweed's row
   pins a `latest` digest under a recorded gate exception (owner, 2026-11-02; expires 2026-11-05): its dated snapshots
   that pass the gate have no arm64 build.
 
@@ -321,9 +344,31 @@ failed safely without it (`Version '2026f-0+deb13u1' for 'tzdata' was not found`
 Proven in the Debian 13 container, 2026-11-03: a real `tzdata` upgrade at a terminal, its rollback, and a hand-off
 finished by `--resume`.
 
+**apt's rows and the real-repo run (1c, D77, #103):** seven container rows, each the oldest or newest supported
+release: Debian 12 and 13, Ubuntu 22.04 and 26.04, Linux Mint 21.3 and 22.3, and LMDE 7. LMDE is dated by
+snapshot.debian.org, since its os-release names a `DEBIAN_CODENAME` and no `UBUNTU_CODENAME`. Mint's images come from
+`linuxmintd` on Docker Hub, the account Mint's own CI pushes to (linuxmint/github-actions, `do-builds.yml`); they are
+amd64 only, so on an Apple-silicon Mac they run under emulation. **The Mint 22.3 quirk:** its image ships Ubuntu's
+`base-files`, so its os-release says Ubuntu. The row installs Mint's own `base-files` (`13ubuntu10mint22.3.0`, from
+Mint's `import` component), so the steward sees Linux Mint, as on a fresh install (owner, 2026-11-03).
+`just linux-test <id> --e2e` runs the whole cycle against the real repositories; all seven rows passed on
+2026-11-03:
+
+| Row | Checks | What it showed |
+| --- | --- | --- |
+| Debian 12 | 14 / 14 | security fixes from `oldstable-security` taken at once; upgrade, rollback, hand-off and `--resume` |
+| Debian 13 | 15 / 15 | `tzdata` 2026f dated 4 days old by snapshot.debian.org and taken; the same steps |
+| Ubuntu 22.04 | 14 / 14 | the same steps, from `jammy-security` |
+| Ubuntu 26.04 | 14 / 14 | the same steps, from `resolute-security` |
+| Linux Mint 21.3 | 95 / 95 | every age in the plan matched Launchpad's, within a day |
+| Linux Mint 22.3 | 144 / 144 | Launchpad's ages matched; Mint's own packages (`xapps-common`, `mint-dev-tools`) first seen here, held |
+| LMDE 7 | 57 / 57 | security fixes taken at once; `mint-dev-tools` first seen here, held |
+
+Mint 21.3 had no package from Mint's own repo waiting, so its first-seen hold was seen only on 22.3 and LMDE 7.
+
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
 | --- | --- | --- | --- | --- |
-| 🟨 apt | Debian, Ubuntu, Linux Mint (the Linux release) | per package | Under way: 1a read-only done (#101, D75); 1b the upgrade with the sudo hand-off done (D76); 1c the rows and the real-repo run | #101 |
+| 🟨 apt | Debian, Ubuntu, Linux Mint (the Linux release) | per package | Under way: 1a read-only done (#101, D75); 1b the upgrade with the sudo hand-off done (#102, D76); 1c the rows, CI and the real-repo run done (#103, D77). Left: its install-check row (T.4, T.7) | #101, #102, #103 |
 | ⬜ dnf | Fedora (the Linux release) | per package | Not started | |
 | ⬜ zypper | openSUSE Leap, Tumbleweed (the Linux release) | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ Flatpak | any | per package | Not started | |
@@ -382,16 +427,19 @@ Stage: Not started. Comes after Linux and before Windows (D-e).
 
 | Tier | When | Cells |
 | --- | --- | --- |
-| Tests | every PR | macOS; `ubuntu-latest` on x64 and arm64; a container for the oldest and newest release of each distribution whose provider has landed |
+| Tests | every PR | macOS; `ubuntu-latest` on x64 and arm64; a container for every row in `test/containers/matrix.json` (owner, 2026-11-03) |
 | Install check | by hand, each release (`gh workflow run install-check.yml -f version=X.Y.Z`) | each fully supported distribution (D-d) × mise's own installer × {worktree, npm}; Linuxbrew on Ubuntu; a NixOS VM |
 | Extended | by hand, before a platform is called supported | mise from the distribution and from Homebrew; arm64 install checks |
 | Not supported | ➖ | any cell not above, listed in [`../lifecycle.md`](../lifecycle.md#platforms) |
 
-- [ ] **T.1** One generated list feeds both matrices, so a new provider adds its rows in one place.
+- [x] **T.1** (#103) One list feeds both matrices, so a new provider adds its rows in one place: `test/containers/matrix.json`.
+  CI's `rows` job reads it (`node tools/linux-test.js ci`), and `test-containers` runs each row the way
+  `just linux-test` does, on the example toolchain's Node through the pinned mise-action. `test` needs both.
 - [x] **T.2** (#100) Tests on `ubuntu-latest` (x64) with Linuxbrew and mise (Milestone 0).
 - [ ] **T.3** Tests on arm64 Linux.
 - [ ] **T.4** The install check as a matrix, with a Linux row.
-- [ ] **T.5** Container rows join with each provider (Milestone 1).
+- [x] **T.5** (#103) Container rows join with each provider (Milestone 1): every row in `matrix.json` runs on every PR,
+  so a provider's rows join CI when it adds them there. apt's seven did in 1c.
 - [ ] **T.6** The NixOS VM row (Milestone 3).
 - [ ] **T.7** The install check takes a `ref`: worktree mode from any commit of `main`, so Linux rows run before the
   release (R-2). npm mode stays for released versions.
@@ -410,7 +458,8 @@ in the PR that relies on it.
   services, Alpine's index, openSUSE's, Void's and Slackware's.
 - [ ] `dnf history undo` on dnf5; the pacman cache and snapper as ways back.
 - [ ] How each family denies a root: `update-ca-certificates`, `update-ca-trust`, p11-kit's blocklist.
-- [ ] The oldest glibc Node 26's Linux binaries need, and mise's.
+- [x] The oldest glibc Node 26's Linux binaries need (2.28), and mise's (2.18): measured 2026-11-03; see
+  [the minimum versions](#supported-platforms-and-minimum-versions).
 - [x] Node 26's Linux arm64 binary needs `libatomic.so.1` (seen on all five rows of 0.9's first run, 2026-11-02).
 - [ ] Node 26 on Alpine: official tarballs have no musl build, and Alpine's package may be older than 26.
 - [ ] mise on NixOS: in nixpkgs; the tools it downloads need `nix-ld`.
@@ -421,6 +470,8 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-03 | 16 | apt 1c done: the minimum versions (what counts as security support), seven apt rows with Mint and LMDE, every row in CI from one list (T.1, T.5), `--e2e` passing on all seven apt rows, the glibc fact (D77) | #103 |
+| 2026-11-03 | 15 | apt 1b done: D-b revised, the upgrade through sudo at your terminal or handed over (D76) | #102 |
 | 2026-11-03 | 14 | apt 1a done: the read-only source, its dates from snapshot.debian.org, Launchpad or the first-seen clock (D75) | #101 |
 | 2026-11-02 | 13 | 0.8 done, Milestone 0 complete: the tests on Linux in CI behind one required check, the exit criterion green (D74); T.2 done | #100 |
 | 2026-11-02 | 12 | 0.7 done: the words, the per-platform lists, the RuVector add-on name (D73); Milestone 0 has only 0.8 left | #97 |

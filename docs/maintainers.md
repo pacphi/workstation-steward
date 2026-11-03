@@ -1,6 +1,6 @@
 # Releasing workstation-steward
 
-![Revision 10](https://img.shields.io/badge/Revision-10-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 11](https://img.shields.io/badge/Revision-11-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
 
 How a release happens, and the one-time npm setup behind it (D46 in [`architecture.md`](architecture.md#decisions)),
 plus what to do when the weekly upstream watch finds that a shipped default changed (D52), and how to check that no
@@ -361,14 +361,18 @@ wrapper.
 
 ## Testing on Linux locally
 
-See a change on Linux before you push it (D65). Each row of `test/containers/matrix.json` is a distribution: Debian,
-Ubuntu, Fedora, openSUSE Leap and Tumbleweed. `just linux-test` builds its image once (later runs reuse it) and runs
-the test suite in a throwaway container with no network. You need Docker: OrbStack or Docker Desktop.
+See a change on Linux before you push it (D65). Each row of `test/containers/matrix.json` is a distribution's
+oldest or newest supported release, named `<distro>-<version>`: Debian 12 and 13, Ubuntu 22.04 and 26.04, Linux Mint
+21.3 and 22.3, LMDE 7, Fedora 44, openSUSE Leap 16.0 and Tumbleweed (D77). `just linux-test` builds a row's image once
+(later runs reuse it) and runs the test suite in a throwaway container with no network. You need Docker: OrbStack or
+Docker Desktop.
 
 ```sh
 just linux-test                  # every row; the same as `just linux-test all`
-just linux-test debian fedora    # some rows
+just linux-test debian fedora    # every Debian row and every Fedora row
+just linux-test ubuntu-22.04     # one row
 just linux-test leap --x64       # the x64 image, under emulation on an Apple-silicon Mac (slower)
+just linux-test debian-13 --e2e  # end to end against the real repositories (network on)
 just linux-clean                 # remove what the runs made: lists it, then asks
 just linux-clean --cache         # the same, then the shared build cache (asks again)
 ```
@@ -384,6 +388,16 @@ the last summary is in `latest.txt` beside it.
 
 The runs add to the CI matrix; they never replace it. A row whose image is pinned under a release-age gate exception
 says so at the start, and says EXPIRED once the exception's date has passed: move the row to an image past the gate.
+A row past its `supported_until` date says PAST SUPPORT: drop it in the next minor release (D-c).
+
+Linux Mint's and LMDE's images are amd64 only, so on an Apple-silicon Mac they always run under emulation, about ten
+times slower. Those rows get `STEWARD_TEST_EMULATED=1`, and the briefing's two 1-second time limits allow 3 s there.
+
+**End to end** (`--e2e`, apt rows for now): the network is on, and the container plays a real machine. As root it
+installs sudo, allowed `apt-get` only, and installs older versions of a few packages the archive still has. Then, as
+the user, it checks each line of `steward sc plan` against snapshot.debian.org or Launchpad, upgrades at a terminal,
+rolls back, and hands the upgrade over and finishes it with `--resume`. Run it before a provider is ticked, not on
+every PR. An emulated row takes 15 to 20 minutes. Each run's output is in `<row>-e2e-<time>.txt` beside the others.
 
 ### In CI
 
@@ -391,3 +405,8 @@ Every PR runs `test-macos` and `test-linux` (Ubuntu), and one check named `test`
 requires `test`, so adding an OS job never means changing branch protection: add it under `test`'s `needs` in
 `.github/workflows/test.yml` (D74). `test-linux` also runs Milestone 0's exit criterion, the audit without Homebrew and
 with Linuxbrew, and puts the output in the job's summary.
+
+`test` also needs `rows` and `test-containers` (D77). `rows` reads `test/containers/matrix.json` and passes the row
+ids on, with a warning for a row past its support date or an expired gate exception; `test-containers` runs each row
+as `node tools/linux-test.js run <id>`, the same path as `just linux-test`, on the example toolchain's Node through the
+pinned mise-action. A new row is one entry in `matrix.json`: CI picks it up on the next PR.
