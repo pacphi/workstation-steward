@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 16](https://img.shields.io/badge/Revision-16-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
+![Revision 16](https://img.shields.io/badge/Revision-17-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -44,7 +44,7 @@ combination we claim.
 | [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Under way | 0 / 10 |
 | [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 6 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
-| [Testing](#testing-the-ci-matrix-and-install-checks) | A CI row and an install-check row for every combination we claim | Under way | 3 / 7 |
+| [Testing](#testing-the-ci-matrix-and-install-checks) | A CI row and an install-check row for every combination we claim | Under way | 5 / 7 |
 | [The Linux release](#the-linux-release-the-bar) | 0.11.0: Milestone 0, apt, dnf and zypper at full parity | Under way | 1 / 8 |
 | [Decisions](#decisions) | The choices the work depends on | All made | 12 / 12 |
 
@@ -127,7 +127,8 @@ ticked.
   distributions.
 - [ ] **CI green** on the oldest and newest supported release of Debian, Ubuntu, Linux Mint, Fedora, openSUSE Leap
   and Tumbleweed.
-- [ ] **Install check, worktree mode,** from the release commit on every one of those rows (T.7).
+- [ ] **Install check, worktree mode,** from the release commit on every one of those rows (T.7):
+  `gh workflow run install-check.yml -f ref=<release commit>`.
 - [ ] **End-to-end runs** (`--e2e`) pass for apt, dnf and zypper.
 - [ ] **Say it:** `package.json` `os` adds `linux`, the publish job moves to `ubuntu-latest`, and the README and [`../lifecycle.md`](../lifecycle.md#platforms)
   say the steward runs on Linux with apt, dnf and zypper.
@@ -366,9 +367,24 @@ Mint's `import` component), so the steward sees Linux Mint, as on a fresh instal
 
 Mint 21.3 had no package from Mint's own repo waiting, so its first-seen hold was seen only on 22.3 and LMDE 7.
 
+**apt's install-check row (1d, D78, #107):** the install check runs on the Mac and on every row of `matrix.json`, the
+same list as the tests (owner, 2026-11-03), from any commit (`-f ref=<sha>`) or a release (`-f version=X.Y.Z`); see
+[the testing section](#testing-the-ci-matrix-and-install-checks). Each Linux row starts from its test image with a
+fresh home and an empty mise, so `mise install` downloads the toolchain as a new user's would (owner, 2026-11-03).
+apt's box counts as ticked when worktree mode passes on its seven rows; npm mode on Linux waits for the release, whose
+`package.json` `os` first names `linux` (the bar's last box, R-2; owner, 2026-11-03). LMDE has one row: Mint's release
+page lists LMDE 7 alone (checked 2026-11-03). Run here on 2026-11-03 with `just linux-test <id> --install-check`:
+Debian 13 passed in 2 min 40 s, Linux Mint 21.3 (emulated) in 2 min 51 s; Debian 13's first try failed on a DNS
+lookup for sigstore's TUF root while mise verified jq, and passed when run again.
+
+**apt's OS updates (1e, next):** point releases and kernels already arrive as apt packages, but nothing says when a
+restart is needed or a newer release is out. A small read-only Linux section will name both, a newer release as a note
+(a release upgrade is a major, never planned), and the real Ubuntu run checks whether a kernel upgrade pulls in its new
+package before anything is claimed (owner, 2026-11-03).
+
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
 | --- | --- | --- | --- | --- |
-| 🟨 apt | Debian, Ubuntu, Linux Mint (the Linux release) | per package | Under way: 1a read-only done (#101, D75); 1b the upgrade with the sudo hand-off done (#102, D76); 1c the rows, CI and the real-repo run done (#103, D77). Left: its install-check row (T.4, T.7) | #101, #102, #103 |
+| 🟨 apt | Debian, Ubuntu, Linux Mint (the Linux release) | per package | Under way: 1a read-only done (#101, D75); 1b the upgrade with the sudo hand-off done (#102, D76); 1c the rows, CI and the real-repo run done (#103, D77); 1d its install-check row done (#107, D78). Left: OS updates, through the provider (1e) | #101, #102, #103, #107 |
 | ⬜ dnf | Fedora (the Linux release) | per package | Not started | |
 | ⬜ zypper | openSUSE Leap, Tumbleweed (the Linux release) | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ Flatpak | any | per package | Not started | |
@@ -428,7 +444,7 @@ Stage: Not started. Comes after Linux and before Windows (D-e).
 | Tier | When | Cells |
 | --- | --- | --- |
 | Tests | every PR | macOS; `ubuntu-latest` on x64 and arm64; a container for every row in `test/containers/matrix.json` (owner, 2026-11-03) |
-| Install check | by hand, each release (`gh workflow run install-check.yml -f version=X.Y.Z`) | each fully supported distribution (D-d) × mise's own installer × {worktree, npm}; Linuxbrew on Ubuntu; a NixOS VM |
+| Install check | by hand: from a commit before a release (`gh workflow run install-check.yml -f ref=<sha>`), from the release after it (`-f version=X.Y.Z`) | macOS and every row in `test/containers/matrix.json` (owner, 2026-11-03) × mise's own release file × {worktree, npm}; npm only where the release's `package.json` `os` names the platform; Linuxbrew on Ubuntu; a NixOS VM |
 | Extended | by hand, before a platform is called supported | mise from the distribution and from Homebrew; arm64 install checks |
 | Not supported | ➖ | any cell not above, listed in [`../lifecycle.md`](../lifecycle.md#platforms) |
 
@@ -437,12 +453,16 @@ Stage: Not started. Comes after Linux and before Windows (D-e).
   `just linux-test` does, on the example toolchain's Node through the pinned mise-action. `test` needs both.
 - [x] **T.2** (#100) Tests on `ubuntu-latest` (x64) with Linuxbrew and mise (Milestone 0).
 - [ ] **T.3** Tests on arm64 Linux.
-- [ ] **T.4** The install check as a matrix, with a Linux row.
+- [x] **T.4** (#107) The install check as a matrix, with a Linux row: a `rows` job reads `matrix.json`, and a `macos`
+  job and one `linux` job per row each run `tools/install-check.sh`, the rows through `linux-test.js run <id>
+  --install-check`, as `just linux-test` runs them locally.
 - [x] **T.5** (#103) Container rows join with each provider (Milestone 1): every row in `matrix.json` runs on every PR,
   so a provider's rows join CI when it adds them there. apt's seven did in 1c.
 - [ ] **T.6** The NixOS VM row (Milestone 3).
-- [ ] **T.7** The install check takes a `ref`: worktree mode from any commit of `main`, so Linux rows run before the
-  release (R-2). npm mode stays for released versions.
+- [x] **T.7** (#107) The install check takes a `ref`: worktree mode from any commit of `main`, so Linux rows run before the
+  release (R-2). npm mode stays for released versions. A commit not on `main` runs too, and its summary says it
+  doesn't count for the release bar (owner, 2026-11-03). The tooling comes from the workflow's own commit, what is
+  installed from the ref or the tag, since an older tag has neither the script nor the list.
 
 > [!IMPORTANT]
 > Linux runners and containers cost nothing on the public repo. macOS rows keep running by hand on a private copy,
@@ -470,6 +490,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-03 | 17 | apt 1d done: the install check as a matrix from a ref, on the Mac and every `matrix.json` row (T.4, T.7, D78); how LMDE fits; OS updates decided for 1e | #107 |
 | 2026-11-03 | 16 | apt 1c done: the minimum versions (what counts as security support), seven apt rows with Mint and LMDE, every row in CI from one list (T.1, T.5), `--e2e` passing on all seven apt rows, the glibc fact (D77) | #103 |
 | 2026-11-03 | 15 | apt 1b done: D-b revised, the upgrade through sudo at your terminal or handed over (D76) | #102 |
 | 2026-11-03 | 14 | apt 1a done: the read-only source, its dates from snapshot.debian.org, Launchpad or the first-seen clock (D75) | #101 |
