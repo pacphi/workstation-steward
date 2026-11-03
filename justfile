@@ -114,8 +114,9 @@ progress-gaps *args:
     node tools/progress-gaps.js {{args}}
 
 # Run every test: the merge rules and writers, then onboarding and offboarding end to end on throwaway repos
-# Linux: run the tests in a throwaway container per distribution, no network (test/containers/matrix.json; parity 0.9).
-# Rows: debian, ubuntu, fedora, leap, tumbleweed, or all. Logs: ~/.local/state/workstation-steward/linux-test/
+# Linux: run the tests in a throwaway container per release, no network (test/containers/matrix.json; parity 0.9, D77).
+# Rows: an id (debian-13, mint-21.3 …), a distribution (debian, ubuntu, mint, lmde, fedora, leap, tumbleweed), or all;
+# --e2e: end to end against the real repositories (apt rows). Logs: ~/.local/state/workstation-steward/linux-test/
 linux-test *args:
     node tools/linux-test.js run {{args}}
 
