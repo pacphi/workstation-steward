@@ -42,6 +42,7 @@ test('install-check.sh refuses to run on a plain machine: it writes ~/.local/bin
 
 test('install-check.sh: the version line it expects, worked out as steward version works it out (a tag, else HEAD@<short>)', () => {
   const d = repo('1.2.3');
+  git(d, 'switch', '-q', '--detach');   // the release worktree is always detached (tools/release-worktree)
   const short = git(d, 'rev-parse', '--short', 'HEAD').stdout.trim();
   assert.equal(fn('ic_expected', d).stdout.trim(), `release 1.2.3 (HEAD@${short})`, 'a commit with no tag (T.7: any commit of main)');
   git(d, 'tag', 'v1.2.3');
@@ -80,8 +81,9 @@ test('linux-test --install-check: its arguments (a ref, rows), and it never runs
 
 test('installCheckArgs: the row\'s image with a fresh home and an empty mise, the network on, read-only, non-root, the subject copied in', () => {
   const a = L.installCheckArgs({ tag: 'steward-test/debian-13:abc', name: 'steward-ic-debian-13-1', tooling: '/w/tooling', subject: '/w/subject', x64: true,
-    env: { IC_VERSION: '0.11.0', CLAUDE_CODE: '2.1.312', RELEASE_AGE_DAYS: '', IC_REF: 'abc1234', GH_TOKEN: 'secret', HOME: '/Users/me' } });
-  const has = (...xs) => { const i = a.indexOf(xs[0]); return i >= 0 && xs.every((x, k) => a[i + k] === x); };
+    env: { IC_VERSION: '0.11.0', CLAUDE_CODE: '2.1.312', RELEASE_AGE_DAYS: '', IC_REF: 'abc1234', GH_TOKEN: 'secret', HOME: '/outer/home' } });
+  // has(...xs) — those arguments, in a row, anywhere (a flag can come more than once: --tmpfs, -v, -e)
+  const has = (...xs) => a.some((_, i) => xs.every((x, k) => a[i + k] === x));
   assert.equal(a[0], 'run');
   assert.ok(has('--rm') && has('--label', `${L.LABEL}=1`) && has('--name', 'steward-ic-debian-13-1') && has('--platform', 'linux/amd64'));
   assert.ok(!a.includes('none'), 'the network is on: mise, npm and GitHub are what a fresh machine reaches');
@@ -90,7 +92,7 @@ test('installCheckArgs: the row\'s image with a fresh home and an empty mise, th
   assert.ok(has('-v', '/w/tooling:/tooling:ro') && has('-v', '/w/subject:/subject:ro'));
   const env = a.flatMap((x, i) => (x === '-e' ? [a[i + 1]] : []));
   for (const e of ['STEWARD_INSTALL_CHECK=1', 'HOME=/work/home', 'MISE_DATA_DIR=/work/home/.local/share/mise', 'MISE_OFFLINE=0', 'PATH=/usr/local/bin:/usr/bin:/bin', 'IC_VERSION=0.11.0', 'CLAUDE_CODE=2.1.312', 'IC_REF=abc1234']) assert.ok(env.includes(e), e);
-  assert.ok(!env.some(e => e.startsWith('GH_TOKEN=') || e === 'HOME=/Users/me'), 'only the install check\'s own inputs go in');
+  assert.ok(!env.some(e => e.startsWith('GH_TOKEN=') || e === 'HOME=/outer/home'), 'only the install check\'s own inputs go in');
   assert.ok(!env.some(e => e.includes('/opt/mise')), 'the image\'s preinstalled toolchain is off the PATH and out of mise');
   assert.match(a[a.length - 1], /cp -a \/subject\/\. \/work\/subject\/.*bash \/tooling\/tools\/install-check\.sh \/work\/subject/, 'git worktree add writes into .git, so the subject is copied');
 });

@@ -10,7 +10,7 @@ default:
 lint:
     biome lint --error-on-warnings .
     tsc -p tsconfig.json
-    shellcheck -x lib/lib.sh tools/release-worktree .claude/skills/steward-maintain/bin/*.sh supply-chain/bin/install-hybrids supply-chain/bin/link supply-chain/bin/mise-self-update supply-chain/bin/node-patch supply-chain/bin/plan supply-chain/bin/prune supply-chain/bin/release-age supply-chain/bin/retire-hybrid supply-chain/bin/rollback supply-chain/bin/status supply-chain/bin/trust-review supply-chain/bin/upgrade-tool supply-chain/bin/verify
+    shellcheck -x lib/lib.sh tools/release-worktree tools/install-check.sh .claude/skills/steward-maintain/bin/*.sh supply-chain/bin/install-hybrids supply-chain/bin/link supply-chain/bin/mise-self-update supply-chain/bin/node-patch supply-chain/bin/plan supply-chain/bin/prune supply-chain/bin/release-age supply-chain/bin/retire-hybrid supply-chain/bin/rollback supply-chain/bin/status supply-chain/bin/trust-review supply-chain/bin/upgrade-tool supply-chain/bin/verify
     node --check bin/steward.js
     node --check tools/export.js
     node --check tools/terminal-svg.js
@@ -116,7 +116,8 @@ progress-gaps *args:
 # Run every test: the merge rules and writers, then onboarding and offboarding end to end on throwaway repos
 # Linux: run the tests in a throwaway container per release, no network (test/containers/matrix.json; parity 0.9, D77).
 # Rows: an id (debian-13, mint-21.3 …), a distribution (debian, ubuntu, mint, lmde, fedora, leap, tumbleweed), or all;
-# --e2e: end to end against the real repositories (apt rows). Logs: ~/.local/state/workstation-steward/linux-test/
+# --e2e: end to end against the real repositories (apt rows); --install-check [--ref <commit>]: the install check in a fresh
+# home, as the Install check workflow runs it (parity 1d). Logs: ~/.local/state/workstation-steward/linux-test/
 linux-test *args:
     node tools/linux-test.js run {{args}}
 
