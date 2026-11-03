@@ -64,7 +64,9 @@ test('firstSeen: the first time a version is seen, kept from then on', () => {
 function ctx(distro, answers = {}, extra = {}) {
   const sys = path.join(ROOT, `sys-${distro}-${Math.random().toString(36).slice(2)}`);
   const rel = { debian: 'ID=debian\nVERSION_ID="13"\nVERSION_CODENAME=trixie\n', ubuntu: 'ID=ubuntu\nID_LIKE=debian\nVERSION_ID="26.04"\nVERSION_CODENAME=resolute\nUBUNTU_CODENAME=resolute\n',
-    linuxmint: 'ID=linuxmint\nID_LIKE="ubuntu debian"\nVERSION_ID="22.2"\nVERSION_CODENAME=zara\nUBUNTU_CODENAME=noble\n' }[distro];
+    linuxmint: 'ID=linuxmint\nID_LIKE="ubuntu debian"\nVERSION_ID="22.2"\nVERSION_CODENAME=zara\nUBUNTU_CODENAME=noble\n',
+    // LMDE 7's own os-release (linuxmintd/lmde7-amd64, 2026-11-03): Mint on Debian, with no Ubuntu codename
+    lmde: 'NAME="LMDE"\nVERSION_ID="7"\nVERSION_CODENAME=gigi\nID=linuxmint\nID_LIKE=debian\nDEBIAN_CODENAME=trixie\n' }[distro];
   put(path.join(sys, 'etc', 'os-release'), rel);
   const calls = [];
   const run = async (cmd, args = []) => {
@@ -108,6 +110,15 @@ test('releaseDate on Ubuntu and on Mint (its Ubuntu base): Launchpad, for this r
 test('releaseDate with no public date (Mint\'s own repo, a PPA): the first-seen clock', async () => {
   const m = ctx('linuxmint', { [LP]: { entries: [] } });
   assert.deepEqual(await A.source.releaseDate(m, 'mintupdate', '6.0.5'), { date: NOW.toISOString(), from: 'first seen here' });
+});
+
+test('releaseDate on LMDE (Mint on Debian): snapshot.debian.org, as on Debian; a version Debian never had is first seen (parity 1c)', async () => {
+  const c = ctx('lmde', { [`${SNAP}tzdata/2026f-0%2Bdeb13u1/binfiles`]: { fileinfo: { a: [{ archive_name: 'debian', first_seen: '20261028T080000Z' }] } } });
+  assert.deepEqual(await A.source.releaseDate(c, 'tzdata', '2026f-0+deb13u1'), { date: '2026-10-28T08:00:00Z', from: 'snapshot' });
+  assert.ok(!c.calls.some(k => k.includes('launchpad')), 'never Launchpad: LMDE has no Ubuntu base');
+  const m = ctx('lmde');
+  assert.deepEqual(await A.source.releaseDate(m, 'mintupdate', '7.1.2'), { date: NOW.toISOString(), from: 'first seen here' });
+  assert.ok(m.calls.some(k => k.startsWith('curl') && k.includes('snapshot.debian.org')), 'snapshot was asked first');
 });
 
 test('sources: apt on the Debian family only', () => {
