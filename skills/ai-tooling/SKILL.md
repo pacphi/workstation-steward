@@ -78,7 +78,7 @@ Follow the runbook section that matches the request:
 - Rollback (`runbook.md#rollback`).
 
 `ai repin`, `ai guard` and `ai transport` change things after a plan and the user's yes, with a backup and a
-receipt. `ai qualify` and `ai promote` arrive in 5c; until then, follow the recipe by hand, one approved step at a
+receipt. `ai qualify` and `ai promote` are planned as tool-neutral verbs over tool packs (#105, for 0.12.0); until then, follow the recipe by hand (for Brain, `runbook.md#a-new-brain-release-by-hand`), one approved step at a
 time.
 
 ## Done when

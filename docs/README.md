@@ -1,6 +1,6 @@
 # Docs index
 
-![Revision 31](https://img.shields.io/badge/Revision-31-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
+![Revision 31](https://img.shields.io/badge/Revision-32-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
 
 Every public doc, by kind. Each doc shows its revision and revision date in badges under the title. The number changes only when the
 content does; moving a file or fixing a link doesn't count. The rules are in
@@ -35,6 +35,7 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | AI tooling | [`../ai-tooling/README.md`](../ai-tooling/README.md) | — | Policy file, what `steward ai drift` checks |
 | AI tooling | [`../skills/ai-tooling/qualification.md`](../skills/ai-tooling/qualification.md) | 3, 2026-10-30 | What has to be true before a new AQE or Ruflo version reaches a project, and the standing guards |
 | AI tooling | [`ai-tooling/upstream-and-reconcile.md`](ai-tooling/upstream-and-reconcile.md) | 6, 2026-10-30 | The three layers (upstream, your machine, each project), from an upstream ask to a retired patch, what `projects reconcile` adds, challenges and mitigations (D42) |
+| AI tooling | [`ai-tooling/tool-packs.md`](ai-tooling/tool-packs.md) | 1, 2026-11-03 | Proposed (#105, 0.12.0): what the steward knows about each AI tool, kept as data in a pack, run by tool-neutral `ai check`, `qualify` and `promote` |
 | Projects | [`../projects/README.md`](../projects/README.md) | — | What counts as a project, the registry fields, `scan` and `list` |
 | Projects | [`../projects/profiles/README.md`](../projects/profiles/README.md) | — | The per-tool onboarding profiles and how they're filled in |
 | Fleet | [`../fleet/README.md`](../fleet/README.md) | — | `fleet sync` and `prune-merged` after merges; Renovate and PR consolidation, with links to the runbook and the skill's rules |
@@ -44,7 +45,7 @@ content does; moving a file or fixing a link doesn't count. The rules are in
 | Area | Doc | Rev | Covers |
 | --- | --- | --- | --- |
 | Supply chain | [`../skills/supply-chain/runbook.md`](../skills/supply-chain/runbook.md) | 9, 2026-10-31 | Routine check, upgrades (one yes with `steward upgrade`), mise itself, Renovate PRs, checking the queue the release-age gate holds, Node security releases, advisories, trust exceptions, prune, changing the release-age gate, rollback |
-| AI tooling | [`../skills/ai-tooling/runbook.md`](../skills/ai-tooling/runbook.md) | 21, 2026-10-31 | Drift and `steward ai fix`, new AQE releases, Ruflo version changes, bringing projects in step after a promotion, retiring a patch when an upstream fix lands, Brain, launcher drift, guards, rollback |
+| AI tooling | [`../skills/ai-tooling/runbook.md`](../skills/ai-tooling/runbook.md) | 22, 2026-11-03 | Drift and `steward ai fix`, new AQE releases, Ruflo version changes, bringing projects in step after a promotion, retiring a patch when an upstream fix lands, Brain (and a new Brain release by hand), launcher drift, guards, rollback |
 | Projects | [`../skills/projects/runbook.md`](../skills/projects/runbook.md) | 17, 2026-10-31 | New projects, decisions (and their rollback), `steward projects apply`, vanished projects, onboarding and offboarding, what may be written |
 | Fleet | [`fleet/runbook.md`](fleet/runbook.md) | 4, 2026-10-31 | Bringing a repo under Renovate, bot-PR consolidation, merging, syncing checkouts and pruning merged branches (`steward fleet tidy`), long-lived lines |
 
