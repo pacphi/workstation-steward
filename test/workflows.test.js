@@ -92,3 +92,20 @@ test('test.yml: every row of test/containers/matrix.json runs in CI, from that o
   assert.match(run, /node tools\/linux-test\.js run "?\$\{\{ matrix\.row \}\}"?/, 'the same tool and path as on a Mac');
   assert.equal(c.if, undefined, 'the private copy too: Linux minutes are cheap');
 });
+
+test('test.yml: the container jobs run linux-test.js on the example toolchain\'s Node (26), not the runner\'s own', () => {
+  const t = wf('test.yml');
+  const mise = t.jobs['test-linux'].steps.find(s => /jdx\/mise-action/.test(s.uses || ''));
+  for (const id of ['rows', 'test-containers']) {
+    const j = t.jobs[id];
+    const steps = j.steps;
+    const m = steps.findIndex(s => s.uses === mise.uses);
+    assert.ok(m >= 0, `${id}: the same pinned mise-action as test-linux`);
+    assert.equal(steps[m].with.version, mise.with.version, `${id}: the same mise`);
+    assert.equal(steps[m].with.install, false, `${id}: the action installs nothing itself`);
+    const n = steps.findIndex(s => /^mise install node$/.test((s.run || '').trim()));
+    const l = steps.findIndex(s => /linux-test\.js/.test(s.run || ''));
+    assert.ok(n > m && l > n, `${id}: Node from the example toolchain, before linux-test.js runs`);
+    assert.equal(j.env && j.env.MISE_GLOBAL_CONFIG_FILE, '${{ github.workspace }}/examples/mise/config.toml', `${id}: the example toolchain`);
+  }
+});

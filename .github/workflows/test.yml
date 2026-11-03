@@ -97,10 +97,19 @@ jobs:
   # as a non-root user. A row past its support end, or an expired gate exception, shows as a warning on the run, never red.
   rows:
     runs-on: ubuntu-latest
+    env:
+      MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
+      MISE_IGNORED_CONFIG_PATHS: ${{ github.workspace }}/mise
     outputs:
       rows: ${{ steps.rows.outputs.rows }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        with:
+          version: 2026.10.21
+          install: false
+      # linux-test.js on the example toolchain's Node (26), as everywhere else, not the runner's own
+      - run: mise install node
       - id: rows
         run: node tools/linux-test.js ci
 
@@ -112,8 +121,17 @@ jobs:
       matrix:
         row: ${{ fromJSON(needs.rows.outputs.rows) }}
     name: test-containers (${{ matrix.row }})
+    env:
+      MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
+      MISE_IGNORED_CONFIG_PATHS: ${{ github.workspace }}/mise
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        with:
+          version: 2026.10.21
+          install: false
+      # linux-test.js on the example toolchain's Node (26), as everywhere else, not the runner's own
+      - run: mise install node
       - name: just linux-test ${{ matrix.row }}
         env:
           XDG_STATE_HOME: ${{ runner.temp }}/state
