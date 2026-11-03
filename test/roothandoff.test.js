@@ -202,13 +202,16 @@ test('steward sc rollback <receipt> sends a root-upgrade receipt to the root han
   const dir = path.join(ROOT, 'rb-state', 'backups', 'apt-upgrade-20261103T120000Z');
   fs.mkdirSync(dir, { recursive: true });
   const rp = path.join(dir, 'receipt.json');
-  fs.writeFileSync(rp, JSON.stringify({ kind: 'root-upgrade', source: 'apt', complete: true, outcome: 'done', items: [TZ], after: { tzdata: TZ.want },
-    back: { items: [{ name: 'tzdata', to: TZ.have }], none: [], command: 'sudo apt-get install --allow-downgrades tzdata=2026e-0+deb13u1' } }));
+  // versions no real machine has: the rollback reads this machine's own dpkg, and Debian 13's image has tzdata 2026e-0+deb13u1
+  // installed, so TZ's versions read as already put back there (found by the Debian 13 container row, parity 1c)
+  const tz = { ...TZ, have: '0~steward.test1', want: '0~steward.test2' };
+  fs.writeFileSync(rp, JSON.stringify({ kind: 'root-upgrade', source: 'apt', complete: true, outcome: 'done', items: [tz], after: { tzdata: tz.want },
+    back: { items: [{ name: 'tzdata', to: tz.have }], none: [], command: 'sudo apt-get install --allow-downgrades tzdata=0~steward.test1' } }));
   const r = spawnSync('bash', [path.join(__dirname, '..', 'supply-chain', 'bin', 'rollback'), rp], {
     encoding: 'utf8', env: { ...process.env, DRY_RUN: '1', STEWARD_INSTANCE: path.join(__dirname, '..', 'examples'), XDG_STATE_HOME: path.join(ROOT, 'rb-xdg'), NO_COLOR: '1' },
   });
   const out = `${r.stdout}${r.stderr}`;
   assert.equal(r.status, 0, out);
-  assert.ok(out.includes('sudo apt-get install --allow-downgrades tzdata=2026e-0+deb13u1'), out);
+  assert.ok(out.includes('sudo apt-get install --allow-downgrades tzdata=0~steward.test1'), out);
   assert.ok(!out.includes('updaters.js'), 'not the declared updaters\' rollback');
 });
