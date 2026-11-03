@@ -310,7 +310,7 @@ by the first-seen clock (owner, 2026-11-03). apt is built in three PRs, 1a to 1c
 
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
 | --- | --- | --- | --- | --- |
-| 🟨 apt | Debian, Ubuntu, Linux Mint (the Linux release) | per package | Under way: 1a read-only done (#PR, D75); 1b the upgrade with the sudo hand-off; 1c the rows and the real-repo run | #PR |
+| 🟨 apt | Debian, Ubuntu, Linux Mint (the Linux release) | per package | Under way: 1a read-only done (#101, D75); 1b the upgrade with the sudo hand-off; 1c the rows and the real-repo run | #101 |
 | ⬜ dnf | Fedora (the Linux release) | per package | Not started | |
 | ⬜ zypper | openSUSE Leap, Tumbleweed (the Linux release) | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ Flatpak | any | per package | Not started | |
@@ -408,7 +408,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-03 | 14 | apt 1a done: the read-only source, its dates from snapshot.debian.org, Launchpad or the first-seen clock (D75) | #PR |
+| 2026-11-03 | 14 | apt 1a done: the read-only source, its dates from snapshot.debian.org, Launchpad or the first-seen clock (D75) | #101 |
 | 2026-11-02 | 13 | 0.8 done, Milestone 0 complete: the tests on Linux in CI behind one required check, the exit criterion green (D74); T.2 done | #100 |
 | 2026-11-02 | 12 | 0.7 done: the words, the per-platform lists, the RuVector add-on name (D73); Milestone 0 has only 0.8 left | #97 |
 | 2026-11-02 | 11 | 0.6 follow-up: the doctor names a mise tool missing from your own toolchain | #95 |
