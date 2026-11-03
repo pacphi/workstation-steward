@@ -1,6 +1,6 @@
 # Lifecycle
 
-![Revision 23](https://img.shields.io/badge/Revision-23-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 23](https://img.shields.io/badge/Revision-24-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
 
 How someone installs workstation-steward, sets it up, uses it, and keeps it, their config and their projects safe
 over release after release. It is the contract the code is built to: each part is marked **built** or **planned**.
@@ -302,7 +302,7 @@ one's tag: remove it with `git -C <that repository> worktree remove <folder>` fi
 Check with `steward version`.
 
 **Switch to npm through mise.** *Built; the install check proves it on a clean Mac
-([`maintainers.md`](maintainers.md#checking-a-release-on-a-clean-mac)).* Keep the worktree: it becomes the fallback.
+([`maintainers.md`](maintainers.md#the-install-check-a-commit-or-a-release-on-a-mac-and-linux)).* Keep the worktree: it becomes the fallback.
 
 1. Check the release's provenance: its record must name this repository and `release.yml`
    ([the README shows how](../README.md#why-its-different)). Then pin it with the

@@ -1,18 +1,26 @@
-# A released workstation-steward on a fresh Mac, the way a maintainer's machine runs it (D41, D48), switching between
-# the two release modes (docs/lifecycle.md, Where the release comes from): a worktree at the tag, then the npm package
-# through mise, then back. On the way it installs the Claude Code skills plugin: a runner is not a Claude Code session,
-# so the plugin's command is accepted with --yes. mise puts tools on PATH with `mise activate` (no shims), as on a
-# maintainer's Mac, so dropping the npm pin hands `steward` back to the worktree's launcher. Every step checks its
-# result and writes a line to the job summary. Started by hand only; read-only, no secrets, nothing published:
-#   gh workflow run install-check.yml -f version=0.2.0
+# The steward installed on a fresh machine the way a maintainer's machine runs it (D41, D48), on a macOS runner and in a
+# container for every row of test/containers/matrix.json (parity 1d, T.4 and T.7), each running tools/install-check.sh:
+# a worktree at the commit, the config and mise's link, steward check, and the Claude Code skills plugin (a runner is not
+# a Claude Code session, so the plugin's command is accepted with --yes); for a released version, npm mode too, then
+# back to the worktree. Two ways to start it, by hand only; read-only, no secrets, nothing published:
+#   gh workflow run install-check.yml -f ref=<commit of main>   before a release: worktree mode on every row (R-2)
+#   gh workflow run install-check.yml -f version=X.Y.Z          after it: npm mode as well, where its package.json os allows
+# The tooling (the script, linux-test.js, the rows) comes from this workflow's own commit; what is installed, from the
+# ref or the tag: an older tag has neither the script nor the list. A ref not on main runs too, and its summary says it
+# doesn't count for the release bar (owner, 2026-11-03).
 name: Install check
 
 on:
   workflow_dispatch:
     inputs:
+      ref:
+        description: A commit to check in worktree mode (a SHA, or main); give this or version
+        required: false
+        default: ''
       version:
-        description: The released version to check (X.Y.Z)
-        required: true
+        description: A released version to check (X.Y.Z), worktree then npm mode; give this or ref
+        required: false
+        default: ''
       release_age_days:
         description: For this run only, the config's release-age gate in days (empty keeps the config's 3)
         required: false
@@ -31,104 +39,117 @@ defaults:
   run:
     shell: bash
 
+env:
+  NO_PROGRESS: '1'
+  NO_COLOR: '1'
+
 jobs:
-  install:
+  # The inputs, what is installed, and the rows: every row of matrix.json, the same list the tests use (T.1; owner, 2026-11-03)
+  rows:
+    runs-on: ubuntu-latest
+    env:
+      REF: ${{ inputs.ref }}
+      V: ${{ inputs.version }}
+      CLAUDE_CODE: ${{ inputs.claude_code }}
+      RELEASE_AGE_DAYS: ${{ inputs.release_age_days }}
+      MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/tooling/examples/mise/config.toml
+      MISE_IGNORED_CONFIG_PATHS: ${{ github.workspace }}/tooling/mise:${{ github.workspace }}/subject/mise
+    outputs:
+      rows: ${{ steps.rows.outputs.rows }}
+    steps:
+      - name: The inputs, exactly one of ref and version
+        run: |
+          if [[ -n "$REF" && -n "$V" || -z "$REF" && -z "$V" ]]; then echo "give exactly one of ref and version"; exit 1; fi
+          [[ -z "$V" || "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "version is not X.Y.Z: $V"; exit 1; }
+          [[ -z "$REF" || "$REF" == main || "$REF" =~ ^[0-9a-f]{7,40}$ ]] || { echo "ref is not a commit SHA or main: $REF"; exit 1; }
+          [[ "$CLAUDE_CODE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "claude_code is not X.Y.Z: $CLAUDE_CODE"; exit 1; }
+          [[ -z "$RELEASE_AGE_DAYS" || "$RELEASE_AGE_DAYS" =~ ^[0-9]+$ ]] || { echo "release_age_days is not a number"; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: tooling
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: subject
+          ref: ${{ inputs.ref || format('refs/tags/v{0}', inputs.version) }}
+          fetch-depth: 0
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        with:
+          version: 2026.10.21
+          install: false
+      # linux-test.js on the example toolchain's Node (26), as in test.yml, not the runner's own
+      - run: mise install node
+      - id: rows
+        run: node tooling/tools/linux-test.js ci
+      - name: What is installed
+        run: |
+          sha="$(git -C subject rev-parse HEAD)"
+          if git -C subject merge-base --is-ancestor HEAD refs/remotes/origin/main; then on="on main: yes"; else on="NOT on main: doesn't count for the release bar"; fi
+          echo "## Install check: ${V:+workstation-steward $V at }${sha} (${on})" >> "$GITHUB_STEP_SUMMARY"
+
+  macos:
+    needs: rows
     runs-on: macos-latest
     timeout-minutes: 30
     env:
-      V: ${{ inputs.version }}
+      IC_VERSION: ${{ inputs.version }}
       RELEASE_AGE_DAYS: ${{ inputs.release_age_days }}
       CLAUDE_CODE: ${{ inputs.claude_code }}
-      NO_PROGRESS: '1'
-      NO_COLOR: '1'
     steps:
-      - name: The inputs are versions
-        run: |
-          [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "version is not X.Y.Z: $V"; exit 1; }
-          [[ "$CLAUDE_CODE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "claude_code is not X.Y.Z: $CLAUDE_CODE"; exit 1; }
-          [[ -z "$RELEASE_AGE_DAYS" || "$RELEASE_AGE_DAYS" =~ ^[0-9]+$ ]] || { echo "release_age_days is not a number"; exit 1; }
-          echo "## Install check: workstation-steward $V" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: refs/tags/v${{ inputs.version }}
+          path: tooling
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: subject
+          ref: ${{ inputs.ref || format('refs/tags/v{0}', inputs.version) }}
           fetch-depth: 0
+      # mise puts tools on PATH with `mise activate` (no shims), as on a maintainer's Mac, so dropping the npm pin hands
+      # `steward` back to the worktree's launcher
       - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
         with:
           version: 2026.10.21
           install: false
           add_shims_to_path: false
           export_path: false
+      - name: The install check, on the Mac runner
+        run: bash tooling/tools/install-check.sh "${{ github.workspace }}/subject"
 
-      - name: 1. Worktree mode, from just release-worktree at the tag; steward version before and after steward init
+  # Each Linux row in its container, as `just linux-test <id> --install-check` runs it on a Mac: the row's image with a
+  # fresh home and an empty mise, the network on, read-only, as a non-root user (owner, 2026-11-03)
+  linux:
+    needs: rows
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        row: ${{ fromJSON(needs.rows.outputs.rows) }}
+    name: linux (${{ matrix.row }})
+    env:
+      IC_VERSION: ${{ inputs.version }}
+      RELEASE_AGE_DAYS: ${{ inputs.release_age_days }}
+      CLAUDE_CODE: ${{ inputs.claude_code }}
+      IC_SUBJECT: ${{ github.workspace }}/subject
+      MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/tooling/examples/mise/config.toml
+      MISE_IGNORED_CONFIG_PATHS: ${{ github.workspace }}/tooling/mise:${{ github.workspace }}/subject/mise
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: tooling
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: subject
+          ref: ${{ inputs.ref || format('refs/tags/v{0}', inputs.version) }}
+          fetch-depth: 0
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        with:
+          version: 2026.10.21
+          install: false
+      - run: mise install node
+      - name: just linux-test ${{ matrix.row }} --install-check
         env:
-          MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
-        run: |
-          mise install
-          eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo y | just release-worktree "v$V"
-          # before any config: version answers and points at init (the first install check found it failing; fixed in 0.2.1)
-          before="$("$HOME/.local/bin/steward" version)"; echo "$before"
-          grep -qF "no steward.toml yet: steward init" <<<"$before" || { echo "expected version to point at steward init"; exit 1; }
-          "$HOME/.local/bin/steward" init --yes
-          out="$("$HOME/.local/bin/steward" version)"; echo "$out"
-          grep -qF "release $V (v$V)" <<<"$out" || { echo "expected: release $V (v$V)"; exit 1; }
-          echo "1. worktree mode: \`$(head -1 <<<"$out")\`" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: 2. The fresh config checks out, and mise is linked to it
-        env:
-          MISE_GLOBAL_CONFIG_FILE: ${{ github.workspace }}/examples/mise/config.toml
-        run: |
-          eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
-          steward config --check
-          steward sc link
-          ls -l "$HOME/.config/mise/"
-          echo "2. config checks out; mise linked: \`$(readlink "$HOME/.config/mise/config.toml")\`" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: 3. npm mode, from steward sc upgrade-tool
-        run: |
-          eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
-          mise install
-          if [[ -n "$RELEASE_AGE_DAYS" ]]; then
-            echo y | steward sc release-age "$RELEASE_AGE_DAYS"
-            echo "3. the release-age gate lowered to $RELEASE_AGE_DAYS day(s) for this run (input)" >> "$GITHUB_STEP_SUMMARY"
-          fi
-          # the provenance record must name THIS repository and its release workflow, not merely exist
-          curl -fsS "https://registry.npmjs.org/-/npm/v1/attestations/workstation-steward@$V" | REPO="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const a=JSON.parse(s).attestations.find(x=>/slsa/.test(x.predicateType));const w=a&&JSON.parse(Buffer.from(a.bundle.dsseEnvelope.payload,"base64").toString()).predicate.buildDefinition.externalParameters.workflow;if(!w||w.repository!==process.env.REPO||w.path!==".github/workflows/release.yml"){console.error("provenance does not name",process.env.REPO,"release.yml:",JSON.stringify(w));process.exit(1)}console.log("provenance:",w.repository,w.path,w.ref)})'
-          # then the pin; allow_low_downloads approves a package name younger than 30 days,
-          # which mise's npm installer otherwise refuses (this one's until 2026-11-27; the third install check found it)
-          steward sc upgrade-tool "npm:workstation-steward[allow_low_downloads=true]" "$V"
-          eval "$(mise hook-env -s bash)"; hash -r
-          echo "steward is $(command -v steward)"
-          out="$(steward version)"; echo "$out"
-          grep -qF "release $V (npm)" <<<"$out" || { echo "expected: release $V (npm)"; exit 1; }
-          echo "3. npm mode: \`$(head -1 <<<"$out")\` from \`$(command -v steward)\`" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: 4. steward check, and the plugin folder as Claude Code builds it (sh, from home)
-        run: |
-          eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
-          steward check
-          dir="$(cd ~ && sh -c 'steward skills path')"
-          ls "$dir/skills"
-          [[ -f "$dir/.claude-plugin/plugin.json" && -f "$dir/skills/supply-chain/SKILL.md" ]] || { echo "no plugin in $dir"; exit 1; }
-          echo "4. check passed; plugin folder holds: $(ls "$dir/skills" | tr '\n' ' ')" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: 5. The skills plugin, from steward skills install
-        run: |
-          eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
-          npm install -g --allow-scripts=@anthropic-ai/claude-code "@anthropic-ai/claude-code@$CLAUDE_CODE"
-          hash -r; claude --version
-          steward skills install --yes
-          claude plugin list --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const p=JSON.parse(s).find(x=>x.id==="steward@workstation-steward");if(!p||!p.enabled){console.error("steward@workstation-steward is not installed and enabled");process.exit(1)}console.log(JSON.stringify(p))})'
-          echo "5. plugin: \`steward@workstation-steward\` installed and enabled (Claude Code $CLAUDE_CODE)" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: 6. Back to worktree mode, from steward sc rollback
-        run: |
-          eval "$(mise activate bash)"; eval "$(mise hook-env -s bash)"
-          printf 'y\ny\n' | steward sc rollback
-          eval "$(mise hook-env -s bash)"; hash -r
-          echo "steward is $(command -v steward)"
-          out="$(steward version)"; echo "$out"
-          grep -qF "release $V (v$V)" <<<"$out" || { echo "expected: release $V (v$V)"; exit 1; }
-          dir="$(cd ~ && sh -c 'steward skills path')"; ls "$dir/skills"
-          echo "6. back to worktree mode: \`$(head -1 <<<"$out")\`; the plugin's command still answers" >> "$GITHUB_STEP_SUMMARY"
+          XDG_STATE_HOME: ${{ runner.temp }}/state
+        run: node tooling/tools/linux-test.js run "${{ matrix.row }}" --install-check
+      - name: The row's log
+        if: ${{ always() }}
+        run: cat "${RUNNER_TEMP}"/state/workstation-steward/linux-test/*.txt 2>/dev/null | tail -n 300 || true

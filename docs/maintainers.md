@@ -1,6 +1,6 @@
 # Releasing workstation-steward
 
-![Revision 11](https://img.shields.io/badge/Revision-11-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
+![Revision 11](https://img.shields.io/badge/Revision-12-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
 
 How a release happens, and the one-time npm setup behind it (D46 in [`architecture.md`](architecture.md#decisions)),
 plus what to do when the weekly upstream watch finds that a shipped default changed (D52), and how to check that no
@@ -18,7 +18,7 @@ repository; users install releases as [`../README.md`](../README.md) describes.
 - [Renovate on the engine repo](#renovate-on-the-engine-repo)
 - [The maintainer skill](#the-maintainer-skill)
 - [Trying the session hook before a release](#trying-the-session-hook-before-a-release)
-- [Checking a release on a clean Mac](#checking-a-release-on-a-clean-mac)
+- [The install check: a commit or a release, on a Mac and Linux](#the-install-check-a-commit-or-a-release-on-a-mac-and-linux)
 - [The publish guard](#the-publish-guard)
 - [A pre-push leak check for your clone](#a-pre-push-leak-check-for-your-clone)
 - [A shipped default changed upstream](#a-shipped-default-changed-upstream)
@@ -216,25 +216,37 @@ checkout's code against your config. That session writes the hook's real stamp (
 installed release would. `just claude` loads the repo's own `plugin.json`, whose hook calls the pinned `steward`: it
 does nothing until the release has `brief --hook`.
 
-## Checking a release on a clean Mac
+## The install check: a commit or a release, on a Mac and Linux
 
-The Install check workflow (`.github/workflows/install-check.yml`) installs a released version on a fresh macOS
-runner the way a maintainer's machine runs it, and switches between the two release modes
-([`lifecycle.md`](lifecycle.md#two-channels)). Start it by hand:
+The Install check workflow (`.github/workflows/install-check.yml`, D78) installs the steward the way a maintainer's
+machine runs it, on a fresh macOS runner and in a container for every row of
+[`test/containers/matrix.json`](../test/containers/matrix.json), and switches between the two release modes
+([`lifecycle.md`](lifecycle.md#two-channels)). Each place runs the same script, `tools/install-check.sh`. Start it by
+hand, with one of:
 
 ```sh
-gh workflow run install-check.yml --repo pacphi/workstation-steward -f version=X.Y.Z
+gh workflow run install-check.yml --repo pacphi/workstation-steward -f ref=<commit>   # before a release
+gh workflow run install-check.yml --repo pacphi/workstation-steward -f version=X.Y.Z  # after it
 ```
 
-1. Worktree mode: `just release-worktree vX.Y.Z`; `steward version` points at `steward init` while there is no config;
-   then `steward init --yes` (a fresh config from the examples), and `steward version` says `release X.Y.Z (vX.Y.Z)`.
+1. Worktree mode: `just release-worktree <commit or vX.Y.Z>`; `steward version` points at `steward init` while there
+   is no config; then `steward init --yes` (a fresh config from the examples), and `steward version` says
+   `release X.Y.Z (vX.Y.Z)`, or `release X.Y.Z (HEAD@<short>)` at a commit with no tag.
 2. `steward config --check`, and `steward sc link` points mise at the new config.
-3. npm mode: the release's provenance attestation, then
+3. npm mode, for a release only, where its `package.json` `os` names the platform (a Mac-only release skips it on
+   Linux, and says so): the release's provenance attestation, then
    `steward sc upgrade-tool 'npm:workstation-steward[allow_low_downloads=true]' X.Y.Z` (the approval lets mise's npm
    installer take a package name younger than 30 days); `steward version` says `release X.Y.Z (npm)`.
 4. `steward check`, and the plugin folder as Claude Code builds it.
 5. The skills plugin: `steward skills install --yes` (a runner is not a Claude Code session), then `claude plugin list`.
-6. Back to worktree mode: `steward sc rollback`; `steward version` says `(vX.Y.Z)` again.
+6. Back to worktree mode, after 3: `steward sc rollback`; `steward version` says `(vX.Y.Z)` again.
+
+The script itself, the rows and `linux-test.js` come from the workflow's own commit; what is installed comes from the
+ref or the tag, so an old tag can still be checked. The summary's first line names the commit and says whether it is
+on `main`: a commit that isn't (a PR's, before it merges) still runs, and doesn't count for the release bar. Each Linux
+row starts from its test image with a fresh home and an empty mise, with the network on, read-only, as a non-root user;
+`just linux-test <id> --install-check [--ref <commit>]` runs one here the same way (the ref defaults to the checkout's
+HEAD). The script refuses to run anywhere else: it writes `~/.local/bin/steward`, the release worktree and `~/.config`.
 
 The config's release-age gate (3 days) applies to step 3. To check a younger release, set `-f release_age_days=0`:
 it lowers the gate for that run only, and the job summary says so. Each step checks its result and adds a line to the

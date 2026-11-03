@@ -226,7 +226,7 @@ sessions to watch: an advisory check, setting up a new repo, and the AI tooling.
 | [`docs/config-repo.md`](docs/config-repo.md) | Keeping your config in a private Git repo, and in step across your Macs |
 | [`skills/README.md`](skills/README.md) | The Claude Code skills: install, what to ask, and what they do |
 | [`examples/README.md`](examples/README.md) | What goes in your instance |
-| [`docs/maintainers.md`](docs/maintainers.md) | How releases are made, published and checked on a clean Mac |
+| [`docs/maintainers.md`](docs/maintainers.md) | How releases are made, published and checked on a clean Mac and every Linux row |
 | [`docs/README.md`](docs/README.md) | Every doc, the runbooks and the skills |
 
 ## Repository layout

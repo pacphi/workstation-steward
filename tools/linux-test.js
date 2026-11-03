@@ -99,12 +99,51 @@ const runArgs = ({ tag, name, checkout, x64 = false, emulated: emu = false }) =>
 
 // e2eRefusal(row) — null when --e2e runs for the row's family, else why not: each Linux provider brings its own (parity 1c: apt)
 const E2E = { debian: 'apt.sh' };
+// IC_CLAUDE_CODE — the Claude Code version a local install check uses when CLAUDE_CODE isn't set: the workflow's default
+const IC_CLAUDE_CODE = (fs.readFileSync(path.join(REPO, '.github', 'workflows', 'install-check.yml'), 'utf8').match(/claude_code:[\s\S]*?default: '([\d.]+)'/) || [])[1] || '';
 const e2eRefusal = row => (E2E[row.family] ? null : `${row.id}: --e2e comes with the ${row.family} family's provider (docs/platforms/parity.md)`);
 
 // e2eArgs({tag, name, checkout, x64, family}) — `docker run` for an end-to-end run: the real repos (network on), writable, started
 // as root for sudo and the seed, then the script drops to the steward user; the checkout read-only, labelled, removed after
 const e2eArgs = ({ tag, name, checkout, x64 = false, family = 'debian' }) => ['run', '--rm', '--name', name, '--label', `${LABEL}=1`, ...(x64 ? ['--platform', 'linux/amd64'] : []),
   '--user', 'root', '-v', `${checkout}:/src:ro`, '-e', 'NO_PROGRESS=1', '-e', 'NO_COLOR=1', tag, 'bash', `/src/test/containers/e2e/${E2E[family]}`];
+
+// the install check's own inputs (tools/install-check.sh), the only variables that go into its container
+const IC_PASS = ['IC_VERSION', 'IC_REF', 'CLAUDE_CODE', 'RELEASE_AGE_DAYS'];
+// INSIDE_IC: git worktree add writes into the subject's .git, so the read-only subject is copied onto tmpfs first
+const INSIDE_IC = 'set -e; mkdir -p "$HOME" /work/subject; cp -a /subject/. /work/subject/; cd /work/subject; bash /tooling/tools/install-check.sh /work/subject';
+
+// installCheckArgs({tag, name, tooling, subject, x64, env}) — `docker run` for the install check (parity 1d, T.4): the row's
+// image, with a fresh home and an empty mise (the image's /opt/mise toolchain off PATH, so mise install downloads it again,
+// owner 2026-11-03), the network on, read-only, non-root, the tooling and the subject read-only, labelled, removed after
+const installCheckArgs = ({ tag, name, tooling, subject, x64 = false, env = {} }) => ['run', '--rm', '--name', name, '--label', `${LABEL}=1`, ...(x64 ? ['--platform', 'linux/amd64'] : []),
+  '--read-only', '--user', 'steward', '--tmpfs', '/work:exec,mode=1777', '--tmpfs', '/tmp:exec,mode=1777', '-v', `${tooling}:/tooling:ro`, '-v', `${subject}:/subject:ro`,
+  ...['STEWARD_INSTALL_CHECK=1', 'HOME=/work/home', 'MISE_DATA_DIR=/work/home/.local/share/mise', 'MISE_CACHE_DIR=/work/home/.cache/mise', 'MISE_STATE_DIR=/work/home/.local/state/mise',
+    'MISE_GLOBAL_CONFIG_FILE=/work/home/.config/mise/config.toml', 'MISE_OFFLINE=0', 'PATH=/usr/local/bin:/usr/bin:/bin', 'NO_PROGRESS=1', 'NO_COLOR=1', 'CI=1',
+    ...IC_PASS.filter(k => env[k] !== undefined).map(k => `${k}=${env[k]}`)].flatMap(e => ['-e', e]), tag, 'bash', '-c', INSIDE_IC];
+
+// icPassed(out, status) — an install check passed: exit 0 and the script's last line
+const icPassed = (out, status) => status === 0 && /^install check: passed$/m.test(String(out));
+// icSummary(out) — the script's results, its SUMMARY lines, for the job summary
+const icSummary = out => String(out).split('\n').map(l => l.match(/^SUMMARY (.*)$/)).filter(Boolean).map(m => m[1]);
+
+// parseArgs(argv) — `run`'s arguments: rows, --x64, --keep, and one of --e2e and --install-check (with --ref <commit>)
+function parseArgs(argv) {
+  const o = { want: [], x64: false, keep: false, e2e: false, installCheck: false, ref: '' };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--ref') {
+      if (!argv[i + 1] || argv[i + 1].startsWith('--')) throw new Error('--ref needs a commit (a SHA, a tag or a branch)');
+      o.ref = argv[++i];
+    } else if (a === '--x64') o.x64 = true;
+    else if (a === '--keep') o.keep = true;
+    else if (a === '--e2e') o.e2e = true;
+    else if (a === '--install-check') o.installCheck = true;
+    else if (!a.startsWith('--')) o.want.push(a);
+  }
+  if (o.e2e && o.installCheck) throw new Error('use one of --e2e and --install-check');
+  return o;
+}
 
 // jsonLines(text) — docker's `--format '{{json .}}'` output, one object per line
 const jsonLines = text => String(text || '').split('\n').filter(l => l.trim()).map(l => JSON.parse(l));
@@ -148,11 +187,13 @@ function summary(results) {
   const lines = results.map(r => {
     const id = r.id.padEnd(11);
     if (r.status === 'build-failed') return `${id} ✗ the image did not build · ${dur(r.secs)} · ${r.log}`;
+    if (r.status === 'ic-pass') return `${id} ✓ install check passed · ${dur(r.secs)} · ${r.log}`;
+    if (r.status === 'ic-fail') return `${id} ✗ install check failed (exit ${r.exit}) · ${dur(r.secs)} · ${r.log}`;
     if (r.status === 'no-summary') return `${id} ✗ the tests ended without a summary · ${dur(r.secs)} · ${r.log}`;
     if (r.status === 'pass') return `${id} ✓ ${r.pass}/${r.total} pass · ${dur(r.secs)} · ${r.log}`;
     return `${id} ✗ ${r.pass}/${r.total} pass · ${r.fail} fail · ${dur(r.secs)} · ${r.log}`;
   });
-  return { lines, code: results.every(r => r.status === 'pass') ? 0 : 1 };
+  return { lines, code: results.every(r => r.status === 'pass' || r.status === 'ic-pass') ? 0 : 1 };
 }
 
 // docker(args, {log, st}) — run docker; its output to the log file (when given) and its last line to the live stage
@@ -196,8 +237,9 @@ async function run(argv) {
   const bad = validate(m);
   if (bad.length) { for (const b of bad) console.error(`ERROR matrix.json: ${b}`); return 1; }
   if ((await docker(['info', '--format', '{{.ServerVersion}}'])).status !== 0) { console.error('ERROR docker is not running (OrbStack or Docker Desktop)'); return 1; }
-  const hostX64 = argv.includes('--x64') || process.arch === 'x64', keep = argv.includes('--keep'), e2e = argv.includes('--e2e');
-  const want = argv.filter(a => !a.startsWith('--'));
+  let args;
+  try { args = parseArgs(argv); } catch (e) { console.error(`ERROR ${e.message}`); return 2; }
+  const { want, keep, e2e, installCheck, ref } = args, hostX64 = args.x64 || process.arch === 'x64';
   const { rows, unknown } = select(m.rows, want);
   if (unknown.length || !rows.length) { console.error(`ERROR no such row: ${unknown.join(', ') || want.join(', ')} (rows: ${m.rows.map(r => r.id).join(', ')}; or a distribution: ${[...new Set(m.rows.map(r => r.distro))].join(', ')})`); return 2; }
   if (e2e) {
@@ -221,7 +263,8 @@ async function run(argv) {
   const results = [];
   for (const row of rows) {
     const x64 = rowX64(row, hostX64);
-    const t0 = Date.now(), log = path.join(dir, `${row.id}${e2e ? '-e2e' : ''}-${stamp()}.txt`);
+    const kind = e2e ? 'e2e' : installCheck ? 'ic' : 'test';
+    const t0 = Date.now(), log = path.join(dir, `${row.id}${kind === 'test' ? '' : `-${kind}`}-${stamp()}.txt`);
     const secs = () => Math.round((Date.now() - t0) / 1000);
     const recipe = ['Dockerfile', 'install-mise.sh', '.mise-config.toml'].map(f => fs.readFileSync(path.join(ctxDir, f === 'Dockerfile' ? `${row.family}.Dockerfile` : f), 'utf8')).join('\0');
     const tag = imageTag(row, recipe, m.mise) + (x64 ? '-x64' : '');
@@ -238,14 +281,24 @@ async function run(argv) {
         await docker(['image', 'prune', '-f', '--filter', `label=${LABEL}=1`]);
       }
     }
-    const name = `steward-${e2e ? 'e2e' : 'test'}-${row.id.replace(/\./g, '-')}-${stamp().toLowerCase()}`;
+    const name = `steward-${kind}-${row.id.replace(/\./g, '-')}-${stamp().toLowerCase()}`;
     const stop = onInterrupt(name, a => docker(a));
     const bye = async () => { await stop(); process.exit(130); };
     process.once('SIGINT', bye); process.once('SIGTERM', bye);
-    st = pg.stage(e2e ? `${row.id}: end to end (network on, the real repos)` : `${row.id}: tests (no network)`);
+    st = pg.stage(e2e ? `${row.id}: end to end (network on, the real repos)` : installCheck ? `${row.id}: install check (network on, a fresh home)` : `${row.id}: tests (no network)`);
     fs.appendFileSync(log, `\n# docker run (${name})\n`);
-    const r = await stream(e2e ? e2eArgs({ tag, name, checkout: REPO, x64, family: row.family }) : runArgs({ tag, name, checkout: REPO, x64, emulated: emulated(row, hostX64) }), st, log);
+    const subject = process.env.IC_SUBJECT || REPO;
+    const icEnv = { ...process.env, ...(ref ? { IC_REF: ref } : {}), CLAUDE_CODE: process.env.CLAUDE_CODE || IC_CLAUDE_CODE };
+    const r = installCheck ? await stream(installCheckArgs({ tag, name, tooling: REPO, subject, x64, env: icEnv }), st, log)
+      : await stream(e2e ? e2eArgs({ tag, name, checkout: REPO, x64, family: row.family }) : runArgs({ tag, name, checkout: REPO, x64, emulated: emulated(row, hostX64) }), st, log);
     process.removeListener('SIGINT', bye); process.removeListener('SIGTERM', bye);
+    if (installCheck) {
+      const ok = icPassed(r.stdout, r.status);
+      if (ok) st.done('passed'); else st.fail(`FAILED (exit ${r.status})`);
+      if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${icSummary(r.stdout).map(l => (l.startsWith('## ') ? `${l} (${row.id})` : l)).join('\n')}\n`);
+      results.push({ id: row.id, status: ok ? 'ic-pass' : 'ic-fail', exit: r.status, secs: secs(), log: tilde(log) });
+      continue;
+    }
     const c = counts(r.stdout);
     const status = !c ? 'no-summary' : c.fail === 0 && r.status === 0 ? 'pass' : 'fail';
     if (status === 'pass') st.done(`${c.pass}/${c.total} pass`);
@@ -276,7 +329,7 @@ async function clean(argv) {
   return 0;
 }
 
-module.exports = { LABEL, IMAGES, markOurs, loadMatrix, validate, select, rowX64, emulated, notes, ci, imageTag, buildArgs, runArgs, e2eRefusal, e2eArgs, cleanPlan, cleanCommands, staleTags, onInterrupt, counts, summary };
+module.exports = { LABEL, IMAGES, markOurs, loadMatrix, validate, select, rowX64, emulated, notes, ci, imageTag, buildArgs, runArgs, e2eRefusal, e2eArgs, parseArgs, installCheckArgs, icPassed, icSummary, cleanPlan, cleanCommands, staleTags, onInterrupt, counts, summary };
 
 if (require.main === module) {
   const [cmd, ...rest] = process.argv.slice(2);
@@ -291,6 +344,6 @@ if (require.main === module) {
     return 0;
   };
   const go = cmd === 'clean' ? clean : cmd === 'run' ? run : cmd === 'ci' ? ciCmd : null;
-  if (!go) { console.error('usage: linux-test.js run [<id>|<distro>|all] [--x64] [--keep] [--e2e] | ci | clean [--cache]'); process.exitCode = 2; }
+  if (!go) { console.error('usage: linux-test.js run [<id>|<distro>|all] [--x64] [--keep] [--e2e | --install-check [--ref <commit>]] | ci | clean [--cache]'); process.exitCode = 2; }
   else go(rest).then(code => { process.exitCode = code; }).catch(e => { console.error(`ERROR ${e.message}`); process.exitCode = 1; });
 }
