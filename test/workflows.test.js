@@ -60,7 +60,7 @@ test('release.yml: the release is tested on Linux as well, and publish waits for
 test('test.yml: one job named test passes only when every OS job did, so main\'s required check stays test (the owner\'s idea, 2026-11-02)', () => {
   const g = wf('test.yml').jobs.test;
   assert.ok(g, 'a gate job named test');
-  assert.deepEqual([].concat(g.needs).sort(), ['test-containers', 'test-linux', 'test-macos'], 'the container rows are part of the required check (parity 1c)');
+  assert.deepEqual([].concat(g.needs).sort(), ['rows', 'test-containers', 'test-linux', 'test-macos'], 'the container rows are part of the required check, and so is reading them: a broken matrix.json would skip them, and skipped counts (parity 1c)');
   assert.equal(g.if, '${{ always() }}', 'it runs even when a job it needs failed, and then fails itself');
   assert.equal(g['runs-on'], 'ubuntu-latest');
   const run = g.steps.map(s => s.run || '').join('\n');

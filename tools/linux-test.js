@@ -18,6 +18,9 @@ const { FAMILIES } = require('../lib/platform.js');
 const LABEL = 'org.workstation-steward.test';
 const REPO = path.join(__dirname, '..');
 const HEX64 = /^[0-9a-f]{64}$/;
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const ROLES = ['oldest', 'newest', 'rolling'];
+const ARCHES = ['amd64', 'arm64'];
 
 // loadMatrix(file) — test/containers/matrix.json, parsed
 const loadMatrix = (file = path.join(REPO, 'test', 'containers', 'matrix.json')) => JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -28,17 +31,50 @@ function validate(m) {
   for (const r of m.rows || []) {
     if (!FAMILIES.includes(r.family)) bad.push(`${r.id}: family must be one of ${FAMILIES.join(', ')} (not ${r.family})`);
     if (!/^[a-z0-9./-]+(:[\w.-]+)?@sha256:[0-9a-f]{64}$/.test(r.image || '')) bad.push(`${r.id}: image must name a digest (image:tag@sha256:<64 hex>)`);
+    if (!r.distro || !(r.id === r.distro || String(r.id).startsWith(`${r.distro}-`))) bad.push(`${r.id}: distro is missing, and the id must be <distro> or <distro>-<version>`);
+    if (!ROLES.includes(r.role)) bad.push(`${r.id}: role must be one of ${ROLES.join(', ')}`);
+    const u = r.supported_until;
+    if (r.role !== 'rolling' && !(u && u.source && (DAY.test(u.date || '') || (u.date === null && u.why)))) bad.push(`${r.id}: supported_until needs a date (YYYY-MM-DD, or null with why) and its source`);
+    if (r.arch && !(Array.isArray(r.arch) && r.arch.length && r.arch.every(a => ARCHES.includes(a)))) bad.push(`${r.id}: arch must list amd64 and/or arm64`);
+    if (r.extra && !(Array.isArray(r.extra) && r.extra.every(x => /^[a-z0-9][a-z0-9.+-]*=[\w.+:~-]+$/.test(x)))) bad.push(`${r.id}: extra must list package=version pins`);
     const e = r.gate_exception;
-    if (e && !(e.why && e.decided && /^\d{4}-\d{2}-\d{2}$/.test(e.expires || ''))) bad.push(`${r.id}: gate_exception needs why, decided and expires (YYYY-MM-DD)`);
+    if (e && !(e.why && e.decided && DAY.test(e.expires || ''))) bad.push(`${r.id}: gate_exception needs why, decided and expires (YYYY-MM-DD)`);
   }
+  const ids = (m.rows || []).map(r => r.id);
+  for (const id of new Set(ids.filter((x, i) => ids.indexOf(x) !== i))) bad.push(`${id}: the id is used twice`);
   const mise = m.mise || {};
   if (!mise.version) bad.push('mise: version is missing');
   for (const a of ['arm64', 'x64']) if (!HEX64.test((mise.sha256 || {})[a] || '')) bad.push(`mise: sha256.${a} must be 64 hex characters`);
   return bad;
 }
 
-// imageTag(row, recipe, mise) — steward-test/<id>:<12 hex>, from the Dockerfile (and what it copies), the base and mise
-const imageTag = (row, recipe, mise) => `steward-test/${row.id}:${crypto.createHash('sha256').update([recipe, row.image, mise.version, JSON.stringify(mise.sha256)].join('\0')).digest('hex').slice(0, 12)}`;
+// select(rows, want) — {rows, unknown}: rows by id, a distribution's rows by its name (`debian`: every Debian row), or all
+function select(rows, want) {
+  if (!want.length || want.includes('all')) return { rows, unknown: [] };
+  const unknown = want.filter(w => !rows.some(r => r.id === w || r.distro === w));
+  return { rows: rows.filter(r => want.some(w => r.id === w || r.distro === w)), unknown };
+}
+
+// rowX64(row, x64) — whether the row runs as amd64: on an x64 machine, with --x64, or when its images are amd64 only (Mint)
+const rowX64 = (row, x64) => x64 || (Array.isArray(row.arch) && !row.arch.includes('arm64'));
+
+// notes(rows, today) — what to say before a run: a row past its support end (drop it), a gate exception and its expiry
+function notes(rows, today) {
+  const out = [];
+  for (const r of rows) {
+    const u = r.supported_until;
+    if (u && u.date && u.date < today) out.push(`PAST SUPPORT: ${r.id} was supported until ${u.date} (${u.source}): drop the row`);
+    const e = r.gate_exception;
+    if (e) out.push(`note: ${r.id} runs under a release-age gate exception (${e.decided}; expires ${e.expires})${e.expires < today ? ': EXPIRED, move it to an image past the gate' : ''}`);
+  }
+  return out;
+}
+
+// ci(m, today) — {rows, warnings} for test.yml: every row's id (parity T.1), and each note other than a plain one as a warning
+const ci = (m, today) => ({ rows: m.rows.map(r => r.id), warnings: notes(m.rows, today).filter(n => n.startsWith('PAST SUPPORT') || n.includes('EXPIRED')).map(n => `::warning title=linux-test::${n}`) });
+
+// imageTag(row, recipe, mise) — steward-test/<id>:<12 hex>, from the Dockerfile (and what it copies), the base, its extras and mise
+const imageTag = (row, recipe, mise) => `steward-test/${row.id}:${crypto.createHash('sha256').update([recipe, row.image, mise.version, JSON.stringify(mise.sha256), ...(row.extra || [])].join('\0')).digest('hex').slice(0, 12)}`;
 
 // buildArgs(row, {tag, mise, context, x64}) — `docker build` for a row: labelled, its base, mise for that CPU (x64: amd64,
 // else arm64; run() sets x64 on an x64 machine or with --x64)
@@ -46,7 +82,7 @@ function buildArgs(row, { tag, mise, context, x64 = false }) {
   const arch = x64 ? 'x64' : 'arm64';
   const dir = path.join(context, 'test', 'containers');
   return ['build', '--label', `${LABEL}=1`, ...(x64 ? ['--platform', 'linux/amd64'] : []), '--build-arg', `BASE=${row.image}`, '--build-arg', `MISE_VERSION=${mise.version}`,
-    '--build-arg', `MISE_ARCH=${arch}`, '--build-arg', `MISE_SHA256=${mise.sha256[arch]}`, '-f', path.join(dir, `${row.family}.Dockerfile`), '-t', tag, dir];
+    '--build-arg', `MISE_ARCH=${arch}`, '--build-arg', `MISE_SHA256=${mise.sha256[arch]}`, ...(row.extra && row.extra.length ? ['--build-arg', `EXTRA=${row.extra.join(' ')}`] : []), '-f', path.join(dir, `${row.family}.Dockerfile`), '-t', tag, dir];
 }
 
 // the run inside the container: copy the read-only checkout onto tmpfs, then the tests against the example instance
@@ -56,6 +92,15 @@ const INSIDE = 'set -e; mkdir -p "$HOME" /work/src; cp -a /src/. /work/src/; cd 
 const runArgs = ({ tag, name, checkout, x64 = false }) => ['run', '--rm', '--name', name, '--label', `${LABEL}=1`, ...(x64 ? ['--platform', 'linux/amd64'] : []),
   '--network', 'none', '--read-only', '--user', 'steward', '--tmpfs', '/work:exec,mode=1777', '--tmpfs', '/tmp:exec,mode=1777', '-v', `${checkout}:/src:ro`,
   '-e', 'STEWARD_TEST_FIXTURES=1', '-e', 'STEWARD_INSTANCE=/work/src/examples', '-e', 'NO_PROGRESS=1', '-e', 'NO_COLOR=1', '-e', 'CI=1', tag, 'bash', '-c', INSIDE];
+
+// e2eRefusal(row) — null when --e2e runs for the row's family, else why not: each Linux provider brings its own (parity 1c: apt)
+const E2E = { debian: 'apt.sh' };
+const e2eRefusal = row => (E2E[row.family] ? null : `${row.id}: --e2e comes with the ${row.family} family's provider (docs/platforms/parity.md)`);
+
+// e2eArgs({tag, name, checkout, x64, family}) — `docker run` for an end-to-end run: the real repos (network on), writable, started
+// as root for sudo and the seed, then the script drops to the steward user; the checkout read-only, labelled, removed after
+const e2eArgs = ({ tag, name, checkout, x64 = false, family = 'debian' }) => ['run', '--rm', '--name', name, '--label', `${LABEL}=1`, ...(x64 ? ['--platform', 'linux/amd64'] : []),
+  '--user', 'root', '-v', `${checkout}:/src:ro`, '-e', 'NO_PROGRESS=1', '-e', 'NO_COLOR=1', tag, 'bash', `/src/test/containers/e2e/${E2E[family]}`];
 
 // jsonLines(text) — docker's `--format '{{json .}}'` output, one object per line
 const jsonLines = text => String(text || '').split('\n').filter(l => l.trim()).map(l => JSON.parse(l));
@@ -146,15 +191,16 @@ async function run(argv) {
   const m = loadMatrix();
   const bad = validate(m);
   if (bad.length) { for (const b of bad) console.error(`ERROR matrix.json: ${b}`); return 1; }
-  if (argv.includes('--e2e')) { console.error('ERROR --e2e comes with each Linux provider (apt, dnf, zypper): docs/platforms/parity.md'); return 2; }
   if ((await docker(['info', '--format', '{{.ServerVersion}}'])).status !== 0) { console.error('ERROR docker is not running (OrbStack or Docker Desktop)'); return 1; }
-  const x64 = argv.includes('--x64') || process.arch === 'x64', keep = argv.includes('--keep');
+  const hostX64 = argv.includes('--x64') || process.arch === 'x64', keep = argv.includes('--keep'), e2e = argv.includes('--e2e');
   const want = argv.filter(a => !a.startsWith('--'));
-  const rows = !want.length || want.includes('all') ? m.rows : m.rows.filter(r => want.includes(r.id));
-  const unknown = want.filter(w => w !== 'all' && !m.rows.some(r => r.id === w));
-  if (unknown.length || !rows.length) { console.error(`ERROR no such row: ${unknown.join(', ') || want.join(', ')} (rows: ${m.rows.map(r => r.id).join(', ')})`); return 2; }
-  const today = new Date().toISOString().slice(0, 10);
-  for (const r of rows) if (r.gate_exception) console.log(`note: ${r.id} runs under a release-age gate exception (${r.gate_exception.decided}; expires ${r.gate_exception.expires})${r.gate_exception.expires < today ? ': EXPIRED, move it to an image past the gate' : ''}`);
+  const { rows, unknown } = select(m.rows, want);
+  if (unknown.length || !rows.length) { console.error(`ERROR no such row: ${unknown.join(', ') || want.join(', ')} (rows: ${m.rows.map(r => r.id).join(', ')}; or a distribution: ${[...new Set(m.rows.map(r => r.distro))].join(', ')})`); return 2; }
+  if (e2e) {
+    const no = rows.map(e2eRefusal).filter(Boolean);
+    if (no.length) { for (const n of no) console.error(`ERROR ${n}`); return 2; }
+  }
+  for (const n of notes(rows, new Date().toISOString().slice(0, 10))) console.log(n);
 
   // a container a crashed run left: named, and removed only on a yes
   const left = cleanPlan({ containers: (await docker(['ps', '-a', '--format', '{{json .}}'])).stdout }).containers;
@@ -170,7 +216,8 @@ async function run(argv) {
   const pg = progress(rows.length * 2);
   const results = [];
   for (const row of rows) {
-    const t0 = Date.now(), log = path.join(dir, `${row.id}-${stamp()}.txt`);
+    const x64 = rowX64(row, hostX64);
+    const t0 = Date.now(), log = path.join(dir, `${row.id}${e2e ? '-e2e' : ''}-${stamp()}.txt`);
     const secs = () => Math.round((Date.now() - t0) / 1000);
     const recipe = ['Dockerfile', 'install-mise.sh', '.mise-config.toml'].map(f => fs.readFileSync(path.join(ctxDir, f === 'Dockerfile' ? `${row.family}.Dockerfile` : f), 'utf8')).join('\0');
     const tag = imageTag(row, recipe, m.mise) + (x64 ? '-x64' : '');
@@ -187,13 +234,13 @@ async function run(argv) {
         await docker(['image', 'prune', '-f', '--filter', `label=${LABEL}=1`]);
       }
     }
-    const name = `steward-test-${row.id}-${stamp().toLowerCase()}`;
+    const name = `steward-${e2e ? 'e2e' : 'test'}-${row.id.replace(/\./g, '-')}-${stamp().toLowerCase()}`;
     const stop = onInterrupt(name, a => docker(a));
     const bye = async () => { await stop(); process.exit(130); };
     process.once('SIGINT', bye); process.once('SIGTERM', bye);
-    st = pg.stage(`${row.id}: tests (no network)`);
+    st = pg.stage(e2e ? `${row.id}: end to end (network on, the real repos)` : `${row.id}: tests (no network)`);
     fs.appendFileSync(log, `\n# docker run (${name})\n`);
-    const r = await stream(runArgs({ tag, name, checkout: REPO, x64 }), st, log);
+    const r = await stream(e2e ? e2eArgs({ tag, name, checkout: REPO, x64, family: row.family }) : runArgs({ tag, name, checkout: REPO, x64 }), st, log);
     process.removeListener('SIGINT', bye); process.removeListener('SIGTERM', bye);
     const c = counts(r.stdout);
     const status = !c ? 'no-summary' : c.fail === 0 && r.status === 0 ? 'pass' : 'fail';
@@ -225,11 +272,21 @@ async function clean(argv) {
   return 0;
 }
 
-module.exports = { LABEL, IMAGES, markOurs, loadMatrix, validate, imageTag, buildArgs, runArgs, cleanPlan, cleanCommands, staleTags, onInterrupt, counts, summary };
+module.exports = { LABEL, IMAGES, markOurs, loadMatrix, validate, select, rowX64, notes, ci, imageTag, buildArgs, runArgs, e2eRefusal, e2eArgs, cleanPlan, cleanCommands, staleTags, onInterrupt, counts, summary };
 
 if (require.main === module) {
   const [cmd, ...rest] = process.argv.slice(2);
-  const go = cmd === 'clean' ? clean : cmd === 'run' ? run : null;
-  if (!go) { console.error('usage: linux-test.js run [<id>|all] [--x64] [--keep] | clean [--cache]'); process.exitCode = 2; }
+  // ci: the rows for test.yml's matrix, as GITHUB_OUTPUT's rows=<json>, and each warning as a GitHub annotation
+  const ciCmd = async () => {
+    const m = loadMatrix(), bad = validate(m);
+    if (bad.length) { for (const b of bad) console.error(`ERROR matrix.json: ${b}`); return 1; }
+    const c = ci(m, new Date().toISOString().slice(0, 10));
+    for (const w of c.warnings) console.log(w);
+    const line = `rows=${JSON.stringify(c.rows)}\n`;
+    if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, line); else process.stdout.write(line);
+    return 0;
+  };
+  const go = cmd === 'clean' ? clean : cmd === 'run' ? run : cmd === 'ci' ? ciCmd : null;
+  if (!go) { console.error('usage: linux-test.js run [<id>|<distro>|all] [--x64] [--keep] [--e2e] | ci | clean [--cache]'); process.exitCode = 2; }
   else go(rest).then(code => { process.exitCode = code; }).catch(e => { console.error(`ERROR ${e.message}`); process.exitCode = 1; });
 }

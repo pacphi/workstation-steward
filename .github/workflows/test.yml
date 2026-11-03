@@ -92,11 +92,41 @@ jobs:
           strip() { sed -E 's/\x1b\[[0-9;]*m//g' "$1"; }
           { echo "## Milestone 0 on ${where}"; for f in audit-plain.txt audit-brew.txt plan.txt; do echo; echo "### ${f}"; echo; echo '```text'; strip "$f"; echo '```'; done; } >> "$GITHUB_STEP_SUMMARY"
 
+  # The container rows (parity 1c, T.1 and T.5): every row of test/containers/matrix.json, from that one list, each run as
+  # `just linux-test <id>` runs it on a Mac (the owner, 2026-11-03): its image built, then the tests with no network, read-only,
+  # as a non-root user. A row past its support end, or an expired gate exception, shows as a warning on the run, never red.
+  rows:
+    runs-on: ubuntu-latest
+    outputs:
+      rows: ${{ steps.rows.outputs.rows }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: rows
+        run: node tools/linux-test.js ci
+
+  test-containers:
+    needs: rows
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        row: ${{ fromJSON(needs.rows.outputs.rows) }}
+    name: test-containers (${{ matrix.row }})
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: just linux-test ${{ matrix.row }}
+        env:
+          XDG_STATE_HOME: ${{ runner.temp }}/state
+        run: node tools/linux-test.js run "${{ matrix.row }}"
+      - name: The row's log
+        if: ${{ always() }}
+        run: cat "${RUNNER_TEMP}"/state/workstation-steward/linux-test/*.txt 2>/dev/null | tail -n 200 || true
+
   # The check main requires: it passes when every OS job did, so the required check stays `test` while jobs are added
   # (the owner's idea, 2026-11-02). A skipped job counts (macOS is skipped on a private copy); at least one must pass.
   test:
     if: ${{ always() }}
-    needs: [test-macos, test-linux]
+    needs: [test-macos, test-linux, rows, test-containers]
     runs-on: ubuntu-latest
     steps:
       - name: Every test job passed
