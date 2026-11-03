@@ -117,7 +117,7 @@ test('sources: apt on the Debian family only', () => {
   assert.ok(!P.sources({ ...base, platform: 'macos', family: null }).some(s => s.id === 'apt'));
 });
 
-test('plan on Debian: apt\'s section; old enough is listed for you with its sudo command (D-b), young is held, each with where its date came from', async () => {
+test('plan on Debian: apt\'s section; old enough is taken, pinned, with why; a security pocket is taken at once; young is held (parity 1b)', async () => {
   const c = ctx('debian', {
     [`${SNAP}tzdata/`]: { fileinfo: { a: [{ archive_name: 'debian', first_seen: '20261028T080000Z' }] } },
     [`${SNAP}libc6/`]: { fileinfo: { a: [{ archive_name: 'debian-security', first_seen: '20261102T080000Z' }] } },
@@ -126,10 +126,25 @@ test('plan on Debian: apt\'s section; old enough is listed for you with its sudo
   const lines = [], sections = [];
   const p = await plan(c, { section: (_n, t) => sections.push(t), line: l => lines.push(l), warn: () => {} });
   assert.equal(sections[0], 'apt packages');
-  assert.ok(lines.includes("manual apt: needs root; the steward doesn't run sudo yet (D-b, comes with the apt provider): sudo apt-get install --only-upgrade tzdata"), lines.join('\n'));
-  assert.ok(lines.includes('hold   libc6 2.41-12+deb13u1 -> 2.41-12+deb13u2 (1d old, snapshot)'), lines.join('\n'));
+  assert.ok(lines.includes('take   tzdata 2026e-0+deb13u1 -> 2026f-0+deb13u1 (6d old, snapshot)'), lines.join('\n'));
+  assert.ok(lines.includes('take   libc6 2.41-12+deb13u1 -> 2.41-12+deb13u2 (security pocket: trixie-security)'), lines.join('\n'));
   assert.ok(lines.includes('hold   mintupdate 6.0.4 -> 6.0.5 (0d old, first seen here)'), lines.join('\n'));
-  assert.deepEqual(p.packages, [], 'nothing applied before 1b');
+  assert.ok(!lines.some(l => l.startsWith('manual apt')), 'no longer a manual line (D-b revised)');
+  assert.deepEqual(p.packages, [{ source: 'apt', names: ['tzdata', 'libc6'], items: [
+    { name: 'tzdata', have: '2026e-0+deb13u1', want: '2026f-0+deb13u1', why: 'gate: 6d old, snapshot' },
+    { name: 'libc6', have: '2.41-12+deb13u1', want: '2.41-12+deb13u2', why: 'security pocket: trixie-security' },
+  ] }]);
   const lists = c.calls.find(k => k.startsWith('apt-get') && k.includes(' update'));
   assert.ok(lists && lists.includes('Dir::State::Lists=') && !lists.startsWith('sudo'), `its own lists, no sudo: ${lists}`);
+});
+
+test('judge: a security-pocket version is taken whatever its age, and says which pocket; others still wait out the gate', async () => {
+  const c = ctx('debian', { [`${SNAP}libc6/`]: { fileinfo: { a: [{ archive_name: 'debian-security', first_seen: '20261103T080000Z' }] } } });
+  const j = await P.judge(c, A.source, { name: 'libc6', suite: 'trixie-security', have: '2.41-12+deb13u1', want: '2.41-12+deb13u2' });
+  assert.equal(j.verdict, 'take');
+  assert.equal(j.age, 0);
+  assert.equal(j.pocket, 'trixie-security');
+  const k = await P.judge(c, A.source, { name: 'libc6', suite: 'trixie-updates', have: '2.41-12+deb13u1', want: '2.41-12+deb13u2' });
+  assert.equal(k.verdict, 'hold');
+  assert.equal(k.pocket, undefined);
 });

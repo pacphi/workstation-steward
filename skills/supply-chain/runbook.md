@@ -1,6 +1,6 @@
 # Supply chain runbook
 
-![Revision 11](https://img.shields.io/badge/Revision-11-green) ![Revised 2026-11-02](https://img.shields.io/badge/Revised-2026--11--02-green)
+![Revision 12](https://img.shields.io/badge/Revision-12-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
 
 Procedures for the supply-chain area: mise, the npm -g hybrids, Homebrew, apps, the App Store, macOS, trust
 stores, Docker and IOCs. The rules behind them are in [`../../AGENTS.md`](../../AGENTS.md) (Toolchain, Release
@@ -56,6 +56,12 @@ It prints every part's plan and asks once; each part keeps its own backup and re
    batch, a declared updater, mise itself) doesn't stop the others: it's reported when it happens, the end lists each
    failure with its way back, and the run exits 1 instead of saying `done`. Read each failure's error, fix it, and run
    the upgrade again; it takes only what is still behind.
+   - **apt (Debian, Ubuntu, Mint) needs root** (D76). At a terminal, the upgrade runs `sudo apt-get update`, then the
+     pinned install, as children on that terminal; the owner types their password into sudo's prompt. Anywhere else
+     (an agent's shell, `--unattended`) it prints that exact line, keeps a waiting receipt and ends "waiting on you",
+     exit 4. Hand the owner the line to run in their own terminal, then run `steward sc upgrade --resume`, which
+     checks the versions and finishes the receipt. Never run sudo for them, and never retry the upgrade to get past
+     the hand-off.
 3. Commit `mise/config.toml` and `mise/mise.lock` with the list of what moved, and push once the owner
    approves. Renovate then closes its own PRs for versions already applied.
 4. **Majors stay deliberate.** Read the release notes, then
@@ -261,6 +267,7 @@ the command's own plan), and ask before anything that writes. The briefing's che
 | --- | --- | --- |
 | `receipt-unfinished`, a config sync | A config sync stopped. If it set your edits aside, they are in `git stash` and copied to the folder it names | `steward config sync` again; its plan shows where the branch is. Never `--rollback`: it refuses an unfinished sync. If an edit is missing from the files, `git stash pop` in the config folder puts it back |
 | `receipt-unfinished`, sending your config | The push or the pull request didn't happen | `steward config sync` retries both; `steward config sync --rollback <receipt>` goes back |
+| `receipt-unfinished`, a root upgrade | An apt upgrade was handed over (no terminal) and the versions haven't moved yet | The owner runs the sudo line it names, in their own terminal; then `steward sc upgrade --resume` |
 | `receipt-unfinished`, a declared updater | An `[[updater]]` stopped after its backup | Its rollback (the receipt names it, else `steward sc rollback <receipt>`), then the update again |
 | `backup-no-receipt`, a mise self-update | It stopped after backing up the binary | `mise --version`; if it isn't the version you expect, `steward sc rollback mise` |
 | `hybrid-vs-policy` | A hybrid is behind, ahead of or missing from `hybrids.toml`, or was installed for another Node | `steward sc install-hybrids`. When GitHub has a newer `hybrids.toml`, `steward config sync` first, or you install the old policy |
@@ -276,6 +283,9 @@ the command's own plan), and ask before anything that writes. The briefing's che
   binary written over in place gets killed by macOS). Then run `steward sc verify`.
 - **A declared updater:** `steward sc rollback <receipt>` (the path its apply printed) puts its copies back; what's
   there now moves beside them in the receipt's folder, so nothing is lost. Then `steward sc audit --only updaters`.
+- **apt:** `steward sc rollback <receipt>` (the path the upgrade printed) puts back the versions from before that the
+  repos still offer, through sudo at a terminal or handed over, and records it once checked. A version the archive
+  dropped can't go back; the receipt says so.
 - **Homebrew:** `brew upgrade` cleans up old kegs, so there's no keg rollback. Reinstall the previous bottle if
   needed.
 - **Hybrids:** re-run `steward sc install-hybrids` from the restored config. For Ruflo state, restore the

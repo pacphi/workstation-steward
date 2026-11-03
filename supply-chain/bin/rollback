@@ -2,12 +2,16 @@
 # Restore the newest (or a named) config + lockfile backup taken by upgrade/node-patch, then reshim.
 # Nothing is uninstalled, so the previous versions are still on disk.
 # `rollback mise` restores the mise binary from the newest mise-self-update backup instead (D38), and
-# `rollback <receipt>` what a declared updater's apply replaced (D52; lib/updaters.js).
+# `rollback <receipt>` what a declared updater's apply replaced (D52; lib/updaters.js), or, for a root upgrade's receipt
+# (apt, parity 1b), the package versions from before that the repos still offer (lib/roothandoff.js: sudo at a terminal).
 # Usage: rollback [backup-file]      rollback mise      rollback <updater receipt>      DRY_RUN=1 rollback
 # shellcheck source=lib/lib.sh
 source "$(dirname "$0")/../../lib/lib.sh"
 
 if [[ -n "${1:-}" && ( "$1" == */receipt.json || -f "$(user_path "$1")/receipt.json" ) ]]; then
+  rp="$(user_path "$1")"; [[ "${rp}" == */receipt.json ]] || rp="${rp}/receipt.json"
+  kind="$(node -e 'try { process.stdout.write(String(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).kind || "")) } catch {}' "${rp}")"
+  [[ "${kind}" == root-upgrade ]] && exec node "${REPO_ROOT}/lib/roothandoff.js" --rollback "${rp}"
   exec node "${REPO_ROOT}/lib/updaters.js" --rollback "$(user_path "$1")"
 fi
 
