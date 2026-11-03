@@ -375,7 +375,9 @@ apt's box counts as ticked when worktree mode passes on its seven rows; npm mode
 `package.json` `os` first names `linux` (the bar's last box, R-2; owner, 2026-11-03). LMDE has one row: Mint's release
 page lists LMDE 7 alone (checked 2026-11-03). Run here on 2026-11-03 with `just linux-test <id> --install-check`:
 Debian 13 passed in 2 min 40 s, Linux Mint 21.3 (emulated) in 2 min 51 s; Debian 13's first try failed on a DNS
-lookup for sigstore's TUF root while mise verified jq, and passed when run again.
+lookup for sigstore's TUF root while mise verified jq, and passed when run again. Then in CI, on the branch before it
+merged (run 41682387384, 2026-11-03, marked as not counting for the bar): the Mac and all ten rows passed, each in
+36 s to 1 min 15 s, Fedora 44, Leap 16.0 and Tumbleweed included.
 
 **apt's OS updates (1e, next):** point releases and kernels already arrive as apt packages, but nothing says when a
 restart is needed or a newer release is out. A small read-only Linux section will name both, a newer release as a note
