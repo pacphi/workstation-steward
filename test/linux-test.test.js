@@ -182,6 +182,16 @@ test('runArgs: removed after the run, no network, read-only, non-root, the check
   assert.ok(a.includes('steward-test/debian:abc'));
 });
 
+test('emulated: a row run as amd64 on an arm64 host is emulated, and its tests are told so (looser timing limits; owner, 2026-11-03)', () => {
+  assert.equal(L.emulated({ arch: ['amd64'] }, false, 'arm64'), true, 'Mint on an Apple-silicon Mac');
+  assert.equal(L.emulated({}, true, 'arm64'), true, '--x64 on an Apple-silicon Mac');
+  assert.equal(L.emulated({ arch: ['amd64'] }, true, 'x64'), false, 'Mint on CI: native');
+  assert.equal(L.emulated({}, false, 'arm64'), false, 'Debian on a Mac: native');
+  const on = L.runArgs({ tag: 't', name: 'n', checkout: '/c', x64: true, emulated: true });
+  assert.ok(on.join(' ').includes('-e STEWARD_TEST_EMULATED=1'), on.join(' '));
+  assert.ok(!L.runArgs({ tag: 't', name: 'n', checkout: '/c' }).includes('STEWARD_TEST_EMULATED=1'), 'only when emulated');
+});
+
 // docker's `--format '{{json .}}'` lines: Labels is "k=v,k2=v2"
 const j = o => JSON.stringify(o);
 const MIXED = {

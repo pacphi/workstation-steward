@@ -58,6 +58,10 @@ function select(rows, want) {
 // rowX64(row, x64) — whether the row runs as amd64: on an x64 machine, with --x64, or when its images are amd64 only (Mint)
 const rowX64 = (row, x64) => x64 || (Array.isArray(row.arch) && !row.arch.includes('arm64'));
 
+// emulated(row, x64, arch) — whether the row runs emulated here: as amd64 on a host that isn't x64 (Mint on an Apple-silicon
+// Mac). Its tests then get STEWARD_TEST_EMULATED=1, and timing limits loosen (owner, 2026-11-03); CI runs x64 natively
+const emulated = (row, x64, arch = process.arch) => rowX64(row, x64) && arch !== 'x64';
+
 // notes(rows, today) — what to say before a run: a row past its support end (drop it), a gate exception and its expiry
 function notes(rows, today) {
   const out = [];
@@ -89,9 +93,9 @@ function buildArgs(row, { tag, mise, context, x64 = false }) {
 const INSIDE = 'set -e; mkdir -p "$HOME" /work/src; cp -a /src/. /work/src/; cd /work/src; just test';
 
 // runArgs({tag, name, checkout, x64}) — `docker run` for a row: removed after, no network, read-only, non-root, labelled
-const runArgs = ({ tag, name, checkout, x64 = false }) => ['run', '--rm', '--name', name, '--label', `${LABEL}=1`, ...(x64 ? ['--platform', 'linux/amd64'] : []),
+const runArgs = ({ tag, name, checkout, x64 = false, emulated: emu = false }) => ['run', '--rm', '--name', name, '--label', `${LABEL}=1`, ...(x64 ? ['--platform', 'linux/amd64'] : []),
   '--network', 'none', '--read-only', '--user', 'steward', '--tmpfs', '/work:exec,mode=1777', '--tmpfs', '/tmp:exec,mode=1777', '-v', `${checkout}:/src:ro`,
-  '-e', 'STEWARD_TEST_FIXTURES=1', '-e', 'STEWARD_INSTANCE=/work/src/examples', '-e', 'NO_PROGRESS=1', '-e', 'NO_COLOR=1', '-e', 'CI=1', tag, 'bash', '-c', INSIDE];
+  '-e', 'STEWARD_TEST_FIXTURES=1', '-e', 'STEWARD_INSTANCE=/work/src/examples', '-e', 'NO_PROGRESS=1', '-e', 'NO_COLOR=1', '-e', 'CI=1', ...(emu ? ['-e', 'STEWARD_TEST_EMULATED=1'] : []), tag, 'bash', '-c', INSIDE];
 
 // e2eRefusal(row) — null when --e2e runs for the row's family, else why not: each Linux provider brings its own (parity 1c: apt)
 const E2E = { debian: 'apt.sh' };
@@ -240,7 +244,7 @@ async function run(argv) {
     process.once('SIGINT', bye); process.once('SIGTERM', bye);
     st = pg.stage(e2e ? `${row.id}: end to end (network on, the real repos)` : `${row.id}: tests (no network)`);
     fs.appendFileSync(log, `\n# docker run (${name})\n`);
-    const r = await stream(e2e ? e2eArgs({ tag, name, checkout: REPO, x64, family: row.family }) : runArgs({ tag, name, checkout: REPO, x64 }), st, log);
+    const r = await stream(e2e ? e2eArgs({ tag, name, checkout: REPO, x64, family: row.family }) : runArgs({ tag, name, checkout: REPO, x64, emulated: emulated(row, hostX64) }), st, log);
     process.removeListener('SIGINT', bye); process.removeListener('SIGTERM', bye);
     const c = counts(r.stdout);
     const status = !c ? 'no-summary' : c.fail === 0 && r.status === 0 ? 'pass' : 'fail';
@@ -272,7 +276,7 @@ async function clean(argv) {
   return 0;
 }
 
-module.exports = { LABEL, IMAGES, markOurs, loadMatrix, validate, select, rowX64, notes, ci, imageTag, buildArgs, runArgs, e2eRefusal, e2eArgs, cleanPlan, cleanCommands, staleTags, onInterrupt, counts, summary };
+module.exports = { LABEL, IMAGES, markOurs, loadMatrix, validate, select, rowX64, emulated, notes, ci, imageTag, buildArgs, runArgs, e2eRefusal, e2eArgs, cleanPlan, cleanCommands, staleTags, onInterrupt, counts, summary };
 
 if (require.main === module) {
   const [cmd, ...rest] = process.argv.slice(2);
