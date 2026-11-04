@@ -64,6 +64,11 @@ if [[ "${distro}" == mint || "${distro}" == lmde ]]; then
 fi
 
 say "seeded: $(cut -f1,2 /work/seeded.txt | tr '\t\n' ' ,')"
+
+# a pending restart, as update-notifier-common writes it on Ubuntu and Mint (parity 1e): the user's audit must name it
+say 'a pending restart: /run/reboot-required'
+printf '*** System restart required ***\n' > /run/reboot-required
+printf 'steward-e2e-restart\n' > /run/reboot-required.pkgs
 say 'the user phase, as steward'
 exec su steward -s /bin/bash -c "export HOME=/work/home PATH=/opt/mise/shims:/usr/local/bin:/usr/bin:/bin STEWARD_INSTANCE=/work/src/examples \
   MISE_DATA_DIR=/opt/mise MISE_GLOBAL_CONFIG_FILE=/opt/mise/config.toml MISE_CACHE_DIR=/tmp/mise-cache MISE_STATE_DIR=/tmp/mise-state MISE_OFFLINE=1 \

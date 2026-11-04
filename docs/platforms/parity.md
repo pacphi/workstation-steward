@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 16](https://img.shields.io/badge/Revision-17-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
+![Revision 17](https://img.shields.io/badge/Revision-18-green) ![Revised 2026-11-04](https://img.shields.io/badge/Revised-2026--11--04-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -41,7 +41,7 @@ combination we claim.
 | Milestone | What it delivers | Stage | Done |
 | --- | --- | --- | --- |
 | [0. Portable engine](#milestone-0-a-portable-engine) | The engine runs on Linux with Linuxbrew and mise; the Mac's output is unchanged | Done | 9 / 9 |
-| [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Under way | 0 / 10 |
+| [1. Linux providers](#milestone-1-linux-one-package-manager-at-a-time) | System packages per package manager, gated and reversible | Under way | 1 / 10 |
 | [2. Linux apps and trust](#milestone-2-linux-apps-and-trust-stores) | Flatpak, Snap, AppImage and the Electron window; trust store per family | Not started | 0 / 6 |
 | [3. NixOS](#milestone-3-nixos) | The flake or channel as a whole, with generations as the way back | Not started | 0 / 6 |
 | [Testing](#testing-the-ci-matrix-and-install-checks) | A CI row and an install-check row for every combination we claim | Under way | 5 / 7 |
@@ -204,7 +204,7 @@ Each row is something the steward does on a Mac today. The columns say how it ge
 | System packages | Homebrew | one provider per package manager; Linuxbrew reuses Homebrew's | one `nix` provider over the flake or channel | ⬜ |
 | Release-age gate | Homebrew commit dates | the date a version reached the repo, or a dated snapshot (D-a) | a nixpkgs revision at least the gate's days old | ⬜ |
 | Way back | mise yes, Homebrew no | per manager; where there is none, the plan says so | generations | ⬜ |
-| OS updates | `softwareupdate -l` | part of the system provider | moving nixpkgs is the OS update | ⬜ |
+| OS updates | `softwareupdate -l` | part of the system provider: apt's is read-only, as on a Mac (D79) | moving nixpkgs is the OS update | 🟨 |
 | Apps and the Electron window | `/Applications`, casks | Flatpak, Snap, AppImage, `/opt` | Nix apps; Flatpak where enabled | ⬜ |
 | App store | `mas` | Flatpak and Snap stand in | ➖ | ⬜ |
 | Trust store: finding distrusted roots | keychain, PEM bundles, Node's roots | the family's system bundle, Linuxbrew's and Node's roots (0.5) | the system bundle | 🟨 |
@@ -379,14 +379,39 @@ lookup for sigstore's TUF root while mise verified jq, and passed when run again
 merged (run 41682387384, 2026-11-03, marked as not counting for the bar): the Mac and all ten rows passed, each in
 36 s to 1 min 15 s, Fedora 44, Leap 16.0 and Tumbleweed included.
 
-**apt's OS updates (1e, next):** point releases and kernels already arrive as apt packages, but nothing says when a
-restart is needed or a newer release is out. A small read-only Linux section will name both, a newer release as a note
-(a release upgrade is a major, never planned), and the real Ubuntu run checks whether a kernel upgrade pulls in its new
-package before anything is claimed (owner, 2026-11-03).
+**apt's OS updates (1e, D79, #108):** point releases and new kernels arrive as apt packages, which the apt source
+already dates, gates and upgrades. `steward sc audit` adds a read-only "OS updates" section on Debian, Ubuntu, Mint and
+LMDE, as the Mac's `softwareupdate` section does (owner, 2026-11-03):
+
+- **A restart:** an action when `/run/reboot-required` exists (Ubuntu and Mint write it; it names the packages) or the
+  running kernel (`uname -r`) is older than the newest installed `linux-image-*`, since Debian writes no file (owner,
+  2026-11-03). A container has no kernel package, so there only the file is read, and the section says so.
+- **A newer release:** a note, never planned, since a release upgrade is a major and done by hand.
+- **The end of free security support** (D-c's cap): a note within 90 days, an action once past (owner, 2026-11-03).
+
+The dates come from distro-info-data (`debian.csv`: `eol-lts`, else `eol`; `ubuntu.csv`: `eol`, LTS rows only) and,
+for Mint and LMDE, Mint's release page, `download_all.php` (owner, 2026-11-03, over saying Mint isn't checked), each
+fetched once a day. A source that can't be fetched, or no longer reads as it did, says "not checked", never "up to
+date". The kernel fact was checked first: on Ubuntu, `apt-get install --only-upgrade linux-headers-generic=<new>`
+pulls in the new ABI's packages, so a kernel upgrade through the steward installs the new kernel. `--e2e` now plants a
+restart and checks the section against the live sources; all seven rows passed on 2026-11-03:
+
+| Row | Restart | Free support until | Newer release |
+| --- | --- | --- | --- |
+| Debian 12 | action | 2028-06-30 | Debian 13 (trixie) |
+| Debian 13 | action | 2030-06-30 | none |
+| Ubuntu 22.04 | action | 2027-06-01 | Ubuntu 26.04 LTS (resolute) |
+| Ubuntu 26.04 | action | 2031-05-29 | none |
+| Linux Mint 21.3 | action | 2027-04-30 | Linux Mint 22.3 |
+| Linux Mint 22.3 | action | 2029-04-30 | none |
+| LMDE 7 | action | no end date published | none |
+
+Each end date matched the row's `supported_until` in `matrix.json`, and each newer release matched the live source.
+The kernel comparison runs on a real machine only; the containers prove it through the tests' canned `dpkg-query`.
 
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
 | --- | --- | --- | --- | --- |
-| 🟨 apt | Debian, Ubuntu, Linux Mint (the Linux release) | per package | Under way: 1a read-only done (#101, D75); 1b the upgrade with the sudo hand-off done (#102, D76); 1c the rows, CI and the real-repo run done (#103, D77); 1d its install-check row done (#107, D78). Left: OS updates, through the provider (1e) | #101, #102, #103, #107 |
+| ✅ apt | Debian, Ubuntu, Linux Mint, LMDE (the Linux release) | per package | Done: 1a read-only (#101, D75); 1b the upgrade with the sudo hand-off (#102, D76); 1c the rows, CI and the real-repo run (#103, D77); 1d its install-check row (#107, D78); 1e OS updates, read-only (#108, D79). npm mode on Linux waits for the release (R-2) | #101, #102, #103, #107, #108 |
 | ⬜ dnf | Fedora (the Linux release) | per package | Not started | |
 | ⬜ zypper | openSUSE Leap, Tumbleweed (the Linux release) | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ Flatpak | any | per package | Not started | |
@@ -492,6 +517,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-04 | 18 | apt 1e done, and apt done: OS updates as a read-only audit section (a restart, a newer release, the end of free security support), checked on all seven apt rows (D79) | #108 |
 | 2026-11-03 | 17 | apt 1d done: the install check as a matrix from a ref, on the Mac and every `matrix.json` row (T.4, T.7, D78); how LMDE fits; OS updates decided for 1e | #107 |
 | 2026-11-03 | 16 | apt 1c done: the minimum versions (what counts as security support), seven apt rows with Mint and LMDE, every row in CI from one list (T.1, T.5), `--e2e` passing on all seven apt rows, the glibc fact (D77) | #103 |
 | 2026-11-03 | 15 | apt 1b done: D-b revised, the upgrade through sudo at your terminal or handed over (D76) | #102 |
