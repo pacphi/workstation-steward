@@ -7,6 +7,8 @@
 //   3. `sc rollback <receipt>`: the versions from before are back
 //   4. `sc upgrade` with no terminal: handed over (exit 4, the receipt waiting on you); the handed-over line run as the
 //      user would; `sc upgrade --resume` finishes it (done)
+//   5. `sc audit`'s OS updates (parity 1e): the restart apt.sh left is an action; the end of free support matches the
+//      date matrix.json records by hand from the vendor's page, and the newer-release line what the live source says
 // Each answer is typed only once its prompt's text has been seen: node's readline swallows answers sent early (1b).
 // It prints node --test's summary lines (ℹ tests/pass/fail), which tools/linux-test.js reads. Engine tooling.
 // Usage: drive.js apt <distro>     (in /work/src, a copy of the checkout)
@@ -149,6 +151,21 @@ async function apt(distro) {
     const r3 = receipts().pop();
     check(res.code === 0 && Boolean(r3 && r3.r.outcome === 'done'), `sc upgrade --resume exited ${res.code}; the receipt says ${r3 ? r3.r.outcome : 'none'}`);
   }
+  // 5. the OS updates section, against the live sources (parity 1e)
+  const OS = require(path.join(process.cwd(), 'lib', 'osupdates.js'));
+  const audit = sh(`${steward} sc audit --plain`);
+  check(/os: restart needed: \/run\/reboot-required \(steward-e2e-restart\)/.test(audit.out), 'sc audit: the pending restart is an action');
+  const w = OS.which('/');
+  const row = JSON.parse(fs.readFileSync(path.join('test', 'containers', 'matrix.json'), 'utf8')).rows.find(r => r.id === `${w.distro}-${w.version}`);
+  const until = row && row.supported_until ? row.supported_until.date : undefined;
+  const ends = (audit.out.match(/free security support until (\d{4}-\d\d-\d\d)/) || [])[1] || null;
+  check(Boolean(row) && ends === until, `sc audit: free support until ${ends || 'no date'}; matrix.json (${row ? row.id : 'no row'}) records ${until === null ? 'no date' : until}`);
+  if (until === null) check(audit.out.includes('free security support: no end date published'), 'sc audit: no end date published, and says so');
+  const today = new Date().toISOString().slice(0, 10);
+  const src = await fetch(w.distro === 'mint' || w.distro === 'lmde' ? OS.SOURCES.mint : OS.SOURCES[w.distro]).then(r => r.text()).catch(() => '');
+  const live = w.distro === 'mint' || w.distro === 'lmde' ? OS.fromMintPage(src, w.distro, w.version, today) : OS.fromCsv(src, w.distro, w.codename, today);
+  const newer = (audit.out.match(/newer release: (.+?) is out/) || [])[1] || null;
+  check(Boolean(live) && newer === (live.newer ? live.newer.name : null), `sc audit: newer release ${newer || 'none'}; the live source says ${live ? (live.newer ? live.newer.name : 'none') : 'nothing readable'}`);
   return results;
 }
 

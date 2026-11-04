@@ -181,6 +181,8 @@ const LONG = [
   ['supply-chain/checks/index.js', /'mas', \['outdated'\]|'softwareupdate', \['-l'\]/, /label: /, 0],
   ['lib/coarse.js', /^(?!\s*\/\/).*= (onboard|offboard)\(r\.abs\)/, /\bst\.detail\(/, 8],
   ['lib/coarse.js', /^(?!\s*\/\/).*R\.all\(/, /\brs\.detail\(/, 0],
+  // the OS updates section's release lists (parity 1e): each fetch is labelled, so the audit's live line names it
+  ['lib/osupdates.js', /^(?!\s*\/\/).*ctx\.run\('curl'/, /\blabel: /, 0],
   ['lib/coarse.js', /^(?!\s*\/\/).*nodejs\.org\/dist\/index\.json'/, /\.stage\(/, 1],
   ['lib/vulns.js', /^(?!\s*\/\/).*\/querybatch`, body|\/vulns\/\$\{encodeURIComponent/, /\bsay\(/, 2],
   ['supply-chain/checks/index.js', /await V\.(inventory|lookup)\(/, /\bdetail\(ctx, |t => detail\(ctx, t\)/, 1],

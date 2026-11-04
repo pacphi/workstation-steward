@@ -14,6 +14,7 @@ const { X509Certificate } = require('crypto');
 const brew = require('../../lib/providers/brew.js');
 const P = require('../../lib/providers/index.js');
 const apt = require('../../lib/providers/apt.js');
+const OSU = require('../../lib/osupdates.js');
 const U = require('../../lib/updaters.js');
 const V = require('../../lib/vulns.js');
 
@@ -234,6 +235,13 @@ const CHECKS = [
     id: 'apt', name: 'apt packages', platforms: ['linux'], families: ['debian'], provider: apt.source,
     title: ctx => `apt packages (dated by snapshot.debian.org or Launchpad, else first seen here; eligible = at least ${minAge(ctx)}d)`,
     run: packages('apt'),
+  },
+  {
+    // Linux's OS updates (parity 1e, D79): a restart, a newer release (a note: a major), the end of free security
+    // support; point releases and kernels are the apt packages above. dnf and zypper bring their families' own
+    id: 'os-updates', name: 'OS updates', platforms: ['linux'], families: ['debian'],
+    title: ctx => `OS updates (${(OSU.which(ctx.sysroot || '/') || {}).pretty || 'this release'}): read-only, by hand, as on a Mac`,
+    run: (ctx, out) => OSU.check(ctx, out),
   },
   {
     id: 'brew-casks', name: 'Homebrew casks', platforms: ['macos'], provider: brew, title: () => 'Homebrew casks (casks that update themselves are judged by their app bundle below)',
