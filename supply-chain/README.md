@@ -103,6 +103,12 @@ apt state is never touched (D75). Each new version is dated by the earliest day 
 The plan and the audit say which ("4d old, snapshot"). Upgrading needs root, so each update past the gate is listed
 with its exact `sudo apt-get install --only-upgrade …` line for you to run; the steward never runs `sudo`.
 
+**OS updates** (D79): point releases and new kernels are apt packages, so they come through the plan above. The audit's
+"OS updates" section only reads, as the Mac's does: an action when a restart is needed (`/run/reboot-required`, or a
+running kernel older than the newest installed one), a note when a newer release is out (a release upgrade is a major,
+done by hand), and the end of the release's free security support, from distro-info-data or Mint's release page: a
+note within 90 days, an action once past.
+
 ## What may skip the gate
 
 Every update source has one **release class** (D52, [`release-classes.md`](../docs/release-classes.md)), and only
