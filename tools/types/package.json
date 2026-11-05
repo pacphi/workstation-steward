@@ -3,6 +3,6 @@
   "private": true,
   "description": "Dev only (D45): Node's type definitions for `tsc --checkJs` (tsconfig.json typeRoots). Kept out of the shipped package.json, which has no dependencies and installs only on macOS. Install: npm ci --ignore-scripts --prefix tools/types",
   "devDependencies": {
-    "@types/node": "26.6.5"
+    "@types/node": "26.6.6"
   }
 }
