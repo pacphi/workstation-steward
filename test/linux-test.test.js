@@ -304,6 +304,10 @@ test('pinnedSince: the day the row\'s digest was committed to matrix.json, or nu
   git(['commit', '-qam', 'another change, same digest'], '2026-11-20T12:00:00Z');
   assert.equal(L.pinnedSince(TW, f), '2026-11-02');
   assert.equal(L.pinnedSince({ ...TW, image: `opensuse/tumbleweed:latest@sha256:${'c'.repeat(64)}` }, f), null, 'a digest git never saw');
+  const shallow = path.join(dir, 'shallow');
+  spawnSync('git', ['clone', '-q', '--depth', '1', `file://${dir}`, shallow]);
+  assert.equal(L.pinnedSince(TW, path.join(shallow, 'test', 'containers', 'matrix.json')), null,
+    'a shallow clone sees only its tip, which would look like a fresh pin');
 });
 
 test('matrix.json: no gate exception is left once its image passes the gate (Tumbleweed, 2026-11-04)', () => {

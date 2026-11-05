@@ -12,7 +12,7 @@ const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const readline = require('readline');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const { FAMILIES } = require('../lib/platform.js');
 
 const LABEL = 'org.workstation-steward.test';
@@ -62,10 +62,38 @@ const rowX64 = (row, x64) => x64 || (Array.isArray(row.arch) && !row.arch.includ
 // Mac). Its tests then get STEWARD_TEST_EMULATED=1, and timing limits loosen (owner, 2026-11-03); CI runs x64 natively
 const emulated = (row, x64, arch = process.arch) => rowX64(row, x64) && arch !== 'x64';
 
-// notes(rows, today) — what to say before a run: a row past its support end (drop it), a gate exception and its expiry
-function notes(rows, today) {
+// STALE_DAYS — a rolling row's pin older than this is said loudly: Tumbleweed's latest is rebuilt about daily, so the
+// 3-day gate may never let Renovate move it (the owner, 2026-11-04)
+const STALE_DAYS = 30;
+const daysBetween = (a, b) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000);
+
+// pinnedSince(row, file) — the day (YYYY-MM-DD) the commit that brought this row's digest into matrix.json was made, or
+// null when git can't see it (not a checkout, a shallow one, or a digest never committed). The image can't say: its
+// build date is a fixed timestamp
+function pinnedSince(row, file = path.join(__dirname, '..', 'test', 'containers', 'matrix.json')) {
+  const digest = (String(row.image).match(/@(sha256:[0-9a-f]{64})$/) || [])[1];
+  if (!digest) return null;
+  const cwd = path.dirname(file);
+  // a shallow clone's tip seems to bring in every line, so its date would read as a fresh pin
+  const sh = spawnSync('git', ['rev-parse', '--is-shallow-repository'], { cwd, encoding: 'utf8' });
+  if (sh.status !== 0 || sh.stdout.trim() !== 'false') return null;
+  const r = spawnSync('git', ['log', '-1', '--format=%cs', `-S${digest}`, '--', path.basename(file)], { cwd, encoding: 'utf8' });
+  const day = r.status === 0 ? r.stdout.trim() : '';
+  return DAY.test(day) ? day : null;
+}
+// pinDates(rows) — {id: day or null} for the rolling rows, for notes() and ci()
+const pinDates = rows => Object.fromEntries(rows.filter(r => r.role === 'rolling').map(r => [r.id, pinnedSince(r)]));
+
+// notes(rows, today, pinned) — what to say before a run: a row past its support end (drop it), a gate exception and its
+// expiry, and a rolling row's pin that is stale or can't be dated (pinned: pinDates(); rows it doesn't name aren't checked)
+function notes(rows, today, pinned = {}) {
   const out = [];
   for (const r of rows) {
+    if (r.role === 'rolling' && r.id in pinned) {
+      const since = pinned[r.id];
+      if (!since) out.push(`PIN AGE UNKNOWN: ${r.id}: git can't see when its digest was pinned (a shallow checkout?)`);
+      else if (daysBetween(since, today) > STALE_DAYS) out.push(`STALE PIN: ${r.id} pinned since ${since} (${daysBetween(since, today)} days): Renovate hasn't moved it; repin by hand`);
+    }
     const u = r.supported_until;
     if (u && u.date && u.date < today) out.push(`PAST SUPPORT: ${r.id} was supported until ${u.date} (${u.source}): drop the row`);
     const e = r.gate_exception;
@@ -75,7 +103,7 @@ function notes(rows, today) {
 }
 
 // ci(m, today) — {rows, warnings} for test.yml: every row's id (parity T.1), and each note other than a plain one as a warning
-const ci = (m, today) => ({ rows: m.rows.map(r => r.id), warnings: notes(m.rows, today).filter(n => n.startsWith('PAST SUPPORT') || n.includes('EXPIRED')).map(n => `::warning title=linux-test::${n}`) });
+const ci = (m, today, pinned = {}) => ({ rows: m.rows.map(r => r.id), warnings: notes(m.rows, today, pinned).filter(n => !n.startsWith('note: ') || n.includes('EXPIRED')).map(n => `::warning title=linux-test::${n}`) });
 
 // imageTag(row, recipe, mise) — steward-test/<id>:<12 hex>, from the Dockerfile (and what it copies), the base, its extras and mise
 const imageTag = (row, recipe, mise) => `steward-test/${row.id}:${crypto.createHash('sha256').update([recipe, row.image, mise.version, JSON.stringify(mise.sha256), ...(row.extra || [])].join('\0')).digest('hex').slice(0, 12)}`;
@@ -246,7 +274,7 @@ async function run(argv) {
     const no = rows.map(e2eRefusal).filter(Boolean);
     if (no.length) { for (const n of no) console.error(`ERROR ${n}`); return 2; }
   }
-  for (const n of notes(rows, new Date().toISOString().slice(0, 10))) console.log(n);
+  for (const n of notes(rows, new Date().toISOString().slice(0, 10), pinDates(rows))) console.log(n);
 
   // a container a crashed run left: named, and removed only on a yes
   const left = cleanPlan({ containers: (await docker(['ps', '-a', '--format', '{{json .}}'])).stdout }).containers;
@@ -329,7 +357,7 @@ async function clean(argv) {
   return 0;
 }
 
-module.exports = { LABEL, IMAGES, markOurs, loadMatrix, validate, select, rowX64, emulated, notes, ci, imageTag, buildArgs, runArgs, e2eRefusal, e2eArgs, parseArgs, installCheckArgs, icPassed, icSummary, cleanPlan, cleanCommands, staleTags, onInterrupt, counts, summary };
+module.exports = { LABEL, IMAGES, markOurs, loadMatrix, validate, select, rowX64, emulated, pinnedSince, notes, ci, imageTag, buildArgs, runArgs, e2eRefusal, e2eArgs, parseArgs, installCheckArgs, icPassed, icSummary, cleanPlan, cleanCommands, staleTags, onInterrupt, counts, summary };
 
 if (require.main === module) {
   const [cmd, ...rest] = process.argv.slice(2);
@@ -337,7 +365,7 @@ if (require.main === module) {
   const ciCmd = async () => {
     const m = loadMatrix(), bad = validate(m);
     if (bad.length) { for (const b of bad) console.error(`ERROR matrix.json: ${b}`); return 1; }
-    const c = ci(m, new Date().toISOString().slice(0, 10));
+    const c = ci(m, new Date().toISOString().slice(0, 10), pinDates(m.rows));
     for (const w of c.warnings) console.log(w);
     const line = `rows=${JSON.stringify(c.rows)}\n`;
     if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, line); else process.stdout.write(line);

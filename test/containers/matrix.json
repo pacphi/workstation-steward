@@ -120,12 +120,7 @@
       "distro": "tumbleweed",
       "family": "suse",
       "role": "rolling",
-      "image": "opensuse/tumbleweed:latest@sha256:0afa1776a6caada91802c6866df7b09edabe248876baf79a1a99918b377ca08c",
-      "gate_exception": {
-        "why": "Tumbleweed's only multi-arch image is latest, rebuilt daily; its dated snapshots that pass the gate have no arm64 build. This digest was pushed 2026-11-01T12:16Z and clears the 3-day gate on its own on 2026-11-04.",
-        "decided": "owner, 2026-11-02",
-        "expires": "2026-11-05"
-      }
+      "image": "opensuse/tumbleweed:latest@sha256:0afa1776a6caada91802c6866df7b09edabe248876baf79a1a99918b377ca08c"
     }
   ],
   "mise": {
