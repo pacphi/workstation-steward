@@ -258,3 +258,60 @@ test('images: docker images\' JSON carries no labels, so ours are listed by a la
   assert.deepEqual(L.cleanPlan({ images: marked, containers: '', volumes: '', networks: '' }).images.map(i => i.ID), ['30216ad76d89']);
   assert.deepEqual(L.staleTags(L.markOurs([raw, j({ ID: 'x', Repository: 'steward-test/debian', Tag: 'old' })].join('\n')), 'debian', '74af6771a2ed'), ['steward-test/debian:old']);
 });
+
+// A rolling row's pin and its age (the owner, 2026-11-04): Tumbleweed's only multi-arch tag is rebuilt about daily, so
+// Renovate's 3-day gate may never let it move. The image's own build date is a fixed timestamp, so the age comes from
+// git: when its digest entered matrix.json. Past 30 days, a warning, never a failure.
+const TW = { id: 'tumbleweed', role: 'rolling', image: `opensuse/tumbleweed:latest@sha256:${'b'.repeat(64)}` };
+
+test('notes: a rolling row pinned more than 30 days ago is a stale pin; 30 days is not', () => {
+  assert.deepEqual(L.notes([TW], '2026-12-02', { tumbleweed: '2026-11-02' }), []);
+  assert.deepEqual(L.notes([TW], '2026-12-03', { tumbleweed: '2026-11-02' }), [
+    "STALE PIN: tumbleweed pinned since 2026-11-02 (31 days): Renovate hasn't moved it; repin by hand",
+  ]);
+});
+
+test('notes: a rolling row whose pin date git can\'t see says so; a fixed release is never checked', () => {
+  assert.deepEqual(L.notes([TW], '2026-11-05', { tumbleweed: null }), [
+    "PIN AGE UNKNOWN: tumbleweed: git can't see when its digest was pinned (a shallow checkout?)",
+  ]);
+  assert.deepEqual(L.notes([TW], '2026-11-05'), [], 'no pin dates given: nothing said (the pure callers)');
+  assert.deepEqual(L.notes([{ ...GOOD }], '2027-01-01', { 'debian-13': '2026-01-01' }), [], 'only rolling rows');
+});
+
+test('ci: a stale or unknown pin is a GitHub warning', () => {
+  const m = { rows: [GOOD, TW], mise: PIN };
+  assert.deepEqual(L.ci(m, '2026-12-03', { tumbleweed: '2026-11-02' }).warnings, [
+    "::warning title=linux-test::STALE PIN: tumbleweed pinned since 2026-11-02 (31 days): Renovate hasn't moved it; repin by hand",
+  ]);
+  assert.deepEqual(L.ci(m, '2026-11-05', { tumbleweed: null }).warnings, [
+    "::warning title=linux-test::PIN AGE UNKNOWN: tumbleweed: git can't see when its digest was pinned (a shallow checkout?)",
+  ]);
+});
+
+test('pinnedSince: the day the row\'s digest was committed to matrix.json, or null outside git', () => {
+  const { spawnSync } = require('child_process');
+  const dir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'pin-'));
+  const f = path.join(dir, 'test', 'containers', 'matrix.json');
+  fs.mkdirSync(path.dirname(f), { recursive: true });
+  assert.equal(L.pinnedSince(TW, f), null, 'not a git repo');
+  const git = (args, date) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args],
+    { cwd: dir, env: { ...process.env, GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date } });
+  git(['init', '-q']);
+  fs.writeFileSync(f, JSON.stringify({ rows: [TW] }, null, 1));
+  git(['add', '-A']); git(['commit', '-qm', 'pin'], '2026-11-02T12:00:00Z');
+  fs.writeFileSync(f, JSON.stringify({ rows: [{ ...TW, extra: ['x'] }] }, null, 1));
+  git(['commit', '-qam', 'another change, same digest'], '2026-11-20T12:00:00Z');
+  assert.equal(L.pinnedSince(TW, f), '2026-11-02');
+  assert.equal(L.pinnedSince({ ...TW, image: `opensuse/tumbleweed:latest@sha256:${'c'.repeat(64)}` }, f), null, 'a digest git never saw');
+});
+
+test('matrix.json: no gate exception is left once its image passes the gate (Tumbleweed, 2026-11-04)', () => {
+  assert.deepEqual(L.loadMatrix(MATRIX).rows.filter(r => r.gate_exception).map(r => r.id), []);
+});
+
+test('test.yml: the rows job checks out full history, so git can date the rolling pins', () => {
+  const y = fs.readFileSync(path.join(REPO, '.github', 'workflows', 'test.yml'), 'utf8');
+  const rows = y.split(/\n {2}rows:\n/)[1].split(/\n {2}[a-z-]+:\n/)[0];
+  assert.match(rows, /fetch-depth: 0/);
+});
