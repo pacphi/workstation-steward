@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 17](https://img.shields.io/badge/Revision-18-green) ![Revised 2026-11-04](https://img.shields.io/badge/Revised-2026--11--04-green)
+![Revision 18](https://img.shields.io/badge/Revision-19-green) ![Revised 2026-11-05](https://img.shields.io/badge/Revised-2026--11--05-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -287,8 +287,11 @@ Stage: Done (2026-11-02). Its exit criterion passes in CI on every PR (D74).
   Containers run arm64 on an Apple-silicon Mac (x64 by emulation) and have no systemd, so the NixOS VM stays in CI.
   Linux Mint's rows joined with the apt provider (1c, #103): `linuxmintd` is the Mint project's own account, the one
   its CI pushes to, and its images are amd64 only. (#87 said Mint has no official image; that was wrong.) Tumbleweed's row
-  pins a `latest` digest under a recorded gate exception (owner, 2026-11-02; expires 2026-11-05): its dated snapshots
-  that pass the gate have no arm64 build.
+  pins a `latest` digest: its dated snapshots that pass the gate have no arm64 build. The digest pinned on 2026-11-02
+  ran under a recorded gate exception until it passed the gate on its own; the exception came out on 2026-11-05 (D80,
+  #109). `latest` is rebuilt about daily, so Renovate's 3-day gate may never move the pin; `linux-test` dates the pin
+  from git and warns (STALE PIN) once it is more than 30 days old, so a pin Renovate never moves gets noticed and
+  repinned by hand (owner, 2026-11-04).
 
 **The first Linux baseline** (`just linux-test all`, 2026-11-02, arm64): the work list for 0.3 to 0.8.
 
@@ -517,6 +520,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-05 | 19 | Tumbleweed's pin passed the gate and its exception came out; a rolling row's pin is dated by git and warned of past 30 days (D80) | #109 |
 | 2026-11-04 | 18 | apt 1e done, and apt done: OS updates as a read-only audit section (a restart, a newer release, the end of free security support), checked on all seven apt rows (D79) | #108 |
 | 2026-11-03 | 17 | apt 1d done: the install check as a matrix from a ref, on the Mac and every `matrix.json` row (T.4, T.7, D78); how LMDE fits; OS updates decided for 1e | #107 |
 | 2026-11-03 | 16 | apt 1c done: the minimum versions (what counts as security support), seven apt rows with Mint and LMDE, every row in CI from one list (T.1, T.5), `--e2e` passing on all seven apt rows, the glibc fact (D77) | #103 |
