@@ -1,6 +1,6 @@
 # Releasing workstation-steward
 
-![Revision 11](https://img.shields.io/badge/Revision-12-green) ![Revised 2026-11-03](https://img.shields.io/badge/Revised-2026--11--03-green)
+![Revision 12](https://img.shields.io/badge/Revision-13-green) ![Revised 2026-11-05](https://img.shields.io/badge/Revised-2026--11--05-green)
 
 How a release happens, and the one-time npm setup behind it (D46 in [`architecture.md`](architecture.md#decisions)),
 plus what to do when the weekly upstream watch finds that a shipped default changed (D52), and how to check that no
@@ -400,6 +400,8 @@ the last summary is in `latest.txt` beside it.
 
 The runs add to the CI matrix; they never replace it. A row whose image is pinned under a release-age gate exception
 says so at the start, and says EXPIRED once the exception's date has passed: move the row to an image past the gate.
+A rolling row (Tumbleweed) says STALE PIN when the commit that brought its digest in is more than 30 days old: Renovate
+hasn't moved it, so repin it by hand to a digest past the gate (D80). In a shallow clone it says PIN AGE UNKNOWN.
 A row past its `supported_until` date says PAST SUPPORT: drop it in the next minor release (D-c).
 
 Linux Mint's and LMDE's images are amd64 only, so on an Apple-silicon Mac they always run under emulation, about ten
@@ -419,6 +421,6 @@ requires `test`, so adding an OS job never means changing branch protection: add
 with Linuxbrew, and puts the output in the job's summary.
 
 `test` also needs `rows` and `test-containers` (D77). `rows` reads `test/containers/matrix.json` and passes the row
-ids on, with a warning for a row past its support date or an expired gate exception; `test-containers` runs each row
+ids on, with a warning for a row past its support date, an expired gate exception or a stale rolling pin (it checks out full history to date the pin, D80); `test-containers` runs each row
 as `node tools/linux-test.js run <id>`, the same path as `just linux-test`, on the example toolchain's Node through the
 pinned mise-action. A new row is one entry in `matrix.json`: CI picks it up on the next PR.
