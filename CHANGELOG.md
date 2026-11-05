@@ -3,6 +3,39 @@
 All notable changes to workstation-steward. From 0.1.0 on, release-please writes each release's section from the
 Conventional Commit titles of the pull requests merged since the one before it (D46).
 
+## [0.11.0](https://github.com/pacphi/workstation-steward/compare/v0.10.1...v0.11.0) (2026-11-05)
+
+
+### Features
+
+* a dated [[updater]] gates a tool that installs itself, Claude Code first (D72) ([#96](https://github.com/pacphi/workstation-steward/issues/96)) ([c87c669](https://github.com/pacphi/workstation-steward/commit/c87c669a3b2702273a86c3c9b7df555ff5077e17))
+* apt upgrades through sudo at your terminal, or handed over and finished with --resume (parity 1b) ([#102](https://github.com/pacphi/workstation-steward/issues/102)) ([ad725e4](https://github.com/pacphi/workstation-steward/commit/ad725e467e8a08ae99e7b0956730e5955ab422fd))
+* apt's oldest and newest rows with Mint and LMDE, every row in CI from one list, and linux-test --e2e (parity 1c) ([#103](https://github.com/pacphi/workstation-steward/issues/103)) ([9f80e41](https://github.com/pacphi/workstation-steward/commit/9f80e41b181a3a74fb7ea2df7ac9ab4d379529c8))
+* know the Linux distribution and family, and host.toml's families key (parity 0.1) ([#84](https://github.com/pacphi/workstation-steward/issues/84)) ([3766b1d](https://github.com/pacphi/workstation-steward/commit/3766b1d54d05f4119f81a47c4eed1fd3913de53b))
+* OS updates on the Debian family, read-only, and apt done (parity 1e) ([#108](https://github.com/pacphi/workstation-steward/issues/108)) ([62d9303](https://github.com/pacphi/workstation-steward/commit/62d93030e56b2b2e5b6f9df8df53fb98adb98401))
+* package sources with one contract; the plan and the audit judge them in one place (parity 0.2) ([#86](https://github.com/pacphi/workstation-steward/issues/86)) ([a7b197d](https://github.com/pacphi/workstation-steward/commit/a7b197dd77bcdfd4a7e8a59ce7071c76e7038781))
+* steward sc vulns-fix and steward sc isolate: fix what can be fixed, switch off what can't (D70) ([#93](https://github.com/pacphi/workstation-steward/issues/93)) ([7c06f7b](https://github.com/pacphi/workstation-steward/commit/7c06f7b505cf3c67f84dc30137d4a3bfb461c679))
+* steward sc vulns: known vulnerabilities in what the steward installs, with the coverage it could read (D69) ([#92](https://github.com/pacphi/workstation-steward/issues/92)) ([89aece0](https://github.com/pacphi/workstation-steward/commit/89aece0a4860de68790d177b81795f22293e2c30))
+* test each Linux distribution locally, in throwaway containers (parity 0.9) ([#87](https://github.com/pacphi/workstation-steward/issues/87)) ([28c552c](https://github.com/pacphi/workstation-steward/commit/28c552c323e4d6442c4e9a0845c65ece6330f293))
+* the apt source, read-only: Debian, Ubuntu and Mint packages dated and judged by the gate (parity 1a) ([#101](https://github.com/pacphi/workstation-steward/issues/101)) ([b767c6d](https://github.com/pacphi/workstation-steward/commit/b767c6d124f224cea00e79f4ee59c83fbcdb5877))
+* the install check as a matrix from a ref, on the Mac and every Linux row (parity 1d) ([#107](https://github.com/pacphi/workstation-steward/issues/107)) ([d243db6](https://github.com/pacphi/workstation-steward/commit/d243db6b3725871b512910cc9507bfb019ed8cc4))
+
+
+### Bug Fixes
+
+* a machine without Homebrew or an app folder no longer fails the audit; the tests run on Linux too (parity 0.8) ([#100](https://github.com/pacphi/workstation-steward/issues/100)) ([897a3af](https://github.com/pacphi/workstation-steward/commit/897a3af6d45b6e497265621ef783fa84f402ecc6))
+* distrusted roots found on Linux too: the family's system bundle, Linuxbrew's and Node's (parity 0.5) ([#90](https://github.com/pacphi/workstation-steward/issues/90)) ([66384b8](https://github.com/pacphi/workstation-steward/commit/66384b84d3671d13e0edc45d587ce119acd8d794))
+* indicators of compromise on Linux and macOS alike: /proc on Linux, environment markers apart, a coverage line, never a clean that couldn't look (parity 0.4) ([#89](https://github.com/pacphi/workstation-steward/issues/89)) ([83eadbc](https://github.com/pacphi/workstation-steward/commit/83eadbc82fa69a9e76aee756de2a6f321c4dcd81))
+* steward doctor per platform: Linux's own prerequisites and install hints, sudo never run (parity 0.6) ([#91](https://github.com/pacphi/workstation-steward/issues/91)) ([2323030](https://github.com/pacphi/workstation-steward/commit/2323030b90e4fc000dbb557f98dae49121d0df0e))
+* the doctor names a mise tool missing from your own toolchain, instead of an install that won't stick ([#95](https://github.com/pacphi/workstation-steward/issues/95)) ([361274b](https://github.com/pacphi/workstation-steward/commit/361274b0a4fa5699becb5fb87dc1c3ebe8cee5a3))
+* the engine speaks of this machine, lists only what applies here, and names RuVector's add-on for its platform (parity 0.7) ([#97](https://github.com/pacphi/workstation-steward/issues/97)) ([c8a39d8](https://github.com/pacphi/workstation-steward/commit/c8a39d81e15b9b56ea697b5149df40660e62f1a0))
+* the engine's shell runs on macOS, GNU and busybox alike; perl and lsof no longer needed (parity 0.3) ([#88](https://github.com/pacphi/workstation-steward/issues/88)) ([1de68ce](https://github.com/pacphi/workstation-steward/commit/1de68ce56ee4aecd1fc0d127ff3d297d4e94c519))
+
+
+### Documentation
+
+* the film's Act IV, Storm warnings, and commands shown whole ([#94](https://github.com/pacphi/workstation-steward/issues/94)) ([deb91d2](https://github.com/pacphi/workstation-steward/commit/deb91d2f77518f859da973b9f4c3d52c849d1bc6))
+
 ## [0.10.1](https://github.com/pacphi/workstation-steward/compare/v0.10.0...v0.10.1) (2026-10-31)
 
 
