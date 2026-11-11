@@ -36,7 +36,7 @@ jobs:
           persist-credentials: false
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          version: 2026.10.21
+          version: 2026.11.4
           install: false # a lockfile in a parent folder would make the action use --locked (see test.yml)
       - run: mise install node yq
       - name: Check each shipped key pin against its publisher's copy

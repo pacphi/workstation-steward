@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          version: 2026.10.21
+          version: 2026.11.4
           # The action installs with --locked when it finds a mise lockfile in any parent folder, and a checkout that is
           # also an instance has the owner's at its root (runs 40550641067 and 40550828044 failed on it). Install below.
           install: false
@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          version: 2026.10.21
+          version: 2026.11.4
           install: false
       - run: mise install
       - run: npm ci --ignore-scripts --prefix tools/types
@@ -109,7 +109,7 @@ jobs:
           fetch-depth: 0
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          version: 2026.10.21
+          version: 2026.11.4
           install: false
       # linux-test.js on the example toolchain's Node (26), as everywhere else, not the runner's own
       - run: mise install node
@@ -131,7 +131,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          version: 2026.10.21
+          version: 2026.11.4
           install: false
       # linux-test.js on the example toolchain's Node (26), as everywhere else, not the runner's own
       - run: mise install node

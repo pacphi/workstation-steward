@@ -16,7 +16,7 @@ const MATRIX = path.join(REPO, 'test', 'containers', 'matrix.json');
 test('matrix.json: the oldest and newest of each distribution the Linux release needs (parity 1c, D-c), each pinned by tag and digest', () => {
   const m = L.loadMatrix(MATRIX);
   assert.deepEqual(L.validate(m), []);
-  assert.deepEqual(m.rows.map(r => r.id), ['debian-12', 'debian-13', 'ubuntu-22.04', 'ubuntu-26.04', 'mint-21.3', 'mint-22.3', 'lmde-7', 'fedora-44', 'leap-16.0', 'tumbleweed']);
+  assert.deepEqual(m.rows.map(r => r.id), ['debian-12', 'debian-13', 'ubuntu-22.04', 'ubuntu-26.04', 'mint-21.3', 'mint-22.3', 'lmde-7', 'fedora-44', 'fedora-45', 'leap-16.0', 'tumbleweed']);
   for (const r of m.rows) {
     assert.ok(FAMILIES.includes(r.family), `${r.id}: family`);
     assert.match(r.image, /^[a-z0-9./-]+(:[\w.-]+)?@sha256:[0-9a-f]{64}$/, `${r.id}: image names a digest`);

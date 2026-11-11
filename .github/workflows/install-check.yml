@@ -74,7 +74,7 @@ jobs:
           fetch-depth: 0
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          version: 2026.10.21
+          version: 2026.11.4
           install: false
       # linux-test.js on the example toolchain's Node (26), as in test.yml, not the runner's own
       - run: mise install node
@@ -107,7 +107,7 @@ jobs:
       # `steward` back to the worktree's launcher
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          version: 2026.10.21
+          version: 2026.11.4
           install: false
           add_shims_to_path: false
           export_path: false
@@ -143,7 +143,7 @@ jobs:
           fetch-depth: 0
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          version: 2026.10.21
+          version: 2026.11.4
           install: false
       - run: mise install node
       - name: just linux-test ${{ matrix.row }} --install-check
