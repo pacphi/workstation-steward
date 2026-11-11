@@ -44,7 +44,7 @@ test('sources: macOS gets formulae and casks; Linux formulae only; families narr
   const apt = { id: 'fake-apt', platforms: ['linux'], families: ['debian'] };
   const all = [...P.ALL, apt];
   assert.deepEqual(P.sources(ctx({ platform: 'linux', family: 'debian', sources: all })).map(s => s.id), ['brew-formula', 'apt', 'fake-apt']);
-  assert.deepEqual(P.sources(ctx({ platform: 'linux', family: 'rhel', sources: all })).map(s => s.id), ['brew-formula']);
+  assert.deepEqual(P.sources(ctx({ platform: 'linux', family: 'rhel', sources: all })).map(s => s.id), ['brew-formula', 'dnf'], 'dnf on the rhel family (parity dnf 1a)');
   assert.equal(P.byId('brew-cask').title.startsWith('Homebrew casks'), true);
   assert.equal(P.byId('nope'), null);
 });

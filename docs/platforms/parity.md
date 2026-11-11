@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 18](https://img.shields.io/badge/Revision-19-green) ![Revised 2026-11-05](https://img.shields.io/badge/Revised-2026--11--05-green)
+![Revision 20](https://img.shields.io/badge/Revision-20-green) ![Revised 2026-11-11](https://img.shields.io/badge/Revised-2026--11--11-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -169,13 +169,20 @@ edition, is on Mint's line too. The apt numbers, from distro-info-data's `debian
 | Linux Mint 21.3 | oldest | April 2027 |
 | Linux Mint 22.3 | newest | April 2029 |
 | LMDE 7 | newest | not published: Mint's page says only "Long term support release (LTS)" |
+| Fedora 44 | oldest | 2027-06-02 |
+| Fedora 45 | newest | 2027-12-08 |
 
-Ubuntu 24.04 and Mint 22 to 22.2 fall between oldest and newest, so they are inside the range. Each row in
+Ubuntu 24.04 and Mint 22 to 22.2 fall between oldest and newest, so they are inside the range. **Fedora** (dnf 1a,
+checked 2026-11-11 on [Bodhi's releases API](https://bodhi.fedoraproject.org/releases/?exclude_archived=true), which
+matches Fedora's [lifecycle page](https://docs.fedoraproject.org/en-US/releases/lifecycle/): release N is supported
+until four weeks after N+2): Fedora 43, 44 and 45 are supported today, and Fedora 43 ends on 2026-12-02, three weeks
+after Fedora 45's release on 2026-11-03, so D-c's cap leaves 44 and 45. os-release's `SUPPORT_END` is about two weeks
+earlier than Bodhi's date (it is fixed when the release is built), so Bodhi is the source. Each row in
 `test/containers/matrix.json` carries its end date and source; once a date passes, `just linux-test` and CI warn
 "PAST SUPPORT: drop the row", and nothing goes red (owner, 2026-11-03).
 
 **glibc** (measured 2026-11-03 in the oldest rows' images): Ubuntu 22.04 and Mint 21.3 have glibc 2.35, Debian 12
-has 2.36. Node 26.13.0's Linux build needs 2.28 and mise 2026.10.21 needs 2.18 (the newest `GLIBC_` symbol version
+has 2.36; Fedora 44 has 2.43 and Fedora 45 2.44 (2026-11-11). Node 26.13.0's Linux build needs 2.28 and mise 2026.10.21 needs 2.18 (the newest `GLIBC_` symbol version
 each binary asks for), so neither raises the floor.
 
 | Distribution | Package manager | Kind | Minimum version | Support | Provider |
@@ -183,7 +190,7 @@ each binary asks for), so neither raises the floor.
 | Debian | apt | fixed releases | 12 (Debian LTS to 2028-06-30) to 13 | Full | 🟨 |
 | Ubuntu | apt | fixed releases | 22.04 (standard support to 2027-06-01) to 26.04 | Full | 🟨 |
 | Linux Mint | apt | fixed releases | 21.3 (to April 2027) to 22.3, by series; LMDE 7 | Full | 🟨 |
-| Fedora | dnf | fixed releases | n-3, capped (in practice the vendor supports two) | Full | ⬜ |
+| Fedora | dnf | fixed releases | 44 (to 2027-06-02) to 45 | Full | 🟨 |
 | openSUSE Leap | zypper | fixed releases | n-3, capped | Full | ⬜ |
 | openSUSE Tumbleweed | zypper | rolling | current | Full | ⬜ |
 | Arch Linux | pacman | rolling | current | Full | ⬜ |
@@ -412,10 +419,50 @@ restart and checks the section against the live sources; all seven rows passed o
 Each end date matched the row's `supported_until` in `matrix.json`, and each newer release matched the live source.
 The kernel comparison runs on a real machine only; the containers prove it through the tests' canned `dpkg-query`.
 
+**dnf's step 0** (2026-11-11, checked live in Fedora 43, 44 and 45 containers):
+
+- **The date:** [Bodhi](https://bodhi.fedoraproject.org/), Fedora's update system, gives each update's `date_stable`,
+  the moment it went to the stable `updates` repo, by advisory (`/updates/?alias=…`, many in one request) or by source
+  build (`/updates/?builds=…`); no sign-in, no rate-limit headers seen. The repo's own metadata names each version's
+  advisory (`dnf5 advisory list --json`), and all 46 updates pending in the Fedora 44 image had one. **Its issued time
+  is not the date:** it matched `date_stable` on 126 of 132 advisories across Fedora 43, 44 and 45, but the other 6,
+  all made stable in that day's compose, still carried the day they went to testing (`FEDORA-2026-97b00a408b`, vim:
+  issued 2026-11-10 02:52:25, stable 2026-11-11 01:02:59; `FEDORA-2026-b630871014`: 15 days early). Taken as the date,
+  that would let an update past the gate early, so the advisory gives the id and the type, and Bodhi the date. An
+  RPM's build time is no date either: it came 1 to 16 days before `date_stable` (`pcre2-10.49-1.fc44`: built
+  2026-10-23, stable 2026-11-08). Koji, the build system, knows only build times. A version only in the release's
+  own `fedora` repo is dated by the release's day (Bodhi's `released_on`, null for Fedora 43). A version in
+  `updates-testing` has no stable date and is never read.
+- **Security:** each advisory has Bodhi's type, and `security` is the one that counts; severity is sometimes unset
+  on a security update (`dnf5-5.4.7.0-1.fc44`, FEDORA-2026-97ca946ad2), so the type decides.
+- **The way back:** `dnf5 history undo` failed on Fedora 44 after a `tzdata` 2026c → 2026f upgrade ("no match for:
+  tzdata-2026c-1.fc44"), because the `updates` repo keeps only the newest build; `dnf5 list --showduplicates` offers
+  only the release's build and the newest update. `dnf5 downgrade` works, to a version the repos still offer: here
+  2026a, the release's. An exact pin works (`dnf5 upgrade tzdata-2026f-1.fc44`). This shapes dnf 1b.
+- **OS updates:** `dnf5 needs-restarting -r` exits 1 and names glibc after a glibc upgrade, in a container and as a
+  normal user; Bodhi's releases give each release's end and the newer releases.
+- **As the user:** `dnf5` with its own `cachedir` reads every repo, the advisories included, without root, and leaves
+  the system's cache alone (about 100 MB).
+
+**dnf's read-only source (1a, D81):** `lib/providers/dnf.js`, for the rhel family, dnf5 only (Fedora's dnf since 41).
+It lists what dnf would upgrade from its own cache under the steward's state folder, as the user, never reading a
+testing repo, and dates each new version by Bodhi's `date_stable` for its advisory (one request for all of a run's
+advisories, cached for the day), else for its source build, else the release's day for a version only in the
+release's repo, else the first-seen clock, as on Mint; a Bodhi that can't be reached gives the first-seen clock too,
+never the advisory's issued time. A version whose advisory is of type security is taken at once and names the
+advisory, as apt's security pockets are. Until 1b brings the upgrade, the plan lists each update past the gate with its
+exact `sudo dnf5 upgrade -y <name>-<version>.<arch>` line, and `apply` refuses the source. Live, as the unprivileged
+user in both row images (2026-11-11): all 16 pending updates on Fedora 44 and 18 on Fedora 45 dated by Bodhi; `tzdata`
+2026f 5 and 4 days old, taken; `pcre2` 10.49 and `curl` taken at once on their security advisories; vim's fix of that
+morning held at 0 days; the system's dnf cache untouched. **The rows:** Fedora 44
+(oldest) and Fedora 45 (newest). Docker Hub's `fedora:45` is the prerelease image (pushed 2026-11-02, the day before
+the release): its `fedora-repos` 45-0.6 turns `updates-testing` on, so the row installs the release's `fedora-repos`
+45-1 first, as a fresh install has it.
+
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
 | --- | --- | --- | --- | --- |
 | ✅ apt | Debian, Ubuntu, Linux Mint, LMDE (the Linux release) | per package | Done: 1a read-only (#101, D75); 1b the upgrade with the sudo hand-off (#102, D76); 1c the rows, CI and the real-repo run (#103, D77); 1d its install-check row (#107, D78); 1e OS updates, read-only (#108, D79). npm mode on Linux waits for the release (R-2) | #101, #102, #103, #107, #108 |
-| ⬜ dnf | Fedora (the Linux release) | per package | Not started | |
+| 🟨 dnf | Fedora (the Linux release) | per package | Under way: step 0 (2026-11-11); 1a read-only (#112, D81) | #112 |
 | ⬜ zypper | openSUSE Leap, Tumbleweed (the Linux release) | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ Flatpak | any | per package | Not started | |
 | ⬜ Snap | Ubuntu and others | per package | Not started | |
@@ -504,9 +551,10 @@ These shaped the plan but were not checked when it was written. Each is checked 
 in the PR that relies on it.
 
 - [ ] Arch doesn't support partial upgrades, and the Arch Linux Archive serves repos by date.
-- [ ] Each package manager's date source: Fedora's Bodhi, Debian's and Ubuntu's publishing history or snapshot
+- [ ] Each package manager's date source: Fedora's Bodhi (checked 2026-11-11, dnf's step 0), Debian's and Ubuntu's publishing history or snapshot
   services, Alpine's index, openSUSE's, Void's and Slackware's.
-- [ ] `dnf history undo` on dnf5; the pacman cache and snapper as ways back.
+- [ ] `dnf history undo` on dnf5 (checked 2026-11-11, dnf's step 0: it exists, and fails whenever the version before
+  was an earlier update, since Fedora's `updates` repo keeps only the newest); the pacman cache and snapper as ways back.
 - [ ] How each family denies a root: `update-ca-certificates`, `update-ca-trust`, p11-kit's blocklist.
 - [x] The oldest glibc Node 26's Linux binaries need (2.28), and mise's (2.18): measured 2026-11-03; see
   [the minimum versions](#supported-platforms-and-minimum-versions).
@@ -520,6 +568,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-11 | 20 | dnf step 0 (Bodhi, the advisories, `history undo`, the releases) and dnf 1a: the dnf source, read-only (D81); the Fedora rows are 44 (oldest) and 45 (newest, its prerelease image's testing repo turned off); Fedora's minimum versions | #112 |
 | 2026-11-05 | 19 | Tumbleweed's pin passed the gate and its exception came out; a rolling row's pin is dated by git and warned of past 30 days (D80) | #109 |
 | 2026-11-04 | 18 | apt 1e done, and apt done: OS updates as a read-only audit section (a restart, a newer release, the end of free security support), checked on all seven apt rows (D79) | #108 |
 | 2026-11-03 | 17 | apt 1d done: the install check as a matrix from a ref, on the Mac and every `matrix.json` row (T.4, T.7, D78); how LMDE fits; OS updates decided for 1e | #107 |

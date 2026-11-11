@@ -109,6 +109,20 @@ running kernel older than the newest installed one), a note when a newer release
 done by hand), and the end of the release's free security support, from distro-info-data or Mint's release page: a
 note within 90 days, an action once past.
 
+### dnf (Fedora)
+
+The steward reads dnf's metadata as you, into its own cache in its state folder, without `sudo`, and never reads a
+testing repo (D81). Each new version is dated by when it reached Fedora's stable updates:
+
+| Where | Dated by |
+| --- | --- |
+| Every Fedora update | Bodhi, Fedora's update system: the day its advisory, or its build, went stable |
+| A version only in the release's own repo | the release's day |
+| Anything else, or when Bodhi can't be reached | the first time this machine saw it, kept in `<state>/dnf/first-seen.json` |
+
+A version whose advisory is a security one is taken at once and names it. Until dnf 1b, each update past the gate is
+listed with its exact `sudo dnf5 upgrade -y …` line for you to run, and `steward sc upgrade` doesn't apply dnf.
+
 ## What may skip the gate
 
 Every update source has one **release class** (D52, [`release-classes.md`](../docs/release-classes.md)), and only
