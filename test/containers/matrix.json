@@ -124,10 +124,10 @@
     }
   ],
   "mise": {
-    "version": "2026.10.21",
+    "version": "2026.11.4",
     "sha256": {
-      "arm64": "1c05e4d4baaf1b4a9bf929e9c39b3512deb937c8d4c1bd52927499624018834f",
-      "x64": "f56cc56b462eaae60aa7a33dffd24f641847b52e098b69e4a5064c4b8bbe03cb"
+      "arm64": "e168248871cd4f958bb1597dc74d03ec65634bb54bf49c80dbb7999a7ba88471",
+      "x64": "e9652ecdc9ac990662ba8346b2b3da95ad9c890ed73768ea4675ef721dcef37e"
     }
   }
 }
