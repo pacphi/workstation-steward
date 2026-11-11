@@ -96,12 +96,27 @@
       "id": "fedora-44",
       "distro": "fedora",
       "family": "rhel",
-      "role": "newest",
-      "image": "fedora:44@sha256:43b29f65a41eb9c35e1cd5323e3bdf3b655c2357a9f4f1ff2f9c2798e5045d80",
+      "role": "oldest",
+      "image": "fedora:44@sha256:15da97ed9aa94dd3d92c3925eb89520f6c80e07ea7ee24cba848d1f8b6912b3e",
       "supported_until": {
         "date": "2027-06-02",
-        "source": "bodhi.fedoraproject.org/releases/F44 (eol)"
+        "source": "bodhi.fedoraproject.org/releases/F44 (eol, checked 2026-11-11)"
       }
+    },
+    {
+      "id": "fedora-45",
+      "distro": "fedora",
+      "family": "rhel",
+      "role": "newest",
+      "image": "fedora:45@sha256:a7d72ba2745b100a3351087472e5ee7b2450af7cf331e7673007e3817612839c",
+      "supported_until": {
+        "date": "2027-12-08",
+        "source": "bodhi.fedoraproject.org/releases/F45 (eol, checked 2026-11-11)"
+      },
+      "extra": [
+        "fedora-repos=45-1"
+      ],
+      "extra_why": "Docker Hub's fedora:45 is the prerelease image (pushed 2026-11-02, the day before GA): fedora-repos 45-0.6 turns updates-testing on; the release's own fedora-repos 45-1 turns it off, as a fresh install has it (parity dnf 1a, 2026-11-11)"
     },
     {
       "id": "leap-16.0",

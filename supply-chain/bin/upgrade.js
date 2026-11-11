@@ -2,10 +2,10 @@
 // Upgrade what can be upgraded from the CLI, within host.toml's policy (R5c, D43): `steward sc upgrade`, and with
 // DRY_RUN=1 `steward sc plan`. The plan comes from the providers (lib/providers/):
 //   - each package source that applies here and is installed (lib/providers/index.js, parity 0.2: Homebrew formulae
-//     and non-self-updating casks; apt), for versions at least the release-age gate (steward.toml [policy]) old, or
-//     that match an unexpired host.toml security_exception (or come from apt's security pocket); a source that needs
-//     root goes through lib/roothandoff.js: sudo at your terminal, else handed over and finished by --resume (D-b
-//     revised, parity 1b);
+//     and non-self-updating casks; apt; dnf), for versions at least the release-age gate (steward.toml [policy]) old,
+//     or that match an unexpired host.toml security_exception (or come from apt's security pocket, or a Fedora
+//     security advisory); a source that needs root goes through lib/roothandoff.js: sudo at your terminal, else handed
+//     over and finished by --resume (D-b revised, parity 1b); a read-only one (dnf until its 1b) lists its sudo line;
 //   - mise tools (mise holds them to minimum_release_age; majors are skipped and listed; Node goes through node-patch;
 //     AI tooling's own tools follow its qualification);
 //   - declared updaters ([[updater]], D52) that are behind and whose class may skip the gate (lib/updaters.js);
@@ -89,7 +89,9 @@ async function plan(ctx, out) {
       const what = `${it.name} ${it.have} -> ${it.want}`;
       const old = `${j.age}d old${j.from ? `, ${j.from}` : ''}`;
       if (j.verdict === 'hold') { out.line(`hold   ${what} (${old})`); continue; }
-      const why = j.exception ? `security exception: ${j.exception}` : j.pocket ? `security pocket: ${j.pocket}` : old;
+      const why = j.exception ? `security exception: ${j.exception}` : j.pocket ? `${s.pocketWhy || 'security pocket'}: ${j.pocket}` : old;
+      // a read-only source (dnf until its 1b): the exact sudo line, for you to run; nothing is planned for apply
+      if (s.readOnly) { const c = s.upgradeCmd([it]); out.line(`manual ${s.provider}: needs root, which the steward takes on in ${s.readOnly} (${why}): sudo ${[c.cmd, ...c.args].join(' ')}`); continue; }
       names.push(it.name);
       items.push({ name: it.name, have: it.have, want: it.want, why: j.exception || j.pocket ? why : `gate: ${old}` });
       out.line(`take   ${what} (${why})`);
@@ -207,6 +209,7 @@ async function apply(p, o = {}) {
   for (const { source, names, items } of p.packages || []) {
     const s = P.byId(source, list);
     if (!s) { fail(`${source}: no such package source`, 1, 'none needed: nothing ran for it'); continue; }
+    if (s.readOnly) { fail(`${s.provider}: read-only until ${s.readOnly}`, 1, 'none needed: nothing ran for it'); continue; }
     if (s.needsRoot) {
       log(`${s.provider}: ${(items || []).length} package(s), through sudo`);
       const c = await RH.upgrade(o.ctx || context(), s, items || [], { tty: o.tty === undefined ? RH.terminal() : o.tty, spawn: o.sudo, dry });

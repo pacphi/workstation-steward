@@ -14,6 +14,7 @@ const { X509Certificate } = require('crypto');
 const brew = require('../../lib/providers/brew.js');
 const P = require('../../lib/providers/index.js');
 const apt = require('../../lib/providers/apt.js');
+const dnf = require('../../lib/providers/dnf.js');
 const OSU = require('../../lib/osupdates.js');
 const U = require('../../lib/updaters.js');
 const V = require('../../lib/vulns.js');
@@ -235,6 +236,11 @@ const CHECKS = [
     id: 'apt', name: 'apt packages', platforms: ['linux'], families: ['debian'], provider: apt.source,
     title: ctx => `apt packages (dated by snapshot.debian.org or Launchpad, else first seen here; eligible = at least ${minAge(ctx)}d)`,
     run: packages('apt'),
+  },
+  {
+    id: 'dnf', name: 'dnf packages', platforms: ['linux'], families: ['rhel'], provider: dnf.source,
+    title: ctx => `dnf packages (dated by Bodhi, else the release day or first seen here; eligible = at least ${minAge(ctx)}d, or a security advisory)`,
+    run: packages('dnf'),
   },
   {
     // Linux's OS updates (parity 1e, D79): a restart, a newer release (a note: a major), the end of free security

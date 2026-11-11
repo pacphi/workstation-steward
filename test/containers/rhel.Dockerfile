@@ -5,7 +5,11 @@ FROM ${BASE}
 ARG MISE_VERSION
 ARG MISE_ARCH
 ARG MISE_SHA256
+# a row's extra pins (matrix.json `extra`, name=version): fedora:45's prerelease image turns updates-testing on, and the
+# release's fedora-repos turns it off (parity dnf 1a); it goes first, so nothing below comes from testing
+ARG EXTRA=
 LABEL org.workstation-steward.test=1
+RUN if [ -n "$EXTRA" ]; then dnf -y --disable-repo='*-testing' upgrade $(printf '%s\n' $EXTRA | sed 's/=/-/') && dnf clean all; fi
 # Node 26's Linux binaries need libatomic, which minimal images leave out (found by the first run, 2026-11-02)
 RUN dnf -y install --setopt=install_weak_deps=False \
       bash git-core python3 util-linux procps-ng ca-certificates curl tar gzip xz findutils shadow-utils libatomic util-linux-script diffutils \
