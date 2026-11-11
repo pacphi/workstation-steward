@@ -462,7 +462,7 @@ the release): its `fedora-repos` 45-0.6 turns `updates-testing` on, so the row i
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
 | --- | --- | --- | --- | --- |
 | ✅ apt | Debian, Ubuntu, Linux Mint, LMDE (the Linux release) | per package | Done: 1a read-only (#101, D75); 1b the upgrade with the sudo hand-off (#102, D76); 1c the rows, CI and the real-repo run (#103, D77); 1d its install-check row (#107, D78); 1e OS updates, read-only (#108, D79). npm mode on Linux waits for the release (R-2) | #101, #102, #103, #107, #108 |
-| 🟨 dnf | Fedora (the Linux release) | per package | Under way: step 0 (2026-11-11); 1a read-only (D81) | |
+| 🟨 dnf | Fedora (the Linux release) | per package | Under way: step 0 (2026-11-11); 1a read-only (#112, D81) | #112 |
 | ⬜ zypper | openSUSE Leap, Tumbleweed (the Linux release) | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ Flatpak | any | per package | Not started | |
 | ⬜ Snap | Ubuntu and others | per package | Not started | |
@@ -568,7 +568,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-11 | 20 | dnf step 0 (Bodhi, the advisories, `history undo`, the releases) and dnf 1a: the dnf source, read-only (D81); the Fedora rows are 44 (oldest) and 45 (newest, its prerelease image's testing repo turned off); Fedora's minimum versions | dnf 1a |
+| 2026-11-11 | 20 | dnf step 0 (Bodhi, the advisories, `history undo`, the releases) and dnf 1a: the dnf source, read-only (D81); the Fedora rows are 44 (oldest) and 45 (newest, its prerelease image's testing repo turned off); Fedora's minimum versions | #112 |
 | 2026-11-05 | 19 | Tumbleweed's pin passed the gate and its exception came out; a rolling row's pin is dated by git and warned of past 30 days (D80) | #109 |
 | 2026-11-04 | 18 | apt 1e done, and apt done: OS updates as a read-only audit section (a restart, a newer release, the end of free security support), checked on all seven apt rows (D79) | #108 |
 | 2026-11-03 | 17 | apt 1d done: the install check as a matrix from a ref, on the Mac and every `matrix.json` row (T.4, T.7, D78); how LMDE fits; OS updates decided for 1e | #107 |
