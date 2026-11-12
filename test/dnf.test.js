@@ -1,7 +1,8 @@
-// The dnf source (parity dnf 1a, lib/providers/dnf.js): Fedora packages, read-only. Its own metadata cache, read as the
+// The dnf source (parity dnf 1a and 1b, lib/providers/dnf.js): Fedora packages. Its own metadata cache, read as the
 // user; testing repos never read; each new version dated by Bodhi's date_stable for its advisory (never the advisory's
 // own issued time), else for its build, else the release's day for a version only in the release's own repo, else the
-// first-seen clock; a security advisory taken at once. No network: dnf5, rpm and curl are canned, from real output trimmed (Fedora 43, 44 and 45
+// first-seen clock; a security advisory taken at once. The upgrade goes through the root hand-off, pinned to the exact
+// build, and the way back only to builds the repos still offer (owner, 2026-11-11: apt's rule). No network: dnf5, rpm and curl are canned, from real output trimmed (Fedora 43, 44 and 45
 // containers, 2026-11-11).
 // Run: just test
 const test = require('node:test');
@@ -118,9 +119,11 @@ function ctx(answers = {}, extra = {}) {
   const run = async (cmd, args = []) => {
     const k = [cmd, ...args].join(' ');
     calls.push(k);
-    if (cmd === 'dnf5' && args.includes('repoquery')) return { status: 0, stdout: UPGRADES };
+    if (cmd === 'dnf5' && args.includes('repoquery') && args.includes('--upgrades')) return { status: 0, stdout: UPGRADES };
+    if (cmd === 'dnf5' && args.includes('repoquery')) return { status: 0, stdout: ((extra.offered || {})[args[args.length - 1]] || []).map(v => `${v}\n`).join('') };
     if (cmd === 'dnf5' && args.includes('advisory')) return { status: 0, stdout: ADV54 };
     if (cmd === 'dnf5' || (cmd === 'rpm' && args[0] === '--version')) return { status: 0, stdout: 'dnf5 version 5.4.3.0\n' };
+    if (cmd === 'rpm' && extra.installed) return { status: 0, stdout: args.slice(3).map(n => (extra.installed[n] ? `${n} ${/:/.test(extra.installed[n]) ? '' : '0:'}${extra.installed[n]}\n` : `package ${n} is not installed\n`)).join('') };
     if (cmd === 'rpm') return { status: 0, stdout: INSTALLED };
     if (cmd === 'curl') {
       const url = args[args.length - 1];
@@ -194,32 +197,107 @@ test('sources: dnf on the rhel family only', () => {
   assert.ok(!P.sources({ ...base, platform: 'macos', family: null }).some(s => s.id === 'dnf'));
 });
 
-test('plan on Fedora: read-only until dnf 1b; each update past the gate is its exact sudo line, nothing planned for apply', async () => {
+test('plan on Fedora: each update past the gate is taken with its why and its arch; the rest held (dnf 1b)', async () => {
   const c = ctx({ [`${BODHI}/updates/?alias=`]: BODHI_ALIASES, [`${BODHI}/updates/?builds=glibc-2.43-9.fc44`]: BODHI_GLIBC, [`${BODHI}/releases/F44`]: BODHI_F44 }, { sources: [D.source] });
   c.run = (orig => async (cmd, args = []) => (cmd === 'mise' ? { status: 0, stdout: '{}' } : cmd === 'node' ? { status: 0, stdout: 'ok\t2026.10.21\t2026.10.21\tcurrent\tfalse\n' } : orig(cmd, args)))(c.run);
   const lines = [], sections = [];
   const p = await plan(c, { section: (_n, t) => sections.push(t), line: l => lines.push(l), warn: () => {} });
   assert.equal(sections[0], 'dnf packages');
   const say = l => assert.ok(lines.includes(l), `${l}\n---\n${lines.join('\n')}`);
-  say('manual dnf: needs root, which the steward takes on in dnf 1b (5d old, Bodhi): sudo dnf5 upgrade -y tzdata-2026f-1.fc44.noarch');
-  say('manual dnf: needs root, which the steward takes on in dnf 1b (security advisory: FEDORA-2026-12f3f3d569): sudo dnf5 upgrade -y openssl-libs-1:3.5.9-1.fc44.aarch64');
-  say('manual dnf: needs root, which the steward takes on in dnf 1b (41d old, Bodhi): sudo dnf5 upgrade -y glibc-2.43-9.fc44.aarch64');
-  say('manual dnf: needs root, which the steward takes on in dnf 1b (197d old, release day): sudo dnf5 upgrade -y fedora-gpg-keys-44-2.noarch');
+  say('take   tzdata 2026c-1.fc44 -> 2026f-1.fc44 (5d old, Bodhi)');
+  say('take   openssl-libs 1:3.5.4-2.fc44 -> 1:3.5.9-1.fc44 (security advisory: FEDORA-2026-12f3f3d569)');
+  say('take   glibc 2.43-8.fc44 -> 2.43-9.fc44 (41d old, Bodhi)');
+  say('take   fedora-gpg-keys 44-1 -> 44-2 (197d old, release day)');
   say('hold   vim-minimal 2:9.2.1200-1.fc44 -> 2:9.2.1302-2.fc44 (0d old, Bodhi)');
   say('hold   mystery 0.9-1.fc44 -> 1.0-1.fc44 (0d old, first seen here)');
-  assert.deepEqual(p.packages, [], 'apply gets nothing from dnf');
+  assert.ok(!lines.some(l => l.startsWith('manual dnf')), 'no longer read-only');
+  assert.equal(p.packages.length, 1);
+  assert.deepEqual(p.packages[0].names, ['tzdata', 'openssl-libs', 'glibc', 'fedora-gpg-keys']);
+  assert.deepEqual(p.packages[0].items[1], { name: 'openssl-libs', have: '1:3.5.4-2.fc44', want: '1:3.5.9-1.fc44', arch: 'aarch64', why: 'security advisory: FEDORA-2026-12f3f3d569' });
+  assert.deepEqual(D.source.upgradeCmd(p.packages[0].items).args,
+    ['upgrade', '-y', '--refresh', 'tzdata-2026f-1.fc44.noarch', 'openssl-libs-1:3.5.9-1.fc44.aarch64', 'glibc-2.43-9.fc44.aarch64', 'fedora-gpg-keys-44-2.noarch'], 'each pinned to the exact build');
 });
 
-test('apply refuses a read-only source: it fails that step and runs nothing for it', async () => {
+test('dnf: installed from rpm, as you; offered from the steward\'s own cache, testing left out, the rpm database never read', async () => {
+  const c = ctx({}, { installed: { tzdata: '2026f-1.fc44', 'openssl-libs': '1:3.5.9-1.fc44' }, offered: { tzdata: ['2026a-1.fc44', '2026f-1.fc44', '2026f-1.fc44'] } });
+  assert.deepEqual(await D.source.installed(c, ['tzdata', 'openssl-libs', 'gone']), { tzdata: '2026f-1.fc44', 'openssl-libs': '1:3.5.9-1.fc44' });
+  assert.deepEqual(await D.source.installed(c, []), {});
+  assert.deepEqual(await D.source.offered(c, 'tzdata'), ['2026a-1.fc44', '2026f-1.fc44'], 'each build once');
+  const q = c.calls.find(k => k.includes('repoquery'));
+  assert.ok(q.includes(`--setopt=cachedir=${path.join(c.cfg.paths.state, 'dnf', 'cache')}`) && q.includes('--disable-repo=*-testing') && !q.includes('--installed'), q);
+  assert.deepEqual(D.source.rollbackCmd([{ name: 'tzdata', to: '2026a-1.fc44' }]), { cmd: 'dnf5', args: ['downgrade', '-y', '--refresh', 'tzdata-2026a-1.fc44'] });
+  assert.equal(D.source.readOnly, undefined);
+  assert.equal(D.source.rootRefresh, undefined, 'the refresh is --refresh on the one command');
+  assert.ok(!c.calls.some(k => k.startsWith('sudo')), 'all as you');
+});
+
+// fedora(o) — a Fedora machine whose rpm database the stand-in sudo changes: dnf5 upgrade and downgrade install each
+// pinned name-evr(.arch) they are given
+function fedora(o = {}) {
+  const inst = { tzdata: '2026c-1.fc44', 'openssl-libs': '1:3.5.4-2.fc44', ...(o.installed || {}) };
+  const c = ctx({}, { installed: inst, offered: o.offered || { tzdata: ['2026a-1.fc44', '2026f-1.fc44'], 'openssl-libs': ['1:3.5.0-1.fc44', '1:3.5.9-1.fc44'] } });
+  const sudo = [], printed = [];
+  const spawn = async (cmd, args) => {
+    sudo.push([cmd, ...args].join(' '));
+    for (const a of args.slice(3)) {
+      const n = Object.keys(inst).find(k => a.startsWith(`${k}-`) && /^\d|^\d+:/.test(a.slice(k.length + 1)));
+      if (n) inst[n] = a.slice(n.length + 1).replace(/\.(noarch|aarch64|x86_64|i686)$/, '');
+    }
+    return 0;
+  };
+  return { c, inst, sudo, printed, o: extra => ({ spawn, print: s => printed.push(String(s).replace(/\x1b\[[0-9;]*m/g, '')), ...extra }) };
+}
+
+test('dnf upgrade at a terminal: one sudo line, refreshed and pinned; the receipt checks every build; the way back is what the repos still offer', async () => {
+  const H = require('../lib/roothandoff.js');
+  const m = fedora();
+  const items = [{ name: 'tzdata', have: '2026c-1.fc44', want: '2026f-1.fc44', arch: 'noarch', why: 'gate: 5d old, Bodhi' },
+    { name: 'openssl-libs', have: '1:3.5.4-2.fc44', want: '1:3.5.9-1.fc44', arch: 'aarch64', why: 'security advisory: FEDORA-2026-12f3f3d569' }];
+  assert.equal(await H.upgrade(m.c, D.source, items, m.o({ tty: true })), 0, m.printed.join('\n'));
+  assert.deepEqual(m.sudo, ['sudo dnf5 upgrade -y --refresh tzdata-2026f-1.fc44.noarch openssl-libs-1:3.5.9-1.fc44.aarch64']);
+  assert.deepEqual(m.inst, { tzdata: '2026f-1.fc44', 'openssl-libs': '1:3.5.9-1.fc44' });
+  const rp = path.join(m.c.cfg.paths.state, 'backups', fs.readdirSync(path.join(m.c.cfg.paths.state, 'backups'))[0], 'receipt.json');
+  const r = JSON.parse(fs.readFileSync(rp, 'utf8'));
+  assert.equal(r.outcome, 'done');
+  assert.deepEqual(r.before, { tzdata: '2026c-1.fc44', 'openssl-libs': '1:3.5.4-2.fc44' });
+  assert.deepEqual(r.back.items, [], 'neither build from before is still offered: the updates repo keeps only its newest');
+  assert.deepEqual(r.back.none.map(n => n.name), ['tzdata', 'openssl-libs']);
+  assert.ok(m.printed.some(l => l === '   no way back for tzdata: the archive no longer offers 2026c-1.fc44'), m.printed.join('\n'));
+});
+
+test('dnf rollback: a build from before that the repos still offer is put back with dnf5 downgrade, pinned', async () => {
+  const H = require('../lib/roothandoff.js');
+  const m = fedora({ installed: { tzdata: '2026a-1.fc44' } });
+  const items = [{ name: 'tzdata', have: '2026a-1.fc44', want: '2026f-1.fc44', arch: 'noarch', why: 'gate: 5d old, Bodhi' }];
+  assert.equal(await H.upgrade(m.c, D.source, items, m.o({ tty: true })), 0);
+  const rp = path.join(m.c.cfg.paths.state, 'backups', fs.readdirSync(path.join(m.c.cfg.paths.state, 'backups'))[0], 'receipt.json');
+  assert.deepEqual(JSON.parse(fs.readFileSync(rp, 'utf8')).back.items, [{ name: 'tzdata', to: '2026a-1.fc44' }], 'the release\'s own build is still offered');
+  assert.equal(await H.rollback(m.c, D.source, rp, m.o({ tty: true, ask: async () => true })), 0, m.printed.join('\n'));
+  assert.equal(m.sudo[1], 'sudo dnf5 downgrade -y --refresh tzdata-2026a-1.fc44');
+  assert.equal(m.inst.tzdata, '2026a-1.fc44');
+  assert.ok(JSON.parse(fs.readFileSync(rp, 'utf8')).rolled_back);
+});
+
+test('dnf without a terminal: the exact line is handed over and the receipt waits; nothing runs through sudo', async () => {
+  const H = require('../lib/roothandoff.js');
+  const m = fedora();
+  const items = [{ name: 'tzdata', have: '2026c-1.fc44', want: '2026f-1.fc44', arch: 'noarch', why: 'gate: 5d old, Bodhi' }];
+  assert.equal(await H.upgrade(m.c, D.source, items, m.o({ tty: false })), 4);
+  assert.deepEqual(m.sudo, []);
+  assert.ok(m.printed.includes('   sudo dnf5 upgrade -y --refresh tzdata-2026f-1.fc44.noarch'), m.printed.join('\n'));
+});
+
+test('apply still refuses a read-only source: it fails that step and runs nothing for it', async () => {
+  const ro = { ...D.source, readOnly: 'a later PR' };
   const ran = [], keep = { log: console.log, error: console.error }, errs = [];
   Object.assign(console, { log: () => {}, error: (...a) => errs.push(a.join(' ')) });
   let code;
   try {
     code = await apply({ packages: [{ source: 'dnf', names: ['tzdata'], items: [{ name: 'tzdata', want: '2026f-1.fc44' }] }], tools: [], updaters: [], miseSelf: '' },
-      { sources: [D.source], dry: false, step: async (cmd, args) => { ran.push([cmd, ...args].join(' ')); return 0; }, script: async (cmd) => { ran.push(cmd); return 0; },
+      { sources: [ro], dry: false, step: async (cmd, args) => { ran.push([cmd, ...args].join(' ')); return 0; }, script: async (cmd) => { ran.push(cmd); return 0; },
         sudo: async () => { ran.push('sudo'); return 0; }, ctx: ctx() });
   } finally { Object.assign(console, keep); }
   assert.equal(code, 1);
-  assert.ok(errs.some(e => e.includes('dnf: read-only until dnf 1b')), errs.join('\n'));
+  assert.ok(errs.some(e => e.includes('dnf: read-only until a later PR')), errs.join('\n'));
   assert.ok(!ran.some(k => k.startsWith('sudo') || k.startsWith('dnf5')), ran.join('\n'));
 });

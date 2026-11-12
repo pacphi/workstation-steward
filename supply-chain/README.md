@@ -86,7 +86,9 @@ formulae and Homebrew casks today; apt, dnf and zypper next ([`../docs/platforms
 `steward sc audit` and `steward sc plan` show a section for each source that applies on this machine, and judge each
 package in it the same way: taken once it is at least the release-age gate's days old, or when an unexpired
 `security_exception` names that version; held otherwise. A source that isn't installed says so and is skipped. One
-that needs root is listed with its exact `sudo` command for you to run; the steward never runs `sudo` itself (D-b).
+that needs root (apt, dnf) is upgraded through `sudo` at your terminal after the plan's yes, where you type your
+password into sudo's own prompt; with no terminal, the exact line is handed to you and `steward sc upgrade --resume`
+finishes it (D-b, D76). The steward itself never runs as root and never holds a password.
 mise is not a source: it applies the gate itself.
 
 ### apt (Debian, Ubuntu, Linux Mint)
@@ -100,8 +102,9 @@ apt state is never touched (D75). Each new version is dated by the earliest day 
 | Ubuntu, and Mint's Ubuntu-built packages | Launchpad: its earliest publication in Release, Updates or Security (never Proposed) |
 | Anything else (Mint's own repo, a PPA) | the first time this machine saw it, kept in `<state>/apt/first-seen.json` |
 
-The plan and the audit say which ("4d old, snapshot"). Upgrading needs root, so each update past the gate is listed
-with its exact `sudo apt-get install --only-upgrade …` line for you to run; the steward never runs `sudo`.
+The plan and the audit say which ("4d old, snapshot"). Each update past the gate is upgraded pinned to that version
+(`sudo apt-get install --only-upgrade <package>=<version>`, after `sudo apt-get update`), and `steward sc rollback
+<receipt>` puts back the versions from before that the repos still offer (D76).
 
 **OS updates** (D79): point releases and new kernels are apt packages, so they come through the plan above. The audit's
 "OS updates" section only reads, as the Mac's does: an action when a restart is needed (`/run/reboot-required`, or a
@@ -120,8 +123,10 @@ testing repo (D81). Each new version is dated by when it reached Fedora's stable
 | A version only in the release's own repo | the release's day |
 | Anything else, or when Bodhi can't be reached | the first time this machine saw it, kept in `<state>/dnf/first-seen.json` |
 
-A version whose advisory is a security one is taken at once and names it. Until dnf 1b, each update past the gate is
-listed with its exact `sudo dnf5 upgrade -y …` line for you to run, and `steward sc upgrade` doesn't apply dnf.
+A version whose advisory is a security one is taken at once and names it. Each update past the gate is upgraded pinned
+to the exact build (`sudo dnf5 upgrade -y --refresh <name>-<version>.<arch>`, D82). The way back is `steward sc rollback
+<receipt>`, a `dnf5 downgrade` to the build from before, but only when the repos still offer it: Fedora's updates repo
+keeps only its newest build, so often only the release's own build is left, and the receipt says when there is none.
 
 ## What may skip the gate
 

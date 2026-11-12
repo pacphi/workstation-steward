@@ -90,10 +90,10 @@ async function plan(ctx, out) {
       const old = `${j.age}d old${j.from ? `, ${j.from}` : ''}`;
       if (j.verdict === 'hold') { out.line(`hold   ${what} (${old})`); continue; }
       const why = j.exception ? `security exception: ${j.exception}` : j.pocket ? `${s.pocketWhy || 'security pocket'}: ${j.pocket}` : old;
-      // a read-only source (dnf until its 1b): the exact sudo line, for you to run; nothing is planned for apply
+      // a read-only source (dnf until its 1b, D81; none now): the exact sudo line, for you to run; nothing is planned for apply
       if (s.readOnly) { const c = s.upgradeCmd([it]); out.line(`manual ${s.provider}: needs root, which the steward takes on in ${s.readOnly} (${why}): sudo ${[c.cmd, ...c.args].join(' ')}`); continue; }
       names.push(it.name);
-      items.push({ name: it.name, have: it.have, want: it.want, why: j.exception || j.pocket ? why : `gate: ${old}` });
+      items.push({ name: it.name, have: it.have, want: it.want, ...(it.arch ? { arch: it.arch } : {}), why: j.exception || j.pocket ? why : `gate: ${old}` });
       out.line(`take   ${what} (${why})`);
     }
     for (const l of await s.manual(ctx)) out.line(s.manualText('plan', l));
