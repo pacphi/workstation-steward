@@ -482,6 +482,11 @@ test's own lookups try again when the network drops them. Both rows passed on 20
 | Fedora 44 | 44 / 44 | every age matched Bodhi's; the security updates taken at once; the pinned upgrade, its rollback to the release's build, and the hand-off with `--resume` |
 | Fedora 45 | 49 / 49 | the same, on a re-run: the first run's one miss was the test's own Bodhi lookup coming back empty while Fedora's mirrors dropped connections; Bodhi agreed with the steward (dnf5 5.4.7.0-1.fc45 stable 2026-11-06, 6 days) |
 
+**dnf's install-check row (1d):** nothing to build: the install check (D78) already runs on every `matrix.json` row.
+Run on `main` at cf7bdfd, with dnf 1a to 1c in (run 43141398561, 2026-11-12): the Mac and all twelve rows passed,
+Fedora 44 in 1 min 26 s and Fedora 45 in 1 min 19 s. Worktree mode is ticked for dnf; npm mode waits for the release
+(R-2), as apt's.
+
 **dnf's OS updates (1e, D84):** as apt's (D79), point updates and new kernels are dnf packages, which the dnf source
 already dates, gates and upgrades, so the audit's read-only "OS updates" section now runs on Fedora too, with the same
 three parts:
@@ -501,7 +506,7 @@ be fetched is "not checked". The tests read trimmed copies (the dates checked 20
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
 | --- | --- | --- | --- | --- |
 | ✅ apt | Debian, Ubuntu, Linux Mint, LMDE (the Linux release) | per package | Done: 1a read-only (#101, D75); 1b the upgrade with the sudo hand-off (#102, D76); 1c the rows, CI and the real-repo run (#103, D77); 1d its install-check row (#107, D78); 1e OS updates, read-only (#108, D79). npm mode on Linux waits for the release (R-2) | #101, #102, #103, #107, #108 |
-| 🟨 dnf | Fedora (the Linux release) | per package | Under way: step 0 (2026-11-11); 1a read-only (#112, D81); 1b the upgrade with the sudo hand-off (#113, D82); 1c the real-repo run, both Fedora rows passing (D83, #114); 1e OS updates, read-only (D84) | #112, #113, #114 |
+| 🟨 dnf | Fedora (the Linux release) | per package | Under way: step 0 (2026-11-11); 1a read-only (#112, D81); 1b the upgrade with the sudo hand-off (#113, D82); 1c the real-repo run, both Fedora rows passing (D83, #114); 1d the install-check rows, passing (run 43141398561); 1e OS updates, read-only (D84) | #112, #113, #114 |
 | ⬜ zypper | openSUSE Leap, Tumbleweed (the Linux release) | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ Flatpak | any | per package | Not started | |
 | ⬜ Snap | Ubuntu and others | per package | Not started | |
@@ -607,7 +612,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-12 | 23 | dnf 1e: the OS updates section on Fedora (needs-restarting, Bodhi's releases), read-only (D84) | |
+| 2026-11-12 | 23 | dnf 1d: the install check passes on both Fedora rows; dnf 1e: the OS updates section on Fedora (needs-restarting, Bodhi's releases), read-only (D84) | |
 | 2026-11-12 | 22 | dnf 1c: `--e2e` for the Fedora rows, against Fedora's real repos; both pass (D83) | #114 |
 | 2026-11-12 | 21 | dnf 1b: the upgrade through the sudo hand-off, pinned to the exact build; the way back by apt's rule, a downgrade only to builds the repos still offer (D82) | #113 |
 | 2026-11-11 | 20 | dnf step 0 (Bodhi, the advisories, `history undo`, the releases) and dnf 1a: the dnf source, read-only (D81); the Fedora rows are 44 (oldest) and 45 (newest, its prerelease image's testing repo turned off); Fedora's minimum versions | #112 |
