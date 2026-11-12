@@ -1,0 +1,8 @@
+{"releases": [
+ {"name": "F43", "long_name": "Fedora 43", "version": "43", "id_prefix": "FEDORA", "state": "current", "released_on": "2025-10-28", "eol": "2026-12-02"},
+ {"name": "F44", "long_name": "Fedora 44", "version": "44", "id_prefix": "FEDORA", "state": "current", "released_on": "2026-04-28", "eol": "2027-06-02"},
+ {"name": "F45", "long_name": "Fedora 45", "version": "45", "id_prefix": "FEDORA", "state": "current", "released_on": "2026-11-03", "eol": "2027-12-08"},
+ {"name": "F45C", "long_name": "Fedora 45 Containers", "version": "45", "id_prefix": "FEDORA-CONTAINER", "state": "current", "released_on": null, "eol": null},
+ {"name": "F46", "long_name": "Fedora 46", "version": "46", "id_prefix": "FEDORA", "state": "pending", "released_on": null, "eol": null},
+ {"name": "EPEL-10.1", "long_name": "Fedora EPEL 10.1", "version": "10.1", "id_prefix": "FEDORA-EPEL", "state": "current", "released_on": null, "eol": null}
+], "page": 1, "pages": 1, "rows_per_page": 100, "total": 6}

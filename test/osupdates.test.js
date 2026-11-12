@@ -5,7 +5,8 @@
 // support ends (a note within 90 days, an action once past). Sources: distro-info-data's debian.csv and ubuntu.csv,
 // and Mint's release page. A source that can't be fetched or read is "not checked", never "up to date".
 // test/osupdates/ holds real copies, fetched 2026-11-03 from salsa.debian.org/debian/distro-info-data (main) and
-// www.linuxmint.com/download_all.php. Canned commands, a fake /; no network. Run: just test
+// www.linuxmint.com/download_all.php; and Bodhi's releases for Fedora (dnf 1e, D84), trimmed to the fields read, with
+// the dates checked 2026-11-11 (F44 and F45 eol, F45's release) and checked live by the end-to-end run. Canned commands, a fake /; no network. Run: just test
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -27,6 +28,7 @@ const OS_RELEASE = {
   ubuntu2204: 'PRETTY_NAME="Ubuntu 22.04.5 LTS"\nNAME="Ubuntu"\nVERSION_ID="22.04"\nVERSION_CODENAME=jammy\nID=ubuntu\nID_LIKE=debian\nUBUNTU_CODENAME=jammy\n',
   mint213: 'NAME="Linux Mint"\nVERSION="21.3 (Virginia)"\nID=linuxmint\nID_LIKE="ubuntu debian"\nPRETTY_NAME="Linux Mint 21.3"\nVERSION_ID="21.3"\nVERSION_CODENAME=virginia\nUBUNTU_CODENAME=jammy\n',
   mint223: 'NAME="Linux Mint"\nVERSION="22.3 (Zena)"\nID=linuxmint\nID_LIKE="ubuntu debian"\nPRETTY_NAME="Linux Mint 22.3"\nVERSION_ID="22.3"\nVERSION_CODENAME=zena\nUBUNTU_CODENAME=noble\n',
+  fedora44: 'NAME="Fedora Linux"\nVERSION="44 (Container Image)"\nID=fedora\nVERSION_ID=44\nPRETTY_NAME="Fedora Linux 44 (Container Image)"\n',
   lmde7: 'PRETTY_NAME="LMDE 7 (gigi)"\nNAME="LMDE"\nVERSION_ID="7"\nVERSION="7 (gigi)"\nVERSION_CODENAME=gigi\nID=linuxmint\nID_LIKE=debian\nDEBIAN_CODENAME=trixie\n',
 };
 // sysroot(name, release, files) — a fake / with that os-release and any other files
@@ -97,7 +99,8 @@ test('endState: ok, soon within 90 days, past after the day; unknown without a d
 });
 
 // the audit's check, end to end through audit.js, with canned commands and saved sources
-const SOURCES = { 'debian.csv': read('debian.csv'), 'ubuntu.csv': read('ubuntu.csv'), 'download_all.php': read('mint-download_all.html') };
+const SOURCES = { 'debian.csv': read('debian.csv'), 'ubuntu.csv': read('ubuntu.csv'), 'download_all.php': read('mint-download_all.html'),
+  '/releases/F44': read('bodhi-F44.json'), 'exclude_archived=true&rows_per_page=100': read('bodhi-releases.json') };
 function curl(fail = [], calls = []) {
   return args => {
     const url = args[args.length - 1];
@@ -199,7 +202,52 @@ test('os-updates: each source is fetched once a day (cached), and the check runs
   for (let i = 0; i < 2; i++) await audit(ctx({ sysroot: sys, run: run({ calls }), cache }), { only: ['os-updates'], write: () => {} });
   assert.deepEqual(calls, [O.SOURCES.ubuntu], 'one fetch, then the day\'s cache');
   const r = await audit(ctx({ family: 'rhel', sysroot: sys, run: run(), cache }), { only: ['os-updates'], write: () => {} });
-  assert.deepEqual(r.skipped, ['os-updates'], 'dnf and zypper bring their own');
+  assert.deepEqual(r.skipped, [], 'Fedora has it too (dnf 1e)');
+  const s = await audit(ctx({ family: 'suse', sysroot: sys, run: run(), cache }), { only: ['os-updates'], write: () => {} });
+  assert.deepEqual(s.skipped, ['os-updates'], 'zypper brings its own');
+});
+
+// needs(status, stdout) — dnf5 needs-restarting -r's answer
+const needs = (status, stdout = '') => ({ 'dnf5': args => (args.includes('needs-restarting') ? { status, stdout } : { status: 1, stdout: '' }) });
+const NEEDS = 'Core libraries or services have been updated since boot-up:\n  * glibc\n  * systemd\n\nReboot is required to fully utilize these updates.\nMore information: https://access.redhat.com/solutions/27943\n';
+
+test('which: Fedora, its version and its name (dnf 1e)', () => {
+  assert.deepEqual(O.which(sysroot('w-fed', 'fedora44')), { distro: 'fedora', version: '44', codename: '', name: 'Fedora 44', pretty: 'Fedora Linux 44 (Container Image)' });
+});
+
+test('needsRestart: dnf5 needs-restarting -r exits 0 for none and 1 for one, naming what asks; anything else is not checked', async () => {
+  assert.deepEqual(await O.needsRestart({ run: canned(needs(1, NEEDS)) }), { needed: true, why: ['glibc', 'systemd'] });
+  assert.deepEqual(await O.needsRestart({ run: canned(needs(0, 'No core libraries or services have been updated since boot-up.\nReboot should not be necessary.\n')) }), { needed: false, why: [] });
+  assert.equal(await O.needsRestart({ run: canned(needs(2)) }), null);
+  assert.equal(await O.needsRestart({ run: canned({}) }), null, 'no dnf5');
+});
+
+test('fromBodhi: the release\'s eol; the newer one is the highest Fedora already released (not a container, EPEL or pending row)', () => {
+  const mine = JSON.parse(read('bodhi-F44.json')), list = JSON.parse(read('bodhi-releases.json'));
+  assert.deepEqual(O.fromBodhi(mine, list, '44', '2026-11-11'), { endsOn: '2027-06-02', newer: { version: '45', name: 'Fedora 45' } });
+  assert.deepEqual(O.fromBodhi(mine, list, '44', '2026-10-01'), { endsOn: '2027-06-02', newer: null }, 'F45 not out yet on that day');
+  assert.deepEqual(O.fromBodhi({ ...mine, name: 'F45', eol: '2027-12-08' }, list, '45', '2026-11-11'), { endsOn: '2027-12-08', newer: null }, 'F46 is pending');
+  assert.equal(O.fromBodhi({ name: 'F99' }, list, '44', '2026-11-11'), null, 'not this release');
+  assert.equal(O.fromBodhi(null, list, '44', '2026-11-11'), null);
+  assert.deepEqual(O.fromBodhi({ name: 'F44', eol: null }, list, '44', '2026-11-11').endsOn, null, 'no eol yet: unknown, never "fine"');
+});
+
+test('os-updates on Fedora: needs-restarting is the restart; Bodhi gives the newer release and the end of support', async () => {
+  const w = lines();
+  const r = await audit(ctx({ family: 'rhel', today: '2026-11-11', sysroot: sysroot('a-fed', 'fedora44'), run: canned({ ...needs(1, NEEDS), curl: curl() }), cache: path.join(ROOT, 'cache-fed') }),
+    { only: ['os-updates'], write: w.write });
+  const text = w.out.join('\n');
+  assert.ok(text.includes('point updates arrive as dnf packages'), text);
+  assert.ok(text.includes('os: restart needed: dnf5 needs-restarting (glibc, systemd)'), text);
+  assert.ok(text.includes('newer release: Fedora 45 is out; a release upgrade is a major: by hand'), text);
+  assert.ok(text.includes('free security support until 2027-06-02 (Bodhi)'), text);
+  assert.equal(r.actions.length, 1);
+  const q = lines();
+  await audit(ctx({ family: 'rhel', today: '2026-11-11', sysroot: sysroot('a-fed2', 'fedora44'), run: canned({ ...needs(0), curl: curl(['/releases/F44']) }), cache: path.join(ROOT, 'cache-fed2') }),
+    { only: ['os-updates'], write: q.write });
+  const t2 = q.out.join('\n');
+  assert.ok(t2.includes('no restart needed'), t2);
+  assert.ok(t2.includes("newer release and support end: not checked (Bodhi's releases could not be fetched)"), t2);
 });
 
 test('the end-to-end run checks the section too: root writes /run/reboot-required, the user\'s audit must show the restart', () => {
