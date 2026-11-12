@@ -125,8 +125,8 @@ const runArgs = ({ tag, name, checkout, x64 = false, emulated: emu = false }) =>
   '--network', 'none', '--read-only', '--user', 'steward', '--tmpfs', '/work:exec,mode=1777', '--tmpfs', '/tmp:exec,mode=1777', '-v', `${checkout}:/src:ro`,
   '-e', 'STEWARD_TEST_FIXTURES=1', '-e', 'STEWARD_INSTANCE=/work/src/examples', '-e', 'NO_PROGRESS=1', '-e', 'NO_COLOR=1', '-e', 'CI=1', ...(emu ? ['-e', 'STEWARD_TEST_EMULATED=1'] : []), tag, 'bash', '-c', INSIDE];
 
-// e2eRefusal(row) — null when --e2e runs for the row's family, else why not: each Linux provider brings its own (parity 1c: apt)
-const E2E = { debian: 'apt.sh' };
+// e2eRefusal(row) — null when --e2e runs for the row's family, else why not: each Linux provider brings its own (parity 1c: apt; dnf 1c: dnf)
+const E2E = { debian: 'apt.sh', rhel: 'dnf.sh' };
 // IC_CLAUDE_CODE — the Claude Code version a local install check uses when CLAUDE_CODE isn't set: the workflow's default
 const IC_CLAUDE_CODE = (fs.readFileSync(path.join(REPO, '.github', 'workflows', 'install-check.yml'), 'utf8').match(/claude_code:[\s\S]*?default: '([\d.]+)'/) || [])[1] || '';
 const e2eRefusal = row => (E2E[row.family] ? null : `${row.id}: --e2e comes with the ${row.family} family's provider (docs/platforms/parity.md)`);

@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 21](https://img.shields.io/badge/Revision-21-green) ![Revised 2026-11-12](https://img.shields.io/badge/Revised-2026--11--12-green)
+![Revision 22](https://img.shields.io/badge/Revision-22-green) ![Revised 2026-11-12](https://img.shields.io/badge/Revised-2026--11--12-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -469,10 +469,23 @@ way back, and the receipt and the run say so; after the first update of a packag
 there. `dnf5 history undo` is not used: it fails in exactly that case (step 0). The real upgrade, rollback and
 hand-off in the Fedora rows are dnf 1c's end-to-end run.
 
+**dnf's real-repo run (1c, D83):** `just linux-test <fedora row> --e2e` now runs for the rhel family, as for apt (D77).
+Its root phase (`test/containers/e2e/dnf.sh`) gives the steward user `sudo` for `dnf5` only and takes up to three
+packages back to the release's own build (`tzdata`, `less`, `diffutils` and the like; never dnf, rpm, glibc, sudo or
+TLS), the build the repos keep, so there is something to upgrade and a way back. The user phase (`drive.js dnf`)
+checks every plan line's age against Bodhi, asked directly by the test (the build's `date_stable`, or the release's
+day), then the upgrade at a terminal, the rollback with `dnf5 downgrade`, and the hand-off finished by `--resume`. The
+test's own lookups try again when the network drops them. Both rows passed on 2026-11-12:
+
+| Row | Checks | What it showed |
+| --- | --- | --- |
+| Fedora 44 | 44 / 44 | every age matched Bodhi's; the security updates taken at once; the pinned upgrade, its rollback to the release's build, and the hand-off with `--resume` |
+| Fedora 45 | 49 / 49 | the same, on a re-run: the first run's one miss was the test's own Bodhi lookup coming back empty while Fedora's mirrors dropped connections; Bodhi agreed with the steward (dnf5 5.4.7.0-1.fc45 stable 2026-11-06, 6 days) |
+
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
 | --- | --- | --- | --- | --- |
 | ✅ apt | Debian, Ubuntu, Linux Mint, LMDE (the Linux release) | per package | Done: 1a read-only (#101, D75); 1b the upgrade with the sudo hand-off (#102, D76); 1c the rows, CI and the real-repo run (#103, D77); 1d its install-check row (#107, D78); 1e OS updates, read-only (#108, D79). npm mode on Linux waits for the release (R-2) | #101, #102, #103, #107, #108 |
-| 🟨 dnf | Fedora (the Linux release) | per package | Under way: step 0 (2026-11-11); 1a read-only (#112, D81); 1b the upgrade with the sudo hand-off (D82) | #112 |
+| 🟨 dnf | Fedora (the Linux release) | per package | Under way: step 0 (2026-11-11); 1a read-only (#112, D81); 1b the upgrade with the sudo hand-off (#113, D82); 1c the real-repo run, both Fedora rows passing (D83) | #112, #113 |
 | ⬜ zypper | openSUSE Leap, Tumbleweed (the Linux release) | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ Flatpak | any | per package | Not started | |
 | ⬜ Snap | Ubuntu and others | per package | Not started | |
@@ -578,7 +591,8 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-12 | 21 | dnf 1b: the upgrade through the sudo hand-off, pinned to the exact build; the way back by apt's rule, a downgrade only to builds the repos still offer (D82) | |
+| 2026-11-12 | 22 | dnf 1c: `--e2e` for the Fedora rows, against Fedora's real repos; both pass (D83) | |
+| 2026-11-12 | 21 | dnf 1b: the upgrade through the sudo hand-off, pinned to the exact build; the way back by apt's rule, a downgrade only to builds the repos still offer (D82) | #113 |
 | 2026-11-11 | 20 | dnf step 0 (Bodhi, the advisories, `history undo`, the releases) and dnf 1a: the dnf source, read-only (D81); the Fedora rows are 44 (oldest) and 45 (newest, its prerelease image's testing repo turned off); Fedora's minimum versions | #112 |
 | 2026-11-05 | 19 | Tumbleweed's pin passed the gate and its exception came out; a rolling row's pin is dated by git and warned of past 30 days (D80) | #109 |
 | 2026-11-04 | 18 | apt 1e done, and apt done: OS updates as a read-only audit section (a restart, a newer release, the end of free security support), checked on all seven apt rows (D79) | #108 |

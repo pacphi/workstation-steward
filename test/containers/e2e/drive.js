@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // The end-to-end run's user phase (parity 1c, `just linux-test <id> --e2e`): run as the steward user inside a container whose
-// root phase (apt.sh) installed sudo, allowed `apt-get` only, and seeded older packages. Against the real repositories:
+// root phase (apt.sh, or dnf.sh for Fedora, dnf 1c) installed sudo, allowed `apt-get` (or `dnf5`) only, and seeded older
+// packages. dnf's run is the same steps 1 to 4, dated against Bodhi (its OS updates are dnf 1e). Against the real repositories:
 //   1. `sc plan`: every apt line's age and source checked against snapshot.debian.org or Launchpad, asked here directly;
 //      a version neither knows must be "first seen here"; takes are past the gate, holds aren't (security pockets: at once)
 //   2. `sc upgrade` at a terminal (a pty, `script -qec`): the taken versions are installed, the receipt says done
@@ -11,7 +12,7 @@
 //      date matrix.json records by hand from the vendor's page, and the newer-release line what the live source says
 // Each answer is typed only once its prompt's text has been seen: node's readline swallows answers sent early (1b).
 // It prints node --test's summary lines (ℹ tests/pass/fail), which tools/linux-test.js reads. Engine tooling.
-// Usage: drive.js apt <distro>     (in /work/src, a copy of the checkout)
+// Usage: drive.js apt <distro> | drive.js dnf fedora     (in /work/src, a copy of the checkout)
 const fs = require('fs');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
@@ -58,18 +59,27 @@ function sh(cmd, input = '') {
   return { code: r.status === null ? 1 : r.status, out: strip(`${r.stdout || ''}${r.stderr || ''}`) };
 }
 
-// planLines(out) — the apt section's take and hold lines: {act, name, have, want, days, from, pocket}
+// planLines(out) — the package sections' take and hold lines: {act, name, have, want, days, from, pocket}; pocket is
+// apt's security pocket or dnf's security advisory
 function planLines(out) {
   const rows = [];
   for (const l of strip(out).split('\n')) {
-    const m = l.trim().match(/^(take|hold)\s+(\S+) (\S+) -> (\S+) \((?:(\d+)d old, ([^)]+)|security pocket: ([^)]+))\)$/);
+    const m = l.trim().match(/^(take|hold)\s+(\S+) (\S+) -> (\S+) \((?:(\d+)d old, ([^)]+)|security (?:pocket|advisory): ([^)]+))\)$/);
     if (m) rows.push({ act: m[1], name: m[2], have: m[3], want: m[4], days: m[5] === undefined ? null : Number(m[5]), from: m[6] || null, pocket: m[7] || null });
   }
   return rows;
 }
 
 const enc = encodeURIComponent;
-const getJSON = async url => { try { const r = await fetch(url); return r.ok ? r.json() : null; } catch { return null; } };
+// getJSON(url) — the answer, or null; tried up to three times, since a dropped connection on the way is the network's,
+// not the service's answer (fedora-45's first run, 2026-11-12: Bodhi's own answer came back empty once)
+async function getJSON(url) {
+  for (let i = 0; i < 3; i++) {
+    try { const r = await fetch(url); if (r.ok) return await r.json(); if (r.status < 500) return null; } catch { /* the network: try again */ }
+    await new Promise(res => setTimeout(res, 2000 * (i + 1)));
+  }
+  return null;
+}
 // published(distro, name, want, release) — the service's own date for that version (ISO), or null when it has none
 async function published(distro, name, want, release) {
   if (distro === 'debian' || distro === 'lmde') {
@@ -169,11 +179,101 @@ async function apt(distro) {
   return results;
 }
 
+// the e2e's own dnf cache (never the steward's, never the system's): to ask what the repos say, as the user
+const DNF = ['-q', '--setopt=cachedir=/tmp/e2e-dnf-cache', '--disable-repo=*-testing'];
+// dnfq(...args) — dnf5's answer, asked again once when it comes back empty (a mirror that dropped the connection)
+const dnfq = (...args) => {
+  const ask = () => spawnSync('dnf5', [...DNF, ...args], { encoding: 'utf8' }).stdout || '';
+  return ask().trim() ? ask() : ask();
+};
+const rpmEvr = name => (spawnSync('rpm', ['-q', '--qf', '%{EPOCHNUM}:%{VERSION}-%{RELEASE}\n', name], { encoding: 'utf8' }).stdout || '').split('\n')[0].trim().replace(/^0:/, '');
+
+// bodhi(name, want, version) — {date, from}: what Fedora's own services say for that build, asked here directly: Bodhi's
+// date_stable for its source build, else the release's day for a build only in the release's repo, else nothing
+async function bodhi(name, want, version) {
+  const [srpm = '', repo = ''] = dnfq('repoquery', '--qf', '%{sourcerpm} %{repoid}\n', `${name}-${want}`).trim().split('\n')[0].split(/\s+/);
+  const build = srpm.replace(/\.src\.rpm$/, '');
+  if (build) {
+    const j = await getJSON(`https://bodhi.fedoraproject.org/updates/?builds=${enc(build)}`);
+    const d = ((j && j.updates) || []).filter(u => u.status === 'stable' && u.date_stable).map(u => `${u.date_stable.replace(' ', 'T')}Z`).sort();
+    if (d.length) return { date: d[0], from: 'Bodhi' };
+  }
+  if (repo === 'fedora') {
+    const j = await getJSON(`https://bodhi.fedoraproject.org/releases/F${enc(version)}`);
+    if (j && j.released_on) return { date: `${j.released_on}T00:00:00Z`, from: 'release day' };
+  }
+  return { date: null, from: 'first seen here' };
+}
+
+async function dnf() {
+  const results = [];
+  const check = (ok, what) => { results.push(ok); console.log(`\ne2e ${ok ? 'PASS' : 'FAIL'}: ${what}`); return ok; };
+  const steward = 'node bin/steward.js';
+  const gate = 3;
+  const version = (fs.readFileSync('/etc/os-release', 'utf8').match(/^VERSION_ID=["']?(\d+)/m) || [])[1] || '';
+  const seeded = fs.readFileSync('/work/seeded.txt', 'utf8').split('\n').filter(Boolean).map(l => { const [name, have] = l.split('\t'); return { name, have }; });
+  console.log(`e2e: fedora ${version}; seeded: ${seeded.map(s => `${s.name} ${s.have}`).join(', ')}`);
+  const sys = () => { try { return fs.readdirSync('/var/cache/libdnf5').length; } catch { return 0; } };
+  const sysBefore = sys();
+
+  // 1. the plan, every dnf line checked against Bodhi itself
+  const plan = sh(`DRY_RUN=1 ${steward} sc plan --plain`);
+  const lines = planLines(plan.out);
+  check(plan.code === 0 && lines.length > 0, `sc plan ran and listed ${lines.length} dnf line(s)`);
+  check(!/manual dnf:/.test(plan.out), 'no "manual dnf" line: the upgrade is the steward\'s now (dnf 1b)');
+  const now = Date.now();
+  for (const l of lines) {
+    if (l.pocket) { check(l.act === 'take' && /^FEDORA-\d{4}-/.test(l.pocket), `${l.name} ${l.want}: taken at once on the security advisory ${l.pocket}`); continue; }
+    const b = await bodhi(l.name, l.want, version);
+    const days = b.date ? Math.floor((now - Date.parse(b.date)) / 86400000) : 0;
+    check(l.from === b.from && Math.abs(l.days - days) <= 1, `${l.name} ${l.want}: ${l.days}d old, ${l.from} (Fedora says ${b.date || 'nothing: first seen here'}, ${b.from}, ${days}d)`);
+    check(l.act === (l.days >= gate ? 'take' : 'hold'), `${l.name} ${l.want}: ${l.act} at ${l.days}d against the ${gate}-day gate`);
+  }
+  const takes = lines.filter(l => l.act === 'take' && seeded.some(s => s.name === l.name));
+  if (!check(takes.length > 0, `a seeded package is taken (${takes.map(t => t.name).join(', ') || 'none'})`)) return results;
+
+  // 2. the upgrade at a terminal: one sudo line, pinned and refreshed
+  const up = await pty(`${steward} sc upgrade`, [{ expect: 'Apply this plan? [y/N]', send: 'y' }]);
+  const after = takes.map(t => ({ ...t, now: rpmEvr(t.name) }));
+  check(up.code === 0 && up.pending === 0, `sc upgrade at a terminal exited ${up.code}`);
+  check(/sudo dnf5 upgrade -y --refresh /.test(up.out), 'the root step is the one pinned dnf5 line');
+  check(after.every(t => t.now === t.want), `installed: ${after.map(t => `${t.name} ${t.now}`).join(', ')}`);
+  const r1 = receipts().pop();
+  check(Boolean(r1 && r1.r.outcome === 'done'), `the receipt says done (${r1 ? `${r1.r.outcome}, ${r1.p}` : 'none'})`);
+  const backFor = r1 ? (r1.r.back || { items: [] }).items.map(i => i.name) : [];
+  check(takes.every(t => backFor.includes(t.name)), `the way back names each seeded package, whose release build is still offered (${backFor.join(', ') || 'none'})`);
+
+  // 3. the way back: dnf5 downgrade to the release's build
+  if (r1) {
+    const back = await pty(`${steward} sc rollback ${r1.p}`, [], [{ expect: /\[y\/N\] $/, send: 'y' }]);
+    const was = takes.map(t => ({ ...t, now: rpmEvr(t.name) }));
+    check(back.code === 0, `sc rollback exited ${back.code}`);
+    check(/sudo dnf5 downgrade -y --refresh /.test(back.out), 'the rollback is dnf5 downgrade, pinned');
+    check(was.every(t => t.now === t.have), `rolled back: ${was.map(t => `${t.name} ${t.now} (was ${t.have})`).join(', ')}`);
+  }
+
+  // 4. no terminal: handed over, then finished by --resume
+  const hand = sh(`${steward} sc upgrade`, 'y\n');
+  check(hand.code === 4, `sc upgrade with no terminal exited ${hand.code} (4: waiting on you)`);
+  const r2 = receipts().pop();
+  check(Boolean(r2 && r2.r.outcome === 'waiting-on-you'), `the receipt waits on you (${r2 ? r2.r.outcome : 'none'})`);
+  const line = ((hand.out.match(/(sudo dnf5 upgrade -y --refresh [^\n]*)/) || [])[1] || '').trim();
+  if (check(Boolean(line), `the handed-over line: ${line || 'not found'}`)) {
+    const ran = await pty(line);
+    check(ran.code === 0, `the handed-over line, run as you would, exited ${ran.code}`);
+    const res = sh(`${steward} sc upgrade --resume`);
+    const r3 = receipts().pop();
+    check(res.code === 0 && Boolean(r3 && r3.r.outcome === 'done'), `sc upgrade --resume exited ${res.code}; the receipt says ${r3 ? r3.r.outcome : 'none'}`);
+  }
+  check(sys() >= sysBefore, 'the user\'s reads never cleared the system\'s dnf cache');
+  return results;
+}
+
 module.exports = { responder, planLines };
 
 if (require.main === module) {
   const [kind, distro] = process.argv.slice(2);
-  (kind === 'apt' ? apt(distro) : Promise.reject(new Error(`no e2e for ${kind}`))).then(results => {
+  (kind === 'apt' ? apt(distro) : kind === 'dnf' ? dnf() : Promise.reject(new Error(`no e2e for ${kind}`))).then(results => {
     const pass = results.filter(Boolean).length;
     console.log(`\nℹ tests ${results.length}\nℹ pass ${pass}\nℹ fail ${results.length - pass}`);
     process.exitCode = results.length && pass === results.length ? 0 : 1;

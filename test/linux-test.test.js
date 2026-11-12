@@ -133,9 +133,11 @@ test('buildArgs: a row\'s extra pins go to the build (Mint 22.3 takes back Mint\
   assert.match(df, /--allow-downgrades/, 'a pin older than what the image has (Ubuntu\'s base-files) is put back on purpose');
 });
 
-test('e2e: apt\'s family runs it; the others say it comes with their provider (parity 1c)', () => {
+test('e2e: apt\'s and dnf\'s families run it; the others say it comes with their provider (parity 1c, dnf 1c)', () => {
   assert.equal(L.e2eRefusal({ id: 'debian-13', family: 'debian' }), null);
-  assert.match(L.e2eRefusal({ id: 'fedora-44', family: 'rhel' }), /fedora-44: --e2e comes with the rhel family's provider/);
+  assert.equal(L.e2eRefusal({ id: 'fedora-44', family: 'rhel' }), null);
+  assert.match(L.e2eRefusal({ id: 'leap-16.0', family: 'suse' }), /leap-16.0: --e2e comes with the suse family's provider/);
+  assert.ok(L.e2eArgs({ tag: 't', name: 'n', checkout: '/c', family: 'rhel' }).includes('/src/test/containers/e2e/dnf.sh'));
 });
 
 test('e2eArgs: network on, writable, started as root (for sudo and the seed), the checkout read-only, labelled, removed after', () => {
@@ -148,7 +150,15 @@ test('e2eArgs: network on, writable, started as root (for sudo and the seed), th
   assert.ok(has('-v', '/src/ws:/src:ro'));
   assert.ok(has('--platform', 'linux/amd64'));
   assert.ok(a.includes('/src/test/containers/e2e/apt.sh'), 'the e2e script, from the read-only checkout');
-  for (const f of ['apt.sh', 'drive.js']) assert.ok(fs.existsSync(path.join(REPO, 'test', 'containers', 'e2e', f)), f);
+  for (const f of ['apt.sh', 'dnf.sh', 'drive.js']) assert.ok(fs.existsSync(path.join(REPO, 'test', 'containers', 'e2e', f)), f);
+});
+
+test('drive: planLines reads apt\'s security pocket and dnf\'s security advisory alike (dnf 1c)', () => {
+  const D = require('./containers/e2e/drive.js');
+  assert.deepEqual(D.planLines('  take   openssl-libs 1:3.5.4-2.fc44 -> 1:3.5.9-1.fc44 (security advisory: FEDORA-2026-12f3f3d569)\n')[0],
+    { act: 'take', name: 'openssl-libs', have: '1:3.5.4-2.fc44', want: '1:3.5.9-1.fc44', days: null, from: null, pocket: 'FEDORA-2026-12f3f3d569' });
+  assert.equal(D.planLines('take   libc6 2.41-12+deb13u1 -> 2.41-12+deb13u2 (security pocket: trixie-security)')[0].pocket, 'trixie-security');
+  assert.deepEqual(D.planLines('hold   tzdata 2026c-1.fc44 -> 2026f-1.fc44 (1d old, Bodhi)')[0].from, 'Bodhi');
 });
 
 test('drive: answers a prompt only once its text has been seen (readline swallows answers sent early, 1b)', () => {
