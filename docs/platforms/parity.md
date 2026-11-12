@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 20](https://img.shields.io/badge/Revision-20-green) ![Revised 2026-11-11](https://img.shields.io/badge/Revised-2026--11--11-green)
+![Revision 21](https://img.shields.io/badge/Revision-21-green) ![Revised 2026-11-12](https://img.shields.io/badge/Revised-2026--11--12-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -459,10 +459,20 @@ morning held at 0 days; the system's dnf cache untouched. **The rows:** Fedora 4
 the release): its `fedora-repos` 45-0.6 turns `updates-testing` on, so the row installs the release's `fedora-repos`
 45-1 first, as a fresh install has it.
 
+**dnf's upgrade (1b, D82):** through D-b's hand-off (`lib/roothandoff.js`), as apt's. Each package is pinned to the
+exact build the plan judged, with its arch (`sudo dnf5 upgrade -y --refresh tzdata-2026f-1.fc44.noarch`); `--refresh`
+is root's refresh of the system's metadata, in the one command, as apt's `apt-get update` is. The receipt reads before
+and after from `rpm`, as you. **The way back** follows apt's rule (owner, 2026-11-11): a `dnf5 downgrade` to the build
+from before, only when the repos still offer it (`dnf5 repoquery`, from the steward's own cache, testing left out).
+Fedora's `updates` repo keeps only its newest build, so after an update replaces an earlier update there is often no
+way back, and the receipt and the run say so; after the first update of a package, the release's own build is still
+there. `dnf5 history undo` is not used: it fails in exactly that case (step 0). The real upgrade, rollback and
+hand-off in the Fedora rows are dnf 1c's end-to-end run.
+
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
 | --- | --- | --- | --- | --- |
 | ✅ apt | Debian, Ubuntu, Linux Mint, LMDE (the Linux release) | per package | Done: 1a read-only (#101, D75); 1b the upgrade with the sudo hand-off (#102, D76); 1c the rows, CI and the real-repo run (#103, D77); 1d its install-check row (#107, D78); 1e OS updates, read-only (#108, D79). npm mode on Linux waits for the release (R-2) | #101, #102, #103, #107, #108 |
-| 🟨 dnf | Fedora (the Linux release) | per package | Under way: step 0 (2026-11-11); 1a read-only (#112, D81) | #112 |
+| 🟨 dnf | Fedora (the Linux release) | per package | Under way: step 0 (2026-11-11); 1a read-only (#112, D81); 1b the upgrade with the sudo hand-off (D82) | #112 |
 | ⬜ zypper | openSUSE Leap, Tumbleweed (the Linux release) | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
 | ⬜ Flatpak | any | per package | Not started | |
 | ⬜ Snap | Ubuntu and others | per package | Not started | |
@@ -568,6 +578,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-12 | 21 | dnf 1b: the upgrade through the sudo hand-off, pinned to the exact build; the way back by apt's rule, a downgrade only to builds the repos still offer (D82) | |
 | 2026-11-11 | 20 | dnf step 0 (Bodhi, the advisories, `history undo`, the releases) and dnf 1a: the dnf source, read-only (D81); the Fedora rows are 44 (oldest) and 45 (newest, its prerelease image's testing repo turned off); Fedora's minimum versions | #112 |
 | 2026-11-05 | 19 | Tumbleweed's pin passed the gate and its exception came out; a rolling row's pin is dated by git and warned of past 30 days (D80) | #109 |
 | 2026-11-04 | 18 | apt 1e done, and apt done: OS updates as a read-only audit section (a restart, a newer release, the end of free security support), checked on all seven apt rows (D79) | #108 |
