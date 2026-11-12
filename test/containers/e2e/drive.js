@@ -71,7 +71,15 @@ function planLines(out) {
 }
 
 const enc = encodeURIComponent;
-const getJSON = async url => { try { const r = await fetch(url); return r.ok ? r.json() : null; } catch { return null; } };
+// getJSON(url) — the answer, or null; tried up to three times, since a dropped connection on the way is the network's,
+// not the service's answer (fedora-45's first run, 2026-11-12: Bodhi's own answer came back empty once)
+async function getJSON(url) {
+  for (let i = 0; i < 3; i++) {
+    try { const r = await fetch(url); if (r.ok) return await r.json(); if (r.status < 500) return null; } catch { /* the network: try again */ }
+    await new Promise(res => setTimeout(res, 2000 * (i + 1)));
+  }
+  return null;
+}
 // published(distro, name, want, release) — the service's own date for that version (ISO), or null when it has none
 async function published(distro, name, want, release) {
   if (distro === 'debian' || distro === 'lmde') {
@@ -173,7 +181,11 @@ async function apt(distro) {
 
 // the e2e's own dnf cache (never the steward's, never the system's): to ask what the repos say, as the user
 const DNF = ['-q', '--setopt=cachedir=/tmp/e2e-dnf-cache', '--disable-repo=*-testing'];
-const dnfq = (...args) => spawnSync('dnf5', [...DNF, ...args], { encoding: 'utf8' }).stdout || '';
+// dnfq(...args) — dnf5's answer, asked again once when it comes back empty (a mirror that dropped the connection)
+const dnfq = (...args) => {
+  const ask = () => spawnSync('dnf5', [...DNF, ...args], { encoding: 'utf8' }).stdout || '';
+  return ask().trim() ? ask() : ask();
+};
 const rpmEvr = name => (spawnSync('rpm', ['-q', '--qf', '%{EPOCHNUM}:%{VERSION}-%{RELEASE}\n', name], { encoding: 'utf8' }).stdout || '').split('\n')[0].trim().replace(/^0:/, '');
 
 // bodhi(name, want, version) — {date, from}: what Fedora's own services say for that build, asked here directly: Bodhi's
