@@ -244,8 +244,8 @@ const CHECKS = [
   },
   {
     // Linux's OS updates (parity 1e, D79): a restart, a newer release (a note: a major), the end of free security
-    // support; point releases and kernels are the apt packages above. dnf and zypper bring their families' own
-    id: 'os-updates', name: 'OS updates', platforms: ['linux'], families: ['debian'],
+    // support; point releases and kernels are the apt or dnf packages above (Fedora: dnf 1e, D84). zypper brings its own
+    id: 'os-updates', name: 'OS updates', platforms: ['linux'], families: ['debian', 'rhel'],
     title: ctx => `OS updates (${(OSU.which(ctx.sysroot || '/') || {}).pretty || 'this release'}): read-only, by hand, as on a Mac`,
     run: (ctx, out) => OSU.check(ctx, out),
   },

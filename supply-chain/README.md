@@ -128,6 +128,11 @@ to the exact build (`sudo dnf5 upgrade -y --refresh <name>-<version>.<arch>`, D8
 <receipt>`, a `dnf5 downgrade` to the build from before, but only when the repos still offer it: Fedora's updates repo
 keeps only its newest build, so often only the release's own build is left, and the receipt says when there is none.
 
+**OS updates** (D84): as on Debian, point updates and kernels come through the plan above, and the audit's "OS updates"
+section only reads: an action when `dnf5 needs-restarting -r` says a restart is needed, a note when a newer Fedora is
+out (a release upgrade is by hand), and the end of the release's support from Bodhi: a note within 90 days, an action
+once past.
+
 ## What may skip the gate
 
 Every update source has one **release class** (D52, [`release-classes.md`](../docs/release-classes.md)), and only
