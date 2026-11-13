@@ -75,7 +75,7 @@ jobs:
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          version: 2026.11.4
+          version: 2026.11.6
           install: false
       - run: mise install
       - run: npm ci --ignore-scripts --prefix tools/types
@@ -97,7 +97,7 @@ jobs:
           ref: refs/tags/${{ inputs.tag || needs.release-please.outputs.tag_name }}
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          version: 2026.11.4
+          version: 2026.11.6
           install: false
       - run: mise install
       - run: npm ci --ignore-scripts --prefix tools/types
@@ -127,7 +127,7 @@ jobs:
           [ "$(git rev-parse "refs/tags/${TAG}^{commit}")" = "$SHA" ] || { echo "$TAG moved after it was tested"; exit 1; }
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          version: 2026.11.4
+          version: 2026.11.6
           install: false
       - run: mise install node npm   # npm 11.5.1 or later is needed for Trusted Publishing
       - run: mise exec -- node tools/publish-guard.js
