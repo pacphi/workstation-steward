@@ -133,11 +133,13 @@ test('buildArgs: a row\'s extra pins go to the build (Mint 22.3 takes back Mint\
   assert.match(df, /--allow-downgrades/, 'a pin older than what the image has (Ubuntu\'s base-files) is put back on purpose');
 });
 
-test('e2e: apt\'s and dnf\'s families run it; the others say it comes with their provider (parity 1c, dnf 1c)', () => {
+test('e2e: apt\'s, dnf\'s and zypper\'s families run it; the others say it comes with their provider (parity 1c, dnf 1c, zypper 1c)', () => {
   assert.equal(L.e2eRefusal({ id: 'debian-13', family: 'debian' }), null);
   assert.equal(L.e2eRefusal({ id: 'fedora-44', family: 'rhel' }), null);
-  assert.match(L.e2eRefusal({ id: 'leap-16.0', family: 'suse' }), /leap-16.0: --e2e comes with the suse family's provider/);
+  assert.equal(L.e2eRefusal({ id: 'leap-16.0', family: 'suse' }), null);
+  assert.match(L.e2eRefusal({ id: 'arch', family: 'arch' }), /arch: --e2e comes with the arch family's provider/);
   assert.ok(L.e2eArgs({ tag: 't', name: 'n', checkout: '/c', family: 'rhel' }).includes('/src/test/containers/e2e/dnf.sh'));
+  assert.ok(L.e2eArgs({ tag: 't', name: 'n', checkout: '/c', family: 'suse' }).includes('/src/test/containers/e2e/zypper.sh'));
 });
 
 test('e2eArgs: network on, writable, started as root (for sudo and the seed), the checkout read-only, labelled, removed after', () => {
@@ -150,7 +152,21 @@ test('e2eArgs: network on, writable, started as root (for sudo and the seed), th
   assert.ok(has('-v', '/src/ws:/src:ro'));
   assert.ok(has('--platform', 'linux/amd64'));
   assert.ok(a.includes('/src/test/containers/e2e/apt.sh'), 'the e2e script, from the read-only checkout');
-  for (const f of ['apt.sh', 'dnf.sh', 'drive.js']) assert.ok(fs.existsSync(path.join(REPO, 'test', 'containers', 'e2e', f)), f);
+  for (const f of ['apt.sh', 'dnf.sh', 'zypper.sh', 'drive.js']) assert.ok(fs.existsSync(path.join(REPO, 'test', 'containers', 'e2e', f)), f);
+});
+
+test('drive: patchIssued finds the issued time zypper shows for a patch, in epoch seconds or a date; none is null (zypper 1c)', () => {
+  const D = require('./containers/e2e/drive.js');
+  // as zypper 1.14 on Leap 16.0 writes it (2026-11-13): <license/> and <source/> come before the date
+  const xml = '<update-list><update kind="patch" name="openSUSE-Leap-16.0-2045" edition="1" arch="noarch" status="needed" category="security" severity="important">' +
+    '<summary>Security update for pcre2</summary><description>…</description><license/><source url="http://download.opensuse.org/update/leap/16.0/oss" alias="openSUSE:repo-oss"/>' +
+    '<issue-date time_t="1793812179" text="2026-11-04T17:09:39Z"/></update>' +
+    '<update name="openSUSE-Leap-16.0-9" kind="patch"><license/><issue-date text="2026-11-05 10:00:00"/></update><update name="x" kind="patch"/></update-list>';
+  assert.equal(D.patchIssued(xml, 'openSUSE-Leap-16.0-2045'), '2026-11-04T17:09:39.000Z');
+  assert.equal(D.patchIssued(xml, 'openSUSE-Leap-16.0-9'), '2026-11-05T10:00:00.000Z');
+  assert.equal(D.patchIssued(xml, 'x'), null);
+  assert.equal(D.patchIssued(xml, 'missing'), null);
+  assert.equal(D.planLines('take   libpcre2-8-0 10.45-160000.4.1 -> 10.45-160000.5.1 (security patch: openSUSE-Leap-16.0-2026-12)')[0].pocket, 'openSUSE-Leap-16.0-2026-12');
 });
 
 test('drive: planLines reads apt\'s security pocket and dnf\'s security advisory alike (dnf 1c)', () => {
