@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 22](https://img.shields.io/badge/Revision-23-green) ![Revised 2026-11-12](https://img.shields.io/badge/Revised-2026--11--12-green)
+![Revision 22](https://img.shields.io/badge/Revision-24-green) ![Revised 2026-11-12](https://img.shields.io/badge/Revised-2026--11--12-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -190,8 +190,8 @@ each binary asks for), so neither raises the floor.
 | Debian | apt | fixed releases | 12 (Debian LTS to 2028-06-30) to 13 | Full | 🟨 |
 | Ubuntu | apt | fixed releases | 22.04 (standard support to 2027-06-01) to 26.04 | Full | 🟨 |
 | Linux Mint | apt | fixed releases | 21.3 (to April 2027) to 22.3, by series; LMDE 7 | Full | 🟨 |
-| Fedora | dnf | fixed releases | 44 (to 2027-06-02) to 45 | Full | 🟨 |
-| openSUSE Leap | zypper | fixed releases | n-3, capped | Full | ⬜ |
+| Fedora | dnf | fixed releases | 44 (to 2027-06-02) to 45 | Full | ✅ |
+| openSUSE Leap | zypper | fixed releases | 16.0 (to 2027-10-31, endoflife.date) to 16.1; the rows change in zypper 1c | Full | 🟨 |
 | openSUSE Tumbleweed | zypper | rolling | current | Full | ⬜ |
 | Arch Linux | pacman | rolling | current | Full | ⬜ |
 | Alpine | apk | fixed releases (musl) | n-3, capped | Full, if the feasibility spike passes | ⬜ |
@@ -501,13 +501,43 @@ three parts:
 
 Bodhi's `/releases/F<n>` and `/releases/?exclude_archived=true` are fetched once a day into the cache; one that can't
 be fetched is "not checked". The tests read trimmed copies (the dates checked 2026-11-11: Fedora 44 ends 2027-06-02,
-45 came out 2026-11-03); the live shape is checked by the end-to-end run on the Mac.
+45 came out 2026-11-03); the live shape is checked by the end-to-end run on the Mac. The owner checked both releases'
+pages against them on 2026-11-12: they agree.
+
+**zypper's step 0** (2026-11-12, checked live in throwaway Leap 16.0 and Tumbleweed containers, the matrix's pinned
+images, and on openSUSE's mirrors):
+
+- **Leap's dates:** every update comes with a patch, and each patch has an issued time, in the update repo's own
+  updateinfo, which zypper reads (`zypper --xmlout lp`) with no web service. Of 1,057 patches checked against when
+  their packages reached the repo, none was issued more than 30 minutes early, and a late one errs on the safe side.
+  So the issued time is the date, unlike Fedora's (6 of 132 up to 15 days early, D81).
+- **Security:** a patch's category says `security`, with a severity; 2 of the 4 updates pending in the Leap image were.
+- **As the user:** `zypper --cache-dir <own folder> lu` and `lp` work unprivileged, with their own cache (about 84 MB).
+- **The way back on Leap:** the update repo keeps older builds, and `zypper install --oldpackage <name>=<edition>` put
+  back the exact build from before.
+- **Tumbleweed:** its main repo has no patches. A package's file time is the day of the first snapshot that holds it
+  (checked for curl, sqlite, glib and ca-certificates against openSUSE's snapshot archive, about 20 days deep), and
+  a snapshot reaches the mirrors up to a day later. The live repo offers only the newest build, so there is no way back
+  from it; an earlier snapshot is. It is meant to be updated as a whole (`zypper dup`). How the steward gates it is the
+  owner's choice, asked on 2026-11-12: a whole snapshot at least the gate's days old (recommended), package by package
+  as Leap, or watch only.
+- **A restart:** `zypper needs-rebooting` exits 102 when one is needed and 0 when not, as the user, on both.
+- **The rows:** Leap 16.1 is out, so they become Leap 16.0 (oldest), Leap 16.1 (newest) and Tumbleweed, in zypper 1c.
+
+**zypper's read-only source (1a, D85):** `lib/providers/zypper.js`, for the suse family. On Leap it lists what zypper
+would update (`zypper --xmlout list-updates`) from its own cache under the steward's state folder, as the user. Each
+version is dated by the issued time of the patch that brings it, read from the updateinfo zypper keeps in that cache
+(gzip or plain; zstd where Node has it), else by the first-seen clock; a security patch is taken at once and named.
+Like dnf's 1a, the plan names the exact `sudo zypper --non-interactive install --no-recommends <name>=<edition>` line,
+and `apply` refuses the source until 1b. On Tumbleweed it reads nothing and says "not checked" until the owner's
+choice. Its tests use XML in zypper's and rpm-md's formats with names and versions from step 0; real captures from the
+Leap and Tumbleweed images replace them before 1b.
 
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
 | --- | --- | --- | --- | --- |
 | ✅ apt | Debian, Ubuntu, Linux Mint, LMDE (the Linux release) | per package | Done: 1a read-only (#101, D75); 1b the upgrade with the sudo hand-off (#102, D76); 1c the rows, CI and the real-repo run (#103, D77); 1d its install-check row (#107, D78); 1e OS updates, read-only (#108, D79). npm mode on Linux waits for the release (R-2) | #101, #102, #103, #107, #108 |
-| 🟨 dnf | Fedora (the Linux release) | per package | Under way: step 0 (2026-11-11); 1a read-only (#112, D81); 1b the upgrade with the sudo hand-off (#113, D82); 1c the real-repo run, both Fedora rows passing (D83, #114); 1d the install-check rows, passing (run 43141398561); 1e OS updates, read-only (D84) | #112, #113, #114 |
-| ⬜ zypper | openSUSE Leap, Tumbleweed (the Linux release) | per package (D-a); the zypper PR checks how Tumbleweed's rolling updates fit | Not started | |
+| ✅ dnf | Fedora (the Linux release) | per package | Done: step 0 (2026-11-11); 1a read-only (#112, D81); 1b the upgrade with the sudo hand-off (#113, D82); 1c the real-repo run, both Fedora rows passing (D83, #114); 1d the install-check rows, passing (run 43141398561); 1e OS updates, read-only (#115, D84). npm mode on Linux waits for the release (R-2) | #112, #113, #114, #115 |
+| 🟨 zypper | openSUSE Leap, Tumbleweed (the Linux release) | Leap per package (D-a); Tumbleweed waits on the owner's choice (step 0) | Under way: step 0 (2026-11-12); 1a read-only on Leap (D85) | |
 | ⬜ Flatpak | any | per package | Not started | |
 | ⬜ Snap | Ubuntu and others | per package | Not started | |
 | ⬜ pacman | Arch | dated snapshot | Not started | |
@@ -612,6 +642,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-13 | 24 | dnf done; zypper step 0 (Leap's patch dates, Tumbleweed's snapshots, the way back, the restart, Leap 16.1) and 1a: the zypper source, read-only, on Leap (D85) | |
 | 2026-11-12 | 23 | dnf 1d: the install check passes on both Fedora rows; dnf 1e: the OS updates section on Fedora (needs-restarting, Bodhi's releases), read-only (D84) | |
 | 2026-11-12 | 22 | dnf 1c: `--e2e` for the Fedora rows, against Fedora's real repos; both pass (D83) | #114 |
 | 2026-11-12 | 21 | dnf 1b: the upgrade through the sudo hand-off, pinned to the exact build; the way back by apt's rule, a downgrade only to builds the repos still offer (D82) | #113 |
