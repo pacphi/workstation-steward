@@ -60,11 +60,11 @@ function sh(cmd, input = '') {
 }
 
 // planLines(out) — the package sections' take and hold lines: {act, name, have, want, days, from, pocket}; pocket is
-// apt's security pocket or dnf's security advisory
+// apt's security pocket, dnf's security advisory or zypper's security patch
 function planLines(out) {
   const rows = [];
   for (const l of strip(out).split('\n')) {
-    const m = l.trim().match(/^(take|hold)\s+(\S+) (\S+) -> (\S+) \((?:(\d+)d old, ([^)]+)|security (?:pocket|advisory): ([^)]+))\)$/);
+    const m = l.trim().match(/^(take|hold)\s+(\S+) (\S+) -> (\S+) \((?:(\d+)d old, ([^)]+)|security (?:pocket|advisory|patch): ([^)]+))\)$/);
     if (m) rows.push({ act: m[1], name: m[2], have: m[3], want: m[4], days: m[5] === undefined ? null : Number(m[5]), from: m[6] || null, pocket: m[7] || null });
   }
   return rows;
@@ -269,11 +269,100 @@ async function dnf() {
   return results;
 }
 
-module.exports = { responder, planLines };
+const ZYP = ['-n', '--cache-dir=/tmp/e2e-zc'];
+// zq(...args) — zypper's answer as you, from a cache of the test's own, asked again once when it comes back empty
+const zq = (...args) => {
+  const ask = () => spawnSync('zypper', [...ZYP, ...args], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).stdout || '';
+  const a = ask();
+  return a.trim() ? a : ask();
+};
+// patchIssued(xml, id) — the issued time zypper itself shows for patch id in `zypper --xmlout list-patches --all`, as ISO,
+// whatever its attribute or element is called (epoch seconds or a date and time); null when it shows none
+function patchIssued(xml, id) {
+  const m = String(xml).match(new RegExp(`<update\\s[^>]*name="${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[\\s\\S]*?(?:</update>|/>)`));
+  if (!m) return null;
+  const d = m[0].match(/issue[-_]?(?:date|time)?[^0-9]{0,12}(\d{9,11}|\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?)/i);
+  if (!d) return null;
+  return /^\d+$/.test(d[1]) ? new Date(Number(d[1]) * 1000).toISOString() : new Date(`${d[1].replace(' ', 'T')}Z`).toISOString();
+}
+
+async function zypper() {
+  const results = [];
+  const check = (ok, what) => { results.push(ok); console.log(`\ne2e ${ok ? 'PASS' : 'FAIL'}: ${what}`); return ok; };
+  const steward = 'node bin/steward.js';
+  const gate = 3;
+  const seeded = fs.readFileSync('/work/seeded.txt', 'utf8').split('\n').filter(Boolean).map(l => { const [name, have] = l.split('\t'); return { name, have }; });
+  console.log(`e2e: leap; seeded: ${seeded.map(s => `${s.name} ${s.have}`).join(', ')}`);
+  const sys = () => { try { return fs.readdirSync('/var/cache/zypp/raw').length; } catch { return 0; } };
+  const sysBefore = sys();
+  const lp = zq('--xmlout', 'list-patches', '--all');
+  console.log(`e2e: list-patches --all, first patch as zypper shows it:\n${(lp.match(/<update\s[\s\S]*?(?:<\/update>|\/>)/) || ['none'])[0]}`);
+  const ui = spawnSync('bash', ['-c', `ls ${process.env.HOME}/.local/state/workstation-steward/zypper/cache/raw/*/repodata/ 2>/dev/null; true`], { encoding: 'utf8' }).stdout;
+
+  // 1. the plan, every zypper line checked against what zypper itself says of the patch
+  const plan = sh(`DRY_RUN=1 ${steward} sc plan --plain`);
+  const lines = planLines(plan.out);
+  console.log(`e2e: the steward's zypper cache holds:\n${ui || '(nothing)'}`);
+  check(plan.code === 0 && lines.length > 0, `sc plan ran and listed ${lines.length} zypper line(s)`);
+  check(!/manual zypper:/.test(plan.out), 'no "manual zypper" line: the upgrade is the steward\'s (zypper 1b)');
+  const now = Date.now();
+  for (const l of lines) {
+    if (l.pocket) {
+      check(l.act === 'take' && new RegExp(`name="${l.pocket}"[^>]*category="security"|category="security"[^>]*name="${l.pocket}"`).test(lp), `${l.name} ${l.want}: taken at once on the security patch ${l.pocket}, which zypper calls security`);
+      continue;
+    }
+    const id = (l.from.match(/^patch (.+)$/) || [])[1];
+    const iss = id ? patchIssued(lp, id) : null;
+    const days = iss ? Math.floor((now - Date.parse(iss)) / 86400000) : null;
+    if (id) check(days !== null && Math.abs(l.days - days) <= 1, `${l.name} ${l.want}: ${l.days}d old, ${l.from} (zypper says issued ${iss || 'nothing it shows'}, ${days === null ? '?' : days}d)`);
+    else check(l.from === 'first seen here', `${l.name} ${l.want}: in no patch, so first seen here (${l.from})`);
+    check(l.act === (l.days >= gate ? 'take' : 'hold'), `${l.name} ${l.want}: ${l.act} at ${l.days}d against the ${gate}-day gate`);
+  }
+  const takes = lines.filter(l => l.act === 'take' && seeded.some(s => s.name === l.name));
+  if (!check(takes.length > 0, `a seeded package is taken (${takes.map(t => t.name).join(', ') || 'none'})`)) return results;
+
+  // 2. the upgrade at a terminal: the refresh, then one pinned install
+  const up = await pty(`${steward} sc upgrade`, [{ expect: 'Apply this plan? [y/N]', send: 'y' }]);
+  const after = takes.map(t => ({ ...t, now: rpmEvr(t.name) }));
+  check(up.code === 0 && up.pending === 0, `sc upgrade at a terminal exited ${up.code}`);
+  check(/sudo zypper --non-interactive refresh/.test(up.out) && /sudo zypper --non-interactive install --no-recommends /.test(up.out), 'the root steps are the refresh and one pinned install');
+  check(after.every(t => t.now === t.want), `installed: ${after.map(t => `${t.name} ${t.now}`).join(', ')}`);
+  const r1 = receipts().pop();
+  check(Boolean(r1 && r1.r.outcome === 'done'), `the receipt says done (${r1 ? `${r1.r.outcome}, ${r1.p}` : 'none'})`);
+  const backFor = r1 ? (r1.r.back || { items: [] }).items.map(i => i.name) : [];
+  check(takes.every(t => backFor.includes(t.name)), `the way back names each seeded package, whose older edition is still offered (${backFor.join(', ') || 'none'})`);
+
+  // 3. the way back: --oldpackage to the edition from before
+  if (r1) {
+    const back = await pty(`${steward} sc rollback ${r1.p}`, [], [{ expect: /\[y\/N\] $/, send: 'y' }]);
+    const was = takes.map(t => ({ ...t, now: rpmEvr(t.name) }));
+    check(back.code === 0, `sc rollback exited ${back.code}`);
+    check(/sudo zypper --non-interactive install --oldpackage /.test(back.out), 'the rollback is an --oldpackage install, pinned');
+    check(was.every(t => t.now === t.have), `rolled back: ${was.map(t => `${t.name} ${t.now} (was ${t.have})`).join(', ')}`);
+  }
+
+  // 4. no terminal: handed over, then finished by --resume
+  const hand = sh(`${steward} sc upgrade`, 'y\n');
+  check(hand.code === 4, `sc upgrade with no terminal exited ${hand.code} (4: waiting on you)`);
+  const r2 = receipts().pop();
+  check(Boolean(r2 && r2.r.outcome === 'waiting-on-you'), `the receipt waits on you (${r2 ? r2.r.outcome : 'none'})`);
+  const line = ((hand.out.match(/(sudo zypper --non-interactive refresh && sudo zypper --non-interactive install [^\n]*)/) || [])[1] || '').trim();
+  if (check(Boolean(line), `the handed-over line: ${line || 'not found'}`)) {
+    const ran = await pty(`bash -c '${line.replace(/'/g, "'\\''")}'`);
+    check(ran.code === 0, `the handed-over line, run as you would, exited ${ran.code}`);
+    const res = sh(`${steward} sc upgrade --resume`);
+    const r3 = receipts().pop();
+    check(res.code === 0 && Boolean(r3 && r3.r.outcome === 'done'), `sc upgrade --resume exited ${res.code}; the receipt says ${r3 ? r3.r.outcome : 'none'}`);
+  }
+  check(sys() >= sysBefore, 'the user\'s reads never cleared the system\'s zypper cache');
+  return results;
+}
+
+module.exports = { responder, planLines, patchIssued };
 
 if (require.main === module) {
   const [kind, distro] = process.argv.slice(2);
-  (kind === 'apt' ? apt(distro) : kind === 'dnf' ? dnf() : Promise.reject(new Error(`no e2e for ${kind}`))).then(results => {
+  (kind === 'apt' ? apt(distro) : kind === 'dnf' ? dnf() : kind === 'zypper' ? zypper() : Promise.reject(new Error(`no e2e for ${kind}`))).then(results => {
     const pass = results.filter(Boolean).length;
     console.log(`\nℹ tests ${results.length}\nℹ pass ${pass}\nℹ fail ${results.length - pass}`);
     process.exitCode = results.length && pass === results.length ? 0 : 1;
