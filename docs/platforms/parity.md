@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 22](https://img.shields.io/badge/Revision-25-green) ![Revised 2026-11-12](https://img.shields.io/badge/Revised-2026--11--12-green)
+![Revision 22](https://img.shields.io/badge/Revision-26-green) ![Revised 2026-11-12](https://img.shields.io/badge/Revised-2026--11--12-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -542,11 +542,26 @@ offer it (`zypper search --details --match-exact`, from the steward's own cache)
 so the way back is usually there (step 0 put back the exact build). Tumbleweed still reads nothing until its snapshot
 mode (the owner's choice A, 2026-11-13).
 
+**zypper's real-repo run (1c, D87):** `just linux-test leap-16.0 --e2e` now runs for the suse family, as apt's and dnf's
+do (D77, D83). Its root phase (`test/containers/e2e/zypper.sh`) gives the steward user `sudo` for `zypper` only, prints
+zypper's own `--xmlout` answers into the log, and takes up to three packages back to an older edition the update repo
+keeps (never zypper, libzypp, rpm, glibc, sudo or TLS). The user phase (`drive.js zypper`) checks every plan line
+against the patch zypper itself shows (its `issue-date`, and `category="security"` for one taken at once), then the
+upgrade at a terminal, the rollback with `--oldpackage`, and the hand-off finished by `--resume`. On a Tumbleweed row it
+stops with a reason until snapshot mode. The first run (2026-11-13) found two faults in the test, none in the steward:
+openSUSE's `su` sets `XDG_STATE_HOME`, so the steward's receipt was where the test didn't look (the run now unsets the
+XDG folders, and the test follows `XDG_STATE_HOME`), and zypper writes `<license/>` and `<source/>` before a patch's
+`<issue-date time_t=… text=…/>`, so the test stopped reading too soon. Then:
+
+| Row | Checks | What it showed |
+| --- | --- | --- |
+| Leap 16.0 | 28 / 28 | three security patches taken at once (gzip, pcre2, zchunk); tar 48 days and timezone 35 days old, as zypper's own patch dates say (2026-09-25, 2026-10-08); two `patterns-*` packages in no patch held as first seen; the pinned upgrade, its `--oldpackage` rollback to the exact editions from before, and the hand-off with `--resume`; the system's zypper cache untouched |
+
 | Provider | Distributions | Gate mode (D-a) | Stage | PR |
 | --- | --- | --- | --- | --- |
 | ✅ apt | Debian, Ubuntu, Linux Mint, LMDE (the Linux release) | per package | Done: 1a read-only (#101, D75); 1b the upgrade with the sudo hand-off (#102, D76); 1c the rows, CI and the real-repo run (#103, D77); 1d its install-check row (#107, D78); 1e OS updates, read-only (#108, D79). npm mode on Linux waits for the release (R-2) | #101, #102, #103, #107, #108 |
 | ✅ dnf | Fedora (the Linux release) | per package | Done: step 0 (2026-11-11); 1a read-only (#112, D81); 1b the upgrade with the sudo hand-off (#113, D82); 1c the real-repo run, both Fedora rows passing (D83, #114); 1d the install-check rows, passing (run 43141398561); 1e OS updates, read-only (#115, D84). npm mode on Linux waits for the release (R-2) | #112, #113, #114, #115 |
-| 🟨 zypper | openSUSE Leap, Tumbleweed (the Linux release) | Leap per package (D-a); Tumbleweed dated snapshot (owner, 2026-11-13) | Under way: step 0 (2026-11-12); 1a read-only on Leap (#117, D85); 1b the upgrade with the sudo hand-off (D86); Tumbleweed in snapshot mode (owner, 2026-11-13) | #117 |
+| 🟨 zypper | openSUSE Leap, Tumbleweed (the Linux release) | Leap per package (D-a); Tumbleweed dated snapshot (owner, 2026-11-13) | Under way: step 0 (2026-11-12); 1a read-only on Leap (#117, D85); 1b the upgrade with the sudo hand-off (#118, D86); 1c the real-repo run on Leap 16.0, passing (D87); Tumbleweed in snapshot mode (owner, 2026-11-13) | #117, #118 |
 | ⬜ Flatpak | any | per package | Not started | |
 | ⬜ Snap | Ubuntu and others | per package | Not started | |
 | ⬜ pacman | Arch | dated snapshot | Not started | |
@@ -651,7 +666,8 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-13 | 25 | zypper 1b: the Leap upgrade through the sudo hand-off, pinned; the way back with `--oldpackage`, by apt's rule (D86); Tumbleweed goes by snapshot (owner) | |
+| 2026-11-13 | 26 | zypper 1c: `--e2e` for Leap against openSUSE's real repos; 28 of 28 (D87) | |
+| 2026-11-13 | 25 | zypper 1b: the Leap upgrade through the sudo hand-off, pinned; the way back with `--oldpackage`, by apt's rule (D86); Tumbleweed goes by snapshot (owner) | #118 |
 | 2026-11-13 | 24 | dnf done; zypper step 0 (Leap's patch dates, Tumbleweed's snapshots, the way back, the restart, Leap 16.1) and 1a: the zypper source, read-only, on Leap (D85) | #117 |
 | 2026-11-12 | 23 | dnf 1d: the install check passes on both Fedora rows; dnf 1e: the OS updates section on Fedora (needs-restarting, Bodhi's releases), read-only (D84) | |
 | 2026-11-12 | 22 | dnf 1c: `--e2e` for the Fedora rows, against Fedora's real repos; both pass (D83) | #114 |
