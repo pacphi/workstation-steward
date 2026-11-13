@@ -1,7 +1,8 @@
-// The zypper source (parity zypper 1a, lib/providers/zypper.js): openSUSE Leap packages, read-only. Its own metadata
+// The zypper source (parity zypper 1a and 1b, lib/providers/zypper.js): openSUSE Leap packages. Its own metadata
 // cache, read as the user; each new version dated by the issued time of the patch that brings it (the update repo's own
 // updateinfo, in that cache), else the first-seen clock; a security patch taken at once. Tumbleweed is said to be not
-// checked. No network: zypper and rpm are canned. The XML follows zypper's --xmlout and the rpm-md updateinfo format,
+// checked. The upgrade goes through the root hand-off, refreshed and pinned; the way back is an --oldpackage install of
+// the edition from before, while the repos offer it. No network: zypper and rpm are canned. The XML follows zypper's --xmlout and the rpm-md updateinfo format,
 // with names and versions from zypper's step 0 on Leap 16.0 (2026-11-12).
 // Run: just test
 const test = require('node:test');
@@ -127,6 +128,14 @@ function ctx(o = {}) {
   const run = async (cmd, args = []) => {
     calls.push([cmd, ...args].join(' '));
     if (cmd === 'zypper' && args.includes('list-updates')) return { status: 0, stdout: LU };
+    if (cmd === 'zypper' && args.includes('search')) {
+      const n = args[args.length - 1], eds = ((o.offered || {})[n] || []);
+      return { status: 0, stdout: `<?xml version='1.0'?><stream><search-result version="0.0"><solvable-list>${
+        (o.installed && o.installed[n] ? `<solvable status="installed" name="${n}" kind="package" edition="${o.installed[n]}" arch="aarch64" repository="(System Packages)"/>` : '')}${
+        eds.map(e => `<solvable status="${o.installed && o.installed[n] === e ? 'installed' : 'not-installed'}" name="${n}" kind="package" edition="${e}" arch="aarch64" repository="Update repository (OSS)"/>`).join('')
+      }<solvable status="not-installed" name="${n}-devel" kind="package" edition="9-9" arch="aarch64" repository="Main repository"/></solvable-list></search-result></stream>` };
+    }
+    if (cmd === 'rpm' && args[0] === '-q' && o.installed) return { status: 0, stdout: args.slice(3).map(n => (o.installed[n] ? `${n} ${/:/.test(o.installed[n]) ? '' : '0:'}${o.installed[n]}\n` : `package ${n} is not installed\n`)).join('') };
     if (cmd === 'zypper' || (cmd === 'rpm' && args[0] === '--version')) return { status: 0, stdout: 'zypper 1.14.94\n' };
     return { status: 1, stdout: '' };
   };
@@ -184,29 +193,84 @@ test('sources: zypper on the suse family only', () => {
   assert.ok(!P.sources({ ...base, platform: 'macos', family: null }).some(s => s.id === 'zypper'));
 });
 
-test('plan on Leap, read-only: each update past the gate gets its exact sudo line; nothing is planned for apply', async () => {
+test('plan on Leap: each update past the gate is taken with its why; the rest held (zypper 1b)', async () => {
   const c = ctx({ extra: { sources: [Z.source] } });
   c.run = (orig => async (cmd, args = []) => (cmd === 'mise' ? { status: 0, stdout: '{}' } : cmd === 'node' ? { status: 0, stdout: 'ok\t2026.10.21\t2026.10.21\tcurrent\tfalse\n' } : orig(cmd, args)))(c.run);
   const lines = [], sections = [];
   const p = await plan(c, { section: (_n, t) => sections.push(t), line: l => lines.push(l), warn: () => {} });
   assert.equal(sections[0], 'zypper packages');
-  const has = re => assert.ok(lines.some(l => re.test(l)), `${re}\n---\n${lines.join('\n')}`);
-  has(/^manual zypper: needs root, which the steward takes on in a later PR \(zypper 1b\) \(security patch: openSUSE-Leap-16\.0-2026-12\): sudo zypper --non-interactive install --no-recommends libpcre2-8-0=10\.45-160000\.5\.1$/);
-  has(/^manual zypper: .*\(8d old, patch openSUSE-Leap-16\.0-2026-7\): sudo zypper --non-interactive install --no-recommends timezone=2026f-160000\.2\.1$/);
-  has(/^hold +less 679-160000\.2\.1 -> 679-160000\.3\.1 \(1d old, patch openSUSE-Leap-16\.0-2026-15\)/);
-  assert.equal(p.packages.length, 0, 'read-only: nothing for apply');
+  const say = l => assert.ok(lines.includes(l), `${l}\n---\n${lines.join('\n')}`);
+  say('take   libpcre2-8-0 10.45-160000.4.1 -> 10.45-160000.5.1 (security patch: openSUSE-Leap-16.0-2026-12)');
+  say('take   timezone 2026a-160000.1.1 -> 2026f-160000.2.1 (8d old, patch openSUSE-Leap-16.0-2026-7)');
+  say('hold   less 679-160000.2.1 -> 679-160000.3.1 (1d old, patch openSUSE-Leap-16.0-2026-15)');
+  say('hold   mystery 1.0-160000.1.1 -> 1.1-160000.1.1 (0d old, first seen here)');
+  assert.ok(!lines.some(l => l.startsWith('manual zypper')), 'no longer read-only');
+  assert.equal(p.packages.length, 1);
+  assert.deepEqual(p.packages[0].names, ['libpcre2-8-0', 'timezone']);
+  assert.deepEqual(Z.source.upgradeCmd(p.packages[0].items).args,
+    ['--non-interactive', 'install', '--no-recommends', 'libpcre2-8-0=10.45-160000.5.1', 'timezone=2026f-160000.2.1'], 'each pinned to the exact edition');
+  assert.deepEqual(Z.source.rootRefresh, { cmd: 'zypper', args: ['--non-interactive', 'refresh'] });
+  assert.equal(Z.source.readOnly, undefined);
 });
 
-test('apply refuses zypper while it is read-only: that step fails and nothing runs', async () => {
-  const ran = [], keep = { log: console.log, error: console.error }, errs = [];
-  Object.assign(console, { log: () => {}, error: (...a) => errs.push(a.join(' ')) });
-  let code;
-  try {
-    code = await apply({ packages: [{ source: 'zypper', names: ['timezone'], items: [{ name: 'timezone', want: '2026f-160000.2.1' }] }], tools: [], updaters: [], miseSelf: '' },
-      { sources: [Z.source], dry: false, step: async (cmd, args) => { ran.push([cmd, ...args].join(' ')); return 0; }, script: async (cmd) => { ran.push(cmd); return 0; },
-        sudo: async () => { ran.push('sudo'); return 0; }, ctx: ctx() });
-  } finally { Object.assign(console, keep); }
-  assert.equal(code, 1);
-  assert.ok(errs.some(e => e.includes('zypper: read-only until a later PR (zypper 1b)')), errs.join('\n'));
-  assert.ok(!ran.some(k => k.startsWith('sudo') || k.startsWith('zypper')), ran.join('\n'));
+test('zypper: installed from rpm, as you; offered from the steward\'s own cache, the rpm database\'s row left out', async () => {
+  const c = ctx({ installed: { timezone: '2026f-160000.2.1', vim: '1:9.1-1.1' }, offered: { timezone: ['2026a-160000.1.1', '2026f-160000.2.1'] } });
+  assert.deepEqual(await Z.source.installed(c, ['timezone', 'vim', 'gone']), { timezone: '2026f-160000.2.1', vim: '1:9.1-1.1' });
+  assert.deepEqual(await Z.source.installed(c, []), {});
+  assert.deepEqual(await Z.source.offered(c, 'timezone'), ['2026a-160000.1.1', '2026f-160000.2.1'], 'not timezone-devel, not the installed row');
+  const q = c.calls.find(k => k.includes(' search '));
+  assert.ok(q.includes(`--cache-dir=${path.join(c.cfg.paths.state, 'zypper', 'cache')}`) && q.includes('--match-exact'), q);
+  assert.deepEqual(Z.source.rollbackCmd([{ name: 'timezone', to: '2026a-160000.1.1' }]),
+    { cmd: 'zypper', args: ['--non-interactive', 'install', '--oldpackage', '--no-recommends', 'timezone=2026a-160000.1.1'] });
+  assert.ok(!c.calls.some(k => k.startsWith('sudo')), 'all as you');
+});
+
+// leap(o) — a Leap machine whose rpm database the stand-in sudo changes: zypper install sets each name=edition it gets
+function leap(o = {}) {
+  const inst = { timezone: '2026a-160000.1.1', 'libpcre2-8-0': '10.45-160000.4.1', ...(o.installed || {}) };
+  const c = ctx({ installed: inst, offered: o.offered || { timezone: ['2026a-160000.1.1', '2026f-160000.2.1'], 'libpcre2-8-0': ['10.45-160000.4.1', '10.45-160000.5.1'] } });
+  const sudo = [], printed = [];
+  const spawn = async (cmd, args) => {
+    sudo.push([cmd, ...args].join(' '));
+    if (args.includes('install')) for (const a of args) { const m = a.match(/^([^=]+)=(.+)$/); if (m) inst[m[1]] = m[2]; }
+    return 0;
+  };
+  return { c, inst, sudo, printed, o: extra => ({ spawn, print: s => printed.push(String(s).replace(/\x1b\[[0-9;]*m/g, '')), ...extra }) };
+}
+
+test('zypper upgrade at a terminal: refreshed, then one pinned install; the receipt checks every edition and keeps the way back', async () => {
+  const H = require('../lib/roothandoff.js');
+  const m = leap();
+  const items = [{ name: 'timezone', have: '2026a-160000.1.1', want: '2026f-160000.2.1', why: 'gate: 8d old, patch openSUSE-Leap-16.0-2026-7' },
+    { name: 'libpcre2-8-0', have: '10.45-160000.4.1', want: '10.45-160000.5.1', why: 'security patch: openSUSE-Leap-16.0-2026-12' }];
+  assert.equal(await H.upgrade(m.c, Z.source, items, m.o({ tty: true })), 0, m.printed.join('\n'));
+  assert.deepEqual(m.sudo, ['sudo zypper --non-interactive refresh',
+    'sudo zypper --non-interactive install --no-recommends timezone=2026f-160000.2.1 libpcre2-8-0=10.45-160000.5.1']);
+  assert.deepEqual(m.inst, { timezone: '2026f-160000.2.1', 'libpcre2-8-0': '10.45-160000.5.1' });
+  const rp = path.join(m.c.cfg.paths.state, 'backups', fs.readdirSync(path.join(m.c.cfg.paths.state, 'backups'))[0], 'receipt.json');
+  const r = JSON.parse(fs.readFileSync(rp, 'utf8'));
+  assert.equal(r.outcome, 'done');
+  assert.deepEqual(r.back.items, [{ name: 'timezone', to: '2026a-160000.1.1' }, { name: 'libpcre2-8-0', to: '10.45-160000.4.1' }], 'Leap keeps the builds from before');
+  assert.equal(await H.rollback(m.c, Z.source, rp, m.o({ tty: true, ask: async () => true })), 0, m.printed.join('\n'));
+  assert.equal(m.sudo[3], 'sudo zypper --non-interactive install --oldpackage --no-recommends timezone=2026a-160000.1.1 libpcre2-8-0=10.45-160000.4.1');
+  assert.deepEqual(m.inst, { timezone: '2026a-160000.1.1', 'libpcre2-8-0': '10.45-160000.4.1' });
+});
+
+test('zypper rollback with nothing left to go back to: said, never a guess', async () => {
+  const H = require('../lib/roothandoff.js');
+  const m = leap({ offered: { timezone: ['2026f-160000.2.1'] } });
+  const items = [{ name: 'timezone', have: '2026a-160000.1.1', want: '2026f-160000.2.1', why: 'gate: 8d old' }];
+  assert.equal(await H.upgrade(m.c, Z.source, items, m.o({ tty: true })), 0);
+  const rp = path.join(m.c.cfg.paths.state, 'backups', fs.readdirSync(path.join(m.c.cfg.paths.state, 'backups'))[0], 'receipt.json');
+  assert.deepEqual(JSON.parse(fs.readFileSync(rp, 'utf8')).back.items, []);
+  assert.ok(m.printed.some(l => l === '   no way back for timezone: the archive no longer offers 2026a-160000.1.1'), m.printed.join('\n'));
+});
+
+test('zypper without a terminal: the exact lines are handed over and the receipt waits; nothing runs through sudo', async () => {
+  const H = require('../lib/roothandoff.js');
+  const m = leap();
+  const items = [{ name: 'timezone', have: '2026a-160000.1.1', want: '2026f-160000.2.1', why: 'gate: 8d old' }];
+  assert.equal(await H.upgrade(m.c, Z.source, items, m.o({ tty: false })), 4);
+  assert.deepEqual(m.sudo, []);
+  assert.ok(m.printed.some(l => l.includes('sudo zypper --non-interactive refresh && sudo zypper --non-interactive install --no-recommends timezone=2026f-160000.2.1')), m.printed.join('\n'));
 });
