@@ -13,7 +13,7 @@ const path = require('path');
 const zlib = require('zlib');
 const Z = require('../lib/providers/zypper.js');
 const P = require('../lib/providers/index.js');
-const { plan, apply } = require('../supply-chain/bin/upgrade.js');
+const { plan } = require('../supply-chain/bin/upgrade.js');
 
 const ROOT = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'steward-zypper-')));
 test.after(() => fs.rmSync(ROOT, { recursive: true, force: true }));
