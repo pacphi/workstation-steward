@@ -133,6 +133,14 @@ section only reads: an action when `dnf5 needs-restarting -r` says a restart is 
 out (a release upgrade is by hand), and the end of the release's support from Bodhi: a note within 90 days, an action
 once past.
 
+### zypper (openSUSE)
+
+On Leap, the steward reads zypper's metadata as you, into its own cache in its state folder, without `sudo` (D85).
+Each new version is dated by the issued time of the patch that brings it (the update repo's own record, which on Leap
+is never more than half an hour early), else by the first time this machine saw it; a security patch is taken at once
+and names it. For now the plan only names the exact `sudo zypper install` line for each update past the gate, and
+`steward sc upgrade` doesn't run it. Tumbleweed is shown as not checked until its way of updating is decided.
+
 ## What may skip the gate
 
 Every update source has one **release class** (D52, [`release-classes.md`](../docs/release-classes.md)), and only

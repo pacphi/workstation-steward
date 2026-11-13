@@ -15,6 +15,7 @@ const brew = require('../../lib/providers/brew.js');
 const P = require('../../lib/providers/index.js');
 const apt = require('../../lib/providers/apt.js');
 const dnf = require('../../lib/providers/dnf.js');
+const zypper = require('../../lib/providers/zypper.js');
 const OSU = require('../../lib/osupdates.js');
 const U = require('../../lib/updaters.js');
 const V = require('../../lib/vulns.js');
@@ -241,6 +242,11 @@ const CHECKS = [
     id: 'dnf', name: 'dnf packages', platforms: ['linux'], families: ['rhel'], provider: dnf.source,
     title: ctx => `dnf packages (dated by Bodhi, else the release day or first seen here; eligible = at least ${minAge(ctx)}d, or a security advisory)`,
     run: packages('dnf'),
+  },
+  {
+    id: 'zypper', name: 'zypper packages', platforms: ['linux'], families: ['suse'], provider: zypper.source,
+    title: ctx => `zypper packages (dated by their patch's issued time, else first seen here; eligible = at least ${minAge(ctx)}d, or a security patch)`,
+    run: packages('zypper'),
   },
   {
     // Linux's OS updates (parity 1e, D79): a restart, a newer release (a note: a major), the end of free security
