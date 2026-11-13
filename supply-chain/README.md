@@ -104,7 +104,8 @@ apt state is never touched (D75). Each new version is dated by the earliest day 
 
 The plan and the audit say which ("4d old, snapshot"). Each update past the gate is upgraded pinned to that version
 (`sudo apt-get install --only-upgrade <package>=<version>`, after `sudo apt-get update`), and `steward sc rollback
-<receipt>` puts back the versions from before that the repos still offer (D76).
+<receipt>` puts back the versions from before (D76): from the steward's kept copy, else while the repos still offer them
+(see "Kept packages" below).
 
 **OS updates** (D79): point releases and new kernels are apt packages, so they come through the plan above. The audit's
 "OS updates" section only reads, as the Mac's does: an action when a restart is needed (`/run/reboot-required`, or a
@@ -125,8 +126,9 @@ testing repo (D81). Each new version is dated by when it reached Fedora's stable
 
 A version whose advisory is a security one is taken at once and names it. Each update past the gate is upgraded pinned
 to the exact build (`sudo dnf5 upgrade -y --refresh <name>-<version>.<arch>`, D82). The way back is `steward sc rollback
-<receipt>`, a `dnf5 downgrade` to the build from before, but only when the repos still offer it: Fedora's updates repo
-keeps only its newest build, so often only the release's own build is left, and the receipt says when there is none.
+<receipt>`, a `dnf5 downgrade` to the build from before. Fedora's updates repo keeps only its newest build, so the
+steward's kept copy is what makes this the exact build (see "Kept packages" below); without one, only a build the repos
+still offer, and the receipt says when there is none.
 
 **OS updates** (D84): as on Debian, point updates and kernels come through the plan above, and the audit's "OS updates"
 section only reads: an action when `dnf5 needs-restarting -r` says a restart is needed, a note when a newer Fedora is
@@ -140,8 +142,18 @@ Each new version is dated by the issued time of the patch that brings it (the up
 is never more than half an hour early), else by the first time this machine saw it; a security patch is taken at once
 and names it. Each update past the gate is installed pinned to that edition (`sudo zypper --non-interactive refresh`,
 then `sudo zypper --non-interactive install --no-recommends <package>=<edition>`, D86), and `steward sc rollback
-<receipt>` puts back the editions from before with `--oldpackage`, while the repos still offer them. Tumbleweed is
-shown as not checked until its snapshot mode lands: it will move whole to the newest snapshot past the gate.
+<receipt>` puts back the editions from before with `--oldpackage`, from the steward's kept copy or while the repos still
+offer them. Tumbleweed is shown as not checked until its snapshot mode lands: it will move whole to the newest snapshot
+past the gate.
+
+### Kept packages (apt, dnf, zypper)
+
+Before a root upgrade, the steward downloads, as you, the build each package moves from (while the repos still offer
+it) and the one it moves to, into `<state>/kept/<source>/`, recording each file's SHA-256 (D88). `steward sc rollback
+<receipt>` installs that copy, after checking the hash again, else the build the repos still offer. So from the second
+upgrade on, the way back is always the exact build you had. Per package, `[policy] kept_versions` copies (default 2)
+and the installed build stay; older ones are deleted when an upgrade finishes, and the receipt lists them. Set
+`kept_versions = 0` to keep none.
 
 ## What may skip the gate
 

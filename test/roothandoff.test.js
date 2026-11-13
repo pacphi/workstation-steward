@@ -4,7 +4,8 @@
 // finishes. Root refreshes the system's package lists first (apt-get update; owner, 2026-11-03), because they can be
 // older than the steward's own copy (the Debian container's real run: "Version … was not found"). Before and after are
 // read as you (dpkg-query); the way back is offered only for versions the repos still have (apt-cache madison, from the
-// steward's own lists). No real sudo, apt or dpkg: stand-ins record every call.
+// steward's own lists), or, first, the steward's own kept copy of the build from before (D88). No real sudo, apt or dpkg:
+// stand-ins record every call.
 // Run: just test
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -14,6 +15,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const H = require('../lib/roothandoff.js');
 const A = require('../lib/providers/apt.js');
+const K = require('../lib/kept.js');
 
 const ROOT = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'steward-roothandoff-')));
 test.after(() => fs.rmSync(ROOT, { recursive: true, force: true }));
@@ -31,9 +33,16 @@ function machine(o = {}) {
   const offered = o.offered || { tzdata: [TZ.want, TZ.have], libc6: [LIBC.want] };
   const state = path.join(ROOT, `state-${Math.random().toString(36).slice(2)}`);
   m.ctx = {
-    now: NOW, platform: 'linux', family: 'debian', cfg: { paths: { state }, policy: { min_release_age_days: 3 } },
-    run: async (cmd, args = []) => {
+    now: NOW, platform: 'linux', family: 'debian', cfg: { paths: { state }, policy: { min_release_age_days: 3, ...(o.policy || {}) } },
+    run: async (cmd, args = [], ro = {}) => {
       m.calls.push([cmd, ...args].join(' '));
+      // apt-get download (o.download): writes name_version_arch.deb into its folder when the repos offer that version
+      if (o.download && cmd === 'apt-get' && args.includes('download')) {
+        const [n, v] = args[args.length - 1].split('=');
+        if (!(offered[n] || []).includes(v)) return { status: 100, stdout: '' };
+        fs.writeFileSync(path.join(ro.cwd, `${n}_${v.replace(/:/g, '%3a')}_arm64.deb`), `${n} ${v}`);
+        return { status: 0, stdout: '' };
+      }
       if (cmd === 'dpkg-query') return { status: 0, stdout: args.slice(2).filter(n => m.installed[n]).map(n => `${n}\t${m.installed[n]}\n`).join('') };
       if (cmd === 'apt-cache' && args.includes('madison')) {
         const n = args[args.length - 1];
@@ -47,7 +56,12 @@ function machine(o = {}) {
   m.spawn = async (cmd, args) => {
     m.sudo.push([cmd, ...args]);
     if (o.fail && args[1] === o.fail) return 100;
-    for (const a of args) { const [n, v] = a.split('='); if (v && !(o.stuck || []).includes(n)) m.installed[n] = v; }
+    for (const a of args) {
+      // a kept .deb by its path (name_version_arch.deb), else name=version
+      const f = a.includes('/') && a.endsWith('.deb') && path.basename(a).split('_');
+      const [n, v] = f ? [f[0], decodeURIComponent(f[1])] : a.split('=');
+      if (v && !(o.stuck || []).includes(n)) m.installed[n] = v;
+    }
     return 0;
   };
   m.print = s => m.printed.push(String(s).replace(/\x1b\[[0-9;]*m/g, ''));
@@ -92,7 +106,7 @@ test('at a terminal: sudo refreshes the system\'s lists, then runs exactly the p
   assert.deepEqual(r.items, [TZ, LIBC]);
   assert.deepEqual(r.after, { tzdata: TZ.want, libc6: LIBC.want });
   assert.deepEqual(r.back.items, [{ name: 'tzdata', to: TZ.have }], 'only what the repos still offer');
-  assert.deepEqual(r.back.none, [{ name: 'libc6', have: LIBC.have, reason: `the archive no longer offers ${LIBC.have}` }]);
+  assert.deepEqual(r.back.none, [{ name: 'libc6', have: LIBC.have, reason: `no kept copy, and the repos no longer offer ${LIBC.have}` }]);
   assert.equal(r.back.command, 'sudo apt-get update && sudo apt-get install --allow-downgrades tzdata=2026e-0+deb13u1');
   assert.ok(typeof r.engine === 'string' && r.engine.length);
 });
@@ -181,7 +195,7 @@ test('rollback at a terminal: asks, then sudo downgrades to what the receipt nam
   assert.equal(m.installed.tzdata, TZ.have);
   const r = read(rp);
   assert.ok(r.rolled_back && r.rolled_back.at, 'recorded');
-  assert.ok(m.printed.some(l => l.includes('libc6') && l.includes('no longer offers')), 'what can\'t go back is said');
+  assert.ok(m.printed.some(l => l.includes('libc6') && l.includes('no longer offer')), 'what can\'t go back is said');
 });
 
 test('rollback without a terminal: handed over, exit 4; run again once you ran it, it checks and records without sudo', async () => {
@@ -214,4 +228,104 @@ test('steward sc rollback <receipt> sends a root-upgrade receipt to the root han
   assert.equal(r.status, 0, out);
   assert.ok(out.includes('sudo apt-get install --allow-downgrades tzdata=0~steward.test1'), out);
   assert.ok(!out.includes('updaters.js'), 'not the declared updaters\' rollback');
+});
+
+// Kept packages (D88; owner, 2026-11-13): the steward keeps its own copy of the builds a root upgrade moves between,
+// so the way back is the exact build from before, even after the repos drop it.
+test('kept packages: before sudo, copies of the builds from before and after are downloaded as you; the way back prefers them', async () => {
+  const m = machine({ download: true });
+  assert.equal(await H.upgrade(m.ctx, A.source, [TZ, LIBC], m.o({ tty: true })), 0, m.printed.join('\n'));
+  const dl = m.calls.filter(c => c.startsWith('apt-get') && c.includes(' download '));
+  assert.ok(dl.every(c => c.includes('Dir::State::Lists=')), 'from the steward\'s own lists, as you');
+  const r = read(path.join(m.ctx.cfg.paths.state, 'backups', m.backups()[0], 'receipt.json'));
+  assert.deepEqual(r.kept, { tzdata: { have: true, want: true }, libc6: { have: false, want: true } }, 'libc6\'s old build had left the repos');
+  const tz = r.back.items.find(i => i.name === 'tzdata');
+  assert.match(tz.file, /kept\/apt\/tzdata\/tzdata_2026e-0\+deb13u1_arm64\.deb$/);
+  assert.match(tz.sha256, /^[0-9a-f]{64}$/);
+  assert.match(r.back.command, /apt-get install --allow-downgrades \/.*tzdata_2026e-0\+deb13u1_arm64\.deb$/);
+  assert.deepEqual(r.back.none.map(n => n.name), ['libc6'], 'the first upgrade has no way back for a build the repos dropped');
+  assert.ok(m.printed.some(l => l.includes('tzdata 2026e-0+deb13u1: from the steward\'s kept copy')), m.printed.join('\n'));
+});
+
+test('kept packages: the next upgrade goes back to the kept build even though the repos dropped it; rollback installs that file', async () => {
+  const U3 = '2.41-12+deb13u3';
+  const offered = { tzdata: [TZ.want, TZ.have], libc6: [LIBC.want] };
+  const m = machine({ download: true, offered });
+  await H.upgrade(m.ctx, A.source, [LIBC], m.o({ tty: true }));
+  offered.libc6 = [U3]; // u2 leaves the repos
+  await H.upgrade(m.ctx, A.source, [{ ...LIBC, have: LIBC.want, want: U3 }], m.o({ tty: true }));
+  const rp = path.join(m.ctx.cfg.paths.state, 'backups', m.backups().sort()[1], 'receipt.json');
+  const r = read(rp);
+  assert.equal(r.outcome, 'done');
+  assert.deepEqual(r.back.items.map(i => [i.name, i.to]), [['libc6', LIBC.want]]);
+  m.sudo.length = 0;
+  assert.equal(await H.rollback(m.ctx, A.source, rp, m.o({ tty: true, ask: async () => true })), 0, m.printed.join('\n'));
+  assert.equal(m.installed.libc6, LIBC.want);
+  assert.match(m.sudo[1].join(' '), /apt-get install --allow-downgrades \/.*libc6_2\.41-12\+deb13u2_arm64\.deb$/);
+});
+
+test('kept packages: a kept file changed since it was downloaded is never handed to sudo', async () => {
+  const m = machine({ download: true });
+  await H.upgrade(m.ctx, A.source, [TZ], m.o({ tty: true }));
+  const rp = path.join(m.ctx.cfg.paths.state, 'backups', m.backups()[0], 'receipt.json');
+  fs.writeFileSync(read(rp).back.items[0].file, 'tampered');
+  m.sudo.length = 0;
+  assert.equal(await H.rollback(m.ctx, A.source, rp, m.o({ tty: true, ask: async () => true })), 0);
+  assert.deepEqual(m.sudo, [], 'nothing installed');
+  assert.ok(m.printed.some(l => l.includes('missing or changed since it was downloaded')), m.printed.join('\n'));
+});
+
+test('kept packages: kept_versions = 0 downloads nothing, and the way back is what the repos offer', async () => {
+  const m = machine({ download: true, policy: { kept_versions: 0 } });
+  await H.upgrade(m.ctx, A.source, [TZ], m.o({ tty: true }));
+  assert.ok(!m.calls.some(c => c.includes(' download ')));
+  const r = read(path.join(m.ctx.cfg.paths.state, 'backups', m.backups()[0], 'receipt.json'));
+  assert.deepEqual(r.back.items, [{ name: 'tzdata', to: TZ.have }]);
+});
+
+test('kept packages: the clean-up keeps the newest kept_versions, the installed build and any the way back names', () => {
+  const state = path.join(ROOT, 'prune');
+  const ctx = { cfg: { paths: { state }, policy: { kept_versions: 1 } } };
+  const src = { id: 'apt' };
+  const dir = path.join(K.root(ctx, src), 'x');
+  fs.mkdirSync(dir, { recursive: true });
+  const idx = { x: {} };
+  ['1', '2', '3', '4'].forEach((v, k) => {
+    const file = path.join(dir, `x_${v}_all.deb`);
+    fs.writeFileSync(file, v);
+    idx.x[v] = { file, sha256: '0', at: `2026-11-0${k + 1}T00:00:00.000Z` };
+  });
+  fs.writeFileSync(path.join(K.root(ctx, src), 'index.json'), JSON.stringify(idx));
+  const gone = K.prune(ctx, src, ['x'], { x: '2' }, new Set([idx.x['3'].file]));
+  assert.deepEqual(gone.map(f => path.basename(f)), ['x_1_all.deb'], 'newest (4), installed (2) and the way back (3) stay');
+  assert.deepEqual(fs.readdirSync(dir).sort(), ['x_2_all.deb', 'x_3_all.deb', 'x_4_all.deb']);
+});
+
+test('kept packages: dnf and zypper install a kept .rpm by its path, else the pinned build', () => {
+  const D = require('../lib/providers/dnf.js'), Z = require('../lib/providers/zypper.js');
+  const items = [{ name: 'a', to: '1.0-1.fc44', file: '/k/a-1.0-1.fc44.x86_64.rpm' }, { name: 'b', to: '2.0-1.fc44' }];
+  assert.deepEqual(D.source.rollbackCmd(items).args.slice(-2), ['/k/a-1.0-1.fc44.x86_64.rpm', 'b-2.0-1.fc44']);
+  assert.deepEqual(Z.source.rollbackCmd(items).args.slice(-2), ['/k/a-1.0-1.fc44.x86_64.rpm', 'b=2.0-1.fc44']);
+  assert.equal(typeof D.source.download, 'function');
+  assert.equal(typeof Z.source.download, 'function');
+});
+
+test('kept packages: dnf5 and zypper download the installed architecture into the given folder, as you', async () => {
+  const D = require('../lib/providers/dnf.js'), Z = require('../lib/providers/zypper.js');
+  const dest = fs.mkdtempSync(path.join(ROOT, 'dl-'));
+  const calls = [];
+  const ctx = { cfg: { paths: { state: path.join(ROOT, 'dl-state') } }, run: async (cmd, args) => {
+    calls.push([cmd, ...args]);
+    if (cmd === 'rpm') return { status: 0, stdout: 'x86_64\n' };
+    const d = (args.find(a => /^--(destdir|pkg-cache-dir)=/.test(a)) || '').split('=')[1];
+    fs.mkdirSync(path.join(d, 'repo-oss', 'x86_64'), { recursive: true });
+    fs.writeFileSync(path.join(d, 'repo-oss', 'x86_64', 'curl-8.1-1.1.x86_64.rpm'), 'rpm');
+    return { status: 0, stdout: '' };
+  } };
+  assert.match(await D.source.download(ctx, 'curl', '8.1-1.1', dest), /curl-8\.1-1\.1\.x86_64\.rpm$/);
+  assert.ok(calls.some(c => c[0] === 'dnf5' && c.includes('download') && c.includes('curl-8.1-1.1.x86_64') && c.includes(`--destdir=${dest}`)));
+  const dest2 = fs.mkdtempSync(path.join(ROOT, 'dl-'));
+  assert.match(await Z.source.download(ctx, 'curl', '8.1-1.1', dest2), /curl-8\.1-1\.1\.x86_64\.rpm$/);
+  assert.ok(calls.some(c => c[0] === 'zypper' && c.includes('download') && c.includes('curl.x86_64=8.1-1.1') && c.includes(`--pkg-cache-dir=${dest2}`)));
+  assert.ok(!calls.some(c => c[0] === 'sudo'));
 });

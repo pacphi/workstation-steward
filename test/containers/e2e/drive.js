@@ -5,7 +5,7 @@
 //   1. `sc plan`: every apt line's age and source checked against snapshot.debian.org or Launchpad, asked here directly;
 //      a version neither knows must be "first seen here"; takes are past the gate, holds aren't (security pockets: at once)
 //   2. `sc upgrade` at a terminal (a pty, `script -qec`): the taken versions are installed, the receipt says done
-//   3. `sc rollback <receipt>`: the versions from before are back
+//   3. `sc rollback <receipt>`: the versions from before are back, from the steward's kept copies (D88)
 //   4. `sc upgrade` with no terminal: handed over (exit 4, the receipt waiting on you); the handed-over line run as the
 //      user would; `sc upgrade --resume` finishes it (done)
 //   5. `sc audit`'s OS updates (parity 1e): the restart apt.sh left is an action; the end of free support matches the
@@ -94,6 +94,15 @@ async function published(distro, name, want, release) {
 }
 
 const installed = name => spawnSync('dpkg-query', ['-W', '-f', '${Version}', name], { encoding: 'utf8' }).stdout.trim();
+// keptChecks(r1, takes) — kept packages (D88): before sudo, the steward downloaded, as you, both builds of each taken
+// package (the seeded one is still offered), and the way back installs the kept copy by its path
+function keptChecks(r1, takes) {
+  const kept = (r1 && r1.r.kept) || {};
+  check(takes.every(t => kept[t.name] && kept[t.name].have && kept[t.name].want), `kept copies of both builds: ${takes.map(t => `${t.name} ${JSON.stringify(kept[t.name] || null)}`).join(', ')}`);
+  const files = ((r1 && r1.r.back && r1.r.back.items) || []).filter(i => i.file && fs.existsSync(i.file));
+  check(takes.every(t => files.some(i => i.name === t.name && i.to === t.have)), `the way back is the kept file for each (${files.map(i => path.basename(i.file)).join(', ') || 'none'})`);
+}
+
 function receipts() {
   const out = [];
   const walk = d => { let es; try { es = fs.readdirSync(d, { withFileTypes: true }); } catch { return; } for (const e of es) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else if (e.name === 'receipt.json') out.push(p); } };
@@ -141,6 +150,7 @@ async function apt(distro) {
   check(after.every(t => t.now === t.want), `installed: ${after.map(t => `${t.name} ${t.now}`).join(', ')}`);
   const r1 = receipts().pop();
   check(Boolean(r1 && r1.r.outcome === 'done'), `the receipt says done (${r1 ? `${r1.r.outcome}, ${r1.p}` : 'none'})`);
+  keptChecks(r1, takes);
 
   // 3. the way back
   if (r1) {
@@ -242,6 +252,7 @@ async function dnf() {
   check(after.every(t => t.now === t.want), `installed: ${after.map(t => `${t.name} ${t.now}`).join(', ')}`);
   const r1 = receipts().pop();
   check(Boolean(r1 && r1.r.outcome === 'done'), `the receipt says done (${r1 ? `${r1.r.outcome}, ${r1.p}` : 'none'})`);
+  keptChecks(r1, takes);
   const backFor = r1 ? (r1.r.back || { items: [] }).items.map(i => i.name) : [];
   check(takes.every(t => backFor.includes(t.name)), `the way back names each seeded package, whose release build is still offered (${backFor.join(', ') || 'none'})`);
 
@@ -333,6 +344,7 @@ async function zypper() {
   check(after.every(t => t.now === t.want), `installed: ${after.map(t => `${t.name} ${t.now}`).join(', ')}`);
   const r1 = receipts().pop();
   check(Boolean(r1 && r1.r.outcome === 'done'), `the receipt says done (${r1 ? `${r1.r.outcome}, ${r1.p}` : 'none'})`);
+  keptChecks(r1, takes);
   const backFor = r1 ? (r1.r.back || { items: [] }).items.map(i => i.name) : [];
   check(takes.every(t => backFor.includes(t.name)), `the way back names each seeded package, whose older edition is still offered (${backFor.join(', ') || 'none'})`);
 
