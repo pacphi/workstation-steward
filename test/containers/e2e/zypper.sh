@@ -62,6 +62,7 @@ done
 say "seeded: $(cut -f1,2 /work/seeded.txt | tr '\t\n' ' ,')"
 
 say 'the user phase, as steward'
-exec su steward -s /bin/bash -c "export HOME=/work/home PATH=/opt/mise/shims:/usr/local/bin:/usr/bin:/bin STEWARD_INSTANCE=/work/src/examples \
+# openSUSE's su sets XDG_STATE_HOME and the like to the account's own home; the run keeps everything under /work/home
+exec su steward -s /bin/bash -c "unset XDG_STATE_HOME XDG_CONFIG_HOME XDG_CACHE_HOME XDG_DATA_HOME; export HOME=/work/home PATH=/opt/mise/shims:/usr/local/bin:/usr/bin:/bin STEWARD_INSTANCE=/work/src/examples \
   MISE_DATA_DIR=/opt/mise MISE_GLOBAL_CONFIG_FILE=/opt/mise/config.toml MISE_CACHE_DIR=/tmp/mise-cache MISE_STATE_DIR=/tmp/mise-state MISE_OFFLINE=1 \
   NO_PROGRESS=1 NO_COLOR=1; cd /work/src && node test/containers/e2e/drive.js zypper leap"

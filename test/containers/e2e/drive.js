@@ -97,7 +97,9 @@ const installed = name => spawnSync('dpkg-query', ['-W', '-f', '${Version}', nam
 function receipts() {
   const out = [];
   const walk = d => { let es; try { es = fs.readdirSync(d, { withFileTypes: true }); } catch { return; } for (const e of es) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else if (e.name === 'receipt.json') out.push(p); } };
-  walk(path.join(process.env.HOME, '.local', 'state'));
+  // the steward writes under XDG_STATE_HOME when it is set: openSUSE's su sets it (/home/<user>/.local/state; zypper 1c's
+  // first run, 2026-11-13), Debian's and Fedora's don't
+  walk(process.env.XDG_STATE_HOME || path.join(process.env.HOME, '.local', 'state'));
   return out.map(p => { try { return { p, r: JSON.parse(fs.readFileSync(p, 'utf8')) }; } catch { return null; } }).filter(x => x && x.r.kind === 'root-upgrade').sort((a, b) => a.p.localeCompare(b.p));
 }
 
@@ -279,7 +281,9 @@ const zq = (...args) => {
 // patchIssued(xml, id) — the issued time zypper itself shows for patch id in `zypper --xmlout list-patches --all`, as ISO,
 // whatever its attribute or element is called (epoch seconds or a date and time); null when it shows none
 function patchIssued(xml, id) {
-  const m = String(xml).match(new RegExp(`<update\\s[^>]*name="${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[\\s\\S]*?(?:</update>|/>)`));
+  // the patch's own element, to its </update>: <license/> and <source …/> come before <issue-date time_t=… text=…/> (zypper
+  // 1c's first run, 2026-11-13), so the first "/>" is not its end; a self-closing <update …/> has no date
+  const m = String(xml).match(new RegExp(`<update\\s[^>]*name="${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*?(?:/>|>[\\s\\S]*?</update>)`));
   if (!m) return null;
   const d = m[0].match(/issue[-_]?(?:date|time)?[^0-9]{0,12}(\d{9,11}|\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?)/i);
   if (!d) return null;

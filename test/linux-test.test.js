@@ -157,10 +157,13 @@ test('e2eArgs: network on, writable, started as root (for sudo and the seed), th
 
 test('drive: patchIssued finds the issued time zypper shows for a patch, in epoch seconds or a date; none is null (zypper 1c)', () => {
   const D = require('./containers/e2e/drive.js');
-  const xml = '<update-list><update name="openSUSE-Leap-16.0-2026-7" edition="1" kind="patch" category="recommended" issue-date="1793750400"/>' +
-    '<update name="openSUSE-Leap-16.0-2026-9" kind="patch"><issue-date time="2026-11-05 10:00:00"/></update><update name="x" kind="patch"/></update-list>';
-  assert.equal(D.patchIssued(xml, 'openSUSE-Leap-16.0-2026-7'), '2026-11-04T00:00:00.000Z');
-  assert.equal(D.patchIssued(xml, 'openSUSE-Leap-16.0-2026-9'), '2026-11-05T10:00:00.000Z');
+  // as zypper 1.14 on Leap 16.0 writes it (2026-11-13): <license/> and <source/> come before the date
+  const xml = '<update-list><update kind="patch" name="openSUSE-Leap-16.0-2045" edition="1" arch="noarch" status="needed" category="security" severity="important">' +
+    '<summary>Security update for pcre2</summary><description>…</description><license/><source url="http://download.opensuse.org/update/leap/16.0/oss" alias="openSUSE:repo-oss"/>' +
+    '<issue-date time_t="1793812179" text="2026-11-04T17:09:39Z"/></update>' +
+    '<update name="openSUSE-Leap-16.0-9" kind="patch"><license/><issue-date text="2026-11-05 10:00:00"/></update><update name="x" kind="patch"/></update-list>';
+  assert.equal(D.patchIssued(xml, 'openSUSE-Leap-16.0-2045'), '2026-11-04T17:09:39.000Z');
+  assert.equal(D.patchIssued(xml, 'openSUSE-Leap-16.0-9'), '2026-11-05T10:00:00.000Z');
   assert.equal(D.patchIssued(xml, 'x'), null);
   assert.equal(D.patchIssued(xml, 'missing'), null);
   assert.equal(D.planLines('take   libpcre2-8-0 10.45-160000.4.1 -> 10.45-160000.5.1 (security patch: openSUSE-Leap-16.0-2026-12)')[0].pocket, 'openSUSE-Leap-16.0-2026-12');
