@@ -263,7 +263,7 @@ test('zypper rollback with nothing left to go back to: said, never a guess', asy
   assert.equal(await H.upgrade(m.c, Z.source, items, m.o({ tty: true })), 0);
   const rp = path.join(m.c.cfg.paths.state, 'backups', fs.readdirSync(path.join(m.c.cfg.paths.state, 'backups'))[0], 'receipt.json');
   assert.deepEqual(JSON.parse(fs.readFileSync(rp, 'utf8')).back.items, []);
-  assert.ok(m.printed.some(l => l === '   no way back for timezone: the archive no longer offers 2026a-160000.1.1'), m.printed.join('\n'));
+  assert.ok(m.printed.some(l => l === '   no way back for timezone: no kept copy, and the repos no longer offer 2026a-160000.1.1'), m.printed.join('\n'));
 });
 
 test('zypper without a terminal: the exact lines are handed over and the receipt waits; nothing runs through sudo', async () => {

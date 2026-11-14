@@ -262,7 +262,7 @@ test('dnf upgrade at a terminal: one sudo line, refreshed and pinned; the receip
   assert.deepEqual(r.before, { tzdata: '2026c-1.fc44', 'openssl-libs': '1:3.5.4-2.fc44' });
   assert.deepEqual(r.back.items, [], 'neither build from before is still offered: the updates repo keeps only its newest');
   assert.deepEqual(r.back.none.map(n => n.name), ['tzdata', 'openssl-libs']);
-  assert.ok(m.printed.some(l => l === '   no way back for tzdata: the archive no longer offers 2026c-1.fc44'), m.printed.join('\n'));
+  assert.ok(m.printed.some(l => l === '   no way back for tzdata: no kept copy, and the repos no longer offer 2026c-1.fc44'), m.printed.join('\n'));
 });
 
 test('dnf rollback: a build from before that the repos still offer is put back with dnf5 downgrade, pinned', async () => {

@@ -20,15 +20,15 @@ const T0 = Date.now();
 const elapsed = () => { const s = Math.floor((Date.now() - T0) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 let onLabel = null; // where a command's label goes while it runs: the live step's detail on a terminal, else stderr
 
-// run(cmd, args, {label, stderr}) — Promise {status, stdout}: a command's result, never thrown; stderr: true folds
-// the command's stderr into stdout (softwareupdate writes there)
+// run(cmd, args, {label, stderr, cwd}) — Promise {status, stdout}: a command's result, never thrown; stderr: true folds
+// the command's stderr into stdout (softwareupdate writes there); cwd: the folder it runs in (apt-get download writes there)
 function run(cmd, args = [], o = {}) {
   const t = Date.now();
   if (o.label) { if (onLabel) onLabel(o.label); else process.stderr.write(`   … ${o.label}\n`); }
   return new Promise(resolve => {
     let stdout = '', stderr = '';
     let p;
-    try { p = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] }); } catch { resolve({ status: 127, stdout: '' }); return; }
+    try { p = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], ...(o.cwd ? { cwd: o.cwd } : {}) }); } catch { resolve({ status: 127, stdout: '' }); return; }
     p.stdout.setEncoding('utf8').on('data', d => { stdout += d; });
     p.stderr.setEncoding('utf8').on('data', d => { stderr += d; });
     p.on('error', () => resolve({ status: 127, stdout: '' }));

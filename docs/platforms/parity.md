@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 22](https://img.shields.io/badge/Revision-26-green) ![Revised 2026-11-12](https://img.shields.io/badge/Revised-2026--11--12-green)
+![Revision 22](https://img.shields.io/badge/Revision-27-green) ![Revised 2026-11-13](https://img.shields.io/badge/Revised-2026--11--13-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -107,6 +107,23 @@ A box is ticked only when its check ran and passed. Something left undone stays 
 - [x] **D-g. mise on NixOS comes from nixpkgs, with `nix-ld`** (owner, 2026-10-31). `nix-ld` lets the prebuilt tools
   mise downloads run, so every mise capability works as it does elsewhere. Turning `nix-ld` on is a change to the
   host's config, made as a PR to the repo it lives in. The first NixOS PR checks the facts behind this first.
+- [x] **D-h. Kept packages: the way back is our own copy** (owner, 2026-11-13; D88). Before a root upgrade, the
+  steward downloads, as you, the build each package moves from (while the repos still offer it) and the one it moves
+  to, into `<state>/kept/<source>/`, with each file's SHA-256. The way back installs that copy (its hash checked again
+  just before `sudo`), else the build the repos still offer, else says there is none. So after the first upgrade every
+  package has a way back to the exact build, even once the repos drop it, which Fedora's updates repo does at once.
+  Per package, `[policy] kept_versions` copies (default 2) and the installed build are kept; older ones are deleted.
+  It is the default on every distribution, and reused by the ones still to come:
+
+  | Where the repos keep only the newest build | How it applies |
+  | --- | --- |
+  | Fedora (dnf) | the biggest gain: the way back is the exact build from before, not the release's own |
+  | Debian, Ubuntu, Mint, Leap | a safety net for a build the archive drops |
+  | Tumbleweed on ARM | no snapshot archive exists (x86_64 only), so it applies a snapshot once it has been the live one for the gate's days, and goes back from kept copies (owner, 2026-11-13) |
+  | Arch | x86_64 has a dated archive (snapshot mode); pacman keeps its own cache too; ARM would work as Tumbleweed's |
+  | Void, Alpine edge, Slackware -current | the same as Tumbleweed on ARM, checked in each one's step 0 |
+  | NixOS | not needed: every earlier system stays selectable |
+
 - [x] **R-1. No release until apt, dnf and zypper reach full parity** (owner, 2026-11-01); see
   [the bar](#the-linux-release-the-bar). They are built first, ahead of Flatpak, Snap, pacman and apk.
 - [x] **R-2. Install checks before the release run in worktree mode from a commit** (owner, 2026-11-01); npm mode runs
@@ -561,7 +578,7 @@ XDG folders, and the test follows `XDG_STATE_HOME`), and zypper writes `<license
 | --- | --- | --- | --- | --- |
 | ✅ apt | Debian, Ubuntu, Linux Mint, LMDE (the Linux release) | per package | Done: 1a read-only (#101, D75); 1b the upgrade with the sudo hand-off (#102, D76); 1c the rows, CI and the real-repo run (#103, D77); 1d its install-check row (#107, D78); 1e OS updates, read-only (#108, D79). npm mode on Linux waits for the release (R-2) | #101, #102, #103, #107, #108 |
 | ✅ dnf | Fedora (the Linux release) | per package | Done: step 0 (2026-11-11); 1a read-only (#112, D81); 1b the upgrade with the sudo hand-off (#113, D82); 1c the real-repo run, both Fedora rows passing (D83, #114); 1d the install-check rows, passing (run 43141398561); 1e OS updates, read-only (#115, D84). npm mode on Linux waits for the release (R-2) | #112, #113, #114, #115 |
-| 🟨 zypper | openSUSE Leap, Tumbleweed (the Linux release) | Leap per package (D-a); Tumbleweed dated snapshot (owner, 2026-11-13) | Under way: step 0 (2026-11-12); 1a read-only on Leap (#117, D85); 1b the upgrade with the sudo hand-off (#118, D86); 1c the real-repo run on Leap 16.0, passing (D87); Tumbleweed in snapshot mode (owner, 2026-11-13) | #117, #118 |
+| 🟨 zypper | openSUSE Leap, Tumbleweed (the Linux release) | Leap per package (D-a); Tumbleweed dated snapshot (owner, 2026-11-13) | Under way: step 0 (2026-11-12); 1a read-only on Leap (#117, D85); 1b the upgrade with the sudo hand-off (#118, D86); 1c the real-repo run on Leap 16.0, passing (#119, D87); kept packages for the way back (D88); Tumbleweed in snapshot mode on x86_64, and on ARM by waiting with kept packages (owner, 2026-11-13) | #117, #118, #119 |
 | ⬜ Flatpak | any | per package | Not started | |
 | ⬜ Snap | Ubuntu and others | per package | Not started | |
 | ⬜ pacman | Arch | dated snapshot | Not started | |
@@ -666,7 +683,8 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-13 | 26 | zypper 1c: `--e2e` for Leap against openSUSE's real repos; 28 of 28 (D87) | |
+| 2026-11-13 | 27 | D-h: kept packages, the way back to the exact build on every distribution (D88); Tumbleweed on ARM waits until a snapshot has been live for the gate's days (owner) | |
+| 2026-11-13 | 26 | zypper 1c: `--e2e` for Leap against openSUSE's real repos; 28 of 28 (D87) | #119 |
 | 2026-11-13 | 25 | zypper 1b: the Leap upgrade through the sudo hand-off, pinned; the way back with `--oldpackage`, by apt's rule (D86); Tumbleweed goes by snapshot (owner) | #118 |
 | 2026-11-13 | 24 | dnf done; zypper step 0 (Leap's patch dates, Tumbleweed's snapshots, the way back, the restart, Leap 16.1) and 1a: the zypper source, read-only, on Leap (D85) | #117 |
 | 2026-11-12 | 23 | dnf 1d: the install check passes on both Fedora rows; dnf 1e: the OS updates section on Fedora (needs-restarting, Bodhi's releases), read-only (D84) | |
