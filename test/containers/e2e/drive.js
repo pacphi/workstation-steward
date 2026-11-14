@@ -94,9 +94,9 @@ async function published(distro, name, want, release) {
 }
 
 const installed = name => spawnSync('dpkg-query', ['-W', '-f', '${Version}', name], { encoding: 'utf8' }).stdout.trim();
-// keptChecks(r1, takes) — kept packages (D88): before sudo, the steward downloaded, as you, both builds of each taken
+// keptChecks(check, r1, takes) — kept packages (D88): before sudo, the steward downloaded, as you, both builds of each taken
 // package (the seeded one is still offered), and the way back installs the kept copy by its path
-function keptChecks(r1, takes) {
+function keptChecks(check, r1, takes) {
   const kept = (r1 && r1.r.kept) || {};
   check(takes.every(t => kept[t.name] && kept[t.name].have && kept[t.name].want), `kept copies of both builds: ${takes.map(t => `${t.name} ${JSON.stringify(kept[t.name] || null)}`).join(', ')}`);
   const files = ((r1 && r1.r.back && r1.r.back.items) || []).filter(i => i.file && fs.existsSync(i.file));
@@ -150,7 +150,7 @@ async function apt(distro) {
   check(after.every(t => t.now === t.want), `installed: ${after.map(t => `${t.name} ${t.now}`).join(', ')}`);
   const r1 = receipts().pop();
   check(Boolean(r1 && r1.r.outcome === 'done'), `the receipt says done (${r1 ? `${r1.r.outcome}, ${r1.p}` : 'none'})`);
-  keptChecks(r1, takes);
+  keptChecks(check, r1, takes);
 
   // 3. the way back
   if (r1) {
@@ -252,7 +252,7 @@ async function dnf() {
   check(after.every(t => t.now === t.want), `installed: ${after.map(t => `${t.name} ${t.now}`).join(', ')}`);
   const r1 = receipts().pop();
   check(Boolean(r1 && r1.r.outcome === 'done'), `the receipt says done (${r1 ? `${r1.r.outcome}, ${r1.p}` : 'none'})`);
-  keptChecks(r1, takes);
+  keptChecks(check, r1, takes);
   const backFor = r1 ? (r1.r.back || { items: [] }).items.map(i => i.name) : [];
   check(takes.every(t => backFor.includes(t.name)), `the way back names each seeded package, whose release build is still offered (${backFor.join(', ') || 'none'})`);
 
@@ -344,7 +344,7 @@ async function zypper() {
   check(after.every(t => t.now === t.want), `installed: ${after.map(t => `${t.name} ${t.now}`).join(', ')}`);
   const r1 = receipts().pop();
   check(Boolean(r1 && r1.r.outcome === 'done'), `the receipt says done (${r1 ? `${r1.r.outcome}, ${r1.p}` : 'none'})`);
-  keptChecks(r1, takes);
+  keptChecks(check, r1, takes);
   const backFor = r1 ? (r1.r.back || { items: [] }).items.map(i => i.name) : [];
   check(takes.every(t => backFor.includes(t.name)), `the way back names each seeded package, whose older edition is still offered (${backFor.join(', ') || 'none'})`);
 
