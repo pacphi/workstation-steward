@@ -160,7 +160,7 @@ test('install-hybrids at a terminal: the plan (each hybrid, its scripts, the Ruf
   assert.match(no.stdout, /nothing changed/);
   assert.equal(fs.existsSync(path.join(ROOT, 'stub-calls')), false, 'a no installs nothing');
   run('y\n');
-  assert.match(fs.readFileSync(path.join(ROOT, 'stub-calls'), 'utf8'), /npm install -g --allow-scripts=ruflo,better-sqlite3 ruflo@3\.63\.9/, 'a yes installs (the stand-in)');
+  assert.match(fs.readFileSync(path.join(ROOT, 'stub-calls'), 'utf8'), /npm install -g --before=\S+ --allow-scripts=ruflo,better-sqlite3 ruflo@3\.63\.9/, 'a yes installs (the stand-in)');
   fs.rmSync(path.join(ROOT, 'stub-calls'));
 });
 
