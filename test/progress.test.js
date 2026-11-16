@@ -95,8 +95,8 @@ test('install_hybrids on a terminal: a timer while it finds the Ruflo policy fol
   assert.equal(dry.status, 0, dry.out);
   assert.match(dry.out, /✓ finding Ruflo policy folders \(\d+s\)/);
   assert.match(dry.out, /Ruflo policy backup: 1 folder\(s\)/);
-  assert.match(dry.out, /\$ npm install -g --allow-scripts=fake-cli,better-sqlite3 fake-cli@1\.2\.3/);
-  assert.equal(s.npmRuns().length, 0, 'DRY_RUN=1: npm never ran');
+  assert.match(dry.out, /\$ npm install -g --before=\d{4}-\d\d-\d\dT[\d:.]+Z --allow-scripts=fake-cli,better-sqlite3 fake-cli@1\.2\.3/);
+  assert.equal(s.npmRuns().length, 0, 'DRY_RUN=1: npm never ran, not even to read the publish time');
   assert.equal(fs.existsSync(path.join(s.box, 'state')), false, 'DRY_RUN=1: no backup, no receipt');
 
   const real = onTTY('install_hybrids', s.env);
@@ -104,7 +104,13 @@ test('install_hybrids on a terminal: a timer while it finds the Ruflo policy fol
   assert.match(real.out, /… npm install … fake-cli@1\.2\.3 [1-9]s/);
   assert.match(real.out, /npm warn deprecated old-dep/);
   assert.match(real.out, /backed up 1 folder\(s\)/);
-  assert.deepEqual(s.npmRuns(), ['install -g --allow-scripts=fake-cli,better-sqlite3 fake-cli@1.2.3']);
+  const runs = s.npmRuns();
+  assert.deepEqual(runs[0], 'view fake-cli time --json', 'the pinned version\'s publish time, for the cutoff');
+  assert.equal(runs.length, 2, runs.join('\n'));
+  // the stand-in's answer isn't JSON, so the cutoff is now minus the gate's days (3 here)
+  const m = runs[1].match(/^install -g --before=(\S+) --allow-scripts=fake-cli,better-sqlite3 fake-cli@1\.2\.3$/);
+  assert.ok(m, runs[1]);
+  assert.ok(Math.abs(Date.parse(m[1]) - (Date.now() - 3 * 864e5)) < 120e3, `cutoff ${m[1]}: about 3 days ago`);
   assert.ok(fs.existsSync(path.join(s.box, 'state', 'hybrids', 'fake-cli.json')), 'the receipt');
 });
 

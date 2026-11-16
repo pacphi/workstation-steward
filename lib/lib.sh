@@ -232,7 +232,7 @@ hybrids_plan() {
 }
 
 install_hybrids() {
-  local n i name version source scripts spec backup prev
+  local n i name version source scripts spec backup prev before
   n="$(hybrids_json | yq '. | length')"
   for ((i = 0; i < n; i++)); do
     name="$(hybrids_json | yq -r ".[$i].name")"
@@ -245,12 +245,19 @@ install_hybrids() {
       prev="$(hybrid_receipt "${name}" | yq -p json -r '.version // ""')"
       [[ "${prev}" == "${version}" ]] || { log "${name}: last receipt ${prev:-none} → ${version}"; backup_ruflo_policy; }
     fi
+    # Every dependency it resolves waits out the gate too (npm --before, D89): the cutoff is now minus the gate's
+    # days, or just after the pinned version's own publish time when that is newer (a security exception).
+    if [[ "${source}" == "registry" ]]; then
+      before="$(node "${REPO_ROOT}/lib/npmbefore.js" "${STEWARD_POLICY_MIN_RELEASE_AGE_DAYS:-3}" "${name}" "${version}")"
+    else
+      before="$(node "${REPO_ROOT}/lib/npmbefore.js" "${STEWARD_POLICY_MIN_RELEASE_AGE_DAYS:-3}")"
+    fi
     # Install each hybrid on its own: a shared npm transaction dedupes optional deps across them
     # (seen 2026-10-21 with ruflo + agentdb) and changes which copies resolve.
     if [[ -n "${scripts}" ]]; then
-      run_shown npm install -g --allow-scripts="${scripts}" "${spec}"
+      run_shown npm install -g --before="${before}" --allow-scripts="${scripts}" "${spec}"
     else
-      run_shown npm install -g "${spec}"
+      run_shown npm install -g --before="${before}" "${spec}"
     fi
     [[ "${DRY_RUN}" == "1" ]] || write_hybrid_receipt "${name}" "${version}" "${scripts}"
   done

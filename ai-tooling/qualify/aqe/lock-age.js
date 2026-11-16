@@ -5,6 +5,7 @@
 // exits 1 when any is younger or its time can't be read.
 const fs = require('fs');
 const { execFileSync } = require('child_process');
+const { times: T } = require('../../../lib/npmbefore.js');
 const [stage, days, current] = process.argv.slice(2);
 const entries = f => Object.entries(JSON.parse(fs.readFileSync(f, 'utf8')).packages || {})
   .filter(([k, v]) => k && v.version && !v.link && !(v.resolved || '').startsWith('file:'))
@@ -16,7 +17,8 @@ const out = { days: Number(days), newSinceCurrent: fresh.length, under: [], unkn
 const times = {};
 for (const e of fresh) {
   const at = e.lastIndexOf('@'), name = e.slice(0, at), version = e.slice(at + 1);
-  try { times[name] = times[name] || JSON.parse(execFileSync('npm', ['view', name, 'time', '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })); } catch { times[name] = {}; }
+  // npm 12 answers with a one-element array holding the object; older npm with the object (lib/npmbefore.js)
+  try { times[name] = times[name] || T(execFileSync('npm', ['view', name, 'time', '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })); } catch { times[name] = {}; }
   const t = times[name][version];
   if (!t) out.unknown.push(e); else if (Date.parse(t) > cutoff) out.under.push(`${e} ${t}`); else out.ok.push(`${e} ${t.slice(0, 10)}`);
 }

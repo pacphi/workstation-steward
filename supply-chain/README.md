@@ -212,6 +212,11 @@ which IOCs it couldn't fully check. An IOC must list at least one marker that ca
    instead, because the hybrids have to be reinstalled.
 3. If anything fails: `steward sc rollback`.
 
+**Hybrids and the gate (D89).** Each hybrid in `hybrids.toml` is pinned to a version past the release-age gate, and
+`steward sc install-hybrids` (also `node-patch`) passes npm `--before=<cutoff>` so every dependency it resolves is past
+the gate too: the cutoff is now minus `min_release_age_days`, or just after the pinned version's own publish time when a
+security exception pins a newer one.
+
 ## Known exceptions
 
 - **Hybrids (`hybrids.toml`):**
