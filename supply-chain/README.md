@@ -143,8 +143,9 @@ is never more than half an hour early), else by the first time this machine saw 
 and names it. Each update past the gate is installed pinned to that edition (`sudo zypper --non-interactive refresh`,
 then `sudo zypper --non-interactive install --no-recommends <package>=<edition>`, D86), and `steward sc rollback
 <receipt>` puts back the editions from before with `--oldpackage`, from the steward's kept copy or while the repos still
-offer them. Tumbleweed is shown as not checked until its snapshot mode lands: it will move whole to the newest snapshot
-past the gate.
+offer them. Tumbleweed on x86_64 is gated as a whole (D90): it moves to the newest snapshot in openSUSE's archive whose folder was
+published at least the gate's days ago, in one root chain (`zypper dup --from snap-<date> --allow-downgrade`), and the
+way back is the snapshot from before while the archive still lists it. On ARM it is shown as not checked for now.
 
 ### Kept packages (apt, dnf, zypper)
 
