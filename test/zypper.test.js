@@ -176,13 +176,11 @@ test('judge: a security patch is taken at once and named; any other waits out th
   assert.equal((await P.judge(c, Z.source, items[2])).verdict, 'hold', 'less: 1 day old');
 });
 
-test('Tumbleweed: nothing read, and the section says it is not checked, never up to date', async () => {
+test('Tumbleweed: zypper reads nothing and says nothing; its own source (snapshot mode) does', async () => {
   const c = ctx({ id: 'opensuse-tumbleweed' });
   assert.deepEqual(await Z.source.outdated(c), []);
   assert.ok(!c.calls.some(k => k.includes('list-updates')));
-  const m = await Z.source.manual(c);
-  assert.equal(m.length, 1);
-  assert.match(m[0], /^Tumbleweed: not checked/);
+  assert.deepEqual(await Z.source.manual(c), []);
   assert.deepEqual(await Z.source.manual(ctx()), [], 'Leap has no such line');
 });
 

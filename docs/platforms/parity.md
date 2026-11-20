@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 22](https://img.shields.io/badge/Revision-27-green) ![Revised 2026-11-13](https://img.shields.io/badge/Revised-2026--11--13-green)
+![Revision 22](https://img.shields.io/badge/Revision-28-green) ![Revised 2026-11-20](https://img.shields.io/badge/Revised-2026--11--20-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -556,8 +556,14 @@ package pinned to the edition the plan judged (`sudo zypper --non-interactive in
 <name>=<edition>`). What is installed is read before and after from `rpm`, as you. **The way back** follows apt's rule
 (owner, 2026-11-11, for dnf): `zypper install --oldpackage <name>=<edition from before>`, only when the repos still
 offer it (`zypper search --details --match-exact`, from the steward's own cache). Leap's update repo keeps older builds,
-so the way back is usually there (step 0 put back the exact build). Tumbleweed still reads nothing until its snapshot
-mode (the owner's choice A, 2026-11-13).
+so the way back is usually there (step 0 put back the exact build). Tumbleweed has its own source, in snapshot mode
+(D90): see below.
+
+**Tumbleweed snapshot mode (x86_64, D90):** one item, from os-release's `VERSION_ID` to the newest archive snapshot whose
+folder was published at least the gate's days ago (the folder's time, not its name: 1 to 2.5 days later). It moves as
+root through one chain (`modifyrepo --disable --all`, `addrepo snap-<date>`, `refresh`, `dup --from snap-<date>
+--allow-downgrade`); the way back is the same chain with the date from before, while the archive lists it. ARM has no
+archive and is a later step (wait the gate's days, apply, keep packages as the way back).
 
 **zypper's real-repo run (1c, D87):** `just linux-test leap-16.0 --e2e` now runs for the suse family, as apt's and dnf's
 do (D77, D83). Its root phase (`test/containers/e2e/zypper.sh`) gives the steward user `sudo` for `zypper` only, prints
@@ -683,6 +689,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-20 | 28 | zypper: Tumbleweed snapshot mode on x86_64 (D90): the whole system moves to the newest archived snapshot past the gate, dated by its folder's publish time; the way back is the snapshot before. ARM and the real-repo run are next | |
 | 2026-11-13 | 27 | D-h: kept packages, the way back to the exact build on every distribution (D88); Tumbleweed on ARM waits until a snapshot has been live for the gate's days (owner) | |
 | 2026-11-13 | 26 | zypper 1c: `--e2e` for Leap against openSUSE's real repos; 28 of 28 (D87) | #119 |
 | 2026-11-13 | 25 | zypper 1b: the Leap upgrade through the sudo hand-off, pinned; the way back with `--oldpackage`, by apt's rule (D86); Tumbleweed goes by snapshot (owner) | #118 |

@@ -16,6 +16,7 @@ const P = require('../../lib/providers/index.js');
 const apt = require('../../lib/providers/apt.js');
 const dnf = require('../../lib/providers/dnf.js');
 const zypper = require('../../lib/providers/zypper.js');
+const tumbleweed = require('../../lib/providers/tumbleweed.js');
 const OSU = require('../../lib/osupdates.js');
 const U = require('../../lib/updaters.js');
 const V = require('../../lib/vulns.js');
@@ -247,6 +248,11 @@ const CHECKS = [
     id: 'zypper', name: 'zypper packages', platforms: ['linux'], families: ['suse'], provider: zypper.source,
     title: ctx => `zypper packages (dated by their patch's issued time, else first seen here; eligible = at least ${minAge(ctx)}d, or a security patch)`,
     run: packages('zypper'),
+  },
+  {
+    id: 'tumbleweed', name: 'Tumbleweed snapshot', platforms: ['linux'], families: ['suse'], provider: tumbleweed.source,
+    title: ctx => `Tumbleweed snapshot (gated as a whole: eligible = its archive folder published at least ${minAge(ctx)}d ago)`,
+    run: packages('tumbleweed'),
   },
   {
     // Linux's OS updates (parity 1e, D79): a restart, a newer release (a note: a major), the end of free security
