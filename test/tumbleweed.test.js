@@ -162,3 +162,12 @@ test('no way back once the archive has dropped the snapshot from before: said, n
   assert.equal(await H.upgrade(m.c, T.source, items, m.o({ tty: true })), 0);
   assert.ok(m.printed.some(l => l.includes('no way back for tumbleweed: no kept copy, and the repos no longer offer 20261112')), m.printed.join('\n'));
 });
+
+// The real layout (saved from download.opensuse.org/history/?jsontable on 2026-11-20): one line, no newline, escaped
+// slashes in the folder names, sorted by name, and three plain files (disk, latest, list) beside the folders
+test('parseTable on the real file layout: folders by name with their mtime; disk, latest and list are not snapshots', () => {
+  const real = '{"data":[{"mtime":1794956401,"name":"20261116\\/","size":95},{"mtime":1795060800,"name":"20261117\\/","size":95},{"mtime":1795129200,"name":"20261118\\/","size":95},{"mtime":1795104179,"name":"disk","size":27},{"mtime":1795104167,"name":"latest","size":9},{"mtime":1795104167,"name":"list","size":180}]}';
+  assert.deepEqual(T.parseTable(real), {
+    20261116: '2026-11-17T23:00:01.000Z', 20261117: '2026-11-19T04:00:00.000Z', 20261118: '2026-11-19T23:00:00.000Z',
+  });
+});
