@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 22](https://img.shields.io/badge/Revision-28-green) ![Revised 2026-11-20](https://img.shields.io/badge/Revised-2026--11--20-green)
+![Revision 29](https://img.shields.io/badge/Revision-29-green) ![Revised 2026-11-25](https://img.shields.io/badge/Revised-2026--11--25-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -563,7 +563,7 @@ so the way back is usually there (step 0 put back the exact build). Tumbleweed h
 folder was published at least the gate's days ago (the folder's time, not its name: 1 to 2.5 days later). It moves as
 root through one chain (`modifyrepo --disable --all`, `addrepo snap-<date>`, `refresh`, `dup --from snap-<date>
 --allow-downgrade`); the way back is the same chain with the date from before, while the archive lists it. ARM has no
-archive and is a later step (wait the gate's days, apply, keep packages as the way back).
+archive: its own source (D91) moves to the live snapshot once the ARM repo's publish time is the gate's days old, with kept packages as the way back.
 
 **zypper's real-repo run (1c, D87):** `just linux-test leap-16.0 --e2e` now runs for the suse family, as apt's and dnf's
 do (D77, D83). Its root phase (`test/containers/e2e/zypper.sh`) gives the steward user `sudo` for `zypper` only, prints
@@ -584,7 +584,7 @@ XDG folders, and the test follows `XDG_STATE_HOME`), and zypper writes `<license
 | --- | --- | --- | --- | --- |
 | ✅ apt | Debian, Ubuntu, Linux Mint, LMDE (the Linux release) | per package | Done: 1a read-only (#101, D75); 1b the upgrade with the sudo hand-off (#102, D76); 1c the rows, CI and the real-repo run (#103, D77); 1d its install-check row (#107, D78); 1e OS updates, read-only (#108, D79). npm mode on Linux waits for the release (R-2) | #101, #102, #103, #107, #108 |
 | ✅ dnf | Fedora (the Linux release) | per package | Done: step 0 (2026-11-11); 1a read-only (#112, D81); 1b the upgrade with the sudo hand-off (#113, D82); 1c the real-repo run, both Fedora rows passing (D83, #114); 1d the install-check rows, passing (run 43141398561); 1e OS updates, read-only (#115, D84). npm mode on Linux waits for the release (R-2) | #112, #113, #114, #115 |
-| 🟨 zypper | openSUSE Leap, Tumbleweed (the Linux release) | Leap per package (D-a); Tumbleweed dated snapshot (owner, 2026-11-13) | Under way: step 0 (2026-11-12); 1a read-only on Leap (#117, D85); 1b the upgrade with the sudo hand-off (#118, D86); 1c the real-repo run on Leap 16.0, passing (#119, D87); kept packages for the way back (D88); Tumbleweed in snapshot mode on x86_64, and on ARM by waiting with kept packages (owner, 2026-11-13) | #117, #118, #119 |
+| 🟨 zypper | openSUSE Leap, Tumbleweed (the Linux release) | Leap per package (D-a); Tumbleweed dated snapshot (owner, 2026-11-13) | Under way: step 0 (2026-11-12); 1a read-only on Leap (#117, D85); 1b the upgrade with the sudo hand-off (#118, D86); 1c the real-repo run on Leap 16.0, passing (#119, D87); kept packages for the way back (D88); Tumbleweed in snapshot mode on x86_64 (D90), and on ARM by waiting with kept packages (D91; unit tests only, the real ARM run is next) (owner, 2026-11-13) | #117, #118, #119 |
 | ⬜ Flatpak | any | per package | Not started | |
 | ⬜ Snap | Ubuntu and others | per package | Not started | |
 | ⬜ pacman | Arch | dated snapshot | Not started | |
@@ -689,6 +689,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-25 | 29 | zypper: Tumbleweed on ARM (D91): the live ports repo's snapshot, dated by the repo's own publish time and taken once the gate's days old; one plan line, a per-package receipt, kept copies as the way back. Built from the unit tests only: the real ARM run is next | |
 | 2026-11-20 | 28 | zypper: Tumbleweed snapshot mode on x86_64 (D90): the whole system moves to the newest archived snapshot past the gate, dated by its folder's publish time; the way back is the snapshot before. ARM and the real-repo run are next | |
 | 2026-11-13 | 27 | D-h: kept packages, the way back to the exact build on every distribution (D88); Tumbleweed on ARM waits until a snapshot has been live for the gate's days (owner) | |
 | 2026-11-13 | 26 | zypper 1c: `--e2e` for Leap against openSUSE's real repos; 28 of 28 (D87) | #119 |

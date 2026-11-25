@@ -17,6 +17,7 @@ const apt = require('../../lib/providers/apt.js');
 const dnf = require('../../lib/providers/dnf.js');
 const zypper = require('../../lib/providers/zypper.js');
 const tumbleweed = require('../../lib/providers/tumbleweed.js');
+const tumbleweedArm = require('../../lib/providers/tumbleweed-arm.js');
 const OSU = require('../../lib/osupdates.js');
 const U = require('../../lib/updaters.js');
 const V = require('../../lib/vulns.js');
@@ -253,6 +254,11 @@ const CHECKS = [
     id: 'tumbleweed', name: 'Tumbleweed snapshot', platforms: ['linux'], families: ['suse'], provider: tumbleweed.source,
     title: ctx => `Tumbleweed snapshot (gated as a whole: eligible = its archive folder published at least ${minAge(ctx)}d ago)`,
     run: packages('tumbleweed'),
+  },
+  {
+    id: 'tumbleweed-arm', name: 'Tumbleweed ARM snapshot', platforms: ['linux'], families: ['suse'], provider: tumbleweedArm.source,
+    title: ctx => `Tumbleweed ARM snapshot (gated as a whole: eligible = the ARM repo published it at least ${minAge(ctx)}d ago)`,
+    run: packages('tumbleweed-arm'),
   },
   {
     // Linux's OS updates (parity 1e, D79): a restart, a newer release (a note: a major), the end of free security

@@ -35,6 +35,7 @@ function machine(o = {}) {
   fs.writeFileSync(path.join(sys, 'etc', 'os-release'), `ID="${o.id || 'opensuse-tumbleweed'}"\nVERSION_ID="${version}"\n`);
   const calls = [], sudo = [], printed = [];
   let live = o.products || PRODUCTS;
+  const offers = new Set(['8.23.0-3.1']); // ARM's repo offers only its newest build
   const run = async (cmd, args = []) => {
     calls.push([cmd, ...args].join(' '));
     if (cmd === 'curl') {
@@ -48,6 +49,7 @@ function machine(o = {}) {
       const dest = args.find(a => a.startsWith('--pkg-cache-dir=')).slice('--pkg-cache-dir='.length);
       const spec = args[args.length - 1].replace(/\.aarch64/, '');
       const [n, v] = spec.split('=');
+      if (!offers.has(v)) return { status: 104, stdout: '' };
       fs.mkdirSync(path.join(dest, 'repo-oss', 'aarch64'), { recursive: true });
       fs.writeFileSync(path.join(dest, 'repo-oss', 'aarch64', `${n}-${v}.aarch64.rpm`), `${n} ${v}`);
       return { status: 0, stdout: '' };
@@ -67,7 +69,7 @@ function machine(o = {}) {
     if (args.includes('--oldpackage')) { rpm.curl = '8.23.0-1.1'; rpm['libcurl-mini4'] = '8.23.0-1.1'; version = '20261112'; fs.writeFileSync(path.join(sys, 'etc', 'os-release'), `ID="opensuse-tumbleweed"\nVERSION_ID="${version}"\n`); return o.rollbackCode || 0; }
     return 0;
   };
-  return { c, sudo, printed, live: v => { live = v; }, o: extra => ({ spawn, print: s => printed.push(String(s)), ...extra }) };
+  return { c, sudo, printed, offers, live: v => { live = v; }, o: extra => ({ spawn, print: s => printed.push(String(s)), ...extra }) };
 }
 
 test('parseProducts: the live snapshot name from media.1/products; anything else is empty', () => {
@@ -185,7 +187,9 @@ test('the second move has a way back: the kept copies, installed with --oldpacka
   const m = machine();
   // the first move kept the 8.23.0-1.1 builds (as if a move before had)
   const K = require('../lib/kept.js');
+  m.offers.add('8.23.0-1.1');
   for (const n of ['curl', 'libcurl-mini4']) await K.keep(m.c, T.source, n, '8.23.0-1.1');
+  m.offers.delete('8.23.0-1.1');
   const items = await T.source.outdated(m.c);
   assert.equal(await H.upgrade(m.c, T.source, items, m.o({ tty: true })), 0, m.printed.join('\n'));
   const dir = path.join(m.c.cfg.paths.state, 'backups');
@@ -194,7 +198,7 @@ test('the second move has a way back: the kept copies, installed with --oldpacka
   assert.equal(r.back.items.length, 2);
   assert.ok(r.back.items.every(b => b.file && b.sha256));
   m.sudo.length = 0;
-  assert.equal(await H.rollback(m.c, T.source, rp, m.o({ tty: true, ask: async () => true, spawn: async (_c, a) => { m.sudo.push(`sudo ${a.join(' ')}`); return 106; } })), 1, 'without ok codes 106 would fail');
+  assert.equal(await H.rollback(m.c, T.source, rp, m.o({ tty: true, ask: async () => true, spawn: async (_c, a) => { m.sudo.push(`sudo ${a.join(' ')}`); return 106; } })), 1, 'the stand-in sudo moved nothing, so the check after fails');
 });
 
 test('a step may name exit codes that count as success (zypper offline exits 106)', async () => {
