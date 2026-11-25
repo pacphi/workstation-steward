@@ -97,7 +97,7 @@ test('outdated: one item, the live snapshot; the date is the repo\'s publish tim
   const m = machine();
   const items = await T.source.outdated(m.c);
   assert.deepEqual(items, [{ name: 'tumbleweed', have: '20261112', want: '20261118', packages: 2 }]);
-  const d = await T.source.releaseDate(m.c, 'tumbleweed', '20261118');
+  const d = /** @type {any} */ (await T.source.releaseDate(m.c, 'tumbleweed', '20261118'));
   assert.equal(d.date, '2026-11-19T04:25:49.000Z');
   const j = await P.judge(m.c, T.source, items[0]);
   assert.equal(j.verdict, 'take', 'published 3 days and 8 hours before now');
