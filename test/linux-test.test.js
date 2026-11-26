@@ -169,6 +169,36 @@ test('drive: patchIssued finds the issued time zypper shows for a patch, in epoc
   assert.equal(D.planLines('take   libpcre2-8-0 10.45-160000.4.1 -> 10.45-160000.5.1 (security patch: openSUSE-Leap-16.0-2026-12)')[0].pocket, 'openSUSE-Leap-16.0-2026-12');
 });
 
+test('drive: the ARM e2e reads the live snapshot and the package count from zypper\'s own files, not the steward\'s parser (zypper ARM e2e)', () => {
+  const D = require('./containers/e2e/drive.js');
+  const repomd = '<?xml version="1.0"?><repomd><revision>1795061149</revision><data type="primary"/></repomd>';
+  assert.deepEqual(D.armLive('/ openSUSE 20261118-1\n', repomd), { name: '20261118', published: '2026-11-19T04:25:49.000Z' });
+  assert.equal(D.armLive('<html>403</html>', repomd), null, 'a page that is not the products file is no answer');
+  assert.equal(D.armLive('/ openSUSE 20261118-1\n', '<repomd></repomd>'), null, 'no revision is no publish time');
+  // several <update> elements to a line, as zypper writes them; only kind="package" counts
+  const xml = '<update-list><update kind="package" name="aaa_base" edition="1-2"/><update kind="package" name="bash" edition="3-4"/><update kind="patch" name="p"/></update-list>';
+  assert.equal(D.updateEntries(xml), 2);
+  assert.equal(D.updateEntries(''), 0);
+});
+
+test('drive: which zypper e2e runs follows the os and the cpu: Leap, Tumbleweed on ARM; x86_64 Tumbleweed is the snapshot mode\'s own (zypper ARM e2e)', () => {
+  const D = require('./containers/e2e/drive.js');
+  assert.equal(D.zypperKind('opensuse-leap', 'aarch64'), 'leap');
+  assert.equal(D.zypperKind('opensuse-leap', 'x86_64'), 'leap');
+  assert.equal(D.zypperKind('opensuse-tumbleweed', 'aarch64'), 'tumbleweed-arm');
+  assert.equal(D.zypperKind('opensuse-tumbleweed', 'x86_64'), null);
+  assert.equal(D.zypperKind('debian', 'aarch64'), null);
+});
+
+test('zypper.sh: Tumbleweed runs on aarch64 and hands over to drive.js tumbleweed-arm; x86_64 stops with a reason (zypper ARM e2e)', () => {
+  const sh = fs.readFileSync(path.join(REPO, 'test', 'containers', 'e2e', 'zypper.sh'), 'utf8');
+  assert.match(sh, /uname -m/);
+  assert.match(sh, /aarch64/);
+  assert.match(sh, /drive\.js zypper tumbleweed-arm/);
+  assert.match(sh, /snapshot mode/, 'x86_64 says its end-to-end run is the snapshot mode\'s');
+  assert.doesNotMatch(sh, /comes with its snapshot mode"\s*>&2;\s*exit 2\s*;;\s*\n\s*\*\)/, 'the old blanket refusal is gone');
+});
+
 test('drive: planLines reads apt\'s security pocket and dnf\'s security advisory alike (dnf 1c)', () => {
   const D = require('./containers/e2e/drive.js');
   assert.deepEqual(D.planLines('  take   openssl-libs 1:3.5.4-2.fc44 -> 1:3.5.9-1.fc44 (security advisory: FEDORA-2026-12f3f3d569)\n')[0],
