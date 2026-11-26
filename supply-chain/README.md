@@ -173,6 +173,8 @@ To keep one tool where it is, write a `[[hold]]` in `host.toml` (D93): its `kind
 `steward sc upgrade` leaves it alone until the date, whatever the gate or a security exception says. An incomplete
 hold is left out and reported. The hold is yours alone, and the engine's defaults never hold anything.
 
+Hermes Agent updates itself with `hermes update` and can't install an exact version, so it has no `[[updater]]` (D95): the audit reads its own `hermes update --check` and reports the channel it follows and whether it is behind. Moving it to its curated `stable` channel is `hermes update --set-channel stable`, run by you.
+
 Sources the steward doesn't install itself are declared as `[[updater]]` entries: `steward sc audit` runs each
 `check`, `steward sc plan` lists what `upgrade` would apply and why, and `steward sc upgrade` copies the `backup`
 paths, runs `apply`, refuses unless `require_output` appears, stops if the signing key changed, and writes a receipt.
