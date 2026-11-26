@@ -45,6 +45,28 @@ test('merge: yours adds, replaces by name, wins on plain values, and keeps secur
   assert.ok(sources.some(s => s.key === 'electron_supported_majors' && s.source === 'yours'));
 });
 
+test('merge: [[hold]] is yours alone; a complete one is kept, an incomplete one is left out and said so (D93)', () => {
+  const ok = { kind: 'mise', name: 'npm:vibium', why: 'crashes under Node', expires: '2026-12-31' };
+  const { policy, warnings } = merge(D, {
+    hold: [
+      ok,
+      { kind: 'tool', name: 'x', why: 'w', expires: '2026-12-31' },
+      { kind: 'formula', name: 'y', why: ' ', expires: '2026-12-31' },
+      { kind: 'cask', name: 'z', why: 'w', expires: 'soon' },
+      { kind: 'formula', why: 'w', expires: '2026-12-31' },
+      { kind: 'formula', name: 'w', why: 'only on linux', expires: '2026-12-31', platforms: ['linux'] },
+    ],
+  }, 'macos');
+  assert.deepEqual(policy.hold, [ok]);
+  assert.deepEqual(warnings, [
+    'hold x: kind must be formula, cask, mise, apt, dnf, zypper; left out',
+    'hold y: why is missing; left out',
+    'hold z: expires must be a date, YYYY-MM-DD; left out',
+    'hold ?: name is missing; left out',
+  ]);
+  assert.deepEqual(merge({ ...D, hold: [ok] }, {}, 'macos').policy.hold, [], 'the engine\'s defaults never hold anything');
+});
+
 test('merge: [off] turns defaults off by value or name; one that matches nothing is reported', () => {
   const { policy, sources, warnings } = merge(D, { off: { always_current: ['firefox', 'safari'], ioc: ['IOC 1'], colours: ['x'] } });
   assert.deepEqual(policy.always_current, ['google-chrome']);

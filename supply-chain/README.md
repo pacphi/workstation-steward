@@ -168,6 +168,11 @@ Every update source has one **release class** (D52, [`release-classes.md`](../do
 | `signed_data` | skips it; starts no soak | data, never code: signed by a key the entry pins, checked against the gated runtime that reads it. Brain's knowledge base, a new corpus about daily, is the first |
 | `exception` | skips it until it expires | the first patched release for an advisory (`[[security_exception]]`), or a declared source with a written reason |
 
+To keep one tool where it is, write a `[[hold]]` in `host.toml` (D93): its `kind` (`formula`, `cask`, `mise`, `apt`,
+`dnf` or `zypper`), `name`, a `why` and an `expires` date. `steward sc plan` lists it as `hold` with your reason, and
+`steward sc upgrade` leaves it alone until the date, whatever the gate or a security exception says. An incomplete
+hold is left out and reported. The hold is yours alone, and the engine's defaults never hold anything.
+
 Sources the steward doesn't install itself are declared as `[[updater]]` entries: `steward sc audit` runs each
 `check`, `steward sc plan` lists what `upgrade` would apply and why, and `steward sc upgrade` copies the `backup`
 paths, runs `apply`, refuses unless `require_output` appears, stops if the signing key changed, and writes a receipt.
