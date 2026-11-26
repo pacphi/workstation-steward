@@ -178,6 +178,13 @@ test('hermes: its own --check is read; behind on main or on a release channel is
   const stable = await run({ [key]: '→ Update channel: stable\n→ Selected release available: stable v0.22.0 (e06df9c2eae6)\n  Run `hermes update` to install it.\n' });
   assert.deepEqual(stable.r.actions, ['hermes: on the stable channel, v0.22.0 (e06df9c2eae6) is available (its own updater: hermes update)']);
 
+  // a release younger than the gate is held, and its age comes from the GitHub release
+  const rel = d => ({ [key]: '→ Update channel: stable\n→ Selected release available: stable v0.23.4 (8fc037444731)\n', 'gh api repos/NousResearch/hermes-agent/releases/tags/v0.23.4 --jq .published_at': `${d}\n` });
+  const youngRel = await run(rel(daysAgo(1)));
+  assert.deepEqual(youngRel.r.actions, []);
+  assert.ok(youngRel.w.out.includes('  held   hermes: on the stable channel, v0.23.4 (8fc037444731) is available (1d old; eligible in 2d)'));
+  assert.deepEqual((await run(rel(daysAgo(5)))).r.actions, ['hermes: on the stable channel, v0.23.4 (8fc037444731) is available (its own updater: hermes update)']);
+
   const current = await run({ [key]: '→ Update channel: stable\n✓ Already up to date.\n' });
   assert.deepEqual(current.r.actions, []);
   assert.ok(current.w.out.includes('  ok     hermes: on the stable channel, up to date'));
@@ -185,6 +192,38 @@ test('hermes: its own --check is read; behind on main or on a release channel is
   const broken = await run({ [key]: { status: 2, stdout: 'Traceback…\n' } });
   assert.deepEqual(broken.r.actions, []);
   assert.ok(broken.w.out.includes('  info   hermes: its update check could not run (exit 2): hermes update --check'));
+});
+
+test('cursor-agent: the install script\'s newest version, dated by its name, is an action past the gate and held before it; current is ok; unreadable is info; not installed is skipped (D96)', async () => {
+  const home = path.join(ROOT, 'cursor-home');
+  const bin = path.join(home, '.local', 'bin', 'cursor-agent');
+  const script = v => `#!/bin/bash\nFINAL_DIR="$HOME/.local/share/cursor-agent/versions/${v}"\nln -s "$FINAL_DIR/cursor-agent" ~/.local/bin/cursor-agent\n`;
+  const cmds = (have, installScript) => ({ [`${bin} --version`]: `${have}\n`, 'curl -fsSL --max-time 30 https://cursor.com/install': installScript });
+  const run = async commands => { const w = lines(); const r = await audit(ctx(commands, { home }), { only: ['cursor-agent'], write: w.write }); return { r, w }; };
+
+  const none = await run({});
+  assert.deepEqual(none.r.actions, []);
+  assert.ok(none.w.out.includes('  cursor-agent not installed: skipped'));
+
+  put(bin, '#!/bin/sh\n');
+  const old = await run(cmds('2026.09.28-64d2043', script('2026.10.20-aaaa111')));
+  assert.deepEqual(old.r.actions, ['cursor-agent 2026.09.28-64d2043 -> 2026.10.20-aaaa111 (7d old; its own updater: cursor-agent update)']);
+
+  const young = await run(cmds('2026.09.28-64d2043', script('2026.10.26-bbbb222')));
+  assert.deepEqual(young.r.actions, []);
+  assert.ok(young.w.out.includes('  held   cursor-agent 2026.09.28-64d2043 -> 2026.10.26-bbbb222 (1d old; eligible in 2d)'));
+
+  const same = await run(cmds('2026.10.20-aaaa111', script('2026.10.20-aaaa111')));
+  assert.deepEqual(same.r.actions, []);
+  assert.ok(same.w.out.includes('  ok     cursor-agent 2026.10.20-aaaa111: current'));
+  const ahead = await run(cmds('2026.10.25-cccc333', script('2026.10.20-aaaa111')));
+  assert.ok(ahead.w.out.includes('  ok     cursor-agent 2026.10.25-cccc333: current'), 'newer than the script names is not behind');
+
+  const noScript = await run({ [`${bin} --version`]: '2026.09.28-64d2043\n' });
+  assert.deepEqual(noScript.r.actions, []);
+  assert.ok(noScript.w.out.includes("  info   cursor-agent: the install script's newest version could not be read: cursor-agent --version, cursor.com/install"));
+  const noVersion = await run(cmds('weird', script('2026.10.20-aaaa111')));
+  assert.ok(noVersion.w.out.includes('  info   cursor-agent: its version could not be read: cursor-agent --version, cursor.com/install'));
 });
 
 test('ioc: a file, a process, a site-packages file or an image digest is an alert; nothing found is clean', async () => {
