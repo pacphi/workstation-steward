@@ -97,7 +97,7 @@ test('not Tumbleweed, not x86_64, or an unreadable archive: nothing taken, and e
   assert.deepEqual(await T.source.manual(machine({ id: 'opensuse-leap' }).c), []);
   const arm = machine({ arch: 'aarch64' });
   assert.deepEqual(await T.source.outdated(arm.c), []);
-  assert.match((await T.source.manual(arm.c))[0], /^Tumbleweed on ARM: not checked yet/);
+  assert.deepEqual(await T.source.manual(arm.c), [], 'ARM has its own source (tumbleweed-arm.js)');
   const off = machine({ offline: true });
   assert.deepEqual(await T.source.outdated(off.c), []);
   assert.match((await T.source.manual(off.c))[0], /couldn't read the snapshot archive/);

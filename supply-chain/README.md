@@ -145,7 +145,7 @@ then `sudo zypper --non-interactive install --no-recommends <package>=<edition>`
 <receipt>` puts back the editions from before with `--oldpackage`, from the steward's kept copy or while the repos still
 offer them. Tumbleweed on x86_64 is gated as a whole (D90): it moves to the newest snapshot in openSUSE's archive whose folder was
 published at least the gate's days ago, in one root chain (`zypper dup --from snap-<date> --allow-downgrade`), and the
-way back is the snapshot from before while the archive still lists it. On ARM it is shown as not checked for now.
+way back is the snapshot from before while the archive still lists it. On ARM there is no archive, so the live snapshot of openSUSE's ports repo is taken once the repo's own publish time is the gate's days old (D91): one plan line, kept copies of the new builds as the way back at the next move (the first move has none), and a refusal before sudo if a newer snapshot went live after the plan.
 
 ### Kept packages (apt, dnf, zypper)
 
