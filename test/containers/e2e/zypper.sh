@@ -3,7 +3,8 @@
 # container with the network on: what a user's machine has before the steward runs. As root: sudo, allowed `zypper` and
 # nothing else (D-b: the steward runs sudo as a child at the terminal, or hands the line over); a few packages taken back
 # to an older edition the update repo still keeps (zypper's step 0), so there is something to upgrade and a way back.
-# Then the user phase, as the steward user: drive.js. Tumbleweed waits for its snapshot mode (the owner, 2026-11-13).
+# Then the user phase, as the steward user: drive.js. Tumbleweed runs on aarch64 only (D91: one real move of the whole system to the
+# live ports snapshot, nothing seeded); on x86_64 it is the snapshot mode's own end-to-end run (D90), not here yet.
 # It never runs on a real machine: tools/linux-test.js starts it only in a labelled container removed after the run.
 set -euo pipefail
 say() { printf '\ne2e root: %s\n' "$*"; }
@@ -11,12 +12,15 @@ say() { printf '\ne2e root: %s\n' "$*"; }
 [[ -f /.dockerenv || -n "${container:-}" ]] || { echo "ERROR zypper.sh runs only in linux-test's container" >&2; exit 2; }
 
 osr() { sed -n "s/^$1=//p" /etc/os-release | tr -d '"' | head -1; }
+KIND=leap
 case "$(osr ID)" in
   opensuse-leap) ;;
-  opensuse-tumbleweed) echo "ERROR zypper.sh: Tumbleweed's end-to-end run comes with its snapshot mode (docs/platforms/parity.md)" >&2; exit 2 ;;
-  *) echo "ERROR zypper.sh: not openSUSE Leap ($(osr ID))" >&2; exit 2 ;;
+  opensuse-tumbleweed)
+    [[ "$(uname -m)" == aarch64 ]] || { echo "ERROR zypper.sh: Tumbleweed on $(uname -m) is the snapshot mode; its end-to-end run is not written yet (docs/platforms/parity.md)" >&2; exit 2; }
+    KIND=tumbleweed-arm ;;
+  *) echo "ERROR zypper.sh: not openSUSE Leap or Tumbleweed ($(osr ID))" >&2; exit 2 ;;
 esac
-say "leap ($(osr PRETTY_NAME))"
+say "${KIND} ($(osr PRETTY_NAME))"
 
 mkdir -p /work/src /work/home
 cp -a /src/. /work/src/
@@ -27,6 +31,14 @@ zypper -n -q install --no-recommends sudo >/dev/null
 printf 'steward ALL=(root) NOPASSWD: /usr/bin/zypper\n' > /etc/sudoers.d/steward-e2e
 chmod 0440 /etc/sudoers.d/steward-e2e
 visudo -cf /etc/sudoers.d/steward-e2e
+
+if [[ "${KIND}" == tumbleweed-arm ]]; then
+  # nothing to seed: the pinned image is older than the live ports snapshot, which is the move under test
+  say 'the user phase, as steward (tumbleweed-arm)'
+  exec su steward -s /bin/bash -c "unset XDG_STATE_HOME XDG_CONFIG_HOME XDG_CACHE_HOME XDG_DATA_HOME; export HOME=/work/home PATH=/opt/mise/shims:/usr/local/bin:/usr/bin:/bin STEWARD_INSTANCE=/work/src/examples \
+    MISE_DATA_DIR=/opt/mise MISE_GLOBAL_CONFIG_FILE=/opt/mise/config.toml MISE_CACHE_DIR=/tmp/mise-cache MISE_STATE_DIR=/tmp/mise-state MISE_OFFLINE=1 \
+    NO_PROGRESS=1 NO_COLOR=1; cd /work/src && node test/containers/e2e/drive.js zypper tumbleweed-arm"
+fi
 
 # what the run learned of zypper's own output, for the tests' fixtures (zypper 1c): kept in the log
 say 'zypper --xmlout list-updates (as root, for the record)'
