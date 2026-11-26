@@ -38,6 +38,7 @@ lint:
     node --check tools/known-units.js
     node --check tools/publish-guard.js
     node --check tools/upstream-watch.js
+    node --check tools/pin-mise.js
     node --check tools/progress-gaps.js
     node --check tools/try-hook.js
     node --check lib/platform.js
@@ -124,6 +125,10 @@ linux-test *args:
 # Remove what linux-test made: only labelled containers, images, volumes and networks (asks first); --cache: the build cache too
 linux-clean *args:
     node tools/linux-test.js clean {{args}}
+
+# Pin a mise release in every workflow and in test/containers/matrix.json, checksums from the release's SHASUMS256.txt (D94). A Renovate PR for jdx/mise needs this on its branch; --check only says what would change
+pin-mise version *args:
+    node tools/pin-mise.js {{version}} {{args}}
 
 test:
     node --test test/

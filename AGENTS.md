@@ -121,6 +121,8 @@ values and where the instance is. Paths below are relative to the instance unles
   `renovate/steward.json`, extended at a release tag; until there is one, they are carried inline and
   `test/renovate.test.js` keeps them equal. The engine repo's own config is `.github/renovate.json`, which pins
   GitHub Actions by commit SHA with a version comment.
+- A Renovate PR for `jdx/mise` moves the workflows' pins but not the container images' version and checksums in
+  `test/containers/matrix.json`: on its branch run `just pin-mise <version>` (D94) and push the result.
 - How Renovate behaves (config read from the default branch only, security PRs, the 0.x and mise-tool matching
   rules, checking a config change locally) is in `skills/pr-consolidation/rules.md`. Read it before changing
   `renovate/steward.json`.
