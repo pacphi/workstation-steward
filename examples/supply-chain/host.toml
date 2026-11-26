@@ -74,6 +74,14 @@
 # advisory = "https://github.com/advisories/GHSA-xxxx-xxxx-xxxx"
 # expires = "2026-11-03"                   # a week or so: by then the version is past the gate anyway
 
+# Keep one tool where it is (D93), for example a release that crashes. The plan lists it as `hold` with your reason
+# and `steward sc upgrade` leaves it alone until the date; the hold beats the gate and a security exception. Yours alone.
+# [[hold]]
+# kind = "mise"                            # formula, cask, mise, apt, dnf or zypper
+# name = "npm:vibium"
+# why = "26.11.16 crashes under Node: its bin/cli.js is a native binary"
+# expires = "2026-12-31"                   # required, so a hold can't be forgotten
+
 # Known vulnerabilities (steward sc vulns, D70). The engine's feeds are osv, nodejs and kev (host-defaults.toml); add
 # your own, replace one by name, or turn one off with [off] advisory_feed = ["kev"]. Feeds are data, never code.
 # [[advisory_feed]]

@@ -86,6 +86,41 @@ test('plan: takes what is old enough or excepted, holds the rest, and says what 
   assert.deepEqual(sections, ['Homebrew formulae', 'Homebrew casks (self-updating casks are left to their own updaters)', 'mise tools (mise already applies minimum_release_age)', 'Declared updaters ([[updater]]: a dated one waits out the gate; signed_data, always_current and an unexpired exception skip it)', "mise itself (D38: the gate and advisories decide; Homebrew's mise is judged with the formulae)"]);
 });
 
+test('plan: your own [[hold]] keeps one named tool where it is, with its reason and expiry, over the gate and a security exception; an expired or other-kind hold changes nothing (D93)', async () => {
+  const c = ctx({
+    'brew --prefix': '/opt/homebrew\n',
+    'brew list --formula --versions': 'git 2.51.0\nopenssl@3 3.6.0\n',
+    'brew list --formula --full-name': 'git\nopenssl@3\n',
+    'brew list --cask --versions': 'iterm2 3.6.4\n',
+    ...gh('homebrew-core', 'Formula/g/git.rb', daysAgo(10)), ...gh('homebrew-core', 'Formula/o/openssl@3.rb', daysAgo(1)),
+    ...gh('homebrew-cask', 'Casks/i/iterm2.rb', daysAgo(10)),
+    'mise outdated --bump --json': JSON.stringify({
+      'npm:vibium': { current: '26.8.21', latest: '26.11.16', bump: '26.11.16', requested: '26.8.21' },
+      gh: { current: '2.103.1', latest: '2.103.2', bump: null, requested: 'latest' },
+      jq: { current: '1.7', latest: '1.8', bump: null, requested: 'latest' },
+    }),
+    [`node ${path.join(ENGINE, 'supply-chain', 'bin', 'mise-self.js')} --plan`]: 'current\t2026.10.18\t\tcurrent\tfalse\n',
+  });
+  c.policy = {
+    ...c.policy,
+    hold: [
+      { kind: 'mise', name: 'npm:vibium', why: 'crashes under Node', expires: '2026-12-31' },
+      { kind: 'formula', name: 'git', why: 'waiting on a fix', expires: '2026-10-26' },
+      { kind: 'formula', name: 'openssl@3', why: 'pinned for a build', expires: '2026-11-01' },
+      { kind: 'cask', name: 'iterm2', why: 'new layout bug', expires: '2026-10-27' },
+      { kind: 'formula', name: 'gh', why: 'wrong kind: gh is a mise tool here', expires: '2026-12-31' },
+      { kind: 'mise', name: 'jq', why: 'went stale', expires: '2026-10-26' },
+    ],
+  };
+  const lines = [];
+  const p = await plan(c, { section: () => {}, line: l => lines.push(l), warn: () => {} });
+  assert.ok(lines.includes('hold   npm:vibium 26.8.21 -> 26.11.16 (held by you until 2026-12-31: crashes under Node)'), 'a held mise tool is listed and not taken');
+  assert.ok(lines.includes('hold   openssl@3 3.6.0 -> 3.6.1_1 (held by you until 2026-11-01: pinned for a build)'), 'a hold beats a security exception');
+  assert.ok(lines.includes('hold   iterm2 3.6.4 -> 3.6.5 (held by you until 2026-10-27: new layout bug)'), 'a cask can be held, and a hold still holds on its last day');
+  assert.ok(lines.includes('take   git 2.51.0 -> 2.52.0 (10d old)'), 'a hold that expired yesterday changes nothing');
+  assert.deepEqual(p.tools, ['gh', 'jq'], 'only the tool named by the right kind and date is held');
+});
+
 test('plan: a declared updater that is behind is taken when its class skips the gate, held when gated; a changed key or an unclear check is skipped (D52)', async () => {
   const u = (name, cls, extra = {}) => ({ name, class: cls, why: 'w', check: `check-${name}`, apply: 'a', backup: ['b'], expires: '2026-11-01', ...extra });
   const c = ctx({

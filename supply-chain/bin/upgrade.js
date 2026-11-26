@@ -88,7 +88,7 @@ async function plan(ctx, out) {
       const j = await P.judge(ctx, s, it);
       const what = `${it.name} ${it.have} -> ${it.want}`;
       const old = `${j.age}d old${j.from ? `, ${j.from}` : ''}`;
-      if (j.verdict === 'hold') { out.line(`hold   ${what} (${old})`); continue; }
+      if (j.verdict === 'hold') { out.line(`hold   ${what} (${j.held || old})`); continue; }
       const why = j.exception ? `security exception: ${j.exception}` : j.pocket ? `${s.pocketWhy || 'security pocket'}: ${j.pocket}` : old;
       // a read-only source (dnf until its 1b, D81; none now): the exact sudo line, for you to run; nothing is planned for apply
       if (s.readOnly) { const c = s.upgradeCmd([it]); out.line(`manual ${s.provider}: needs root, which the steward takes on in ${s.readOnly} (${why}): sudo ${[c.cmd, ...c.args].join(' ')}`); continue; }
@@ -105,6 +105,9 @@ async function plan(ctx, out) {
   const aiOwned = new Set(ctx.cfg.profiles.ai_tooling ? ((C.policy('ai-tooling/ai-tooling.toml') || {}).owned_mise || []) : []);
   for (const { name, have, want } of await mise.outdated(ctx)) {
     if (name === 'node') { out.line(`manual node ${have} -> ${want}: steward sc node-patch <version> (hybrids reinstall)`); continue; }
+    // your own [[hold]] on one tool (D93) comes first: it names the tool, says why and expires, so the plan can't re-take it
+    const held = P.holdOf(ctx, 'mise', name);
+    if (held) { out.line(`hold   ${name} ${have} -> ${want} (${held})`); continue; }
     if (aiOwned.has(name)) { out.line(`ai     ${name} ${have} -> ${want} (AI tooling owns it: steward ai drift)`); continue; }
     if (crossesMajor(have, want)) out.line(`skip   ${name} ${have} -> ${want} (major: upgrade deliberately with steward sc upgrade-tool ${name} <version>)`);
     else { p.tools.push(name); out.line(`take   ${name} ${have} -> ${want}`); }
