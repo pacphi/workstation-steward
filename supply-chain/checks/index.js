@@ -161,6 +161,7 @@ const FIX = {
   appstore: 'by hand: the App Store',
   macos: 'by hand: System Settings, Software Update',
   docker: 'by hand: pin each image by tag@digest',
+  cursorAgent: 'by hand: cursor-agent update (its own updater; the newest version is past the gate)',
   hermes: 'by hand: hermes update (its own updater; `hermes update --plan` first, `--set-channel stable` to follow releases)',
   pin: 'review the new key, then update the pin in a config-repo PR (the supply-chain runbook)',
   selfUpdate: name => `turn ${name}'s own updater off`,
@@ -398,8 +399,40 @@ const CHECKS = [
       const commits = (text.match(/(\d+)\s+commits behind/) || [])[1];
       const release = ((text.match(/Selected release available:\s*(.+)/) || [])[1] || '').replace(new RegExp(`^${channel}\\s+`), '');
       if (commits) out.action(`hermes: on the ${channel} channel, ${Number(commits).toLocaleString('en-US')} commits behind (its own updater: hermes update)`, { fix: FIX.hermes, name: 'hermes', have: channel, want: `${commits} commits` });
-      else if (release) out.action(`hermes: on the ${channel} channel, ${release.trim()} is available (its own updater: hermes update)`, { fix: FIX.hermes, name: 'hermes', have: channel, want: release.trim() });
+      else if (release) {
+        // the release's date, from its GitHub release (gh): younger than the gate is held, as any other source is
+        const tag = (release.match(/^v\d[\w.+-]*/) || [])[0];
+        const date = tag ? `${(await ctx.run('gh', ['api', `repos/NousResearch/hermes-agent/releases/tags/${tag}`, '--jq', '.published_at'])).stdout || ''}`.trim() : '';
+        const age = ageDays(date, ctx.now);
+        const min = ctx.cfg.policy.min_release_age_days;
+        if (age >= 0 && age < min) out.held(`hermes: on the ${channel} channel, ${release.trim()} is available (${age}d old; eligible in ${min - age}d)`, { name: 'hermes', have: channel, want: release.trim(), age, note: `eligible in ${min - age}d` });
+        else out.action(`hermes: on the ${channel} channel, ${release.trim()} is available (its own updater: hermes update)`, { fix: FIX.hermes, name: 'hermes', have: channel, want: release.trim() });
+      }
       else out.ok(`hermes: on the ${channel} channel, up to date`);
+    },
+  },
+  {
+    // Cursor Agent (D96): installs itself to ~/.local/share/cursor-agent/versions/<YYYY.MM.DD-hash> and updates with
+    // `cursor-agent update`, which takes the newest. There is no list of past versions, no checksum and no switch for
+    // its updater, so no [[updater]] can gate it; but a version's name carries its date, and the public install script
+    // names the newest one. Read-only: the script's text is read for that one name, never run; the steward never updates it
+    id: 'cursor-agent', name: 'Cursor Agent', platforms: ALL, title: () => "Cursor Agent (updates itself with `cursor-agent update`; read-only: the install script's newest version, held to the gate)",
+    async run(ctx, out) {
+      const bin = path.join(ctx.home, '.local', 'bin', 'cursor-agent');
+      if (!fs.existsSync(bin)) { out.line('cursor-agent not installed: skipped'); return; }
+      detail(ctx, 'cursor-agent --version');
+      const have = (`${(await ctx.run(bin, ['--version'])).stdout || ''}`.match(/\d{4}\.\d{2}\.\d{2}-[0-9a-f]+/) || [])[0];
+      detail(ctx, 'cursor.com/install');
+      const script = await ctx.run('curl', ['-fsSL', '--max-time', '30', 'https://cursor.com/install']);
+      const want = (`${script.stdout || ''}`.match(/\/versions\/(\d{4}\.\d{2}\.\d{2}-[0-9a-f]+)/) || [])[1];
+      if (!have || !want) { out.info(`cursor-agent: ${!have ? 'its version could not be read' : "the install script's newest version could not be read"}: cursor-agent --version, cursor.com/install`); return; }
+      const day = v => v.slice(0, 10);
+      if (day(have) >= day(want)) { out.ok(`cursor-agent ${have}: current`); return; }
+      const age = ageDays(`${day(want).replace(/\./g, '-')}T00:00:00Z`, ctx.now);
+      const min = ctx.cfg.policy.min_release_age_days;
+      const facts = { name: 'cursor-agent', have, want, age };
+      if (age >= min) out.action(`cursor-agent ${have} -> ${want} (${age}d old; its own updater: cursor-agent update)`, { ...facts, fix: FIX.cursorAgent });
+      else out.held(`cursor-agent ${have} -> ${want} (${age}d old; eligible in ${min - age}d)`, { ...facts, note: `eligible in ${min - age}d` });
     },
   },
   {
