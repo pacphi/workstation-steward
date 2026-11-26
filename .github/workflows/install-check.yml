@@ -72,7 +72,7 @@ jobs:
           path: subject
           ref: ${{ inputs.ref || format('refs/tags/v{0}', inputs.version) }}
           fetch-depth: 0
-      - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         with:
           version: 2026.11.8
           install: false
@@ -105,7 +105,7 @@ jobs:
           fetch-depth: 0
       # mise puts tools on PATH with `mise activate` (no shims), as on a maintainer's Mac, so dropping the npm pin hands
       # `steward` back to the worktree's launcher
-      - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         with:
           version: 2026.11.8
           install: false
@@ -141,7 +141,7 @@ jobs:
           path: subject
           ref: ${{ inputs.ref || format('refs/tags/v{0}', inputs.version) }}
           fetch-depth: 0
-      - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         with:
           version: 2026.11.8
           install: false

@@ -73,7 +73,7 @@ jobs:
           git fetch -q origin main
           git merge-base --is-ancestor HEAD origin/main || { echo "the tag's commit is not on main"; exit 1; }
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         with:
           version: 2026.11.8
           install: false
@@ -95,7 +95,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/tags/${{ inputs.tag || needs.release-please.outputs.tag_name }}
-      - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         with:
           version: 2026.11.8
           install: false
@@ -125,7 +125,7 @@ jobs:
           SHA: ${{ needs.test-macos.outputs.sha }}
         run: |
           [ "$(git rev-parse "refs/tags/${TAG}^{commit}")" = "$SHA" ] || { echo "$TAG moved after it was tested"; exit 1; }
-      - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         with:
           version: 2026.11.8
           install: false
