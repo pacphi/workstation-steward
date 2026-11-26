@@ -99,7 +99,7 @@ test('the mise in the images is the mise the CI workflows pin', () => {
     const text = fs.readFileSync(path.join(REPO, '.github', 'workflows', f), 'utf8');
     const pins = [...text.matchAll(/^\s+version: (\d{4}\.\d+\.\d+)\s*$/gm)].map(x => x[1]);
     assert.ok(pins.length, `${f}: a mise pin`);
-    for (const v of pins) assert.equal(v, m.mise.version, `${f} pins mise ${v}`);
+    for (const v of pins) assert.equal(v, m.mise.version, `${f} pins mise ${v} but test/containers/matrix.json has ${m.mise.version}: run just pin-mise ${v} (it writes the version and the checksums from the release's SHASUMS256.txt)`);
   }
 });
 
