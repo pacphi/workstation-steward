@@ -171,7 +171,7 @@ test('drive: patchIssued finds the issued time zypper shows for a patch, in epoc
 
 test('drive: the ARM e2e reads the live snapshot and the package count from zypper\'s own files, not the steward\'s parser (zypper ARM e2e)', () => {
   const D = require('./containers/e2e/drive.js');
-  const repomd = '<?xml version="1.0"?><repomd><revision>1795061149</revision><data type="primary"/></repomd>';
+  const repomd = '<?xml version="1.0"?><repomd><revision>1795062349</revision><data type="primary"/></repomd>';
   assert.deepEqual(D.armLive('/ openSUSE 20261118-1\n', repomd), { name: '20261118', published: '2026-11-19T04:25:49.000Z' });
   assert.equal(D.armLive('<html>403</html>', repomd), null, 'a page that is not the products file is no answer');
   assert.equal(D.armLive('/ openSUSE 20261118-1\n', '<repomd></repomd>'), null, 'no revision is no publish time');

@@ -1,6 +1,6 @@
 # Linux and NixOS parity
 
-![Revision 29](https://img.shields.io/badge/Revision-29-green) ![Revised 2026-11-25](https://img.shields.io/badge/Revised-2026--11--25-green)
+![Revision 30](https://img.shields.io/badge/Revision-30-green) ![Revised 2026-11-26](https://img.shields.io/badge/Revised-2026--11--26-green)
 
 The plan and the progress ledger for bringing the steward from macOS to Linux distributions and NixOS. Every PR in
 this work ticks its boxes here and links itself, so this page always says what is done, what is under way and what
@@ -571,7 +571,7 @@ zypper's own `--xmlout` answers into the log, and takes up to three packages bac
 keeps (never zypper, libzypp, rpm, glibc, sudo or TLS). The user phase (`drive.js zypper`) checks every plan line
 against the patch zypper itself shows (its `issue-date`, and `category="security"` for one taken at once), then the
 upgrade at a terminal, the rollback with `--oldpackage`, and the hand-off finished by `--resume`. On a Tumbleweed row it
-stops with a reason until snapshot mode. The first run (2026-11-13) found two faults in the test, none in the steward:
+runs on aarch64 only, as one real move to the live ports snapshot (D92); x86_64 stops with a reason until the snapshot mode's own run is written. The first run (2026-11-13) found two faults in the test, none in the steward:
 openSUSE's `su` sets `XDG_STATE_HOME`, so the steward's receipt was where the test didn't look (the run now unsets the
 XDG folders, and the test follows `XDG_STATE_HOME`), and zypper writes `<license/>` and `<source/>` before a patch's
 `<issue-date time_t=… text=…/>`, so the test stopped reading too soon. Then:
@@ -689,6 +689,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
+| 2026-11-26 | 30 | zypper: `--e2e` for Tumbleweed on aarch64 (D92): one real move of the whole system to the live ports snapshot, with the plan checked against the repo's own `media.1/products`, `repomd.xml` and `list-updates`; the gate, a declined prompt, the hand-off with `--resume`, the receipt and the kept copies. A first move has no way back, so the ARM rollback stays unproven until two moves in a row. Not run yet (needs the Mac's arm64 Docker) | |
 | 2026-11-25 | 29 | zypper: Tumbleweed on ARM (D91): the live ports repo's snapshot, dated by the repo's own publish time and taken once the gate's days old; one plan line, a per-package receipt, kept copies as the way back. The package list comes from `list-updates` (`dup --dry-run` needs root); `list-updates` and `zypper download` were proven as a normal user against the real ARM repo (Mac, 2026-11-26, 55 packages from a snapshot-20261020 image); the whole upgrade, rollback and hand-off on ARM is not run yet | |
 | 2026-11-20 | 28 | zypper: Tumbleweed snapshot mode on x86_64 (D90): the whole system moves to the newest archived snapshot past the gate, dated by its folder's publish time; the way back is the snapshot before. ARM and the real-repo run are next | |
 | 2026-11-13 | 27 | D-h: kept packages, the way back to the exact build on every distribution (D88); Tumbleweed on ARM waits until a snapshot has been live for the gate's days (owner) | |

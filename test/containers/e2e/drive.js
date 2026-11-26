@@ -12,7 +12,7 @@
 //      date matrix.json records by hand from the vendor's page, and the newer-release line what the live source says
 // Each answer is typed only once its prompt's text has been seen: node's readline swallows answers sent early (1b).
 // It prints node --test's summary lines (ℹ tests/pass/fail), which tools/linux-test.js reads. Engine tooling.
-// Usage: drive.js apt <distro> | drive.js dnf fedora     (in /work/src, a copy of the checkout)
+// Usage: drive.js apt <distro> | drive.js dnf fedora | drive.js zypper leap|tumbleweed-arm     (in /work/src, a copy of the checkout)
 const fs = require('fs');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
@@ -374,11 +374,111 @@ async function zypper() {
   return results;
 }
 
-module.exports = { responder, planLines, patchIssued };
+// armLive(products, repomd) — {name, published} from media.1/products and repomd.xml of the ARM ports repo, read here on
+// purpose without the steward's parser; null when either is not what it should be
+function armLive(products, repomd) {
+  const name = (String(products).match(/openSUSE\s+(\d{8})(?:-\d+)?/) || [])[1];
+  const rev = (String(repomd).match(/<revision>\s*(\d{9,11})\s*<\/revision>/) || [])[1];
+  return name && rev ? { name, published: new Date(Number(rev) * 1000).toISOString() } : null;
+}
+// updateEntries(xml) — how many packages `zypper --xmlout list-updates` lists (several <update> elements to a line)
+const updateEntries = xml => (String(xml).match(/<update\s[^>]*kind="package"/g) || []).length;
+// zypperKind(osId, arch) — which zypper end-to-end runs here: Leap, or Tumbleweed on ARM; x86_64 Tumbleweed is the snapshot mode's own
+const zypperKind = (osId, arch) => (osId === 'opensuse-leap' ? 'leap' : osId === 'opensuse-tumbleweed' && arch === 'aarch64' ? 'tumbleweed-arm' : null);
+
+const ARM_BASE = 'https://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss/';
+async function getText(url) {
+  for (let i = 0; i < 3; i++) {
+    try { const r = await fetch(url); if (r.ok) return await r.text(); if (r.status < 500) return ''; } catch { /* the network: try again */ }
+    await new Promise(res => setTimeout(res, 2000 * (i + 1)));
+  }
+  return '';
+}
+const osVersionId = () => ((fs.readFileSync('/etc/os-release', 'utf8').match(/^VERSION_ID="?([^"\n]*)/m) || [])[1] || '');
+
+// the Tumbleweed ARM run (D91): one real move of the whole system to the live ports snapshot. The way back needs an older build
+// kept from an earlier move, and a fresh container has none, so this run proves the first move: the plan against the repo's own
+// files, the gate, a declined prompt that changes nothing, the hand-off and --resume, the receipt, and that the way back is
+// honestly "none" for a first move.
+async function tumbleweedArm() {
+  const results = [];
+  const check = (ok, what) => { results.push(ok); console.log(`\ne2e ${ok ? 'PASS' : 'FAIL'}: ${what}`); return ok; };
+  const steward = 'node bin/steward.js';
+  const gate = 3;
+  const cur = osVersionId();
+  const live = armLive(await getText(`${ARM_BASE}media.1/products`), await getText(`${ARM_BASE}repodata/repomd.xml`));
+  console.log(`e2e: tumbleweed on arm; installed ${cur}; live ${live ? `${live.name} published ${live.published}` : 'unreadable'}`);
+  if (!check(Boolean(live) && /^\d{8}$/.test(cur), 'the installed and the live snapshot were both read')) return results;
+  if (live.name <= cur) { console.log(`e2e SKIP: the image (${cur}) is already at the live snapshot (${live.name}): nothing to move`); return results; }
+
+  // the package list as zypper itself gives it, from a repo file and a cache of the test's own
+  fs.mkdirSync('/tmp/e2e-zr', { recursive: true });
+  fs.writeFileSync('/tmp/e2e-zr/tw.repo', `[tw-e2e]\nname=e2e\nenabled=1\nautorefresh=1\ngpgcheck=1\nbaseurl=${ARM_BASE}\n`);
+  const lu = spawnSync('zypper', ['-n', '--gpg-auto-import-keys', '--cache-dir=/tmp/e2e-zc', '--reposd-dir=/tmp/e2e-zr', '--xmlout', 'list-updates'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).stdout || '';
+  const count = updateEntries(lu);
+  console.log(`e2e: zypper list-updates offers ${count} package(s)`);
+
+  // 1. the plan, one line, every value checked against the repo's own files
+  const plan = sh(`DRY_RUN=1 ${steward} sc plan --plain`);
+  const l = planLines(plan.out).find(x => x.name === 'tumbleweed');
+  check(plan.code === 0 && Boolean(l), `sc plan ran and has the tumbleweed line (${l ? `${l.have} -> ${l.want}` : 'none'})`);
+  check(!/manual zypper:/.test(plan.out), 'no "manual zypper" line');
+  if (!l) return results;
+  const days = Math.floor((Date.now() - Date.parse(live.published)) / 86400000);
+  check(l.have === cur && l.want === live.name, `have ${l.have} is os-release's ${cur}; want ${l.want} is media.1/products' ${live.name}`);
+  check(l.days !== null && Math.abs(l.days - days) <= 1, `${l.days}d old, ${l.from} (repomd says ${live.published}, ${days}d)`);
+  check(l.act === (l.days >= gate ? 'take' : 'hold'), `${l.act} at ${l.days}d against the ${gate}-day gate`);
+
+  // 2. a live snapshot younger than the gate is held and not moved; the move is then proven with the gate at 0 in a copy of the instance
+  let inst = '';
+  if (l.act === 'hold') {
+    const up = sh(`${steward} sc upgrade`, 'y\n');
+    check(!/sudo zypper/.test(up.out) && osVersionId() === cur, 'the held snapshot reached no sudo and moved nothing');
+    sh('rm -rf /work/gate0 && cp -a /work/src/examples /work/gate0 && sed -i "s/^min_release_age_days = .*/min_release_age_days = 0/" /work/gate0/steward.toml');
+    inst = 'STEWARD_INSTANCE=/work/gate0 ';
+    console.log('e2e: the live snapshot is under the gate; the move runs with min_release_age_days = 0 in /work/gate0 (the default gate was checked above)');
+    const p2 = planLines(sh(`DRY_RUN=1 ${inst}${steward} sc plan --plain`).out).find(x => x.name === 'tumbleweed');
+    if (!check(Boolean(p2) && p2.act === 'take', `with the gate at 0 the plan takes it (${p2 ? p2.act : 'none'})`)) return results;
+  }
+
+  // 3. the prompt declined: asked at a terminal, answered no, nothing changes
+  const no = await pty(`${inst}${steward} sc upgrade`, [{ expect: 'Apply this plan? [y/N]', send: 'n' }]);
+  check(no.pending === 0 && osVersionId() === cur, `declined at the prompt (exit ${no.code}); os-release still ${osVersionId()}`);
+
+  // 4. no terminal: handed over (exit 4, waiting on you); the handed-over line run as you would; --resume finishes it
+  const hand = sh(`${inst}${steward} sc upgrade`, 'y\n');
+  check(hand.code === 4, `sc upgrade with no terminal exited ${hand.code} (4: waiting on you)`);
+  const r1 = receipts().pop();
+  check(Boolean(r1 && r1.r.outcome === 'waiting-on-you'), `the receipt waits on you (${r1 ? r1.r.outcome : 'none'})`);
+  const line = ((hand.out.match(/(sudo zypper [^\n]*dup [^\n]*)/) || [])[1] || '').trim();
+  if (!check(Boolean(line) && /modifyrepo --disable --all/.test(line) && /addrepo/.test(line), `the handed-over line is the whole chain: ${line || 'not found'}`)) return results;
+  const ran = await pty(`bash -c '${line.replace(/'/g, "'\\''")}'`);
+  check([0, 106].includes(ran.code), `the handed-over line, run as you would, exited ${ran.code} (106: repos skipped, the install succeeded)`);
+  const res = sh(`${inst}${steward} sc upgrade --resume`);
+  const r2 = receipts().pop();
+  check(res.code === 0 && Boolean(r2 && r2.r.outcome === 'done'), `sc upgrade --resume exited ${res.code}; the receipt says ${r2 ? r2.r.outcome : 'none'}`);
+  check(osVersionId() === live.name, `os-release now says ${osVersionId()} (the live snapshot ${live.name})`);
+
+  // 5. the receipt: every package the move changed, the kept copies, and an honest "no way back" for a first move
+  const items = (r2 && r2.r.items) || [];
+  check(items.length === count && items.every(i => i.name && i.have && i.want), `the receipt lists the ${items.length} packages the move changed (zypper offered ${count})`);
+  const keptN = Object.keys((r2 && r2.r.kept) || {}).length;
+  const st = process.env.XDG_STATE_HOME || path.join(process.env.HOME, '.local', 'state');
+  const du = spawnSync('bash', ['-c', `du -sk ${st}/workstation-steward/kept 2>/dev/null | cut -f1`], { encoding: 'utf8' }).stdout.trim();
+  console.log(`e2e: kept copies for ${keptN} package(s), ${du || '?'} KiB on disk (the size of a whole-snapshot move)`);
+  check(keptN > 0, 'the new builds are kept, for the next move\'s way back');
+  const back = (r2 && r2.r.back) || { items: [], none: [] };
+  check(back.items.length === 0 && back.none.length > 0, `a first move has no way back, and says so for ${back.none.length} package(s)`);
+  const rb = await pty(`${inst}${steward} sc rollback ${r2.p}`, [], [{ expect: /\[y\/N\] $/, send: 'n' }]);
+  check(rb.code === 0 && osVersionId() === live.name && /nothing kept or still offered/.test(rb.out), `sc rollback says there is nothing to put back (exit ${rb.code}) and changes nothing`);
+  return results;
+}
+
+module.exports = { responder, planLines, patchIssued, armLive, updateEntries, zypperKind };
 
 if (require.main === module) {
   const [kind, distro] = process.argv.slice(2);
-  (kind === 'apt' ? apt(distro) : kind === 'dnf' ? dnf() : kind === 'zypper' ? zypper() : Promise.reject(new Error(`no e2e for ${kind}`))).then(results => {
+  (kind === 'apt' ? apt(distro) : kind === 'dnf' ? dnf() : kind === 'zypper' ? (distro === 'tumbleweed-arm' ? tumbleweedArm() : zypper()) : Promise.reject(new Error(`no e2e for ${kind}`))).then(results => {
     const pass = results.filter(Boolean).length;
     console.log(`\nℹ tests ${results.length}\nℹ pass ${pass}\nℹ fail ${results.length - pass}`);
     process.exitCode = results.length && pass === results.length ? 0 : 1;
