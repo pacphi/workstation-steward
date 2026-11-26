@@ -161,6 +161,32 @@ test('docker: a floating tag is an action, a tag without a digest is info, a dig
   assert.ok(w.out.includes('  info   cache: redis:8 (tag, no digest)'));
 });
 
+test('hermes: its own --check is read; behind on main or on a release channel is an action, current is ok, an unreadable check is info, and not installed is skipped (D95)', async () => {
+  const home = path.join(ROOT, 'hermes-home');
+  const bin = path.join(home, '.local', 'bin', 'hermes');
+  const key = `${bin} update --check`;
+  const run = async (commands, extra = {}) => { const w = lines(); const r = await audit(ctx(commands, { home, ...extra }), { only: ['hermes'], write: w.write }); return { r, w }; };
+
+  const none = await run({});
+  assert.deepEqual(none.r.actions, []);
+  assert.ok(none.w.out.includes('  hermes not installed: skipped'));
+
+  put(bin, '#!/bin/sh\n');
+  const main = await run({ [key]: '→ Update channel: main\n→ Fetching from origin...\n⚕ Update available: 30674 commits behind origin/main.\n  Run \'hermes update\' to install.\n' });
+  assert.deepEqual(main.r.actions, ['hermes: on the main channel, 30,674 commits behind (its own updater: hermes update)']);
+
+  const stable = await run({ [key]: '→ Update channel: stable\n→ Selected release available: stable v0.22.0 (e06df9c2eae6)\n  Run `hermes update` to install it.\n' });
+  assert.deepEqual(stable.r.actions, ['hermes: on the stable channel, v0.22.0 (e06df9c2eae6) is available (its own updater: hermes update)']);
+
+  const current = await run({ [key]: '→ Update channel: stable\n✓ Already up to date.\n' });
+  assert.deepEqual(current.r.actions, []);
+  assert.ok(current.w.out.includes('  ok     hermes: on the stable channel, up to date'));
+
+  const broken = await run({ [key]: { status: 2, stdout: 'Traceback…\n' } });
+  assert.deepEqual(broken.r.actions, []);
+  assert.ok(broken.w.out.includes('  info   hermes: its update check could not run (exit 2): hermes update --check'));
+});
+
 test('ioc: a file, a process, a site-packages file or an image digest is an alert; nothing found is clean', async () => {
   const marker = path.join(ROOT, 'ioc-marker');
   put(marker, '');

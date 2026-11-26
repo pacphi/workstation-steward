@@ -161,6 +161,7 @@ const FIX = {
   appstore: 'by hand: the App Store',
   macos: 'by hand: System Settings, Software Update',
   docker: 'by hand: pin each image by tag@digest',
+  hermes: 'by hand: hermes update (its own updater; `hermes update --plan` first, `--set-channel stable` to follow releases)',
   pin: 'review the new key, then update the pin in a config-repo PR (the supply-chain runbook)',
   selfUpdate: name => `turn ${name}'s own updater off`,
   processList: 'by hand: let the audit read the process list (ps on macOS, /proc on Linux), then run it again',
@@ -379,6 +380,26 @@ const CHECKS = [
         if (image.endsWith(':latest') || !image.slice(image.lastIndexOf('/') + 1).includes(':')) out.action(`docker: container ${name} runs floating ${image}; pin tag@digest`, { fix: FIX.docker, name, have: image });
         else out.info(`${name}: ${image} (tag, no digest)`);
       }
+    },
+  },
+  {
+    // Hermes Agent (D95): a git checkout that updates itself with `hermes update`, with no release dates to gate by and no
+    // way to install an exact tag, so no [[updater]] can hold it. Read-only: its own `--check` says which channel it
+    // follows (stable, canary or the main branch tip) and whether it is behind; the steward says so and never updates it
+    id: 'hermes', name: 'Hermes Agent', platforms: ALL, title: () => 'Hermes Agent (updates itself with `hermes update`; read-only: its own --check)',
+    async run(ctx, out) {
+      const bin = path.join(ctx.home, '.local', 'bin', 'hermes');
+      if (!fs.existsSync(bin)) { out.line('hermes not installed: skipped'); return; }
+      detail(ctx, 'hermes update --check');
+      const r = await ctx.run(bin, ['update', '--check']);
+      const text = `${r.stdout || ''}`;
+      const channel = (text.match(/Update channel:\s*(\S+)/) || [])[1];
+      if (!channel) { out.info(`hermes: its update check could not run${r.status ? ` (exit ${r.status})` : ''}: hermes update --check`); return; }
+      const commits = (text.match(/(\d+)\s+commits behind/) || [])[1];
+      const release = ((text.match(/Selected release available:\s*(.+)/) || [])[1] || '').replace(new RegExp(`^${channel}\\s+`), '');
+      if (commits) out.action(`hermes: on the ${channel} channel, ${Number(commits).toLocaleString('en-US')} commits behind (its own updater: hermes update)`, { fix: FIX.hermes, name: 'hermes', have: channel, want: `${commits} commits` });
+      else if (release) out.action(`hermes: on the ${channel} channel, ${release.trim()} is available (its own updater: hermes update)`, { fix: FIX.hermes, name: 'hermes', have: channel, want: release.trim() });
+      else out.ok(`hermes: on the ${channel} channel, up to date`);
     },
   },
   {
