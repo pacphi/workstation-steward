@@ -689,7 +689,7 @@ in the PR that relies on it.
 
 | Date | Revision | Change | PR |
 | --- | --- | --- | --- |
-| 2026-11-25 | 29 | zypper: Tumbleweed on ARM (D91): the live ports repo's snapshot, dated by the repo's own publish time and taken once the gate's days old; one plan line, a per-package receipt, kept copies as the way back. Built from the unit tests only: the real ARM run is next | |
+| 2026-11-25 | 29 | zypper: Tumbleweed on ARM (D91): the live ports repo's snapshot, dated by the repo's own publish time and taken once the gate's days old; one plan line, a per-package receipt, kept copies as the way back. The package list comes from `list-updates` (`dup --dry-run` needs root); built from unit tests only: the real ARM run is next | |
 | 2026-11-20 | 28 | zypper: Tumbleweed snapshot mode on x86_64 (D90): the whole system moves to the newest archived snapshot past the gate, dated by its folder's publish time; the way back is the snapshot before. ARM and the real-repo run are next | |
 | 2026-11-13 | 27 | D-h: kept packages, the way back to the exact build on every distribution (D88); Tumbleweed on ARM waits until a snapshot has been live for the gate's days (owner) | |
 | 2026-11-13 | 26 | zypper 1c: `--e2e` for Leap against openSUSE's real repos; 28 of 28 (D87) | #119 |

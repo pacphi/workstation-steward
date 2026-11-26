@@ -2,7 +2,8 @@
 // live snapshot of openSUSE's ports repo, dated by the repo's own publish time (repomd <revision>), taken once that is
 // the gate's days old. The plan shows one line; the receipt and the kept copies are per package (the source's `members`),
 // and the way back is the kept copy of each package's build from before. No network: curl, uname, zypper and rpm are
-// canned. The dup dry-run XML is a stand-in until the Mac's fixture (dup-dry-run-arm64.xml) replaces it.
+// canned. `zypper dup --dry-run` refuses without root (Mac, 2026-11-26), so the plan reads `zypper list-updates`, whose XML
+// is the format Leap's plan already reads (test/zypper.test.js).
 // Run: just test
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -20,10 +21,10 @@ const NOW = new Date('2026-11-23T12:00:00Z');
 const REVISION = Math.floor(Date.parse('2026-11-19T04:25:49Z') / 1000); // the Mac saw 1795062349 for snapshot 20261118
 const PRODUCTS = '/ openSUSE 20261118-1\n';
 const REPOMD = `<?xml version="1.0"?><repomd xmlns="http://linux.duke.edu/metadata/repo"><revision>${REVISION}</revision></repomd>`;
-const DUP = `<?xml version='1.0'?><stream><install-summary packages-to-change="2">
-<to-upgrade><solvable type="package" name="curl" edition="8.23.0-3.1" arch="aarch64" edition-old="8.23.0-1.1" repository="snap"/>
-<solvable type="package" name="libcurl-mini4" edition="8.23.0-3.1" arch="aarch64" edition-old="8.23.0-1.1" repository="snap"/></to-upgrade>
-</install-summary></stream>`;
+const DUP = `<?xml version='1.0'?><stream><update-status version="0.6"><update-list>
+<update name="curl" kind="package" edition="8.23.0-3.1" edition-old="8.23.0-1.1" arch="aarch64"><source url="https://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss/" alias="tw-arm"/></update>
+<update name="libcurl-mini4" kind="package" edition="8.23.0-3.1" edition-old="8.23.0-1.1" arch="aarch64"><source url="https://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss/" alias="tw-arm"/></update>
+</update-list></update-status></stream>`;
 const RPM = { curl: '8.23.0-1.1', 'libcurl-mini4': '8.23.0-1.1' };
 
 function machine(o = {}) {
@@ -44,7 +45,7 @@ function machine(o = {}) {
     }
     if (cmd === 'uname') return { status: 0, stdout: `${o.arch || 'aarch64'}\n` };
     if (cmd === 'rpm') return { status: 0, stdout: args.filter(a => rpm[a]).map(a => `${a} 0:${rpm[a]}`).join('\n') };
-    if (cmd === 'zypper' && args.includes('dup') && args.includes('--dry-run')) return { status: 0, stdout: o.dup || DUP };
+    if (cmd === 'zypper' && args.includes('list-updates')) return o.noRoot ? { status: 5, stdout: 'Root privileges are required to run this command.' } : { status: 0, stdout: o.dup === undefined ? DUP : o.dup };
     if (cmd === 'zypper' && args.includes('download')) {
       const dest = args.find(a => a.startsWith('--pkg-cache-dir=')).slice('--pkg-cache-dir='.length);
       const spec = args[args.length - 1].replace(/\.aarch64/, '');
@@ -85,12 +86,12 @@ test('parseRevision: the repo\'s publish time from repomd; empty when unreadable
   assert.equal(T.parseRevision('nope'), '');
 });
 
-test('parseDup: each package a dup would change, from the dry-run XML', () => {
-  assert.deepEqual(T.parseDup(DUP), [
+test('parseUpdates: each package that changes edition, from list-updates', () => {
+  assert.deepEqual(T.parseUpdates(DUP), [
     { name: 'curl', have: '8.23.0-1.1', want: '8.23.0-3.1', arch: 'aarch64' },
     { name: 'libcurl-mini4', have: '8.23.0-1.1', want: '8.23.0-3.1', arch: 'aarch64' },
   ]);
-  assert.deepEqual(T.parseDup('<stream/>'), []);
+  assert.deepEqual(T.parseUpdates('<stream/>'), []);
 });
 
 test('outdated: one item, the live snapshot; the date is the repo\'s publish time, never the name', async () => {
@@ -140,7 +141,7 @@ test('sources: the ARM source is on the suse family only, in snapshot mode', () 
 test('the plan uses the steward\'s own repo file for the live ports repo, never the system\'s repos', async () => {
   const m = machine();
   await T.source.outdated(m.c);
-  const dry = m.c.calls.find(k => k.startsWith('zypper') && k.includes(' dup ') && k.includes('--dry-run'));
+  const dry = m.c.calls.find(k => k.startsWith('zypper') && k.includes('list-updates'));
   assert.ok(dry, m.c.calls.join('\n'));
   assert.match(dry, /--reposd-dir=/);
   assert.match(dry, /--xmlout/);
@@ -149,7 +150,15 @@ test('the plan uses the steward\'s own repo file for the live ports repo, never 
   assert.match(fs.readFileSync(path.join(m.c.cfg.paths.state, 'zypper', 'arm-repos', repos[0]), 'utf8'), /ports\/aarch64\/tumbleweed\/repo\/oss\//);
 });
 
-test('members: the receipt\'s per-package items come from the dry-run, behind the one plan line', async () => {
+test('a newer snapshot with no package changing edition is still a move; zypper that cannot say is reported, never up to date', async () => {
+  const none = machine({ dup: '<stream/>' });
+  assert.deepEqual(await T.source.outdated(none.c), [{ name: 'tumbleweed', have: '20261112', want: '20261118', packages: 0 }]);
+  const refused = machine({ noRoot: true });
+  assert.deepEqual(await T.source.outdated(refused.c), []);
+  assert.match((await T.source.manual(refused.c))[0], /couldn't list the packages it changes/);
+});
+
+test('members: the receipt\'s per-package items come from list-updates, behind the one plan line', async () => {
   const m = machine();
   const items = await T.source.outdated(m.c);
   assert.deepEqual((await T.source.members(m.c, items)).map(i => i.name), ['curl', 'libcurl-mini4']);
