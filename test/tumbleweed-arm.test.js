@@ -94,6 +94,25 @@ test('parseUpdates: each package that changes edition, from list-updates', () =>
   assert.deepEqual(T.parseUpdates('<stream/>'), []);
 });
 
+// two entries taken as they are from the real ARM repo on the Mac (2026-11-26, snapshot 20261020 image, as a normal
+// user; 55 entries in all, several to a line)
+const REAL = `<?xml version='1.0'?>
+<stream>
+<message type="info">Loading repository data...</message>
+<update-status version="0.6">
+<update-list>
+<update kind="package" name="aaa_base" edition="84.87+git20260924.144354a1-2.1" arch="aarch64" edition-old="84.87+git20260924.144354a1-1.1"><summary>openSUSE Base Package</summary><description>This package installs several important configuration files and central
+scripts.</description><license/><source url="https://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss/" alias="tw-arm"/></update> <update kind="package" name="bash-sh" edition="5.3.20-11.1" arch="noarch" edition-old="5.3.20-10.1"><summary>Handle behavior of /bin/sh</summary><description>Use bash as /bin/sh implementation.</description><license/><source url="https://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss/" alias="tw-arm"/></update>
+</update-list>
+</update-status>
+</stream>`;
+test('parseUpdates reads the real list-updates output, several entries to a line, noarch included', () => {
+  assert.deepEqual(T.parseUpdates(REAL), [
+    { name: 'aaa_base', have: '84.87+git20260924.144354a1-1.1', want: '84.87+git20260924.144354a1-2.1', arch: 'aarch64' },
+    { name: 'bash-sh', have: '5.3.20-10.1', want: '5.3.20-11.1', arch: 'noarch' },
+  ]);
+});
+
 test('outdated: one item, the live snapshot; the date is the repo\'s publish time, never the name', async () => {
   const m = machine();
   const items = await T.source.outdated(m.c);
