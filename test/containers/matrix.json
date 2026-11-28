@@ -139,10 +139,10 @@
     }
   ],
   "mise": {
-    "version": "2026.11.12",
+    "version": "2026.11.14",
     "sha256": {
-      "arm64": "9a125763f8445ea28d2da0e943fe5ad7d81b397d78f173cc07c1cc18ee2bee47",
-      "x64": "4b029e19afc575875a4962dfe5d5e31cc93ab0317242768d0234adec219d3e14"
+      "arm64": "6afd537b39e2b1fe6594d4448318293d7e8c85469cbb51a6a01b28a6f26fbaf5",
+      "x64": "42a3ff51c24b4315d679a07bbc598e299dda12fea0dfc0d6f90a543495834831"
     }
   }
 }
